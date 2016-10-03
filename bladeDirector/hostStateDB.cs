@@ -82,6 +82,7 @@ namespace bladeDirector
         {
             lock (bladeStates)
             {
+                bladeStates.Clear();
                 foreach (string bladeIP in bladeIPs)
                     bladeStates.Add(new bladeOwnership(bladeIP, ""));
             }
