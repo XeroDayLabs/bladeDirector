@@ -66,16 +66,13 @@
       <Generator>SettingsSingleFileGenerator</Generator>
       <LastGenOutput>Settings.Designer.cs</LastGenOutput>
     </None>
-    <None Include="Service References\bladeDirector\requestNode.wsdl" />
+    <None Include="Service References\bladeDirector\services.wsdl" />
   </ItemGroup>
   <ItemGroup>
     <WCFMetadata Include="Service References\" />
   </ItemGroup>
   <ItemGroup>
     <WCFMetadataStorage Include="Service References\bladeDirector\" />
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="Service References\bladeDirector\requestNode.disco" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Service References\bladeDirector\configuration91.svcinfo" />
@@ -94,6 +91,9 @@
       <Project>{47995DD9-9F78-4313-809D-55C515EAF89E}</Project>
       <Name>hypervisors</Name>
     </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Service References\bladeDirector\services.disco" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

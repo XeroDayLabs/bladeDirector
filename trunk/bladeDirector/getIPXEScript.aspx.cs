@@ -33,6 +33,7 @@ namespace bladeDirector
                     return;
 
                 script = script.Replace("{BLADE_IP_ISCSI}", state.ISCSIIpAddress);
+                script = script.Replace("{BLADE_IP_MAIN}", state.IPAddress);
                 script = script.Replace("{BLADE_NETMASK_ISCSI}", "255.255.255.0");
                 script = script.Replace("{BLADE_DISK_NAME}", state.IPAddress);
                 script = script.Replace("{HOST_IP}", state.currentOwner);

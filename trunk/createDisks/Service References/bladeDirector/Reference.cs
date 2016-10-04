@@ -12,8 +12,8 @@ namespace createDisks.bladeDirector {
     
     
     [System.CodeDom.Compiler.GeneratedCodeAttribute("System.ServiceModel", "4.0.0.0")]
-    [System.ServiceModel.ServiceContractAttribute(ConfigurationName="bladeDirector.requestNodeSoap")]
-    public interface requestNodeSoap {
+    [System.ServiceModel.ServiceContractAttribute(ConfigurationName="bladeDirector.servicesSoap")]
+    public interface servicesSoap {
         
         [System.ServiceModel.OperationContractAttribute(Action="http://tempuri.org/ListNodes", ReplyAction="*")]
         [System.ServiceModel.XmlSerializerFormatAttribute(SupportFaults=true)]
@@ -49,32 +49,39 @@ namespace createDisks.bladeDirector {
         
         [System.ServiceModel.OperationContractAttribute(Action="http://tempuri.org/releaseBlade", ReplyAction="*")]
         System.Threading.Tasks.Task<string> releaseBladeAsync(string NodeIP);
+        
+        [System.ServiceModel.OperationContractAttribute(Action="http://tempuri.org/forceBladeAllocation", ReplyAction="*")]
+        [System.ServiceModel.XmlSerializerFormatAttribute(SupportFaults=true)]
+        string forceBladeAllocation(string NodeIP, string newOwner);
+        
+        [System.ServiceModel.OperationContractAttribute(Action="http://tempuri.org/forceBladeAllocation", ReplyAction="*")]
+        System.Threading.Tasks.Task<string> forceBladeAllocationAsync(string NodeIP, string newOwner);
     }
     
     [System.CodeDom.Compiler.GeneratedCodeAttribute("System.ServiceModel", "4.0.0.0")]
-    public interface requestNodeSoapChannel : createDisks.bladeDirector.requestNodeSoap, System.ServiceModel.IClientChannel {
+    public interface servicesSoapChannel : createDisks.bladeDirector.servicesSoap, System.ServiceModel.IClientChannel {
     }
     
     [System.Diagnostics.DebuggerStepThroughAttribute()]
     [System.CodeDom.Compiler.GeneratedCodeAttribute("System.ServiceModel", "4.0.0.0")]
-    public partial class requestNodeSoapClient : System.ServiceModel.ClientBase<createDisks.bladeDirector.requestNodeSoap>, createDisks.bladeDirector.requestNodeSoap {
+    public partial class servicesSoapClient : System.ServiceModel.ClientBase<createDisks.bladeDirector.servicesSoap>, createDisks.bladeDirector.servicesSoap {
         
-        public requestNodeSoapClient() {
+        public servicesSoapClient() {
         }
         
-        public requestNodeSoapClient(string endpointConfigurationName) : 
+        public servicesSoapClient(string endpointConfigurationName) : 
                 base(endpointConfigurationName) {
         }
         
-        public requestNodeSoapClient(string endpointConfigurationName, string remoteAddress) : 
+        public servicesSoapClient(string endpointConfigurationName, string remoteAddress) : 
                 base(endpointConfigurationName, remoteAddress) {
         }
         
-        public requestNodeSoapClient(string endpointConfigurationName, System.ServiceModel.EndpointAddress remoteAddress) : 
+        public servicesSoapClient(string endpointConfigurationName, System.ServiceModel.EndpointAddress remoteAddress) : 
                 base(endpointConfigurationName, remoteAddress) {
         }
         
-        public requestNodeSoapClient(System.ServiceModel.Channels.Binding binding, System.ServiceModel.EndpointAddress remoteAddress) : 
+        public servicesSoapClient(System.ServiceModel.Channels.Binding binding, System.ServiceModel.EndpointAddress remoteAddress) : 
                 base(binding, remoteAddress) {
         }
         
@@ -116,6 +123,14 @@ namespace createDisks.bladeDirector {
         
         public System.Threading.Tasks.Task<string> releaseBladeAsync(string NodeIP) {
             return base.Channel.releaseBladeAsync(NodeIP);
+        }
+        
+        public string forceBladeAllocation(string NodeIP, string newOwner) {
+            return base.Channel.forceBladeAllocation(NodeIP, newOwner);
+        }
+        
+        public System.Threading.Tasks.Task<string> forceBladeAllocationAsync(string NodeIP, string newOwner) {
+            return base.Channel.forceBladeAllocationAsync(NodeIP, newOwner);
         }
     }
 }

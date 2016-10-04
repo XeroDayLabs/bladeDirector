@@ -60,7 +60,7 @@ namespace createDisks
 
             //createClonesAndExportViaiSCSI(nas, itemsToAdd);
 
-            // Next, we must prepare each clone. We do this in parallel, per-server.
+            // Next, we must prepare each clone. TODO: do this in parallel, per-server.
             foreach (string serverIP in serverIPs)
             {
                 IEnumerable<itemToAdd> toPrep = itemsToAdd.Where(x => x.serverIP == serverIP);
@@ -78,8 +78,11 @@ namespace createDisks
 
                     // We must ensure the blade is allocated to the required blade before we power it on. This will cause it to
                     // use the required iSCSI root path.
-
-
+                    string url = Properties.Settings.Default.directorURL;
+                    using (bladeDirector.servicesSoapClient bladeDirectorClient = new bladeDirector.servicesSoapClient("WSHttpBinding_IFuzzer1", url))
+                    {
+                        bladeDirectorClient.forceBladeAllocation(itemToAdd.serverIP, itemToAdd.bladeIP);
+                    }
                     ilo.powerOn();
                 }
             }
