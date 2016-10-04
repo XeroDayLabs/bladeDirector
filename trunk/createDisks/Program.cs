@@ -68,8 +68,8 @@ namespace createDisks
                 {
                     hypSpec_iLo spec = new hypSpec_iLo(
                         itemToAdd.serverIP,
-                        Properties.Settings.Default.iloUsername, Properties.Settings.Default.iloPassword,
-                        itemToAdd.nodeiLoIP, Properties.Settings.Default.iloHostUsername, Properties.Settings.Default.iloHostPassword, 
+                        Properties.Settings.Default.iloHostUsername, Properties.Settings.Default.iloHostPassword, 
+                        itemToAdd.nodeiLoIP, Properties.Settings.Default.iloUsername, Properties.Settings.Default.iloPassword,
                         nasIP, nasUsername, nasPassword, 
                         "",  0, "");
                     hypervisor_iLo_appdomainPayload ilo = new hypervisor_iLo_appdomainPayload(spec);
@@ -79,7 +79,7 @@ namespace createDisks
                     // We must ensure the blade is allocated to the required blade before we power it on. This will cause it to
                     // use the required iSCSI root path.
                     string url = Properties.Settings.Default.directorURL;
-                    using (bladeDirector.servicesSoapClient bladeDirectorClient = new bladeDirector.servicesSoapClient("WSHttpBinding_IFuzzer1", url))
+                    using (bladeDirector.servicesSoapClient bladeDirectorClient = new bladeDirector.servicesSoapClient("servicesSoap", url))
                     {
                         bladeDirectorClient.forceBladeAllocation(itemToAdd.serverIP, itemToAdd.bladeIP);
                     }

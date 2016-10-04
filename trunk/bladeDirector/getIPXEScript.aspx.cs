@@ -21,7 +21,7 @@ namespace bladeDirector
             bladeOwnership state = hostStateDB.getBladeByIP(srcIP);
             if (state == null)
             {
-                Response.Write("No blade at this IP address");
+                Response.Write("prompt No blade at this IP address");
                 return;
             }
 
