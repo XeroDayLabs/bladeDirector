@@ -11,17 +11,21 @@ namespace bladeDirector
     {
         protected void Page_Load(object sender, EventArgs e)
         {
+            Response.Clear();
+
             string srcIP = Request.UserHostAddress;
             if (srcIP == null)
             {
-                Response.Write("Cannot find host IP address");
+                Response.Write("prompt Cannot find host IP address");
+                Response.End();
                 return;
             }
-
+            
             bladeOwnership state = hostStateDB.getBladeByIP(srcIP);
             if (state == null)
             {
                 Response.Write("prompt No blade at this IP address");
+                Response.End();
                 return;
             }
 
@@ -30,7 +34,10 @@ namespace bladeDirector
             lock (state)
             {
                 if (state.state == bladeStatus.unused)
+                {
+                    Response.Write("prompt Blade does not have any owner");
                     return;
+                }
 
                 script = script.Replace("{BLADE_IP_ISCSI}", state.ISCSIIpAddress);
                 script = script.Replace("{BLADE_IP_MAIN}", state.IPAddress);
@@ -39,6 +46,7 @@ namespace bladeDirector
                 script = script.Replace("{HOST_IP}", state.currentOwner);
             }
             Response.Write(script);
+            Response.End();
         }
     }
 }
