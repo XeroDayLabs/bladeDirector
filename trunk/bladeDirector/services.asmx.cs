@@ -91,5 +91,11 @@ namespace bladeDirector
         {
             return hostStateDB.getConfigurationOfBlade(NodeIP);
         }
+
+        [WebMethod]
+        public string getCurrentSnapshotForBlade(string NodeIP)
+        {
+            return hostStateDB.getCurrentSnapshotForBlade(NodeIP);
+        }
     }
 }

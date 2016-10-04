@@ -197,6 +197,20 @@ namespace bladeDirector
             }
         }
 
+        public static string getCurrentSnapshotForBlade(string nodeIp)
+        {
+            lock (bladeStates)
+            {
+                bladeOwnership reqBlade = bladeStates.SingleOrDefault(x => x.bladeIP == nodeIp);
+                if (reqBlade == null)
+                    return null;
+
+                lock (reqBlade)
+                {
+                    return reqBlade.currentSnapshotName;
+                }
+            }
+        }
     }
 
     public class bladeSpec
@@ -249,6 +263,8 @@ namespace bladeDirector
         public bladeStatus state = bladeStatus.unused;
         public string currentOwner = null;
         public string nextOwner = null;
+
+        public string currentSnapshotName { get { return bladeIP + "-" + currentOwner; }}
 
         public bladeOwnership(bladeSpec spec)
             : base(spec.bladeIP, spec.iscsiIP, spec.iLOIP, spec.iLOPort)
