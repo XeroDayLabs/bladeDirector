@@ -6,7 +6,7 @@ using System.Linq;
 using System.Net;
 using System.Text;
 using System.Threading.Tasks;
-using fuzzer;
+using hypervisors;
 using Newtonsoft.Json;
 
 namespace createDisks

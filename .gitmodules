@@ -1,0 +1,3 @@
+[submodule "ThirdParty/hypervisors"]
+	path = ThirdParty/hypervisors
+	url = ../hypervisors
