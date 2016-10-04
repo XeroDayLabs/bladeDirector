@@ -1,0 +1,66 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<configuration>
+    <configSections>
+        <sectionGroup name="userSettings" type="System.Configuration.UserSettingsGroup, System, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" >
+            <section name="createDisks.Properties.Settings" type="System.Configuration.ClientSettingsSection, System, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" allowExeDefinition="MachineToLocalUser" requirePermission="false" />
+        </sectionGroup>
+    </configSections>
+    <startup> 
+        <supportedRuntime version="v4.0" sku=".NETFramework,Version=v4.5" />
+    </startup>
+    <userSettings>
+        <createDisks.Properties.Settings>
+            <setting name="iscsiServerIP" serializeAs="String">
+                <value>store.xd.lan</value>
+            </setting>
+            <setting name="iscsiServerUsername" serializeAs="String">
+                <value>root</value>
+            </setting>
+            <setting name="iscsiServerPassword" serializeAs="String">
+                <value>...</value>
+            </setting>
+            <setting name="iscsiBaseName" serializeAs="String">
+                <value>bladeBasesnapshot</value>
+            </setting>
+            <setting name="debugServers" serializeAs="String">
+                <value>172.16.10.91,172.16.2.235,172.16.10.228</value>
+            </setting>
+            <setting name="nodes" serializeAs="String">
+                <value>1,2,3,4,28,29,30,31</value>
+            </setting>
+            <setting name="iloUsername" serializeAs="String">
+                <value>...</value>
+            </setting>
+            <setting name="iloPassword" serializeAs="String">
+                <value>...</value>
+            </setting>
+            <setting name="iloHostUsername" serializeAs="String">
+                <value>...</value>
+            </setting>
+            <setting name="iloHostPassword" serializeAs="String">
+                <value>...</value>
+            </setting>
+        </createDisks.Properties.Settings>
+    </userSettings>
+    <system.serviceModel>
+        <bindings>
+            <basicHttpBinding>
+                <binding name="requestNodeSoap" />
+            </basicHttpBinding>
+            <customBinding>
+                <binding name="requestNodeSoap12">
+                    <textMessageEncoding messageVersion="Soap12" />
+                    <httpTransport />
+                </binding>
+            </customBinding>
+        </bindings>
+        <client>
+            <endpoint address="http://alizbuild.xd.lan/bladedirector/requestNode.asmx"
+                binding="basicHttpBinding" bindingConfiguration="requestNodeSoap"
+                contract="bladeDirector.requestNodeSoap" name="requestNodeSoap" />
+            <endpoint address="http://alizbuild.xd.lan/bladedirector/requestNode.asmx"
+                binding="customBinding" bindingConfiguration="requestNodeSoap12"
+                contract="bladeDirector.requestNodeSoap" name="requestNodeSoap12" />
+        </client>
+    </system.serviceModel>
+</configuration>

@@ -1,0 +1,36 @@
+﻿<?xml version='1.0' encoding='utf-8'?>
+<SettingsFile xmlns="http://schemas.microsoft.com/VisualStudio/2004/01/settings" CurrentProfile="(Default)" GeneratedClassNamespace="createDisks.Properties" GeneratedClassName="Settings">
+  <Profiles />
+  <Settings>
+    <Setting Name="iscsiServerIP" Type="System.String" Scope="User">
+      <Value Profile="(Default)">store.xd.lan</Value>
+    </Setting>
+    <Setting Name="iscsiServerUsername" Type="System.String" Scope="User">
+      <Value Profile="(Default)">root</Value>
+    </Setting>
+    <Setting Name="iscsiServerPassword" Type="System.String" Scope="User">
+      <Value Profile="(Default)">...</Value>
+    </Setting>
+    <Setting Name="iscsiBaseName" Type="System.String" Scope="User">
+      <Value Profile="(Default)">bladeBasesnapshot</Value>
+    </Setting>
+    <Setting Name="debugServers" Type="System.String" Scope="User">
+      <Value Profile="(Default)">172.16.10.91,172.16.2.235,172.16.10.228</Value>
+    </Setting>
+    <Setting Name="nodes" Type="System.String" Scope="User">
+      <Value Profile="(Default)">1,2,3,4,28,29,30,31</Value>
+    </Setting>
+    <Setting Name="iloUsername" Type="System.String" Scope="User">
+      <Value Profile="(Default)" />
+    </Setting>
+    <Setting Name="iloPassword" Type="System.String" Scope="User">
+      <Value Profile="(Default)" />
+    </Setting>
+    <Setting Name="iloHostUsername" Type="System.String" Scope="User">
+      <Value Profile="(Default)" />
+    </Setting>
+    <Setting Name="iloHostPassword" Type="System.String" Scope="User">
+      <Value Profile="(Default)" />
+    </Setting>
+  </Settings>
+</SettingsFile>
