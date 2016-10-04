@@ -21,6 +21,11 @@ namespace bladeDirector
             hostStateDB.initWithBlades(bladeIPs);
         }
 
+        public static void initWithBlades(bladeSpec[] spec)
+        {
+            hostStateDB.initWithBlades(spec);
+        }
+
         [WebMethod]
         public string ListNodes()
         {
@@ -81,5 +86,10 @@ namespace bladeDirector
             return s.ToString();
         }
 
+        [WebMethod]
+        public bladeSpec getConfigurationOfBlade(string NodeIP)
+        {
+            return hostStateDB.getConfigurationOfBlade(NodeIP);
+        }
     }
 }

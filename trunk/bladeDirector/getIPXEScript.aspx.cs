@@ -12,20 +12,29 @@ namespace bladeDirector
         protected void Page_Load(object sender, EventArgs e)
         {
             Response.Clear();
+            try
+            {
+                _Page_load(sender, e);
+            }
+            finally 
+            {
+                Response.End();
+            }
+        }
 
+        private void _Page_load(object sender, EventArgs eventArgs)
+        {
             string srcIP = Request.UserHostAddress;
             if (srcIP == null)
             {
                 Response.Write("prompt Cannot find host IP address");
-                Response.End();
                 return;
             }
-            
+
             bladeOwnership state = hostStateDB.getBladeByIP(srcIP);
             if (state == null)
             {
-                Response.Write("prompt No blade at this IP address");
-                Response.End();
+                Response.Write("prompt No blade configured at this IP address");
                 return;
             }
 
@@ -39,14 +48,13 @@ namespace bladeDirector
                     return;
                 }
 
-                script = script.Replace("{BLADE_IP_ISCSI}", state.ISCSIIpAddress);
-                script = script.Replace("{BLADE_IP_MAIN}", state.IPAddress);
+                script = script.Replace("{BLADE_IP_ISCSI}", state.iscsiIP);
+                script = script.Replace("{BLADE_IP_MAIN}", state.bladeIP);
                 script = script.Replace("{BLADE_NETMASK_ISCSI}", "255.255.255.0");
-                script = script.Replace("{BLADE_DISK_NAME}", state.IPAddress);
+
                 script = script.Replace("{HOST_IP}", state.currentOwner);
             }
             Response.Write(script);
-            Response.End();
         }
     }
 }

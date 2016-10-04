@@ -14,12 +14,14 @@ namespace bladeDirector
             bladeStates = new List<bladeOwnership>();
             foreach (string bladeAddr in Properties.Settings.Default.bladeList.Split(','))
             {
-                int bladeAddrInt = int.Parse(bladeAddr);
-                bladeSpec newSpec = new bladeSpec()
-                {
-                    bladeIP = "172.17.129." + (100 + bladeAddrInt),
-                    iscsiIP = "192.168.66." + (100 + bladeAddrInt)
-                };
+                ushort bladeAddrInt = ushort.Parse(bladeAddr);
+
+                string bladeIP = "172.17.129." + (100 + bladeAddrInt);
+                string iLOIP = "172.17.2." + (100 + bladeAddrInt);
+                ushort iLOPort = (ushort) (Properties.Settings.Default.baseDebugPort + bladeAddrInt);
+                string iscsiIP = "192.168.66." + (100 + bladeAddrInt);
+
+                bladeSpec newSpec = new bladeSpec(bladeIP, iscsiIP, iLOIP, iLOPort);
                 bladeStates.Add(new bladeOwnership(newSpec));
             }
         }
@@ -28,7 +30,7 @@ namespace bladeDirector
         {
             lock (bladeStates)
             {
-                return bladeStates.Select(x => x.IPAddress).ToArray();
+                return bladeStates.Select(x => x.bladeIP).ToArray();
             }
         }
 
@@ -36,7 +38,7 @@ namespace bladeDirector
         {
             lock (bladeStates)
             {
-                return bladeStates.SingleOrDefault(x => x.IPAddress == IP);
+                return bladeStates.SingleOrDefault(x => x.bladeIP == IP);
             }
         }
 
@@ -44,7 +46,7 @@ namespace bladeDirector
         {
             lock (bladeStates)
             {
-                bladeOwnership reqBlade = bladeStates.SingleOrDefault(x => x.IPAddress == bladeIP);
+                bladeOwnership reqBlade = bladeStates.SingleOrDefault(x => x.bladeIP == bladeIP);
                 if (reqBlade == null)
                     return resultCode.bladeNotFound;
 
@@ -74,7 +76,7 @@ namespace bladeDirector
         {
             lock (bladeStates)
             {
-                return bladeStates.Where(x => x.currentOwner == NodeIP).Select(x => x.IPAddress).ToArray();
+                return bladeStates.Where(x => x.currentOwner == NodeIP).Select(x => x.bladeIP).ToArray();
             }
         }
 
@@ -84,24 +86,25 @@ namespace bladeDirector
             {
                 bladeStates.Clear();
                 foreach (string bladeIP in bladeIPs)
-                    bladeStates.Add(new bladeOwnership(bladeIP, ""));
+                    bladeStates.Add(new bladeOwnership(bladeIP, "", "", 0));
             }
         }
 
-        public static void initWithBlades(bladeSpec[] specs)
+        public static void initWithBlades(bladeSpec[] bladeSpecs)
         {
             lock (bladeStates)
             {
-                foreach (bladeSpec spec in specs)
-                    bladeStates.Add(new bladeOwnership(spec.bladeIP, spec.iscsiIP));
+                bladeStates.Clear();
+                foreach (bladeSpec spec in bladeSpecs)
+                    bladeStates.Add(new bladeOwnership(spec));
             }
         }
-
+        
         public static GetBladeStatusResult getBladeStatus(string nodeIp, string requestorIp)
         {
             lock (bladeStates)
             {
-                bladeOwnership reqBlade = bladeStates.SingleOrDefault(x => x.IPAddress == nodeIp);
+                bladeOwnership reqBlade = bladeStates.SingleOrDefault(x => x.bladeIP == nodeIp);
                 if (reqBlade == null)
                     return GetBladeStatusResult.bladeNotFound;
 
@@ -129,7 +132,7 @@ namespace bladeDirector
         {
             lock (bladeStates)
             {
-                bladeOwnership reqBlade = bladeStates.SingleOrDefault(x => x.IPAddress == NodeIP);
+                bladeOwnership reqBlade = bladeStates.SingleOrDefault(x => x.bladeIP == NodeIP);
                 if (reqBlade == null)
                     return resultCode.bladeNotFound;
 
@@ -163,7 +166,7 @@ namespace bladeDirector
         {
             lock (bladeStates)
             {
-                bladeOwnership reqBlade = bladeStates.SingleOrDefault(x => x.IPAddress == nodeIp);
+                bladeOwnership reqBlade = bladeStates.SingleOrDefault(x => x.bladeIP == nodeIp);
                 if (reqBlade == null)
                     return resultCode.bladeNotFound;
 
@@ -177,33 +180,80 @@ namespace bladeDirector
                 }
             }
         }
+
+        public static bladeSpec getConfigurationOfBlade(string nodeIp)
+        {
+            lock (bladeStates)
+            {
+                bladeOwnership reqBlade = bladeStates.SingleOrDefault(x => x.bladeIP == nodeIp);
+                if (reqBlade == null)
+                    return null;
+
+                lock (reqBlade)
+                {
+                    // Clone it, since it might be modified after we release the lock otherwise.
+                    return reqBlade.clone();
+                }
+            }
+        }
+
     }
 
     public class bladeSpec
     {
+        // If you add fields, don't forget to add them to the Equals() override too.
         public string iscsiIP;
         public string bladeIP;
+        public string iLOIP;
+        public ushort iLOPort;
+
+        public bladeSpec(string newBladeIP, string newISCSIIP, string newILOIP, ushort newILOPort)
+        {
+            iscsiIP = newISCSIIP;
+            bladeIP = newBladeIP;
+            iLOPort = newILOPort;
+            iLOIP = newILOIP;
+        }
+
+        public bladeSpec clone()
+        {
+            return new bladeSpec(bladeIP, iscsiIP, iLOIP, iLOPort);
+        }
+
+        public override bool Equals(object obj)
+        {
+            bladeSpec compareTo = obj as bladeSpec;
+            if (compareTo == null)
+                return false;
+
+            if (iscsiIP != compareTo.iscsiIP)
+                return false;
+            if (bladeIP != compareTo.bladeIP)
+                return false;
+            if (iLOIP != compareTo.iLOIP)
+                return false;
+            if (iLOPort != compareTo.iLOPort)
+                return false;
+
+            return true;
+        }
     }
 
-    public class bladeOwnership
+    public class bladeOwnership : bladeSpec
     {
-        public readonly string IPAddress;
-        public readonly string ISCSIIpAddress;
-
         public bladeStatus state = bladeStatus.unused;
         public string currentOwner = null;
         public string nextOwner = null;
 
         public bladeOwnership(bladeSpec spec)
-            : this(spec.bladeIP, spec.iscsiIP)
+            : base(spec.bladeIP, spec.iscsiIP, spec.iLOIP, spec.iLOPort)
         {
             
         }
 
-        public bladeOwnership(string newIPAddress, string newICSIIP)
+        public bladeOwnership(string newIPAddress, string newICSIIP, string newILOIP, ushort newILOPort)
+            : base(newIPAddress, newICSIIP, newILOIP, newILOPort)
         {
-            IPAddress = newIPAddress;
-            ISCSIIpAddress = newICSIIP;
         }
     }
 

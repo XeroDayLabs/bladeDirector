@@ -24,6 +24,22 @@ namespace tests
         }
 
         [TestMethod]
+        public void canGetBladeSpec()
+        {
+            bladeSpec spec1Expected = new bladeSpec("blade1ip", "blade1iscsiIP", "blade1ILOIP", 111);
+            bladeSpec spec2Expected = new bladeSpec("blade2ip", "blade2iscsiIP", "blade2ILOIP", 222);
+            bladeDirector.services.initWithBlades(new [] { spec1Expected, spec2Expected });
+
+            services uut = new bladeDirector.services();
+
+            bladeSpec spec1Actual = uut.getConfigurationOfBlade("blade1ip");
+            bladeSpec spec2Actual = uut.getConfigurationOfBlade("blade2ip");
+
+            Assert.AreEqual(spec1Expected, spec1Actual);
+            Assert.AreEqual(spec2Expected, spec2Actual);
+        }
+
+        [TestMethod]
         public void canAllocateBlade()
         {
             bladeDirector.services.initWithBlades(new[] { "1.1.1.1", "2.2.2.2", "3.3.3.3" });

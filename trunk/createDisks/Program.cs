@@ -5,9 +5,13 @@ using System.IO;
 using System.Linq;
 using System.Net;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using hypervisors;
 using Newtonsoft.Json;
+using VMware.Vim;
+using Action = System.Action;
+using Task = System.Threading.Tasks.Task;
 
 namespace createDisks
 {
@@ -20,6 +24,9 @@ namespace createDisks
         public string bladeIP;
         public string cloneName;
         public string nodeiLoIP;
+        public string computerName;
+        public uint kernelDebugPort;
+        public string snapshotName;
     }
 
     class Program
@@ -34,16 +41,21 @@ namespace createDisks
             {
                 foreach (string bladeIP in bladeIPs)
                 {
-                    string nodeIP = "172.17.128." + (100 + int.Parse(bladeIP));
+                    string nodeIP = "172.17.129." + (100 + int.Parse(bladeIP));
                     string nodeiLoIP = "172.17.2." + (100 + int.Parse(bladeIP));
                     string cloneName = String.Format("{0}-{1}", nodeIP, serverIP);
+                    string computerName = String.Format("blade{0}", uint.Parse(bladeIP).ToString("D2"));
+                    string snapshotName = string.Format("{0}-clean", cloneName);
 
                     var itemToAdd = new itemToAdd
                     {
                         serverIP = serverIP,
                         bladeIP = nodeIP,
                         cloneName = cloneName,
-                        nodeiLoIP = nodeiLoIP
+                        nodeiLoIP = nodeiLoIP,
+                        computerName = computerName,
+                        kernelDebugPort = (51000 + uint.Parse(bladeIP)),
+                        snapshotName = snapshotName
                     };
 
                     itemsToAdd.Add(itemToAdd);
@@ -58,45 +70,120 @@ namespace createDisks
 
             FreeNAS nas = new FreeNAS(nasIP, nasUsername, nasPassword);
 
-            //createClonesAndExportViaiSCSI(nas, itemsToAdd);
-
-            // Next, we must prepare each clone. TODO: do this in parallel, per-server.
-            foreach (string serverIP in serverIPs)
-            {
-                IEnumerable<itemToAdd> toPrep = itemsToAdd.Where(x => x.serverIP == serverIP);
-                foreach (itemToAdd itemToAdd in toPrep)
-                {
-                    hypSpec_iLo spec = new hypSpec_iLo(
-                        itemToAdd.serverIP,
-                        Properties.Settings.Default.iloHostUsername, Properties.Settings.Default.iloHostPassword, 
-                        itemToAdd.nodeiLoIP, Properties.Settings.Default.iloUsername, Properties.Settings.Default.iloPassword,
-                        nasIP, nasUsername, nasPassword, 
-                        "",  0, "");
-                    hypervisor_iLo_appdomainPayload ilo = new hypervisor_iLo_appdomainPayload(spec);
-                    ilo.connect();
-                    ilo.powerOff();
-
-                    // We must ensure the blade is allocated to the required blade before we power it on. This will cause it to
-                    // use the required iSCSI root path.
-                    string url = Properties.Settings.Default.directorURL;
-                    using (bladeDirector.servicesSoapClient bladeDirectorClient = new bladeDirector.servicesSoapClient("servicesSoap", url))
-                    {
-                        bladeDirectorClient.forceBladeAllocation(itemToAdd.serverIP, itemToAdd.bladeIP);
-                    }
-                    ilo.powerOn();
-                }
-            }
-        }
-
-        private static void createClonesAndExportViaiSCSI(FreeNAS nas, List<itemToAdd> itemsToAdd)
-        {
-// Get the snapshot we'll be cloning
+            // Get the snapshot we'll be cloning
             List<snapshot> snapshots = nas.getSnapshots();
             snapshot toClone = snapshots.SingleOrDefault(x => x.name.Equals(Properties.Settings.Default.iscsiBaseName, StringComparison.CurrentCultureIgnoreCase));
             if (toClone == null)
                 throw new Exception("Snapshot not found");
             string toCloneVolume = toClone.fullname.Split('/')[0];
 
+            createClonesAndExportViaiSCSI(nas, toClone, toCloneVolume, itemsToAdd);
+
+            // Next, we must prepare each clone. Do this in parallel, per-server.
+            foreach (string serverIP in serverIPs)
+            {
+                itemToAdd[] toPrep = itemsToAdd.Where(x => x.serverIP == serverIP).ToArray();
+                Task[] toWaitOn = new Task[toPrep.Length];
+                for (int index = 0; index < toPrep.Length; index++)
+                {
+                    itemToAdd itemToAdd = toPrep[index];
+
+                    toWaitOn[index] = new Task(() => prepareCloneImage(itemToAdd, toCloneVolume));
+                    toWaitOn[index].Start();
+                }
+
+                foreach (Task task in toWaitOn)
+                    task.Wait();
+            }
+        }
+
+        private static async void prepareCloneImage(itemToAdd itemToAdd, string toCloneVolume)
+        {
+            Console.WriteLine("Preparing " + itemToAdd.bladeIP + " for server " + itemToAdd.bladeIP);
+
+            string nasIP = Properties.Settings.Default.iscsiServerIP;
+            string nasUsername = Properties.Settings.Default.iscsiServerUsername;
+            string nasPassword = Properties.Settings.Default.iscsiServerPassword;
+
+            FreeNAS nas = new FreeNAS(nasIP, nasUsername, nasPassword);
+
+            hypSpec_iLo spec = new hypSpec_iLo(
+                itemToAdd.bladeIP,
+                Properties.Settings.Default.iloHostUsername, Properties.Settings.Default.iloHostPassword,
+                itemToAdd.nodeiLoIP, Properties.Settings.Default.iloUsername, Properties.Settings.Default.iloPassword,
+                nasIP, nasUsername, nasPassword,
+                "", 0, "");
+            hypervisor_iLo_appdomainPayload ilo = new hypervisor_iLo_appdomainPayload(spec);
+            ilo.connect();
+            ilo.powerOff();
+
+            // We must ensure the blade is allocated to the required blade before we power it on. This will cause it to
+            // use the required iSCSI root path.
+            string url = Properties.Settings.Default.directorURL;
+            using (bladeDirector.servicesSoapClient bladeDirectorClient = new bladeDirector.servicesSoapClient("servicesSoap", url))
+            {
+                string res = bladeDirectorClient.forceBladeAllocation(itemToAdd.bladeIP, itemToAdd.serverIP);
+            }
+            ilo.powerOn();
+            // Wait for it to come up...
+            doWithRetryOnSomeExceptions(() => { ilo.startExecutable("C:\\windows\\system32\\cmd.exe", "/c echo hi"); }, TimeSpan.FromSeconds(5));
+            // and then use psexec to name it.
+            ilo.startExecutable("C:\\windows\\system32\\cmd", "/c wmic computersystem where caption='%COMPUTERNAME%' call rename " + itemToAdd.computerName);
+            // Set the target of the kernel debugger, and enable it.
+            ilo.startExecutable("C:\\windows\\system32\\cmd", "/c bcdedit /dbgsettings net hostip:" + itemToAdd.serverIP + " port:" + itemToAdd.kernelDebugPort);
+            ilo.startExecutable("C:\\windows\\system32\\cmd", "/c bcdedit /debug on");
+            ilo.startExecutable("C:\\windows\\system32\\cmd", "/c shutdown -s -f -t 01");
+
+            // Once it has shut down totally, we can take the snapshot of it.
+            ilo.WaitForStatus(false, TimeSpan.FromMinutes(1));
+
+            nas.createSnapshot(toCloneVolume + "/" + itemToAdd.cloneName, itemToAdd.snapshotName);
+        }
+
+        private static void doWithRetryOnSomeExceptions(Action thingtoDo, TimeSpan retry = default(TimeSpan), int maxRetries = 0)
+        {
+            int retries = maxRetries;
+            if (retry == default(TimeSpan))
+                retry = TimeSpan.Zero;
+
+            while (true)
+            {
+                try
+                {
+                    thingtoDo.Invoke();
+                    break;
+                }
+                catch (VimException)
+                {
+                    if (maxRetries != 0)
+                    {
+                        if (retries-- == 0)
+                            throw;
+                    }
+                }
+                catch (System.Net.WebException)
+                {
+                    if (maxRetries != 0)
+                    {
+                        if (retries-- == 0)
+                            throw;
+                    }
+                }
+                catch (psExecException)
+                {
+                    if (maxRetries != 0)
+                    {
+                        if (retries-- == 0)
+                            throw;
+                    }
+                }
+
+                Thread.Sleep(retry);
+            }
+        }
+
+        private static void createClonesAndExportViaiSCSI(FreeNAS nas, snapshot toClone, string toCloneVolume, List<itemToAdd> itemsToAdd)
+        {
             // Now we can create snapshots
             foreach (itemToAdd itemToAdd in itemsToAdd)
             {
@@ -106,6 +193,7 @@ namespace createDisks
             }
 
             // Now expose each via iSCSI.
+            targetGroup tgtGrp = nas.getTargetGroups()[0];
             foreach (itemToAdd itemToAdd in itemsToAdd)
             {
                 Console.WriteLine("Creating iSCSI target/extent/link for server '" + itemToAdd.serverIP + "' node '" + itemToAdd.bladeIP + "'");
@@ -121,6 +209,8 @@ namespace createDisks
                     iscsi_target_extent_path = String.Format("zvol/SSDs/{0}", toAdd.targetName)
                 };
                 newExtent = nas.addISCSIExtent(newExtent);
+
+                nas.addTargetGroup(tgtGrp, newTarget);
 
                 nas.addISCSITargetToExtent(newTarget.id, newExtent);
             }
@@ -301,6 +391,16 @@ namespace createDisks
         {
             string HTTPResponse = doReq("http://" + _serverIp + "/api/v1.0/storage/snapshot/?format=json", "get", HttpStatusCode.OK).text;
             return JsonConvert.DeserializeObject<List<snapshot>>(HTTPResponse);
+        }
+
+        public snapshot createSnapshot(string dataset, string name)
+        {
+            string payload = String.Format("{{\"dataset\": \"{0}\", " +
+                                             "\"name\": \"{1}\" " +
+                                           "}}", dataset, name);
+
+            string HTTPResponse = doReq("http://" + _serverIp + "/api/v1.0/storage/snapshot/", "post", HttpStatusCode.Created, payload).text;
+            return JsonConvert.DeserializeObject<snapshot>(HTTPResponse);
         }
 
         public void rollbackSnapshot(snapshot shotToRestore) //, volume parentVolume, volume clone)
