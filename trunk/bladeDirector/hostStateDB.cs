@@ -207,6 +207,11 @@ namespace bladeDirector
         public string iLOIP;
         public ushort iLOPort;
 
+        public bladeSpec()
+        {
+            // For XML serialisation
+        }
+
         public bladeSpec(string newBladeIP, string newISCSIIP, string newILOIP, ushort newILOPort)
         {
             iscsiIP = newISCSIIP;
