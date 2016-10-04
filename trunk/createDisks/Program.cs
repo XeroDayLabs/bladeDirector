@@ -79,9 +79,6 @@ namespace createDisks
                     // We must ensure the blade is allocated to the required blade before we power it on. This will cause it to
                     // use the required iSCSI root path.
 
-                    bladeDirector dir = new bladeDirector();
-                    dir.
-
 
                     ilo.powerOn();
                 }
