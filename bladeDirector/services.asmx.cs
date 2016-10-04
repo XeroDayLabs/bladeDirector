@@ -14,7 +14,7 @@ namespace bladeDirector
     [System.ComponentModel.ToolboxItem(false)]
     // To allow this Web Service to be called from script, using ASP.NET AJAX, uncomment the following line. 
     // [System.Web.Script.Services.ScriptService]
-    public class requestNode : System.Web.Services.WebService
+    public class services : System.Web.Services.WebService
     {
         public static void initWithBlades(string[] bladeIPs)
         {
@@ -73,5 +73,13 @@ namespace bladeDirector
             resultCode s = hostStateDB.releaseBlade(nodeIP, requestorIP);
             return s.ToString();
         }
+
+        [WebMethod]
+        public string forceBladeAllocation(string NodeIP, string newOwner)
+        {
+            resultCode s = hostStateDB.forceBladeAllocation(NodeIP, newOwner);
+            return s.ToString();
+        }
+
     }
 }

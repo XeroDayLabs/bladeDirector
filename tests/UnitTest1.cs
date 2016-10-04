@@ -11,9 +11,9 @@ namespace tests
         [TestMethod]
         public void canInitWithBladesAndGetListBack()
         {
-            bladeDirector.requestNode.initWithBlades(new[] { "1.1.1.1", "2.2.2.2", "3.3.3.3" });
+            bladeDirector.services.initWithBlades(new[] { "1.1.1.1", "2.2.2.2", "3.3.3.3" });
 
-            requestNode uut = new bladeDirector.requestNode();
+            services uut = new bladeDirector.services();
 
             string res = uut.ListNodes();
             string[] foundIPs = res.Split(',');
@@ -26,8 +26,8 @@ namespace tests
         [TestMethod]
         public void canAllocateBlade()
         {
-            bladeDirector.requestNode.initWithBlades(new[] { "1.1.1.1", "2.2.2.2", "3.3.3.3" });
-            requestNode uut = new bladeDirector.requestNode();
+            bladeDirector.services.initWithBlades(new[] { "1.1.1.1", "2.2.2.2", "3.3.3.3" });
+            services uut = new bladeDirector.services();
 
             Assert.AreEqual(resultCode.success.ToString(), uut.RequestNode("1.1.1.1", "192.168.1.1"));
 
@@ -38,8 +38,8 @@ namespace tests
         [TestMethod]
         public void willReAllocateNode()
         {
-            bladeDirector.requestNode.initWithBlades(new[] { "1.1.1.1", "2.2.2.2", "3.3.3.3" });
-            requestNode uut = new bladeDirector.requestNode();
+            bladeDirector.services.initWithBlades(new[] { "1.1.1.1", "2.2.2.2", "3.3.3.3" });
+            services uut = new bladeDirector.services();
 
             Assert.AreEqual(resultCode.success.ToString(), uut.RequestNode("1.1.1.1", "192.168.1.1"));
 
@@ -61,5 +61,20 @@ namespace tests
             Assert.AreEqual(GetBladeStatusResult.yours.ToString(), uut.GetBladeStatus("1.1.1.1", "192.168.2.2"));
         }
 
+        [TestMethod]
+        public void willForceReAllocation()
+        {
+            bladeDirector.services.initWithBlades(new[] {"1.1.1.1", "2.2.2.2", "3.3.3.3"});
+            services uut = new bladeDirector.services();
+
+            Assert.AreEqual(resultCode.success.ToString(), uut.RequestNode("1.1.1.1", "192.168.1.1"));
+
+            Assert.AreEqual(GetBladeStatusResult.yours.ToString(), uut.GetBladeStatus("1.1.1.1", "192.168.1.1"));
+
+            uut.forceBladeAllocation("1.1.1.1", "192.168.2.2");
+
+            Assert.AreEqual(GetBladeStatusResult.notYours.ToString(), uut.GetBladeStatus("1.1.1.1", "192.168.1.1"));
+            Assert.AreEqual(GetBladeStatusResult.yours.ToString(), uut.GetBladeStatus("1.1.1.1", "192.168.2.2"));
+        }
     }
 }

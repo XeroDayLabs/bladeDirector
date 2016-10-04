@@ -158,6 +158,25 @@ namespace bladeDirector
             }
             return resultCode.genericFail;
         }
+
+        public static resultCode forceBladeAllocation(string nodeIp, string newOwner)
+        {
+            lock (bladeStates)
+            {
+                bladeOwnership reqBlade = bladeStates.SingleOrDefault(x => x.IPAddress == nodeIp);
+                if (reqBlade == null)
+                    return resultCode.bladeNotFound;
+
+                lock (reqBlade)
+                {
+                    reqBlade.state = bladeStatus.inUse;
+                    reqBlade.currentOwner = newOwner;
+                    reqBlade.nextOwner = null;
+
+                    return resultCode.success;
+                }
+            }
+        }
     }
 
     public class bladeSpec
