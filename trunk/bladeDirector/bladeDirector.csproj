@@ -61,6 +61,7 @@
     <Content Include="getIPXEScript.aspx" />
     <Content Include="services.asmx" />
     <None Include="Resources\ipxeTemplate.txt" />
+    <Content Include="status.aspx" />
     <Content Include="Web.config" />
   </ItemGroup>
   <ItemGroup>
@@ -86,6 +87,13 @@
     <Compile Include="services.asmx.cs">
       <DependentUpon>services.asmx</DependentUpon>
       <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="status.aspx.cs">
+      <DependentUpon>status.aspx</DependentUpon>
+      <SubType>ASPXCodeBehind</SubType>
+    </Compile>
+    <Compile Include="status.aspx.designer.cs">
+      <DependentUpon>status.aspx</DependentUpon>
     </Compile>
   </ItemGroup>
   <ItemGroup>
