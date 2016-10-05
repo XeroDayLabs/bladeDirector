@@ -249,6 +249,8 @@ namespace bladeDirector
         {
             lock (bladeStates)
             {
+                foreach (bladeOwnership blade in bladeStates)
+                    checkKeepAlives(blade);
                 // Put blades in an order of preference. First come unused blades, then used blades with an empty queue.
                 IEnumerable<bladeOwnership> unusedBlades = bladeStates.Where(x => x.currentOwner == null);
                 IEnumerable<bladeOwnership> emptyQueueBlades = bladeStates.Where(x => x.currentOwner != null && x.nextOwner == null);
