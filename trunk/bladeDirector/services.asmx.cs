@@ -41,16 +41,16 @@ namespace bladeDirector
         }
 
         [WebMethod]
-        public string RequestAnySingleNode()
+        public resultCodeAndBladeName RequestAnySingleNode()
         {
             string srcIp = HttpContext.Current.Request.UserHostAddress;
             return RequestAnySingleNode(srcIp);
         }
 
-        public string RequestAnySingleNode(string NodeIP)
+        public resultCodeAndBladeName RequestAnySingleNode(string NodeIP)
         {
-            resultCode s = hostStateDB.RequestAnySingleNode(NodeIP);
-            return s.ToString();
+            resultCodeAndBladeName s = hostStateDB.RequestAnySingleNode(NodeIP);
+            return s;
         }
 
         [WebMethod]

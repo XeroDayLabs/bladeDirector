@@ -212,7 +212,7 @@ namespace bladeDirector
             }
         }
 
-        public static resultCode RequestAnySingleNode(string requestorIP)
+        public static resultCodeAndBladeName RequestAnySingleNode(string requestorIP)
         {
             lock (bladeStates)
             {
@@ -225,11 +225,13 @@ namespace bladeDirector
                 {
                     resultCode res = tryRequestNode(reqBlade.bladeIP, requestorIP);
                     if (res == resultCode.success || res == resultCode.pending)
-                        return res;
+                    {
+                        return new resultCodeAndBladeName() { bladeName = reqBlade.bladeIP, code = res };
+                    }
                 }
             }
             // Otherwise, all blades have full queues.
-            return resultCode.bladeQueueFull;
+            return new resultCodeAndBladeName() { bladeName = null, code = resultCode.bladeQueueFull };
         }
     }
 
@@ -312,6 +314,12 @@ namespace bladeDirector
         unused,
         releaseRequested,
         inUse
+    }
+
+    public class resultCodeAndBladeName
+    {
+        public resultCode code;
+        public string bladeName;
     }
 
     public enum resultCode
