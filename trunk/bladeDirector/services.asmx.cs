@@ -41,6 +41,19 @@ namespace bladeDirector
         }
 
         [WebMethod]
+        public string RequestAnySingleNode()
+        {
+            string srcIp = HttpContext.Current.Request.UserHostAddress;
+            return RequestAnySingleNode(srcIp);
+        }
+
+        public string RequestAnySingleNode(string NodeIP)
+        {
+            resultCode s = hostStateDB.RequestAnySingleNode(NodeIP);
+            return s.ToString();
+        }
+
+        [WebMethod]
         public string RequestNode(string NodeIP)
         {
             string srcIp = HttpContext.Current.Request.UserHostAddress;

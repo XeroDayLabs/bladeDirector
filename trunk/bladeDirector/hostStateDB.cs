@@ -211,6 +211,26 @@ namespace bladeDirector
                 }
             }
         }
+
+        public static resultCode RequestAnySingleNode(string requestorIP)
+        {
+            lock (bladeStates)
+            {
+                // Put blades in an order of preference. First come unused blades, then used blades with an empty queue.
+                IEnumerable<bladeOwnership> unusedBlades = bladeStates.Where(x => x.currentOwner == null);
+                IEnumerable<bladeOwnership> emptyQueueBlades = bladeStates.Where(x => x.currentOwner != null && x.nextOwner == null);
+                IEnumerable<bladeOwnership> orderedBlades = unusedBlades.Concat(emptyQueueBlades);
+
+                foreach (bladeOwnership reqBlade in orderedBlades)
+                {
+                    resultCode res = tryRequestNode(reqBlade.bladeIP, requestorIP);
+                    if (res == resultCode.success || res == resultCode.pending)
+                        return res;
+                }
+            }
+            // Otherwise, all blades have full queues.
+            return resultCode.bladeQueueFull;
+        }
     }
 
     public class bladeSpec
