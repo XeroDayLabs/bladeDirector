@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Linq;
+using System.Threading;
 using bladeDirector;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
@@ -91,6 +92,35 @@ namespace tests
 
             Assert.AreEqual(GetBladeStatusResult.notYours.ToString(), uut.GetBladeStatus("1.1.1.1", "192.168.1.1"));
             Assert.AreEqual(GetBladeStatusResult.yours.ToString(), uut.GetBladeStatus("1.1.1.1", "192.168.2.2"));
+        }
+
+        [TestMethod]
+        public void willTimeoutOnNoKeepalives()
+        {
+            bladeDirector.services.initWithBlades(new[] { "1.1.1.1" });
+            services uut = new bladeDirector.services();
+
+            Assert.AreEqual(resultCode.success.ToString(), uut.RequestNode("1.1.1.1", "192.168.1.1"));
+            Assert.AreEqual(GetBladeStatusResult.yours.ToString(), uut.GetBladeStatus("1.1.1.1", "192.168.1.1"));
+            Thread.Sleep(TimeSpan.FromSeconds(11));
+            Assert.AreEqual(GetBladeStatusResult.unused.ToString(), uut.GetBladeStatus("1.1.1.1", "192.168.1.1"));
+        }
+
+        [TestMethod]
+        public void willNotTimeoutWhenWeSendKeepalives()
+        {
+            bladeDirector.services.initWithBlades(new[] { "1.1.1.1" });
+            services uut = new bladeDirector.services();
+
+            Assert.AreEqual(resultCode.success.ToString(), uut.RequestNode("1.1.1.1", "192.168.1.1"));
+            Assert.AreEqual(GetBladeStatusResult.yours.ToString(), uut.GetBladeStatus("1.1.1.1", "192.168.1.1"));
+
+            for (int i = 0; i < 11; i++)
+            {
+                uut.keepAlive("192.168.1.1");
+                Thread.Sleep(TimeSpan.FromSeconds(1));
+            }
+            Assert.AreEqual(GetBladeStatusResult.yours.ToString(), uut.GetBladeStatus("1.1.1.1", "192.168.1.1"));
         }
     }
 }

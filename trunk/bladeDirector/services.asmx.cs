@@ -27,6 +27,18 @@ namespace bladeDirector
         }
 
         [WebMethod]
+        public void keepAlive()
+        {
+            string srcIp = HttpContext.Current.Request.UserHostAddress;
+            keepAlive(srcIp);
+        }
+
+        public void keepAlive(string srcIP)
+        {
+            hostStateDB.keepAlive(srcIP);
+        }
+
+        [WebMethod]
         public string ListNodes()
         {
             string[] IPAddresses = hostStateDB.getAllBladeIP();

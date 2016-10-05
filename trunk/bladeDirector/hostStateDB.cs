@@ -52,11 +52,14 @@ namespace bladeDirector
 
                 lock (reqBlade)
                 {
+                    checkKeepAlives(reqBlade);
+
                     // If the blade is currently unused, we can just take it.
                     if (reqBlade.state == bladeStatus.unused)
                     {
                         reqBlade.currentOwner = requestorID;
                         reqBlade.state = bladeStatus.inUse;
+                        reqBlade.lastKeepAlive = DateTime.Now;
                         return resultCode.success;
                     }
 
@@ -74,8 +77,23 @@ namespace bladeDirector
                     // It's all okay, so request the release.
                     reqBlade.state = bladeStatus.releaseRequested;
                     reqBlade.nextOwner = requestorID;
-
+                    
                     return resultCode.pending;
+                }
+            }
+        }
+
+        private static void checkKeepAlives(bladeOwnership reqBlade)
+        {
+            lock (reqBlade)
+            {
+                if (reqBlade.state != bladeStatus.unused)
+                {
+                    if (reqBlade.lastKeepAlive + TimeSpan.FromSeconds(10) < DateTime.Now)
+                    {
+                        // Oh no, the blade owner failed to send a keepalive in time!
+                        releaseBlade(reqBlade.bladeIP, reqBlade.currentOwner);
+                    }
                 }
             }
         }
@@ -118,6 +136,8 @@ namespace bladeDirector
 
                 lock (reqBlade)
                 {
+                    checkKeepAlives(reqBlade);
+
                     switch (reqBlade.state)
                     {
                         case bladeStatus.unused:
@@ -241,6 +261,20 @@ namespace bladeDirector
             // Otherwise, all blades have full queues.
             return new resultCodeAndBladeName() { bladeName = null, code = resultCode.bladeQueueFull };
         }
+
+        public static void keepAlive(string requestorIP)
+        {
+            lock (bladeStates)
+            {
+                foreach (bladeOwnership blade in bladeStates.Where(x => x.currentOwner == requestorIP))
+                {
+                    lock (blade)
+                    {
+                        blade.lastKeepAlive = DateTime.Now;
+                    }
+                }
+            }
+        }
     }
 
     public class bladeSpec
@@ -295,6 +329,7 @@ namespace bladeDirector
         public string nextOwner = null;
 
         public string currentSnapshotName { get { return bladeIP + "-" + currentOwner; }}
+        public DateTime lastKeepAlive;
 
         public bladeOwnership(bladeSpec spec)
             : base(spec.bladeIP, spec.iscsiIP, spec.iLOIP, spec.iLOPort)
