@@ -29,13 +29,21 @@ namespace bladeDirector
                 TableRow newRow = new TableRow();
                 newRow.Cells.Add(new TableCell() {Text = bladeInfo.state.ToString()});
                 newRow.Cells.Add(new TableCell() {Text = bladeInfo.bladeIP});
-                newRow.Cells.Add(new TableCell() {Text = (DateTime.Now - bladeInfo.lastKeepAlive).ToString()});
+                if (bladeInfo.lastKeepAlive == DateTime.MinValue)
+                    newRow.Cells.Add(new TableCell() { Text = "(none)" });
+                else
+                    newRow.Cells.Add(new TableCell() { Text = (DateTime.Now - bladeInfo.lastKeepAlive).ToString() });
                 newRow.Cells.Add(new TableCell() { Text = bladeInfo.currentOwner ?? "none" });
                 newRow.Cells.Add(new TableCell() {Text = bladeInfo.nextOwner ?? "none" });
 
 
                 tblBladeStatus.Rows.Add(newRow);
             }
+        }
+
+        protected void cmdReset_Click(object sender, EventArgs e)
+        {
+            hostStateDB.resetAll();
         }
     }
 }

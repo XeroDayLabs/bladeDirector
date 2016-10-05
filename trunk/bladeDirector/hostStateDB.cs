@@ -9,7 +9,7 @@ namespace bladeDirector
     {
         public static List<bladeOwnership> bladeStates;
 
-        static hostStateDB()
+        public static void resetAll()
         {
             bladeStates = new List<bladeOwnership>();
             foreach (string bladeAddr in Properties.Settings.Default.bladeList.Split(','))
@@ -18,12 +18,17 @@ namespace bladeDirector
 
                 string bladeIP = "172.17.129." + (100 + bladeAddrInt);
                 string iLOIP = "172.17.2." + (100 + bladeAddrInt);
-                ushort iLOPort = (ushort) (Properties.Settings.Default.baseDebugPort + bladeAddrInt);
+                ushort iLOPort = (ushort)(Properties.Settings.Default.baseDebugPort + bladeAddrInt);
                 string iscsiIP = "192.168.66." + (100 + bladeAddrInt);
 
                 bladeSpec newSpec = new bladeSpec(bladeIP, iscsiIP, iLOIP, iLOPort);
                 bladeStates.Add(new bladeOwnership(newSpec));
             }
+        }
+
+        static hostStateDB()
+        {
+            resetAll();
         }
 
         public static string[] getAllBladeIP()
