@@ -75,12 +75,16 @@ namespace bladeDirector
                         return resultCode.success;
                     }
 
-                    // Otherwise, we need to request that the blade is released, and retuen pending. 
+                    // Otherwise, we need to request that the blade is released, and return 'pending'. 
                     // Note that we don't permit a requestor to both own the blade, and be in the queue - this is because the
                     // requestor would be unable to determine when its blade is allocated. We just return queuefull in that
                     // situation.
                     if (reqBlade.currentOwner == requestorID)
                         return resultCode.bladeQueueFull;
+
+                    // If the blade is already queued as requested, just report OK and leave it there,
+                    if (reqBlade.nextOwner == requestorID)
+                        return resultCode.success;
 
                     // See if the blade queue is actually full
                     if (reqBlade.nextOwner != null)
