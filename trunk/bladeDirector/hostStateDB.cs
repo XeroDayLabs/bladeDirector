@@ -282,6 +282,26 @@ namespace bladeDirector
                 }
             }
         }
+
+        public static bool isBladeMine(string nodeIp, string requestorIp)
+        {
+            lock (bladeStates)
+            {
+                foreach (bladeOwnership blade in bladeStates)
+                    checkKeepAlives(blade);
+
+                bladeOwnership reqBlade = bladeStates.SingleOrDefault(x => x.bladeIP == nodeIp);
+                if (reqBlade == null)
+                    return false;
+
+                lock (reqBlade)
+                {
+                    if (reqBlade.currentOwner == requestorIp)
+                        return true;
+                }
+                return false;
+            }
+        }
     }
 
     public class bladeSpec

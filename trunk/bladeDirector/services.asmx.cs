@@ -92,6 +92,18 @@ namespace bladeDirector
         }
 
         [WebMethod]
+        public bool isBladeMine(string NodeIP)
+        {
+            string srcIp = HttpContext.Current.Request.UserHostAddress;
+            return isBladeMine(NodeIP, srcIp);
+        }
+
+        public bool isBladeMine(string nodeIP, string requestorIP)
+        {
+            return hostStateDB.isBladeMine(nodeIP, requestorIP);
+        }
+
+        [WebMethod]
         public string releaseBlade(string NodeIP)
         {
             string srcIp = HttpContext.Current.Request.UserHostAddress;
