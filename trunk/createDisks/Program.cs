@@ -97,7 +97,7 @@ namespace createDisks
             }
         }
 
-        private static async void prepareCloneImage(itemToAdd itemToAdd, string toCloneVolume)
+        private static void prepareCloneImage(itemToAdd itemToAdd, string toCloneVolume)
         {
             Console.WriteLine("Preparing " + itemToAdd.bladeIP + " for server " + itemToAdd.bladeIP);
 
@@ -125,8 +125,6 @@ namespace createDisks
                 string res = bladeDirectorClient.forceBladeAllocation(itemToAdd.bladeIP, itemToAdd.serverIP);
             }
             ilo.powerOn();
-            // Wait for it to come up...
-            doWithRetryOnSomeExceptions(() => { ilo.startExecutable("C:\\windows\\system32\\cmd.exe", "/c echo hi"); }, TimeSpan.FromSeconds(5));
             // and then use psexec to name it.
             ilo.startExecutable("C:\\windows\\system32\\cmd", "/c wmic computersystem where caption='%COMPUTERNAME%' call rename " + itemToAdd.computerName);
             // Set the target of the kernel debugger, and enable it.
@@ -139,49 +137,7 @@ namespace createDisks
 
             nas.createSnapshot(toCloneVolume + "/" + itemToAdd.cloneName, itemToAdd.snapshotName);
         }
-
-        private static void doWithRetryOnSomeExceptions(Action thingtoDo, TimeSpan retry = default(TimeSpan), int maxRetries = 0)
-        {
-            int retries = maxRetries;
-            if (retry == default(TimeSpan))
-                retry = TimeSpan.Zero;
-
-            while (true)
-            {
-                try
-                {
-                    thingtoDo.Invoke();
-                    break;
-                }
-                catch (VimException)
-                {
-                    if (maxRetries != 0)
-                    {
-                        if (retries-- == 0)
-                            throw;
-                    }
-                }
-                catch (System.Net.WebException)
-                {
-                    if (maxRetries != 0)
-                    {
-                        if (retries-- == 0)
-                            throw;
-                    }
-                }
-                catch (psExecException)
-                {
-                    if (maxRetries != 0)
-                    {
-                        if (retries-- == 0)
-                            throw;
-                    }
-                }
-
-                Thread.Sleep(retry);
-            }
-        }
-
+        
         private static void createClonesAndExportViaiSCSI(FreeNAS nas, snapshot toClone, string toCloneVolume, List<itemToAdd> itemsToAdd)
         {
             // Now we can create snapshots

@@ -94,7 +94,7 @@ namespace bladeDirector
             {
                 if (reqBlade.state != bladeStatus.unused)
                 {
-                    if (reqBlade.lastKeepAlive + TimeSpan.FromSeconds(10) < DateTime.Now)
+                    if (reqBlade.lastKeepAlive + TimeSpan.FromSeconds(60) < DateTime.Now)
                     {
                         // Oh no, the blade owner failed to send a keepalive in time!
                         releaseBlade(reqBlade.bladeIP, reqBlade.currentOwner);
