@@ -102,7 +102,7 @@ namespace tests
 
             Assert.AreEqual(resultCode.success.ToString(), uut.RequestNode("1.1.1.1", "192.168.1.1"));
             Assert.AreEqual(GetBladeStatusResult.yours.ToString(), uut.GetBladeStatus("1.1.1.1", "192.168.1.1"));
-            Thread.Sleep(TimeSpan.FromSeconds(11));
+            Thread.Sleep(TimeSpan.FromSeconds(61));
             Assert.AreEqual(GetBladeStatusResult.unused.ToString(), uut.GetBladeStatus("1.1.1.1", "192.168.1.1"));
         }
 
@@ -115,7 +115,7 @@ namespace tests
             Assert.AreEqual(resultCode.success.ToString(), uut.RequestNode("1.1.1.1", "192.168.1.1"));
             Assert.AreEqual(GetBladeStatusResult.yours.ToString(), uut.GetBladeStatus("1.1.1.1", "192.168.1.1"));
 
-            for (int i = 0; i < 11; i++)
+            for (int i = 0; i < 61; i++)
             {
                 uut.keepAlive("192.168.1.1");
                 Thread.Sleep(TimeSpan.FromSeconds(1));
