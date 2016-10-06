@@ -79,6 +79,32 @@ namespace tests
         }
 
         [TestMethod]
+        public void willReAllocateNodeAfterTimeout()
+        {
+            bladeDirector.services.initWithBlades(new[] { "1.1.1.1", "2.2.2.2", "3.3.3.3" });
+            services uut = new bladeDirector.services();
+            hostStateDB.setKeepAliveTimeout(TimeSpan.FromSeconds(10));
+
+            Assert.AreEqual(resultCode.success.ToString(), uut.RequestNode("1.1.1.1", "192.168.1.1"));
+            Assert.AreEqual(resultCode.pending.ToString(), uut.RequestNode("1.1.1.1", "192.168.2.2"));
+
+            // 1.1 has it, 2.2 is queued
+            Assert.IsTrue(uut.isBladeMine("1.1.1.1", "192.168.1.1"));
+            Assert.IsFalse(uut.isBladeMine("1.1.1.1", "192.168.2.2"));
+
+            // Now let 1.1 timeout
+            for (int i = 0; i < 11; i++)
+            {
+                uut.keepAlive("192.168.2.2");
+                Thread.Sleep(TimeSpan.FromSeconds(1));
+            }
+
+            // and it should belong to the second requestor.
+            Assert.IsFalse(uut.isBladeMine("1.1.1.1", "192.168.1.1"));
+            Assert.IsTrue(uut.isBladeMine("1.1.1.1", "192.168.2.2"));
+        }
+
+        [TestMethod]
         public void willForceReAllocation()
         {
             bladeDirector.services.initWithBlades(new[] {"1.1.1.1", "2.2.2.2", "3.3.3.3"});
@@ -99,10 +125,11 @@ namespace tests
         {
             bladeDirector.services.initWithBlades(new[] { "1.1.1.1" });
             services uut = new bladeDirector.services();
+            hostStateDB.setKeepAliveTimeout(TimeSpan.FromSeconds(10));
 
             Assert.AreEqual(resultCode.success.ToString(), uut.RequestNode("1.1.1.1", "192.168.1.1"));
             Assert.AreEqual(GetBladeStatusResult.yours.ToString(), uut.GetBladeStatus("1.1.1.1", "192.168.1.1"));
-            Thread.Sleep(TimeSpan.FromSeconds(61));
+            Thread.Sleep(TimeSpan.FromSeconds(11));
             Assert.AreEqual(GetBladeStatusResult.unused.ToString(), uut.GetBladeStatus("1.1.1.1", "192.168.1.1"));
         }
 
@@ -111,11 +138,12 @@ namespace tests
         {
             bladeDirector.services.initWithBlades(new[] { "1.1.1.1" });
             services uut = new bladeDirector.services();
+            hostStateDB.setKeepAliveTimeout(TimeSpan.FromSeconds(10));
 
             Assert.AreEqual(resultCode.success.ToString(), uut.RequestNode("1.1.1.1", "192.168.1.1"));
             Assert.AreEqual(GetBladeStatusResult.yours.ToString(), uut.GetBladeStatus("1.1.1.1", "192.168.1.1"));
 
-            for (int i = 0; i < 61; i++)
+            for (int i = 0; i < 11; i++)
             {
                 uut.keepAlive("192.168.1.1");
                 Thread.Sleep(TimeSpan.FromSeconds(1));

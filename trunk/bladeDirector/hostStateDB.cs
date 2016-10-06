@@ -7,6 +7,8 @@ namespace bladeDirector
 {
     public static class hostStateDB
     {
+        private static TimeSpan keepAliveTimeout = TimeSpan.FromMinutes(1);
+        
         public static List<bladeOwnership> bladeStates;
 
         public static void resetAll()
@@ -24,6 +26,11 @@ namespace bladeDirector
                 bladeSpec newSpec = new bladeSpec(bladeIP, iscsiIP, iLOIP, iLOPort);
                 bladeStates.Add(new bladeOwnership(newSpec));
             }
+        }
+
+        public static void setKeepAliveTimeout(TimeSpan newTimeout)
+        {
+            keepAliveTimeout = newTimeout;
         }
 
         static hostStateDB()
@@ -94,7 +101,7 @@ namespace bladeDirector
             {
                 if (reqBlade.state != bladeStatus.unused)
                 {
-                    if (reqBlade.lastKeepAlive + TimeSpan.FromSeconds(60) < DateTime.Now)
+                    if (reqBlade.lastKeepAlive + keepAliveTimeout < DateTime.Now)
                     {
                         // Oh no, the blade owner failed to send a keepalive in time!
                         releaseBlade(reqBlade.bladeIP, reqBlade.currentOwner);
@@ -187,6 +194,7 @@ namespace bladeDirector
                         reqBlade.state = bladeStatus.inUse;
                         reqBlade.currentOwner = reqBlade.nextOwner;
                         reqBlade.nextOwner = null;
+                        reqBlade.lastKeepAlive = DateTime.Now;
 
                         return resultCode.success;
                     }
