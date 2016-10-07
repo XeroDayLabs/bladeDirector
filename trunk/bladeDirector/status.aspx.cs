@@ -49,7 +49,7 @@ namespace bladeDirector
 
         protected void cmdAddNode_Click(object sender, EventArgs e)
         {
-            bladeOwnership newBlade = new bladeOwnership(txtNewNodeIP.Text, txtNewISCSI.Text, txtNewIloIP.Text, txtNewPort.Text);
+            bladeOwnership newBlade = new bladeOwnership(txtNewNodeIP.Text, txtNewISCSI.Text, txtNewIloIP.Text, ushort.Parse(txtNewPort.Text));
             hostStateDB.addNode(newBlade);
         }
     }

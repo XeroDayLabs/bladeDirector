@@ -71,7 +71,7 @@
                 <td style="width: 25%" ><asp:TextBox ID="txtNewISCSI" style="width: 100%" runat="server">172.16.0.13</asp:TextBox></td>
             </tr>
             <th colspan="4">
-                <asp:Button ID="cmdAddNode" runat="server" Text="Add node" />
+                <asp:Button ID="cmdAddNode" runat="server" Text="Add node" OnClick="cmdAddNode_Click" />
             </th>
         </table>
         
