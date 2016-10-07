@@ -49,7 +49,7 @@ namespace tests
             Assert.AreEqual(resultCode.success.ToString(), uut.RequestNode("1.1.1.1", "192.168.1.1"));
 
             string allocated = uut.getBladesByAllocatedServer("192.168.1.1");
-            Assert.IsTrue(allocated.Contains("1.1.1.1"), "String '" + allocated + "' does not contiain IP we allocated");
+            Assert.IsTrue(allocated.Contains("1.1.1.1"), "String '" + allocated + "' does not contain IP we allocated");
         }
         
         [TestMethod]
