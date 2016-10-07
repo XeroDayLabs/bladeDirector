@@ -63,13 +63,13 @@
     <Reference Include="System.Xml.Linq" />
   </ItemGroup>
   <ItemGroup>
+    <Content Include="..\..\thirdparty\sqlite\SQLite.Interop.dll">
+      <Link>SQLite.Interop.dll</Link>
+    </Content>
     <Content Include="getIPXEScript.aspx" />
     <Content Include="Resources\DBCreation.sql" />
     <Content Include="services.asmx" />
     <None Include="Resources\ipxeTemplate.txt" />
-    <Content Include="SQLite.Interop.dll">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </Content>
     <Content Include="status.aspx" />
     <Content Include="Web.config" />
   </ItemGroup>
