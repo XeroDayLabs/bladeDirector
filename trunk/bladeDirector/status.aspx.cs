@@ -20,12 +20,10 @@ namespace bladeDirector
 
             tblBladeStatus.Rows.Add(headerRow);
 
-            string[] bladeNames = hostStateDB.getAllBladeIP();
+            List<bladeOwnership> allBladeInfo = hostStateDB.getAllBladeInfo();
 
-            foreach (string bladeName in bladeNames)
+            foreach (bladeOwnership bladeInfo in allBladeInfo)
             {
-                bladeOwnership bladeInfo = hostStateDB.bladeStates.Single(x => x.bladeIP == bladeName);
-
                 TableRow newRow = new TableRow();
                 newRow.Cells.Add(new TableCell() {Text = bladeInfo.state.ToString()});
                 newRow.Cells.Add(new TableCell() {Text = bladeInfo.bladeIP});
@@ -47,6 +45,12 @@ namespace bladeDirector
         protected void cmdReset_Click(object sender, EventArgs e)
         {
             hostStateDB.resetAll();
+        }
+
+        protected void cmdAddNode_Click(object sender, EventArgs e)
+        {
+            bladeOwnership newBlade = new bladeOwnership(txtNewNodeIP.Text, txtNewISCSI.Text, txtNewIloIP.Text, txtNewPort.Text);
+            hostStateDB.addNode(newBlade);
         }
     }
 }

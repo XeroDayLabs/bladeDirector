@@ -61,15 +61,43 @@ namespace bladeDirector.Properties {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to create table bladeConfigurations(
+        ///	id primary key,
+        ///    iscsiIP unique,
+        ///    bladeIP unique,
+        ///    iLOIP unique,
+        ///    iLOPort unique
+        ///	);
+        ///
+        ///create table bladeOwnerships(
+        ///	id primary key,
+        ///	bladeConfigID,
+        ///	state,
+        ///	currentOwner,
+        ///	nextOwner,
+        ///	lastKeepAlive,
+        ///
+        ///	foreign key (bladeConfigID) references bladeConfigurations(id)
+        ///	);
+        ///.
+        /// </summary>
+        internal static string DBCreation {
+            get {
+                return ResourceManager.GetString("DBCreation", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to #!ipxe
         ///
         ///ifclose net0
         ///ifopen net1
         ///set net1/ip {BLADE_IP_ISCSI}
-        ///set net1/netmask {BLADE_IP_ISCSI}
+        ///set net1/netmask {BLADE_NETMASK_ISCSI}
         ///set net1/gateway 0.0.0.0
         ///set keep-san 1
-        ///sanboot iscsi:192.168.66.254::::iqn.2016-06.lan.xd.store:{BLADE_DISK_NAME}
+        ///echo booting with SAN device &quot;sanboot iscsi:192.168.66.254::::iqn.2016-06.lan.xd.store:{BLADE_IP_MAIN}-{HOST_IP}&quot;
+        ///sanboot iscsi:192.168.66.254::::iqn.2016-06.lan.xd.store:{BLADE_IP_MAIN}-{HOST_IP}
         ///.
         /// </summary>
         internal static string ipxeTemplate {
