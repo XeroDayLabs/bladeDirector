@@ -305,18 +305,21 @@ namespace bladeDirector
                 createTables();
 
                 foreach (bladeSpec spec in bladeSpecs)
-                {
-                    bladeOwnership newOwnership = new bladeOwnership(spec.bladeIP, spec.iscsiIP, spec.iLOIP, spec.iLOPort);
-                    newOwnership.currentOwner = null;
-                    newOwnership.nextOwner = null;
-                    newOwnership.lastKeepAlive = DateTime.Now;
-                    newOwnership.state = bladeStatus.unused;
-
-                    newOwnership.createInDB(conn);
-                }
+                    addNode(spec);
             }
         }
-        
+
+        public static void addNode(bladeSpec spec)
+        {
+            bladeOwnership newOwnership = new bladeOwnership(spec.bladeIP, spec.iscsiIP, spec.iLOIP, spec.iLOPort);
+            newOwnership.currentOwner = null;
+            newOwnership.nextOwner = null;
+            newOwnership.lastKeepAlive = DateTime.Now;
+            newOwnership.state = bladeStatus.unused;
+
+            newOwnership.createInDB(conn);
+        }
+
         public static GetBladeStatusResult getBladeStatus(string nodeIp, string requestorIp)
         {
             lock (connLock)
