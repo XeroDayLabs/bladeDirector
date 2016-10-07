@@ -65,6 +65,7 @@
   <ItemGroup>
     <Content Include="..\..\thirdparty\sqlite\SQLite.Interop.dll">
       <Link>SQLite.Interop.dll</Link>
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
     <Content Include="getIPXEScript.aspx" />
     <Content Include="Resources\DBCreation.sql" />
