@@ -7,6 +7,7 @@ namespace bladeDirector
 {
     public static class hostStateDB
     {
+        private static List<string> logEvents = new List<string>(); 
         private static TimeSpan keepAliveTimeout = TimeSpan.FromMinutes(1);
         
         public static List<bladeOwnership> bladeStates;
@@ -38,6 +39,14 @@ namespace bladeDirector
             resetAll();
         }
 
+        public static void addLogEvent(string newEntry)
+        {
+            lock (logEvents)
+            {
+                logEvents.Add(DateTime.Now + " : " + newEntry);
+            }
+        }
+
         public static string[] getAllBladeIP()
         {
             lock (bladeStates)
@@ -60,7 +69,10 @@ namespace bladeDirector
             {
                 bladeOwnership reqBlade = bladeStates.SingleOrDefault(x => x.bladeIP == bladeIP);
                 if (reqBlade == null)
+                {
+                    addLogEvent("Blade " + requestorID + " requested blade " + bladeIP + "(not found)");
                     return resultCode.bladeNotFound;
+                }
 
                 lock (reqBlade)
                 {
@@ -72,6 +84,8 @@ namespace bladeDirector
                         reqBlade.currentOwner = requestorID;
                         reqBlade.state = bladeStatus.inUse;
                         reqBlade.lastKeepAlive = DateTime.Now;
+
+                        addLogEvent("Blade " + requestorID + " requested blade " + bladeIP + "(success, blade was idle)");
                         return resultCode.success;
                     }
 
@@ -80,20 +94,30 @@ namespace bladeDirector
                     // requestor would be unable to determine when its blade is allocated. We just return queuefull in that
                     // situation.
                     if (reqBlade.currentOwner == requestorID)
+                    {
+                        addLogEvent("Blade " + requestorID + " requested blade " + bladeIP + "(failure, blade is already owned by this blade)");
                         return resultCode.bladeQueueFull;
+                    }
 
                     // If the blade is already queued as requested, just report OK and leave it there,
                     if (reqBlade.nextOwner == requestorID)
+                    {
+                        addLogEvent("Blade " + requestorID + " requested blade " + bladeIP + "(success, requestor was already in queue)");
                         return resultCode.success;
+                    }
 
                     // See if the blade queue is actually full
                     if (reqBlade.nextOwner != null)
+                    {
+                        addLogEvent("Blade " + requestorID + " requested blade " + bladeIP + "(failure, blade queue is full)");
                         return resultCode.bladeQueueFull;
+                    }
 
                     // It's all okay, so request the release.
                     reqBlade.state = bladeStatus.releaseRequested;
                     reqBlade.nextOwner = requestorID;
-                    
+
+                    addLogEvent("Blade " + requestorID + " requested blade " + bladeIP + "(success, requestor added to blade queue)");
                     return resultCode.pending;
                 }
             }
@@ -108,6 +132,7 @@ namespace bladeDirector
                     if (reqBlade.lastKeepAlive + keepAliveTimeout < DateTime.Now)
                     {
                         // Oh no, the blade owner failed to send a keepalive in time!
+                        addLogEvent("Requestor " + reqBlade.currentOwner + " failed to keepalive for " + reqBlade.bladeIP + ", releasing blade");
                         releaseBlade(reqBlade.bladeIP, reqBlade.currentOwner);
                     }
                 }
@@ -178,23 +203,32 @@ namespace bladeDirector
             {
                 bladeOwnership reqBlade = bladeStates.SingleOrDefault(x => x.bladeIP == NodeIP);
                 if (reqBlade == null)
+                {
+                    addLogEvent("Requestor " + reqBlade.currentOwner + " attempted to release blade " + NodeIP + " (blade not found)");
                     return resultCode.bladeNotFound;
+                }
 
                 lock (reqBlade)
                 {
                     if (reqBlade.currentOwner != RequestorIP)
+                    {
+                        addLogEvent("Requestor " + reqBlade.currentOwner + " attempted to release blade " + NodeIP + " (failure: blade is not owned by requestor)");
                         return resultCode.bladeInUse;
+                    }
 
                     // If there's no-one waiting, just set it to idle.
                     if (reqBlade.state == bladeStatus.inUse)
                     {
                         reqBlade.state = bladeStatus.unused;
                         reqBlade.currentOwner = null;
+                        addLogEvent("Requestor " + reqBlade.currentOwner + " attempted to release blade " + NodeIP + " (success, blade is now idle)");
                         return resultCode.success;
                     }
                     // If there's someone waiting, allocate it to that blade.
                     if (reqBlade.state == bladeStatus.releaseRequested)
                     {
+                        addLogEvent("Requestor " + reqBlade.currentOwner + " attempted to release blade " + NodeIP + " (success, blade is now owned by queue entry " + reqBlade.nextOwner + ")");
+
                         reqBlade.state = bladeStatus.inUse;
                         reqBlade.currentOwner = reqBlade.nextOwner;
                         reqBlade.nextOwner = null;
@@ -204,6 +238,7 @@ namespace bladeDirector
                     }
                 }
             }
+            addLogEvent("Requestor " + RequestorIP + " attempted to release blade " + NodeIP + " (generic failure)");
             return resultCode.genericFail;
         }
 
@@ -312,6 +347,15 @@ namespace bladeDirector
                         return true;
                 }
                 return false;
+            }
+        }
+
+        public static List<string> getLogEvents()
+        {
+            lock (logEvents)
+            {
+                List<string> toRet = new List<string>(logEvents);
+                return toRet;
             }
         }
     }

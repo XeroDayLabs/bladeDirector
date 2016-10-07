@@ -39,6 +39,7 @@ namespace bladeDirector
             if (state == null)
             {
                 Response.Write("prompt No blade configured at this IP address");
+                hostStateDB.addLogEvent("IPXE script for blade " + srcIP + " requested, but blade is not configured");
                 return;
             }
 
@@ -49,6 +50,7 @@ namespace bladeDirector
                 if (state.state == bladeStatus.unused)
                 {
                     Response.Write("prompt Blade does not have any owner");
+                    hostStateDB.addLogEvent("IPXE script for blade " + srcIP + " requested, but blade is not currently owned");
                     return;
                 }
 
@@ -59,6 +61,8 @@ namespace bladeDirector
                 script = script.Replace("{HOST_IP}", state.currentOwner);
             }
             Response.Write(script);
+            hostStateDB.addLogEvent("IPXE script for blade " + srcIP + " generated (owner " + state.currentOwner + ")");
+
         }
     }
 }

@@ -36,8 +36,11 @@ namespace bladeDirector
                 newRow.Cells.Add(new TableCell() { Text = bladeInfo.currentOwner ?? "none" });
                 newRow.Cells.Add(new TableCell() {Text = bladeInfo.nextOwner ?? "none" });
 
-
                 tblBladeStatus.Rows.Add(newRow);
+
+                List<string> logEvents = hostStateDB.getLogEvents();
+                foreach (string logEvent in logEvents)
+                    lstLog.Items.Add(logEvent);
             }
         }
 

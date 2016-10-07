@@ -11,7 +11,13 @@
     <div>
         <asp:Table ID="tblBladeStatus" runat="server"></asp:Table>
     </div>
+    <div>
     <asp:Button ID="cmdReset" runat="server" Text="Reset all nodes to unused" OnClick="cmdReset_Click" />
+    </div>
+    <div>
+        <asp:ListBox ID="lstLog" runat="server">
+        </asp:ListBox>
+    </div>
     </form>
 </body>
 </html>
