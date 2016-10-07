@@ -31,6 +31,10 @@ namespace bladeDirector
                 return;
             }
 
+            // Allow source IP to be overriden by a querystring parameter.
+            if (!String.IsNullOrEmpty(Request.QueryString["hostIP"]))
+                srcIP = Request.QueryString["hostIP"];
+
             bladeOwnership state = hostStateDB.getBladeByIP(srcIP);
             if (state == null)
             {
