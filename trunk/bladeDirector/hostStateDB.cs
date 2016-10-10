@@ -479,6 +479,12 @@ namespace bladeDirector
                 {
                     using (SQLiteDataReader reader = cmd.ExecuteReader())
                     {
+                        if (!reader.Read())
+                        {
+                            addLogEvent("RequestAnySingleNode failed: No blades found");
+                            return new resultCodeAndBladeName() { bladeName = null, code = resultCode.bladeNotFound };
+                        }
+
                         bladeOwnership newBlade = new bladeOwnership(reader);
                         checkKeepAlives(newBlade);
                         bladeStates.Add(newBlade);
