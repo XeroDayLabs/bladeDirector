@@ -185,7 +185,7 @@ namespace bladeDirector
                     return resultCode.bladeNotFound;
                 }
 
-                checkKeepAlives(reqBlade);
+                reqBlade = checkKeepAlives(reqBlade);
 
                 // If the blade is currently unused, we can just take it.
                 if (reqBlade.state == bladeStatus.unused)
@@ -254,7 +254,7 @@ namespace bladeDirector
             }
         }
 
-        private static void checkKeepAlives(bladeOwnership reqBlade)
+        private static bladeOwnership checkKeepAlives(bladeOwnership reqBlade)
         {
             lock (connLock)
             {
@@ -265,9 +265,12 @@ namespace bladeDirector
                         // Oh no, the blade owner failed to send a keepalive in time!
                         addLogEvent("Requestor " + reqBlade.currentOwner + " failed to keepalive for " + reqBlade.bladeIP + ", releasing blade");
                         releaseBlade(reqBlade.bladeIP, reqBlade.currentOwner);
+
+                        return getBladeByIP(reqBlade.bladeIP);
                     }
                 }
             }
+            return reqBlade;
         }
 
         public static string[] getBladesByAllocatedServer(string NodeIP)
@@ -487,7 +490,7 @@ namespace bladeDirector
                         }
 
                         bladeOwnership newBlade = new bladeOwnership(reader);
-                        checkKeepAlives(newBlade);
+                        newBlade = checkKeepAlives(newBlade);
                         bladeStates.Add(newBlade);
                     }
                 }
