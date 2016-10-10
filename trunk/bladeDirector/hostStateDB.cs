@@ -5,6 +5,7 @@ using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Web;
+using System.Xml.Serialization;
 
 namespace bladeDirector
 {
@@ -554,6 +555,7 @@ namespace bladeDirector
 
     }
 
+    [XmlInclude(typeof(bladeOwnership))]
     public class bladeSpec
     {
         // If you add fields, don't forget to add them to the Equals() override too.
@@ -599,6 +601,7 @@ namespace bladeDirector
         }
     }
 
+    [XmlInclude(typeof (bladeSpec))]
     public class bladeOwnership : bladeSpec
     {
         public long bladeID;
