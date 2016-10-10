@@ -20,9 +20,7 @@
     <div>
         <table style="width: 100%" class="settingGroup">
             <tr>
-                <th>
-                    Current node status:
-                </th>
+                <th>Node status</th>
             </tr>
             <tr style="width: 100%">
                 <asp:Table ID="tblBladeStatus" runat="server"  style="border-style: solid; width: 100%"></asp:Table>
@@ -35,11 +33,9 @@
     <div>
         <table class="settingGroup">
             <tr>
-                <th>
-                    Log events:
-                </th>
+                <th>Log events</th>
             </tr>
-            <tr style="min-height: 10px"> foo
+            <tr style="min-height: 10px">
                 <td>
                     <asp:ListBox ID="lstLog" runat="server" style="width: 100%"> </asp:ListBox>
                 </td>
@@ -78,7 +74,7 @@
     </div>
 
     <div>
-        <asp:Button ID="cmdReset" runat="server" Text="Reset all nodes to unused" OnClick="cmdReset_Click" />
+        <asp:Button ID="cmdReset" runat="server" Text="Delete all nodes" OnClick="cmdReset_Click" />
     </div>
     </form>
 </body>

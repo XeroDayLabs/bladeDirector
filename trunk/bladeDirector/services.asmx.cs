@@ -18,6 +18,7 @@ namespace bladeDirector
     {
         public static void initWithBlades(string[] bladeIPs)
         {
+            hostStateDB.dbFilename = ":memory:";
             hostStateDB.initWithBlades(bladeIPs);
         }
 

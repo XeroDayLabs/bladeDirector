@@ -15,14 +15,16 @@ namespace bladeDirector
 
         private static Object connLock = new object();
         private static SQLiteConnection conn = null;
-        private const string dbFilename = "hoststate.sqlite";
+        public static string dbFilename;
 
         //public static List<bladeOwnership> bladeStates;
 
-        static hostStateDB()
+        public static void init(string basePath)
         {
             lock (connLock)
             {
+                dbFilename = Path.Combine(basePath, "hoststate.sqlite");
+
                 // If we're making a new file, remember that, since we'll have to create a new schema.
                 bool needToCreateSchema = !File.Exists(dbFilename);
 
@@ -53,19 +55,22 @@ namespace bladeDirector
                     conn.Dispose();
                 }
 
-                DateTime deadline = DateTime.Now + TimeSpan.FromMinutes(1);
-                while (true)
+                if (dbFilename != ":memory:")
                 {
-                    try
+                    DateTime deadline = DateTime.Now + TimeSpan.FromMinutes(1);
+                    while (true)
                     {
-                        File.Delete(dbFilename);
-                        break;
-                    }
-                    catch (UnauthorizedAccessException)
-                    {
-                        if (deadline < DateTime.Now)
-                            throw;
-                        Thread.Sleep(TimeSpan.FromSeconds(2));
+                        try
+                        {
+                            File.Delete(dbFilename);
+                            break;
+                        }
+                        catch (UnauthorizedAccessException)
+                        {
+                            if (deadline < DateTime.Now)
+                                throw;
+                            Thread.Sleep(TimeSpan.FromSeconds(2));
+                        }
                     }
                 }
 
@@ -131,7 +136,7 @@ namespace bladeDirector
                 {
                     using (SQLiteDataReader reader = cmd.ExecuteReader())
                     {
-                        List<bladeOwnership> toRet = new List<bladeOwnership>(reader.RecordsAffected);
+                        List<bladeOwnership> toRet = new List<bladeOwnership>();
 
                         while (reader.Read())
                             toRet.Add(new bladeOwnership(reader));

@@ -7,16 +7,21 @@ using System.Web.UI.WebControls;
 
 namespace bladeDirector
 {
+    public partial class application
+    {
+        
+    }
+
     public partial class status : System.Web.UI.Page
     {
         protected void Page_Load(object sender, EventArgs e)
         {
             TableRow headerRow = new TableRow();
-            headerRow.Cells.Add(new TableCell() {Text = "State"});
-            headerRow.Cells.Add(new TableCell() {Text = "Blade IP"});
-            headerRow.Cells.Add(new TableCell() {Text = "Time since last keepalive"});
-            headerRow.Cells.Add(new TableCell() {Text = "Current owner"});
-            headerRow.Cells.Add(new TableCell() {Text = "Next owner"});
+            headerRow.Cells.Add(new TableHeaderCell() {Text = "State"});
+            headerRow.Cells.Add(new TableHeaderCell() { Text = "Blade IP" });
+            headerRow.Cells.Add(new TableHeaderCell() { Text = "Time since last keepalive" });
+            headerRow.Cells.Add(new TableHeaderCell() { Text = "Current owner" });
+            headerRow.Cells.Add(new TableHeaderCell() { Text = "Next owner" });
 
             tblBladeStatus.Rows.Add(headerRow);
 
