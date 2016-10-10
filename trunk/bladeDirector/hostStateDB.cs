@@ -603,6 +603,11 @@ namespace bladeDirector
 
         public string currentSnapshotName { get { return bladeIP + "-" + currentOwner; }}
 
+        public bladeOwnership()
+        {
+            // For xml ser
+        }
+
         public bladeOwnership(bladeSpec spec)
             : base(spec.bladeIP, spec.iscsiIP, spec.iLOIP, spec.iLOPort)
         {

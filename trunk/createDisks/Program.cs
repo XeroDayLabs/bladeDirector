@@ -99,7 +99,7 @@ namespace createDisks
 
         private static void prepareCloneImage(itemToAdd itemToAdd, string toCloneVolume)
         {
-            Console.WriteLine("Preparing " + itemToAdd.bladeIP + " for server " + itemToAdd.bladeIP);
+            Console.WriteLine("Preparing " + itemToAdd.bladeIP + " for server " + itemToAdd.serverIP);
 
             string nasIP = Properties.Settings.Default.iscsiServerIP;
             string nasUsername = Properties.Settings.Default.iscsiServerUsername;
