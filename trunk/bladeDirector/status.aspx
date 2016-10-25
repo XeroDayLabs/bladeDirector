@@ -8,8 +8,7 @@
     <style>
         body { background: purple }
         tr { background-color: blue; color: white }
-        tr.Unused { background-color: lightgreen; }
-        tr.timedout {background-color: pink }
+        td.timedout {background-color: pink }
         th { background-color: lightgoldenrodyellow; color: black }
         table.settingGroup { width: 100%;border-style: solid; border-color: gray; background: black }
         td.tableSpacer { background: transparent }

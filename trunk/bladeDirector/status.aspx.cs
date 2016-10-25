@@ -7,11 +7,6 @@ using System.Web.UI.WebControls;
 
 namespace bladeDirector
 {
-    public partial class application
-    {
-        
-    }
-
     public partial class status : System.Web.UI.Page
     {
         protected void Page_Load(object sender, EventArgs e)
@@ -19,7 +14,7 @@ namespace bladeDirector
             TableRow headerRow = new TableRow();
             headerRow.Cells.Add(new TableHeaderCell() {Text = "State"});
             headerRow.Cells.Add(new TableHeaderCell() { Text = "Blade IP" });
-            headerRow.Cells.Add(new TableHeaderCell() { Text = "Time since last keepalive" });
+            headerRow.Cells.Add(new TableHeaderCell() { Text = "Time since last keepalive"});
             headerRow.Cells.Add(new TableHeaderCell() { Text = "Current owner" });
             headerRow.Cells.Add(new TableHeaderCell() { Text = "Next owner" });
 
@@ -33,9 +28,21 @@ namespace bladeDirector
                 newRow.Cells.Add(new TableCell() {Text = bladeInfo.state.ToString()});
                 newRow.Cells.Add(new TableCell() {Text = bladeInfo.bladeIP});
                 if (bladeInfo.lastKeepAlive == DateTime.MinValue)
-                    newRow.Cells.Add(new TableCell() { Text = "(none)" });
+                {
+                    newRow.Cells.Add(new TableCell() {Text = "(none)"});
+                }
                 else
-                    newRow.Cells.Add(new TableCell() { Text = (DateTime.Now - bladeInfo.lastKeepAlive).ToString() });
+                {
+                    string cssClass = "";
+                    if (DateTime.Now - bladeInfo.lastKeepAlive > hostStateDB.keepAliveTimeout)
+                        cssClass = "timedout";
+                    TableCell cell = new TableCell
+                    {
+                        Text = (DateTime.Now - bladeInfo.lastKeepAlive).ToString(),
+                        CssClass = cssClass
+                    };
+                    newRow.Cells.Add(cell);
+                }
                 newRow.Cells.Add(new TableCell() { Text = bladeInfo.currentOwner ?? "none" });
                 newRow.Cells.Add(new TableCell() {Text = bladeInfo.nextOwner ?? "none" });
 

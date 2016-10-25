@@ -11,8 +11,8 @@ namespace bladeDirector
 {
     public static class hostStateDB
     {
-        private static List<string> logEvents = new List<string>(); 
-        private static TimeSpan keepAliveTimeout = TimeSpan.FromMinutes(1);
+        private static List<string> logEvents = new List<string>();
+        public static TimeSpan keepAliveTimeout = TimeSpan.FromMinutes(1);
 
         private static Object connLock = new object();
         private static SQLiteConnection conn = null;

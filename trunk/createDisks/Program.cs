@@ -77,7 +77,7 @@ namespace createDisks
                 throw new Exception("Snapshot not found");
             string toCloneVolume = toClone.fullname.Split('/')[0];
 
-            //createClonesAndExportViaiSCSI(nas, toClone, toCloneVolume, itemsToAdd);
+            createClonesAndExportViaiSCSI(nas, toClone, toCloneVolume, itemsToAdd);
 
             // Next, we must prepare each clone. Do this in parallel, per-server.
             foreach (string serverIP in serverIPs)
@@ -113,7 +113,7 @@ namespace createDisks
                 itemToAdd.nodeiLoIP, Properties.Settings.Default.iloUsername, Properties.Settings.Default.iloPassword,
                 nasIP, nasUsername, nasPassword,
                 "", 0, "");
-            hypervisor_iLo_appdomainPayload ilo = new hypervisor_iLo_appdomainPayload(spec);
+            hypervisor_iLo ilo = new hypervisor_iLo(spec);
             ilo.connect();
             ilo.powerOff();
 
