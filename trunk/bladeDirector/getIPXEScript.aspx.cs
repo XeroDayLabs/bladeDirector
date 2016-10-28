@@ -24,10 +24,12 @@ namespace bladeDirector
 
         private void _Page_load(object sender, EventArgs eventArgs)
         {
+            Response.Write("#!ipxe");
             string srcIP = Request.UserHostAddress;
             if (srcIP == null)
             {
                 Response.Write("prompt Cannot find host IP address");
+                Response.Write("reboot");
                 return;
             }
 
@@ -39,6 +41,7 @@ namespace bladeDirector
             if (state == null)
             {
                 Response.Write("prompt No blade configured at this IP address");
+                Response.Write("reboot");
                 hostStateDB.addLogEvent("IPXE script for blade " + srcIP + " requested, but blade is not configured");
                 return;
             }
