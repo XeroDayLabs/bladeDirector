@@ -27,8 +27,8 @@ namespace tests
         [TestMethod]
         public void canGetBladeSpec()
         {
-            bladeSpec spec1Expected = new bladeSpec("blade1ip", "blade1iscsiIP", "blade1ILOIP", 111);
-            bladeSpec spec2Expected = new bladeSpec("blade2ip", "blade2iscsiIP", "blade2ILOIP", 222);
+            bladeSpec spec1Expected = new bladeSpec("blade1ip", "blade1iscsiIP", "blade1ILOIP", 111, "..");
+            bladeSpec spec2Expected = new bladeSpec("blade2ip", "blade2iscsiIP", "blade2ILOIP", 222, "..");
             bladeDirector.services.initWithBlades(new [] { spec1Expected, spec2Expected });
 
             services uut = new bladeDirector.services();
@@ -150,5 +150,20 @@ namespace tests
             }
             Assert.AreEqual(GetBladeStatusResult.yours.ToString(), uut.GetBladeStatus("1.1.1.1", "192.168.1.1"));
         }
+
+        [TestMethod]
+        public void canSetBladeSnapshot()
+        {
+            bladeDirector.services.initWithBlades(new[] { "blade1ip" });
+
+            services uut = new bladeDirector.services();
+
+            // Default should be "<ip>-<owner>".
+            Assert.AreEqual("success", uut.RequestNode("blade1ip", "1.1.1.1"));
+            Assert.AreEqual("blade1ip-1.1.1.1", uut.getCurrentSnapshotForBlade("blade1ip"));
+            Assert.AreEqual(resultCode.success, uut.selectSnapshotForBlade("blade1ip", "bb"));
+            Assert.AreEqual("bb", uut.getCurrentSnapshotForBlade("blade1ip"));
+        }
+    
     }
 }

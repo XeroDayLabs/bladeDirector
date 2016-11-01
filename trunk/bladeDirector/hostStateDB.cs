@@ -301,7 +301,7 @@ namespace bladeDirector
             bladeSpec[] specs = new bladeSpec[bladeIPs.Length];
             int n = 0;
             foreach (string bladeIP in bladeIPs)
-                specs[n++] = new bladeOwnership(bladeIP, n.ToString(), n.ToString(), (ushort)n);
+                specs[n++] = new bladeOwnership(bladeIP, n.ToString(), n.ToString(), (ushort)n, null);
 
             initWithBlades(specs);
         }
@@ -320,7 +320,7 @@ namespace bladeDirector
 
         public static void addNode(bladeSpec spec)
         {
-            bladeOwnership newOwnership = new bladeOwnership(spec.bladeIP, spec.iscsiIP, spec.iLOIP, spec.iLOPort);
+            bladeOwnership newOwnership = new bladeOwnership(spec.bladeIP, spec.iscsiIP, spec.iLOIP, spec.iLOPort, spec.currentSnapshot);
             newOwnership.currentOwner = null;
             newOwnership.nextOwner = null;
             newOwnership.lastKeepAlive = DateTime.Now;
@@ -467,7 +467,7 @@ namespace bladeDirector
                 if (reqBlade == null)
                     return null;
 
-                return reqBlade.currentSnapshotName;
+                return reqBlade.currentSnapshot;
             }
         }
 
@@ -553,6 +553,22 @@ namespace bladeDirector
             }
         }
 
+        public static resultCode selectSnapshotForBlade(string nodeIp, string newShot)
+        {
+            lock (connLock)
+            {
+                string sqlCommand = "update bladeConfiguration set currentSnapshot=$newShot " +
+                                    "where bladeIP = $nodeIP";
+                using (SQLiteCommand cmd = new SQLiteCommand(sqlCommand, conn))
+                {
+                    cmd.Parameters.AddWithValue("$nodeIP" , nodeIp);
+                    cmd.Parameters.AddWithValue("$newShot", newShot);
+                    if (cmd.ExecuteNonQuery() == 1)
+                        return resultCode.success;
+                }
+            }
+            return resultCode.genericFail;
+        }
     }
 
     [XmlInclude(typeof(bladeOwnership))]
@@ -563,23 +579,25 @@ namespace bladeDirector
         public string bladeIP;
         public string iLOIP;
         public ushort iLOPort;
+        public string currentSnapshot;
 
         public bladeSpec()
         {
             // For XML serialisation
         }
 
-        public bladeSpec(string newBladeIP, string newISCSIIP, string newILOIP, ushort newILOPort)
+        public bladeSpec(string newBladeIP, string newISCSIIP, string newILOIP, ushort newILOPort, string newCurrentSnapshot)
         {
             iscsiIP = newISCSIIP;
             bladeIP = newBladeIP;
             iLOPort = newILOPort;
             iLOIP = newILOIP;
+            currentSnapshot = newCurrentSnapshot;
         }
 
         public bladeSpec clone()
         {
-            return new bladeSpec(bladeIP, iscsiIP, iLOIP, iLOPort);
+            return new bladeSpec(bladeIP, iscsiIP, iLOIP, iLOPort, currentSnapshot);
         }
 
         public override bool Equals(object obj)
@@ -596,6 +614,8 @@ namespace bladeDirector
                 return false;
             if (iLOPort != compareTo.iLOPort)
                 return false;
+            if (currentSnapshot != compareTo.currentSnapshot)
+                return false;
 
             return true;
         }
@@ -610,21 +630,19 @@ namespace bladeDirector
         public string nextOwner = null;
         public DateTime lastKeepAlive;
 
-        public string currentSnapshotName { get { return bladeIP + "-" + currentOwner; }}
-
         public bladeOwnership()
         {
             // For xml ser
         }
 
         public bladeOwnership(bladeSpec spec)
-            : base(spec.bladeIP, spec.iscsiIP, spec.iLOIP, spec.iLOPort)
+            : base(spec.bladeIP, spec.iscsiIP, spec.iLOIP, spec.iLOPort, spec.currentSnapshot)
         {
             
         }
 
-        public bladeOwnership(string newIPAddress, string newICSIIP, string newILOIP, ushort newILOPort)
-            : base(newIPAddress, newICSIIP, newILOIP, newILOPort)
+        public bladeOwnership(string newIPAddress, string newICSIIP, string newILOIP, ushort newILOPort, string newCurrentSnapshot)
+            : base(newIPAddress, newICSIIP, newILOIP, newILOPort, newCurrentSnapshot)
         {
         }
 
@@ -646,6 +664,12 @@ namespace bladeDirector
                 nextOwner = null;
             else
                 nextOwner = (string)reader["nextOwner"];
+
+            if (reader["currentSnapshot"] is System.DBNull)
+                currentSnapshot = bladeIP + "-" + currentOwner;
+            else
+                currentSnapshot = (string) reader["currentSnapshot"];
+
             lastKeepAlive = DateTime.Parse((string)reader["lastKeepAlive"]);
         }
 
@@ -653,15 +677,16 @@ namespace bladeDirector
         {
 
             string cmd_bladeConfig = "insert into bladeConfiguration" +
-                                "(iscsiIP, bladeIP, iLoIP, iLOPort)" +
+                                "(iscsiIP, bladeIP, iLoIP, iLOPort, currentSnapshot)" +
                                 " VALUES " +
-                                "($iscsiIP, $bladeIP, $iLoIP, $iLOPort)";
+                                "($iscsiIP, $bladeIP, $iLoIP, $iLOPort, $currentSnapshot)";
             using (SQLiteCommand cmd = new SQLiteCommand(cmd_bladeConfig, conn))
             {
                 cmd.Parameters.AddWithValue("$iscsiIP", iscsiIP);
                 cmd.Parameters.AddWithValue("$bladeIP", bladeIP);
                 cmd.Parameters.AddWithValue("$iLoIP", iLOIP);
                 cmd.Parameters.AddWithValue("$iLOPort", iLOPort);
+                cmd.Parameters.AddWithValue("$currentSnapshot", currentSnapshot);
                 cmd.ExecuteNonQuery();
                 bladeID = (long)conn.LastInsertRowId;
             }

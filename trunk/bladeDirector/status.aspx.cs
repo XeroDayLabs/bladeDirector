@@ -15,6 +15,7 @@ namespace bladeDirector
             headerRow.Cells.Add(new TableHeaderCell() {Text = "State"});
             headerRow.Cells.Add(new TableHeaderCell() { Text = "Blade IP" });
             headerRow.Cells.Add(new TableHeaderCell() { Text = "Time since last keepalive"});
+            headerRow.Cells.Add(new TableHeaderCell() { Text = "Currently-selected snapshot" });
             headerRow.Cells.Add(new TableHeaderCell() { Text = "Current owner" });
             headerRow.Cells.Add(new TableHeaderCell() { Text = "Next owner" });
 
@@ -43,8 +44,9 @@ namespace bladeDirector
                     };
                     newRow.Cells.Add(cell);
                 }
+                newRow.Cells.Add(new TableCell() { Text = bladeInfo.currentSnapshot});
                 newRow.Cells.Add(new TableCell() { Text = bladeInfo.currentOwner ?? "none" });
-                newRow.Cells.Add(new TableCell() {Text = bladeInfo.nextOwner ?? "none" });
+                newRow.Cells.Add(new TableCell() { Text = bladeInfo.nextOwner ?? "none" });
 
                 tblBladeStatus.Rows.Add(newRow);
 
@@ -61,7 +63,7 @@ namespace bladeDirector
 
         protected void cmdAddNode_Click(object sender, EventArgs e)
         {
-            bladeOwnership newBlade = new bladeOwnership(txtNewNodeIP.Text, txtNewISCSI.Text, txtNewIloIP.Text, ushort.Parse(txtNewPort.Text));
+            bladeOwnership newBlade = new bladeOwnership(txtNewNodeIP.Text, txtNewISCSI.Text, txtNewIloIP.Text, ushort.Parse(txtNewPort.Text), "-clean");
             hostStateDB.addNode(newBlade);
         }
     }

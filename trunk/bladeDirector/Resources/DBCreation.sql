@@ -2,6 +2,7 @@ create table bladeConfiguration(
 	id integer primary key autoincrement,
     iscsiIP unique,
     bladeIP unique,
+	currentSnapshot,
     iLOIP unique,
     iLOPort unique
 	);

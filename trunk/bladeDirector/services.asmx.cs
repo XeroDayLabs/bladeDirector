@@ -135,5 +135,11 @@ namespace bladeDirector
         {
             return hostStateDB.getCurrentSnapshotForBlade(NodeIP);
         }
+
+        [WebMethod]
+        public resultCode selectSnapshotForBlade(string NodeIP, string snapshotName)
+        {
+            return hostStateDB.selectSnapshotForBlade(NodeIP, snapshotName);
+        }
     }
 }
