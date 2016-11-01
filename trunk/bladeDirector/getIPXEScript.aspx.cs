@@ -24,10 +24,10 @@ namespace bladeDirector
 
         private void _Page_load(object sender, EventArgs eventArgs)
         {
-            Response.Write("#!ipxe\r\n");
             string srcIP = Request.UserHostAddress;
             if (srcIP == null)
             {
+                Response.Write("#!ipxe\r\n");
                 Response.Write("prompt Cannot find host IP address\r\n");
                 Response.Write("reboot\r\n");
                 return;
@@ -40,6 +40,7 @@ namespace bladeDirector
             bladeOwnership state = hostStateDB.getBladeByIP(srcIP);
             if (state == null)
             {
+                Response.Write("#!ipxe\r\n");
                 Response.Write("prompt No blade configured at this IP address\r\n");
                 Response.Write("reboot\r\n");
                 hostStateDB.addLogEvent("IPXE script for blade " + srcIP + " requested, but blade is not configured");
@@ -52,6 +53,7 @@ namespace bladeDirector
             {
                 if (state.state == bladeStatus.unused)
                 {
+                    Response.Write("#!ipxe\r\n");
                     Response.Write("prompt Blade does not have any owner");
                     hostStateDB.addLogEvent("IPXE script for blade " + srcIP + " requested, but blade is not currently owned");
                     return;

@@ -1,0 +1,84 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<configuration>
+    <configSections>
+        <sectionGroup name="userSettings" type="System.Configuration.UserSettingsGroup, System, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" >
+            <section name="bladeDirectorClient.Properties.Settings" type="System.Configuration.ClientSettingsSection, System, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" allowExeDefinition="MachineToLocalUser" requirePermission="false" />
+        </sectionGroup>
+    </configSections>
+    <system.serviceModel>
+        <bindings>
+            <basicHttpBinding>
+                <binding name="servicesSoap" />
+            </basicHttpBinding>
+            <customBinding>
+                <binding name="servicesSoap12">
+                    <textMessageEncoding messageVersion="Soap12" />
+                    <httpTransport />
+                </binding>
+            </customBinding>
+        </bindings>
+        <client>
+            <endpoint address="http://alizbuild.xd.lan/bladedirector/services.asmx"
+                binding="basicHttpBinding" bindingConfiguration="servicesSoap"
+                contract="bladeDirector.servicesSoap" name="servicesSoap" />
+            <endpoint address="http://alizbuild.xd.lan/bladedirector/services.asmx"
+                binding="customBinding" bindingConfiguration="servicesSoap12"
+                contract="bladeDirector.servicesSoap" name="servicesSoap12" />
+        </client>
+    </system.serviceModel>
+    <userSettings>
+        <bladeDirectorClient.Properties.Settings>
+            <setting name="kernelVMCount" serializeAs="String">
+                <value>0</value>
+            </setting>
+            <setting name="VMWareVMName" serializeAs="String">
+                <value />
+            </setting>
+            <setting name="VMWareVMPortBase" serializeAs="String">
+                <value>0</value>
+            </setting>
+            <setting name="VMWareVMServer" serializeAs="String">
+                <value />
+            </setting>
+            <setting name="VMWareVMServerUsername" serializeAs="String">
+                <value />
+            </setting>
+            <setting name="VMWareVMServerPassword" serializeAs="String">
+                <value />
+            </setting>
+            <setting name="VMWareVMUsername" serializeAs="String">
+                <value />
+            </setting>
+            <setting name="VMWareVMPassword" serializeAs="String">
+                <value />
+            </setting>
+            <setting name="VMWareVMDebugKey" serializeAs="String">
+                <value />
+            </setting>
+            <setting name="iloHostUsername" serializeAs="String">
+                <value />
+            </setting>
+            <setting name="iloHostPassword" serializeAs="String">
+                <value />
+            </setting>
+            <setting name="iloUsername" serializeAs="String">
+                <value />
+            </setting>
+            <setting name="iloPassword" serializeAs="String">
+                <value />
+            </setting>
+            <setting name="iloISCSIIP" serializeAs="String">
+                <value />
+            </setting>
+            <setting name="iloISCSIUsername" serializeAs="String">
+                <value />
+            </setting>
+            <setting name="iloISCSIPassword" serializeAs="String">
+                <value />
+            </setting>
+            <setting name="iloKernelKey" serializeAs="String">
+                <value />
+            </setting>
+        </bladeDirectorClient.Properties.Settings>
+    </userSettings>
+</configuration>

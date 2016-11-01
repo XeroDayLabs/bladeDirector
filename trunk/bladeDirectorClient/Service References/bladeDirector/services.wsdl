@@ -1,0 +1,934 @@
+<?xml version="1.0" encoding="utf-8"?>
+<wsdl:definitions xmlns:soap="http://schemas.xmlsoap.org/wsdl/soap/" xmlns:soapenc="http://schemas.xmlsoap.org/soap/encoding/" xmlns:tm="http://microsoft.com/wsdl/mime/textMatching/" xmlns:mime="http://schemas.xmlsoap.org/wsdl/mime/" xmlns:tns="http://tempuri.org/" xmlns:http="http://schemas.xmlsoap.org/wsdl/http/" xmlns:s="http://www.w3.org/2001/XMLSchema" xmlns:soap12="http://schemas.xmlsoap.org/wsdl/soap12/" targetNamespace="http://tempuri.org/" xmlns:wsdl="http://schemas.xmlsoap.org/wsdl/">
+  <wsdl:types>
+    <s:schema elementFormDefault="qualified" targetNamespace="http://tempuri.org/">
+      <s:element name="keepAlive">
+        <s:complexType />
+      </s:element>
+      <s:element name="keepAliveResponse">
+        <s:complexType />
+      </s:element>
+      <s:element name="ListNodes">
+        <s:complexType />
+      </s:element>
+      <s:element name="ListNodesResponse">
+        <s:complexType>
+          <s:sequence>
+            <s:element minOccurs="0" maxOccurs="1" name="ListNodesResult" type="s:string" />
+          </s:sequence>
+        </s:complexType>
+      </s:element>
+      <s:element name="getBladesByAllocatedServer">
+        <s:complexType>
+          <s:sequence>
+            <s:element minOccurs="0" maxOccurs="1" name="NodeIP" type="s:string" />
+          </s:sequence>
+        </s:complexType>
+      </s:element>
+      <s:element name="getBladesByAllocatedServerResponse">
+        <s:complexType>
+          <s:sequence>
+            <s:element minOccurs="0" maxOccurs="1" name="getBladesByAllocatedServerResult" type="s:string" />
+          </s:sequence>
+        </s:complexType>
+      </s:element>
+      <s:element name="RequestAnySingleNode">
+        <s:complexType />
+      </s:element>
+      <s:element name="RequestAnySingleNodeResponse">
+        <s:complexType>
+          <s:sequence>
+            <s:element minOccurs="0" maxOccurs="1" name="RequestAnySingleNodeResult" type="tns:resultCodeAndBladeName" />
+          </s:sequence>
+        </s:complexType>
+      </s:element>
+      <s:complexType name="resultCodeAndBladeName">
+        <s:sequence>
+          <s:element minOccurs="1" maxOccurs="1" name="code" type="tns:resultCode" />
+          <s:element minOccurs="0" maxOccurs="1" name="bladeName" type="s:string" />
+        </s:sequence>
+      </s:complexType>
+      <s:simpleType name="resultCode">
+        <s:restriction base="s:string">
+          <s:enumeration value="success" />
+          <s:enumeration value="bladeNotFound" />
+          <s:enumeration value="bladeInUse" />
+          <s:enumeration value="bladeQueueFull" />
+          <s:enumeration value="pending" />
+          <s:enumeration value="genericFail" />
+        </s:restriction>
+      </s:simpleType>
+      <s:element name="RequestNode">
+        <s:complexType>
+          <s:sequence>
+            <s:element minOccurs="0" maxOccurs="1" name="NodeIP" type="s:string" />
+          </s:sequence>
+        </s:complexType>
+      </s:element>
+      <s:element name="RequestNodeResponse">
+        <s:complexType>
+          <s:sequence>
+            <s:element minOccurs="0" maxOccurs="1" name="RequestNodeResult" type="s:string" />
+          </s:sequence>
+        </s:complexType>
+      </s:element>
+      <s:element name="GetBladeStatus">
+        <s:complexType>
+          <s:sequence>
+            <s:element minOccurs="0" maxOccurs="1" name="NodeIP" type="s:string" />
+          </s:sequence>
+        </s:complexType>
+      </s:element>
+      <s:element name="GetBladeStatusResponse">
+        <s:complexType>
+          <s:sequence>
+            <s:element minOccurs="0" maxOccurs="1" name="GetBladeStatusResult" type="s:string" />
+          </s:sequence>
+        </s:complexType>
+      </s:element>
+      <s:element name="isBladeMine">
+        <s:complexType>
+          <s:sequence>
+            <s:element minOccurs="0" maxOccurs="1" name="NodeIP" type="s:string" />
+          </s:sequence>
+        </s:complexType>
+      </s:element>
+      <s:element name="isBladeMineResponse">
+        <s:complexType>
+          <s:sequence>
+            <s:element minOccurs="1" maxOccurs="1" name="isBladeMineResult" type="s:boolean" />
+          </s:sequence>
+        </s:complexType>
+      </s:element>
+      <s:element name="releaseBlade">
+        <s:complexType>
+          <s:sequence>
+            <s:element minOccurs="0" maxOccurs="1" name="NodeIP" type="s:string" />
+          </s:sequence>
+        </s:complexType>
+      </s:element>
+      <s:element name="releaseBladeResponse">
+        <s:complexType>
+          <s:sequence>
+            <s:element minOccurs="0" maxOccurs="1" name="releaseBladeResult" type="s:string" />
+          </s:sequence>
+        </s:complexType>
+      </s:element>
+      <s:element name="forceBladeAllocation">
+        <s:complexType>
+          <s:sequence>
+            <s:element minOccurs="0" maxOccurs="1" name="NodeIP" type="s:string" />
+            <s:element minOccurs="0" maxOccurs="1" name="newOwner" type="s:string" />
+          </s:sequence>
+        </s:complexType>
+      </s:element>
+      <s:element name="forceBladeAllocationResponse">
+        <s:complexType>
+          <s:sequence>
+            <s:element minOccurs="0" maxOccurs="1" name="forceBladeAllocationResult" type="s:string" />
+          </s:sequence>
+        </s:complexType>
+      </s:element>
+      <s:element name="getConfigurationOfBlade">
+        <s:complexType>
+          <s:sequence>
+            <s:element minOccurs="0" maxOccurs="1" name="NodeIP" type="s:string" />
+          </s:sequence>
+        </s:complexType>
+      </s:element>
+      <s:element name="getConfigurationOfBladeResponse">
+        <s:complexType>
+          <s:sequence>
+            <s:element minOccurs="0" maxOccurs="1" name="getConfigurationOfBladeResult" type="tns:bladeSpec" />
+          </s:sequence>
+        </s:complexType>
+      </s:element>
+      <s:complexType name="bladeSpec">
+        <s:sequence>
+          <s:element minOccurs="0" maxOccurs="1" name="iscsiIP" type="s:string" />
+          <s:element minOccurs="0" maxOccurs="1" name="bladeIP" type="s:string" />
+          <s:element minOccurs="0" maxOccurs="1" name="iLOIP" type="s:string" />
+          <s:element minOccurs="1" maxOccurs="1" name="iLOPort" type="s:unsignedShort" />
+        </s:sequence>
+      </s:complexType>
+      <s:complexType name="bladeOwnership">
+        <s:complexContent mixed="false">
+          <s:extension base="tns:bladeSpec">
+            <s:sequence>
+              <s:element minOccurs="1" maxOccurs="1" name="bladeID" type="s:long" />
+              <s:element minOccurs="1" maxOccurs="1" name="state" type="tns:bladeStatus" />
+              <s:element minOccurs="0" maxOccurs="1" name="currentOwner" type="s:string" />
+              <s:element minOccurs="0" maxOccurs="1" name="nextOwner" type="s:string" />
+              <s:element minOccurs="1" maxOccurs="1" name="lastKeepAlive" type="s:dateTime" />
+            </s:sequence>
+          </s:extension>
+        </s:complexContent>
+      </s:complexType>
+      <s:simpleType name="bladeStatus">
+        <s:restriction base="s:string">
+          <s:enumeration value="unused" />
+          <s:enumeration value="releaseRequested" />
+          <s:enumeration value="inUse" />
+        </s:restriction>
+      </s:simpleType>
+      <s:element name="getCurrentSnapshotForBlade">
+        <s:complexType>
+          <s:sequence>
+            <s:element minOccurs="0" maxOccurs="1" name="NodeIP" type="s:string" />
+          </s:sequence>
+        </s:complexType>
+      </s:element>
+      <s:element name="getCurrentSnapshotForBladeResponse">
+        <s:complexType>
+          <s:sequence>
+            <s:element minOccurs="0" maxOccurs="1" name="getCurrentSnapshotForBladeResult" type="s:string" />
+          </s:sequence>
+        </s:complexType>
+      </s:element>
+      <s:element name="string" nillable="true" type="s:string" />
+      <s:element name="resultCodeAndBladeName" nillable="true" type="tns:resultCodeAndBladeName" />
+      <s:element name="boolean" type="s:boolean" />
+      <s:element name="bladeSpec" nillable="true" type="tns:bladeSpec" />
+    </s:schema>
+  </wsdl:types>
+  <wsdl:message name="keepAliveSoapIn">
+    <wsdl:part name="parameters" element="tns:keepAlive" />
+  </wsdl:message>
+  <wsdl:message name="keepAliveSoapOut">
+    <wsdl:part name="parameters" element="tns:keepAliveResponse" />
+  </wsdl:message>
+  <wsdl:message name="ListNodesSoapIn">
+    <wsdl:part name="parameters" element="tns:ListNodes" />
+  </wsdl:message>
+  <wsdl:message name="ListNodesSoapOut">
+    <wsdl:part name="parameters" element="tns:ListNodesResponse" />
+  </wsdl:message>
+  <wsdl:message name="getBladesByAllocatedServerSoapIn">
+    <wsdl:part name="parameters" element="tns:getBladesByAllocatedServer" />
+  </wsdl:message>
+  <wsdl:message name="getBladesByAllocatedServerSoapOut">
+    <wsdl:part name="parameters" element="tns:getBladesByAllocatedServerResponse" />
+  </wsdl:message>
+  <wsdl:message name="RequestAnySingleNodeSoapIn">
+    <wsdl:part name="parameters" element="tns:RequestAnySingleNode" />
+  </wsdl:message>
+  <wsdl:message name="RequestAnySingleNodeSoapOut">
+    <wsdl:part name="parameters" element="tns:RequestAnySingleNodeResponse" />
+  </wsdl:message>
+  <wsdl:message name="RequestNodeSoapIn">
+    <wsdl:part name="parameters" element="tns:RequestNode" />
+  </wsdl:message>
+  <wsdl:message name="RequestNodeSoapOut">
+    <wsdl:part name="parameters" element="tns:RequestNodeResponse" />
+  </wsdl:message>
+  <wsdl:message name="GetBladeStatusSoapIn">
+    <wsdl:part name="parameters" element="tns:GetBladeStatus" />
+  </wsdl:message>
+  <wsdl:message name="GetBladeStatusSoapOut">
+    <wsdl:part name="parameters" element="tns:GetBladeStatusResponse" />
+  </wsdl:message>
+  <wsdl:message name="isBladeMineSoapIn">
+    <wsdl:part name="parameters" element="tns:isBladeMine" />
+  </wsdl:message>
+  <wsdl:message name="isBladeMineSoapOut">
+    <wsdl:part name="parameters" element="tns:isBladeMineResponse" />
+  </wsdl:message>
+  <wsdl:message name="releaseBladeSoapIn">
+    <wsdl:part name="parameters" element="tns:releaseBlade" />
+  </wsdl:message>
+  <wsdl:message name="releaseBladeSoapOut">
+    <wsdl:part name="parameters" element="tns:releaseBladeResponse" />
+  </wsdl:message>
+  <wsdl:message name="forceBladeAllocationSoapIn">
+    <wsdl:part name="parameters" element="tns:forceBladeAllocation" />
+  </wsdl:message>
+  <wsdl:message name="forceBladeAllocationSoapOut">
+    <wsdl:part name="parameters" element="tns:forceBladeAllocationResponse" />
+  </wsdl:message>
+  <wsdl:message name="getConfigurationOfBladeSoapIn">
+    <wsdl:part name="parameters" element="tns:getConfigurationOfBlade" />
+  </wsdl:message>
+  <wsdl:message name="getConfigurationOfBladeSoapOut">
+    <wsdl:part name="parameters" element="tns:getConfigurationOfBladeResponse" />
+  </wsdl:message>
+  <wsdl:message name="getCurrentSnapshotForBladeSoapIn">
+    <wsdl:part name="parameters" element="tns:getCurrentSnapshotForBlade" />
+  </wsdl:message>
+  <wsdl:message name="getCurrentSnapshotForBladeSoapOut">
+    <wsdl:part name="parameters" element="tns:getCurrentSnapshotForBladeResponse" />
+  </wsdl:message>
+  <wsdl:message name="keepAliveHttpGetIn" />
+  <wsdl:message name="keepAliveHttpGetOut" />
+  <wsdl:message name="ListNodesHttpGetIn" />
+  <wsdl:message name="ListNodesHttpGetOut">
+    <wsdl:part name="Body" element="tns:string" />
+  </wsdl:message>
+  <wsdl:message name="getBladesByAllocatedServerHttpGetIn">
+    <wsdl:part name="NodeIP" type="s:string" />
+  </wsdl:message>
+  <wsdl:message name="getBladesByAllocatedServerHttpGetOut">
+    <wsdl:part name="Body" element="tns:string" />
+  </wsdl:message>
+  <wsdl:message name="RequestAnySingleNodeHttpGetIn" />
+  <wsdl:message name="RequestAnySingleNodeHttpGetOut">
+    <wsdl:part name="Body" element="tns:resultCodeAndBladeName" />
+  </wsdl:message>
+  <wsdl:message name="RequestNodeHttpGetIn">
+    <wsdl:part name="NodeIP" type="s:string" />
+  </wsdl:message>
+  <wsdl:message name="RequestNodeHttpGetOut">
+    <wsdl:part name="Body" element="tns:string" />
+  </wsdl:message>
+  <wsdl:message name="GetBladeStatusHttpGetIn">
+    <wsdl:part name="NodeIP" type="s:string" />
+  </wsdl:message>
+  <wsdl:message name="GetBladeStatusHttpGetOut">
+    <wsdl:part name="Body" element="tns:string" />
+  </wsdl:message>
+  <wsdl:message name="isBladeMineHttpGetIn">
+    <wsdl:part name="NodeIP" type="s:string" />
+  </wsdl:message>
+  <wsdl:message name="isBladeMineHttpGetOut">
+    <wsdl:part name="Body" element="tns:boolean" />
+  </wsdl:message>
+  <wsdl:message name="releaseBladeHttpGetIn">
+    <wsdl:part name="NodeIP" type="s:string" />
+  </wsdl:message>
+  <wsdl:message name="releaseBladeHttpGetOut">
+    <wsdl:part name="Body" element="tns:string" />
+  </wsdl:message>
+  <wsdl:message name="forceBladeAllocationHttpGetIn">
+    <wsdl:part name="NodeIP" type="s:string" />
+    <wsdl:part name="newOwner" type="s:string" />
+  </wsdl:message>
+  <wsdl:message name="forceBladeAllocationHttpGetOut">
+    <wsdl:part name="Body" element="tns:string" />
+  </wsdl:message>
+  <wsdl:message name="getConfigurationOfBladeHttpGetIn">
+    <wsdl:part name="NodeIP" type="s:string" />
+  </wsdl:message>
+  <wsdl:message name="getConfigurationOfBladeHttpGetOut">
+    <wsdl:part name="Body" element="tns:bladeSpec" />
+  </wsdl:message>
+  <wsdl:message name="getCurrentSnapshotForBladeHttpGetIn">
+    <wsdl:part name="NodeIP" type="s:string" />
+  </wsdl:message>
+  <wsdl:message name="getCurrentSnapshotForBladeHttpGetOut">
+    <wsdl:part name="Body" element="tns:string" />
+  </wsdl:message>
+  <wsdl:message name="keepAliveHttpPostIn" />
+  <wsdl:message name="keepAliveHttpPostOut" />
+  <wsdl:message name="ListNodesHttpPostIn" />
+  <wsdl:message name="ListNodesHttpPostOut">
+    <wsdl:part name="Body" element="tns:string" />
+  </wsdl:message>
+  <wsdl:message name="getBladesByAllocatedServerHttpPostIn">
+    <wsdl:part name="NodeIP" type="s:string" />
+  </wsdl:message>
+  <wsdl:message name="getBladesByAllocatedServerHttpPostOut">
+    <wsdl:part name="Body" element="tns:string" />
+  </wsdl:message>
+  <wsdl:message name="RequestAnySingleNodeHttpPostIn" />
+  <wsdl:message name="RequestAnySingleNodeHttpPostOut">
+    <wsdl:part name="Body" element="tns:resultCodeAndBladeName" />
+  </wsdl:message>
+  <wsdl:message name="RequestNodeHttpPostIn">
+    <wsdl:part name="NodeIP" type="s:string" />
+  </wsdl:message>
+  <wsdl:message name="RequestNodeHttpPostOut">
+    <wsdl:part name="Body" element="tns:string" />
+  </wsdl:message>
+  <wsdl:message name="GetBladeStatusHttpPostIn">
+    <wsdl:part name="NodeIP" type="s:string" />
+  </wsdl:message>
+  <wsdl:message name="GetBladeStatusHttpPostOut">
+    <wsdl:part name="Body" element="tns:string" />
+  </wsdl:message>
+  <wsdl:message name="isBladeMineHttpPostIn">
+    <wsdl:part name="NodeIP" type="s:string" />
+  </wsdl:message>
+  <wsdl:message name="isBladeMineHttpPostOut">
+    <wsdl:part name="Body" element="tns:boolean" />
+  </wsdl:message>
+  <wsdl:message name="releaseBladeHttpPostIn">
+    <wsdl:part name="NodeIP" type="s:string" />
+  </wsdl:message>
+  <wsdl:message name="releaseBladeHttpPostOut">
+    <wsdl:part name="Body" element="tns:string" />
+  </wsdl:message>
+  <wsdl:message name="forceBladeAllocationHttpPostIn">
+    <wsdl:part name="NodeIP" type="s:string" />
+    <wsdl:part name="newOwner" type="s:string" />
+  </wsdl:message>
+  <wsdl:message name="forceBladeAllocationHttpPostOut">
+    <wsdl:part name="Body" element="tns:string" />
+  </wsdl:message>
+  <wsdl:message name="getConfigurationOfBladeHttpPostIn">
+    <wsdl:part name="NodeIP" type="s:string" />
+  </wsdl:message>
+  <wsdl:message name="getConfigurationOfBladeHttpPostOut">
+    <wsdl:part name="Body" element="tns:bladeSpec" />
+  </wsdl:message>
+  <wsdl:message name="getCurrentSnapshotForBladeHttpPostIn">
+    <wsdl:part name="NodeIP" type="s:string" />
+  </wsdl:message>
+  <wsdl:message name="getCurrentSnapshotForBladeHttpPostOut">
+    <wsdl:part name="Body" element="tns:string" />
+  </wsdl:message>
+  <wsdl:portType name="servicesSoap">
+    <wsdl:operation name="keepAlive">
+      <wsdl:input message="tns:keepAliveSoapIn" />
+      <wsdl:output message="tns:keepAliveSoapOut" />
+    </wsdl:operation>
+    <wsdl:operation name="ListNodes">
+      <wsdl:input message="tns:ListNodesSoapIn" />
+      <wsdl:output message="tns:ListNodesSoapOut" />
+    </wsdl:operation>
+    <wsdl:operation name="getBladesByAllocatedServer">
+      <wsdl:input message="tns:getBladesByAllocatedServerSoapIn" />
+      <wsdl:output message="tns:getBladesByAllocatedServerSoapOut" />
+    </wsdl:operation>
+    <wsdl:operation name="RequestAnySingleNode">
+      <wsdl:input message="tns:RequestAnySingleNodeSoapIn" />
+      <wsdl:output message="tns:RequestAnySingleNodeSoapOut" />
+    </wsdl:operation>
+    <wsdl:operation name="RequestNode">
+      <wsdl:input message="tns:RequestNodeSoapIn" />
+      <wsdl:output message="tns:RequestNodeSoapOut" />
+    </wsdl:operation>
+    <wsdl:operation name="GetBladeStatus">
+      <wsdl:input message="tns:GetBladeStatusSoapIn" />
+      <wsdl:output message="tns:GetBladeStatusSoapOut" />
+    </wsdl:operation>
+    <wsdl:operation name="isBladeMine">
+      <wsdl:input message="tns:isBladeMineSoapIn" />
+      <wsdl:output message="tns:isBladeMineSoapOut" />
+    </wsdl:operation>
+    <wsdl:operation name="releaseBlade">
+      <wsdl:input message="tns:releaseBladeSoapIn" />
+      <wsdl:output message="tns:releaseBladeSoapOut" />
+    </wsdl:operation>
+    <wsdl:operation name="forceBladeAllocation">
+      <wsdl:input message="tns:forceBladeAllocationSoapIn" />
+      <wsdl:output message="tns:forceBladeAllocationSoapOut" />
+    </wsdl:operation>
+    <wsdl:operation name="getConfigurationOfBlade">
+      <wsdl:input message="tns:getConfigurationOfBladeSoapIn" />
+      <wsdl:output message="tns:getConfigurationOfBladeSoapOut" />
+    </wsdl:operation>
+    <wsdl:operation name="getCurrentSnapshotForBlade">
+      <wsdl:input message="tns:getCurrentSnapshotForBladeSoapIn" />
+      <wsdl:output message="tns:getCurrentSnapshotForBladeSoapOut" />
+    </wsdl:operation>
+  </wsdl:portType>
+  <wsdl:portType name="servicesHttpGet">
+    <wsdl:operation name="keepAlive">
+      <wsdl:input message="tns:keepAliveHttpGetIn" />
+      <wsdl:output message="tns:keepAliveHttpGetOut" />
+    </wsdl:operation>
+    <wsdl:operation name="ListNodes">
+      <wsdl:input message="tns:ListNodesHttpGetIn" />
+      <wsdl:output message="tns:ListNodesHttpGetOut" />
+    </wsdl:operation>
+    <wsdl:operation name="getBladesByAllocatedServer">
+      <wsdl:input message="tns:getBladesByAllocatedServerHttpGetIn" />
+      <wsdl:output message="tns:getBladesByAllocatedServerHttpGetOut" />
+    </wsdl:operation>
+    <wsdl:operation name="RequestAnySingleNode">
+      <wsdl:input message="tns:RequestAnySingleNodeHttpGetIn" />
+      <wsdl:output message="tns:RequestAnySingleNodeHttpGetOut" />
+    </wsdl:operation>
+    <wsdl:operation name="RequestNode">
+      <wsdl:input message="tns:RequestNodeHttpGetIn" />
+      <wsdl:output message="tns:RequestNodeHttpGetOut" />
+    </wsdl:operation>
+    <wsdl:operation name="GetBladeStatus">
+      <wsdl:input message="tns:GetBladeStatusHttpGetIn" />
+      <wsdl:output message="tns:GetBladeStatusHttpGetOut" />
+    </wsdl:operation>
+    <wsdl:operation name="isBladeMine">
+      <wsdl:input message="tns:isBladeMineHttpGetIn" />
+      <wsdl:output message="tns:isBladeMineHttpGetOut" />
+    </wsdl:operation>
+    <wsdl:operation name="releaseBlade">
+      <wsdl:input message="tns:releaseBladeHttpGetIn" />
+      <wsdl:output message="tns:releaseBladeHttpGetOut" />
+    </wsdl:operation>
+    <wsdl:operation name="forceBladeAllocation">
+      <wsdl:input message="tns:forceBladeAllocationHttpGetIn" />
+      <wsdl:output message="tns:forceBladeAllocationHttpGetOut" />
+    </wsdl:operation>
+    <wsdl:operation name="getConfigurationOfBlade">
+      <wsdl:input message="tns:getConfigurationOfBladeHttpGetIn" />
+      <wsdl:output message="tns:getConfigurationOfBladeHttpGetOut" />
+    </wsdl:operation>
+    <wsdl:operation name="getCurrentSnapshotForBlade">
+      <wsdl:input message="tns:getCurrentSnapshotForBladeHttpGetIn" />
+      <wsdl:output message="tns:getCurrentSnapshotForBladeHttpGetOut" />
+    </wsdl:operation>
+  </wsdl:portType>
+  <wsdl:portType name="servicesHttpPost">
+    <wsdl:operation name="keepAlive">
+      <wsdl:input message="tns:keepAliveHttpPostIn" />
+      <wsdl:output message="tns:keepAliveHttpPostOut" />
+    </wsdl:operation>
+    <wsdl:operation name="ListNodes">
+      <wsdl:input message="tns:ListNodesHttpPostIn" />
+      <wsdl:output message="tns:ListNodesHttpPostOut" />
+    </wsdl:operation>
+    <wsdl:operation name="getBladesByAllocatedServer">
+      <wsdl:input message="tns:getBladesByAllocatedServerHttpPostIn" />
+      <wsdl:output message="tns:getBladesByAllocatedServerHttpPostOut" />
+    </wsdl:operation>
+    <wsdl:operation name="RequestAnySingleNode">
+      <wsdl:input message="tns:RequestAnySingleNodeHttpPostIn" />
+      <wsdl:output message="tns:RequestAnySingleNodeHttpPostOut" />
+    </wsdl:operation>
+    <wsdl:operation name="RequestNode">
+      <wsdl:input message="tns:RequestNodeHttpPostIn" />
+      <wsdl:output message="tns:RequestNodeHttpPostOut" />
+    </wsdl:operation>
+    <wsdl:operation name="GetBladeStatus">
+      <wsdl:input message="tns:GetBladeStatusHttpPostIn" />
+      <wsdl:output message="tns:GetBladeStatusHttpPostOut" />
+    </wsdl:operation>
+    <wsdl:operation name="isBladeMine">
+      <wsdl:input message="tns:isBladeMineHttpPostIn" />
+      <wsdl:output message="tns:isBladeMineHttpPostOut" />
+    </wsdl:operation>
+    <wsdl:operation name="releaseBlade">
+      <wsdl:input message="tns:releaseBladeHttpPostIn" />
+      <wsdl:output message="tns:releaseBladeHttpPostOut" />
+    </wsdl:operation>
+    <wsdl:operation name="forceBladeAllocation">
+      <wsdl:input message="tns:forceBladeAllocationHttpPostIn" />
+      <wsdl:output message="tns:forceBladeAllocationHttpPostOut" />
+    </wsdl:operation>
+    <wsdl:operation name="getConfigurationOfBlade">
+      <wsdl:input message="tns:getConfigurationOfBladeHttpPostIn" />
+      <wsdl:output message="tns:getConfigurationOfBladeHttpPostOut" />
+    </wsdl:operation>
+    <wsdl:operation name="getCurrentSnapshotForBlade">
+      <wsdl:input message="tns:getCurrentSnapshotForBladeHttpPostIn" />
+      <wsdl:output message="tns:getCurrentSnapshotForBladeHttpPostOut" />
+    </wsdl:operation>
+  </wsdl:portType>
+  <wsdl:binding name="servicesSoap" type="tns:servicesSoap">
+    <soap:binding transport="http://schemas.xmlsoap.org/soap/http" />
+    <wsdl:operation name="keepAlive">
+      <soap:operation soapAction="http://tempuri.org/keepAlive" style="document" />
+      <wsdl:input>
+        <soap:body use="literal" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="ListNodes">
+      <soap:operation soapAction="http://tempuri.org/ListNodes" style="document" />
+      <wsdl:input>
+        <soap:body use="literal" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="getBladesByAllocatedServer">
+      <soap:operation soapAction="http://tempuri.org/getBladesByAllocatedServer" style="document" />
+      <wsdl:input>
+        <soap:body use="literal" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="RequestAnySingleNode">
+      <soap:operation soapAction="http://tempuri.org/RequestAnySingleNode" style="document" />
+      <wsdl:input>
+        <soap:body use="literal" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="RequestNode">
+      <soap:operation soapAction="http://tempuri.org/RequestNode" style="document" />
+      <wsdl:input>
+        <soap:body use="literal" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="GetBladeStatus">
+      <soap:operation soapAction="http://tempuri.org/GetBladeStatus" style="document" />
+      <wsdl:input>
+        <soap:body use="literal" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="isBladeMine">
+      <soap:operation soapAction="http://tempuri.org/isBladeMine" style="document" />
+      <wsdl:input>
+        <soap:body use="literal" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="releaseBlade">
+      <soap:operation soapAction="http://tempuri.org/releaseBlade" style="document" />
+      <wsdl:input>
+        <soap:body use="literal" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="forceBladeAllocation">
+      <soap:operation soapAction="http://tempuri.org/forceBladeAllocation" style="document" />
+      <wsdl:input>
+        <soap:body use="literal" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="getConfigurationOfBlade">
+      <soap:operation soapAction="http://tempuri.org/getConfigurationOfBlade" style="document" />
+      <wsdl:input>
+        <soap:body use="literal" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="getCurrentSnapshotForBlade">
+      <soap:operation soapAction="http://tempuri.org/getCurrentSnapshotForBlade" style="document" />
+      <wsdl:input>
+        <soap:body use="literal" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+  </wsdl:binding>
+  <wsdl:binding name="servicesSoap12" type="tns:servicesSoap">
+    <soap12:binding transport="http://schemas.xmlsoap.org/soap/http" />
+    <wsdl:operation name="keepAlive">
+      <soap12:operation soapAction="http://tempuri.org/keepAlive" style="document" />
+      <wsdl:input>
+        <soap12:body use="literal" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap12:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="ListNodes">
+      <soap12:operation soapAction="http://tempuri.org/ListNodes" style="document" />
+      <wsdl:input>
+        <soap12:body use="literal" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap12:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="getBladesByAllocatedServer">
+      <soap12:operation soapAction="http://tempuri.org/getBladesByAllocatedServer" style="document" />
+      <wsdl:input>
+        <soap12:body use="literal" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap12:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="RequestAnySingleNode">
+      <soap12:operation soapAction="http://tempuri.org/RequestAnySingleNode" style="document" />
+      <wsdl:input>
+        <soap12:body use="literal" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap12:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="RequestNode">
+      <soap12:operation soapAction="http://tempuri.org/RequestNode" style="document" />
+      <wsdl:input>
+        <soap12:body use="literal" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap12:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="GetBladeStatus">
+      <soap12:operation soapAction="http://tempuri.org/GetBladeStatus" style="document" />
+      <wsdl:input>
+        <soap12:body use="literal" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap12:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="isBladeMine">
+      <soap12:operation soapAction="http://tempuri.org/isBladeMine" style="document" />
+      <wsdl:input>
+        <soap12:body use="literal" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap12:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="releaseBlade">
+      <soap12:operation soapAction="http://tempuri.org/releaseBlade" style="document" />
+      <wsdl:input>
+        <soap12:body use="literal" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap12:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="forceBladeAllocation">
+      <soap12:operation soapAction="http://tempuri.org/forceBladeAllocation" style="document" />
+      <wsdl:input>
+        <soap12:body use="literal" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap12:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="getConfigurationOfBlade">
+      <soap12:operation soapAction="http://tempuri.org/getConfigurationOfBlade" style="document" />
+      <wsdl:input>
+        <soap12:body use="literal" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap12:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="getCurrentSnapshotForBlade">
+      <soap12:operation soapAction="http://tempuri.org/getCurrentSnapshotForBlade" style="document" />
+      <wsdl:input>
+        <soap12:body use="literal" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap12:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+  </wsdl:binding>
+  <wsdl:binding name="servicesHttpGet" type="tns:servicesHttpGet">
+    <http:binding verb="GET" />
+    <wsdl:operation name="keepAlive">
+      <http:operation location="/keepAlive" />
+      <wsdl:input>
+        <http:urlEncoded />
+      </wsdl:input>
+      <wsdl:output />
+    </wsdl:operation>
+    <wsdl:operation name="ListNodes">
+      <http:operation location="/ListNodes" />
+      <wsdl:input>
+        <http:urlEncoded />
+      </wsdl:input>
+      <wsdl:output>
+        <mime:mimeXml part="Body" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="getBladesByAllocatedServer">
+      <http:operation location="/getBladesByAllocatedServer" />
+      <wsdl:input>
+        <http:urlEncoded />
+      </wsdl:input>
+      <wsdl:output>
+        <mime:mimeXml part="Body" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="RequestAnySingleNode">
+      <http:operation location="/RequestAnySingleNode" />
+      <wsdl:input>
+        <http:urlEncoded />
+      </wsdl:input>
+      <wsdl:output>
+        <mime:mimeXml part="Body" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="RequestNode">
+      <http:operation location="/RequestNode" />
+      <wsdl:input>
+        <http:urlEncoded />
+      </wsdl:input>
+      <wsdl:output>
+        <mime:mimeXml part="Body" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="GetBladeStatus">
+      <http:operation location="/GetBladeStatus" />
+      <wsdl:input>
+        <http:urlEncoded />
+      </wsdl:input>
+      <wsdl:output>
+        <mime:mimeXml part="Body" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="isBladeMine">
+      <http:operation location="/isBladeMine" />
+      <wsdl:input>
+        <http:urlEncoded />
+      </wsdl:input>
+      <wsdl:output>
+        <mime:mimeXml part="Body" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="releaseBlade">
+      <http:operation location="/releaseBlade" />
+      <wsdl:input>
+        <http:urlEncoded />
+      </wsdl:input>
+      <wsdl:output>
+        <mime:mimeXml part="Body" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="forceBladeAllocation">
+      <http:operation location="/forceBladeAllocation" />
+      <wsdl:input>
+        <http:urlEncoded />
+      </wsdl:input>
+      <wsdl:output>
+        <mime:mimeXml part="Body" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="getConfigurationOfBlade">
+      <http:operation location="/getConfigurationOfBlade" />
+      <wsdl:input>
+        <http:urlEncoded />
+      </wsdl:input>
+      <wsdl:output>
+        <mime:mimeXml part="Body" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="getCurrentSnapshotForBlade">
+      <http:operation location="/getCurrentSnapshotForBlade" />
+      <wsdl:input>
+        <http:urlEncoded />
+      </wsdl:input>
+      <wsdl:output>
+        <mime:mimeXml part="Body" />
+      </wsdl:output>
+    </wsdl:operation>
+  </wsdl:binding>
+  <wsdl:binding name="servicesHttpPost" type="tns:servicesHttpPost">
+    <http:binding verb="POST" />
+    <wsdl:operation name="keepAlive">
+      <http:operation location="/keepAlive" />
+      <wsdl:input>
+        <mime:content type="application/x-www-form-urlencoded" />
+      </wsdl:input>
+      <wsdl:output />
+    </wsdl:operation>
+    <wsdl:operation name="ListNodes">
+      <http:operation location="/ListNodes" />
+      <wsdl:input>
+        <mime:content type="application/x-www-form-urlencoded" />
+      </wsdl:input>
+      <wsdl:output>
+        <mime:mimeXml part="Body" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="getBladesByAllocatedServer">
+      <http:operation location="/getBladesByAllocatedServer" />
+      <wsdl:input>
+        <mime:content type="application/x-www-form-urlencoded" />
+      </wsdl:input>
+      <wsdl:output>
+        <mime:mimeXml part="Body" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="RequestAnySingleNode">
+      <http:operation location="/RequestAnySingleNode" />
+      <wsdl:input>
+        <mime:content type="application/x-www-form-urlencoded" />
+      </wsdl:input>
+      <wsdl:output>
+        <mime:mimeXml part="Body" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="RequestNode">
+      <http:operation location="/RequestNode" />
+      <wsdl:input>
+        <mime:content type="application/x-www-form-urlencoded" />
+      </wsdl:input>
+      <wsdl:output>
+        <mime:mimeXml part="Body" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="GetBladeStatus">
+      <http:operation location="/GetBladeStatus" />
+      <wsdl:input>
+        <mime:content type="application/x-www-form-urlencoded" />
+      </wsdl:input>
+      <wsdl:output>
+        <mime:mimeXml part="Body" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="isBladeMine">
+      <http:operation location="/isBladeMine" />
+      <wsdl:input>
+        <mime:content type="application/x-www-form-urlencoded" />
+      </wsdl:input>
+      <wsdl:output>
+        <mime:mimeXml part="Body" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="releaseBlade">
+      <http:operation location="/releaseBlade" />
+      <wsdl:input>
+        <mime:content type="application/x-www-form-urlencoded" />
+      </wsdl:input>
+      <wsdl:output>
+        <mime:mimeXml part="Body" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="forceBladeAllocation">
+      <http:operation location="/forceBladeAllocation" />
+      <wsdl:input>
+        <mime:content type="application/x-www-form-urlencoded" />
+      </wsdl:input>
+      <wsdl:output>
+        <mime:mimeXml part="Body" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="getConfigurationOfBlade">
+      <http:operation location="/getConfigurationOfBlade" />
+      <wsdl:input>
+        <mime:content type="application/x-www-form-urlencoded" />
+      </wsdl:input>
+      <wsdl:output>
+        <mime:mimeXml part="Body" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="getCurrentSnapshotForBlade">
+      <http:operation location="/getCurrentSnapshotForBlade" />
+      <wsdl:input>
+        <mime:content type="application/x-www-form-urlencoded" />
+      </wsdl:input>
+      <wsdl:output>
+        <mime:mimeXml part="Body" />
+      </wsdl:output>
+    </wsdl:operation>
+  </wsdl:binding>
+  <wsdl:service name="services">
+    <wsdl:port name="servicesSoap" binding="tns:servicesSoap">
+      <soap:address location="http://alizbuild.xd.lan/bladedirector/services.asmx" />
+    </wsdl:port>
+    <wsdl:port name="servicesSoap12" binding="tns:servicesSoap12">
+      <soap12:address location="http://alizbuild.xd.lan/bladedirector/services.asmx" />
+    </wsdl:port>
+    <wsdl:port name="servicesHttpGet" binding="tns:servicesHttpGet">
+      <http:address location="http://alizbuild.xd.lan/bladedirector/services.asmx" />
+    </wsdl:port>
+    <wsdl:port name="servicesHttpPost" binding="tns:servicesHttpPost">
+      <http:address location="http://alizbuild.xd.lan/bladedirector/services.asmx" />
+    </wsdl:port>
+  </wsdl:service>
+</wsdl:definitions>
