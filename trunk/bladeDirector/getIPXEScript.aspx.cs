@@ -62,8 +62,7 @@ namespace bladeDirector
                 script = script.Replace("{BLADE_IP_ISCSI}", state.iscsiIP);
                 script = script.Replace("{BLADE_IP_MAIN}", state.bladeIP);
                 script = script.Replace("{BLADE_NETMASK_ISCSI}", "255.255.255.0");
-                script = script.Replace("{BLADE_SNAPSHOT}", state.currentSnapshot);
-                script = script.Replace("{HOST_IP}", state.currentOwner);
+                script = script.Replace("{BLADE_SNAPSHOT}", hostStateDB.getCurrentSnapshotForBlade(srcIP));
             }
             Response.Write(script);
             hostStateDB.addLogEvent("IPXE script for blade " + srcIP + " generated (owner " + state.currentOwner + ")");
