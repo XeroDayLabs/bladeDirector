@@ -158,11 +158,11 @@ namespace tests
 
             services uut = new bladeDirector.services();
 
-            // Default should be "<ip>-<owner>".
+            // Default should be "<ip>-<owner>-<snapshot name>". Snapshot name should default to 'clean'.
             Assert.AreEqual("success", uut.RequestNode("blade1ip", "1.1.1.1"));
-            Assert.AreEqual("blade1ip-1.1.1.1", uut.getCurrentSnapshotForBlade("blade1ip"));
+            Assert.AreEqual("blade1ip-1.1.1.1-clean", uut.getCurrentSnapshotForBlade("blade1ip"));
             Assert.AreEqual(resultCode.success, uut.selectSnapshotForBlade("blade1ip", "bb"));
-            Assert.AreEqual("bb", uut.getCurrentSnapshotForBlade("blade1ip"));
+            Assert.AreEqual("blade1ip-1.1.1.1-bb", uut.getCurrentSnapshotForBlade("blade1ip"));
         }
     
     }

@@ -467,7 +467,7 @@ namespace bladeDirector
                 if (reqBlade == null)
                     return null;
 
-                return reqBlade.currentSnapshot;
+                return String.Format("{0}-{1}-{2}", reqBlade.bladeIP, reqBlade.currentOwner, reqBlade.currentSnapshot);
             }
         }
 
@@ -666,7 +666,7 @@ namespace bladeDirector
                 nextOwner = (string)reader["nextOwner"];
 
             if (reader["currentSnapshot"] is System.DBNull)
-                currentSnapshot = bladeIP + "-" + currentOwner;
+                currentSnapshot = "clean";
             else
                 currentSnapshot = (string) reader["currentSnapshot"];
 
