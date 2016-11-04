@@ -7,6 +7,7 @@ using System.Net;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using createDisks.bladeDirector;
 using hypervisors;
 using Newtonsoft.Json;
 using VMware.Vim;
@@ -43,9 +44,9 @@ namespace createDisks
                 {
                     string nodeIP = "172.17.129." + (100 + int.Parse(bladeIP));
                     string nodeiLoIP = "172.17.2." + (100 + int.Parse(bladeIP));
-                    string cloneName = String.Format("{0}-{1}", nodeIP, serverIP);
+                    string cloneName = String.Format("{0}-{1}-clean", nodeIP, serverIP);
                     string computerName = String.Format("blade{0}", uint.Parse(bladeIP).ToString("D2"));
-                    string snapshotName = string.Format("{0}-clean", cloneName);
+                    string snapshotName = cloneName;
 
                     var itemToAdd = new itemToAdd
                     {
@@ -125,13 +126,30 @@ namespace createDisks
                 string res = bladeDirectorClient.forceBladeAllocation(itemToAdd.bladeIP, itemToAdd.serverIP);
                 if (res != "success")
                     throw new Exception("Can't claim blade " + itemToAdd.bladeIP);
+                resultCode shotResCode = bladeDirectorClient.selectSnapshotForBlade(itemToAdd.bladeIP, "clean");
+                if (shotResCode != resultCode.success)
+                    throw new Exception("Can't select snapshot on blade " + itemToAdd.bladeIP);
             }
             ilo.powerOn();
+
             // and then use psexec to name it.
             ilo.startExecutable("C:\\windows\\system32\\cmd", "/c wmic computersystem where caption='%COMPUTERNAME%' call rename " + itemToAdd.computerName);
+            
             // Set the target of the kernel debugger, and enable it.
             ilo.startExecutable("C:\\windows\\system32\\cmd", "/c bcdedit /dbgsettings net hostip:" + itemToAdd.serverIP + " port:" + itemToAdd.kernelDebugPort);
             ilo.startExecutable("C:\\windows\\system32\\cmd", "/c bcdedit /debug on");
+            // Instruct WSUS to regen its SID so that it operates correctly
+            ilo.startExecutable("C:\\windows\\system32\\cmd", "/c reg delete \"HKLM\\Software\\Microsoft\\Windows\\CurrentVersion\\WindowsUpdate\" /v SusClientId /f");
+            ilo.startExecutable("C:\\windows\\system32\\cmd", "/c reg delete \"HKLM\\Software\\Microsoft\\Windows\\CurrentVersion\\WindowsUpdate\" /v SusClientIdValidation /f");
+            ilo.startExecutable("C:\\windows\\system32\\cmd", "/c reg add \"HKLM\\Software\\Microsoft\\Windows\\CurrentVersion\\WindowsUpdate\" /v TargetGroup /t REG_SZ /d \"blades\" /f");
+            ilo.startExecutable("C:\\windows\\system32\\cmd", "/c reg add \"HKLM\\Software\\Microsoft\\Windows\\CurrentVersion\\WindowsUpdate\" /v TargetGroupEnabled /t REG_DWORD /d 1 /f");
+            ilo.startExecutable("C:\\windows\\system32\\cmd", "/c net stop wuauserv");
+            ilo.startExecutable("C:\\windows\\system32\\cmd", "/c net start wuauserv");
+            ilo.startExecutable("C:\\windows\\system32\\cmd", "/c wuauclt.exe /resetauthorization /detectnow");
+            // Now we must wait for WSUS to do its thing. How do we do that? MSDN says "wait 10 minutes for a detection cycle to finish". :(
+            Thread.Sleep(TimeSpan.FromMinutes(1));
+
+            // That's all we need, so shut down the system.
             ilo.startExecutable("C:\\windows\\system32\\cmd", "/c shutdown -s -f -t 01");
 
             // Once it has shut down totally, we can take the snapshot of it.

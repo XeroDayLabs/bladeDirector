@@ -15,6 +15,13 @@ namespace createDisks.bladeDirector {
     [System.ServiceModel.ServiceContractAttribute(ConfigurationName="bladeDirector.servicesSoap")]
     public interface servicesSoap {
         
+        [System.ServiceModel.OperationContractAttribute(Action="http://tempuri.org/keepAlive", ReplyAction="*")]
+        [System.ServiceModel.XmlSerializerFormatAttribute(SupportFaults=true)]
+        void keepAlive();
+        
+        [System.ServiceModel.OperationContractAttribute(Action="http://tempuri.org/keepAlive", ReplyAction="*")]
+        System.Threading.Tasks.Task keepAliveAsync();
+        
         [System.ServiceModel.OperationContractAttribute(Action="http://tempuri.org/ListNodes", ReplyAction="*")]
         [System.ServiceModel.XmlSerializerFormatAttribute(SupportFaults=true)]
         string ListNodes();
@@ -28,6 +35,13 @@ namespace createDisks.bladeDirector {
         
         [System.ServiceModel.OperationContractAttribute(Action="http://tempuri.org/getBladesByAllocatedServer", ReplyAction="*")]
         System.Threading.Tasks.Task<string> getBladesByAllocatedServerAsync(string NodeIP);
+        
+        [System.ServiceModel.OperationContractAttribute(Action="http://tempuri.org/RequestAnySingleNode", ReplyAction="*")]
+        [System.ServiceModel.XmlSerializerFormatAttribute(SupportFaults=true)]
+        createDisks.bladeDirector.resultCodeAndBladeName RequestAnySingleNode();
+        
+        [System.ServiceModel.OperationContractAttribute(Action="http://tempuri.org/RequestAnySingleNode", ReplyAction="*")]
+        System.Threading.Tasks.Task<createDisks.bladeDirector.resultCodeAndBladeName> RequestAnySingleNodeAsync();
         
         [System.ServiceModel.OperationContractAttribute(Action="http://tempuri.org/RequestNode", ReplyAction="*")]
         [System.ServiceModel.XmlSerializerFormatAttribute(SupportFaults=true)]
@@ -43,6 +57,13 @@ namespace createDisks.bladeDirector {
         [System.ServiceModel.OperationContractAttribute(Action="http://tempuri.org/GetBladeStatus", ReplyAction="*")]
         System.Threading.Tasks.Task<string> GetBladeStatusAsync(string NodeIP);
         
+        [System.ServiceModel.OperationContractAttribute(Action="http://tempuri.org/isBladeMine", ReplyAction="*")]
+        [System.ServiceModel.XmlSerializerFormatAttribute(SupportFaults=true)]
+        bool isBladeMine(string NodeIP);
+        
+        [System.ServiceModel.OperationContractAttribute(Action="http://tempuri.org/isBladeMine", ReplyAction="*")]
+        System.Threading.Tasks.Task<bool> isBladeMineAsync(string NodeIP);
+        
         [System.ServiceModel.OperationContractAttribute(Action="http://tempuri.org/releaseBlade", ReplyAction="*")]
         [System.ServiceModel.XmlSerializerFormatAttribute(SupportFaults=true)]
         string releaseBlade(string NodeIP);
@@ -56,6 +77,282 @@ namespace createDisks.bladeDirector {
         
         [System.ServiceModel.OperationContractAttribute(Action="http://tempuri.org/forceBladeAllocation", ReplyAction="*")]
         System.Threading.Tasks.Task<string> forceBladeAllocationAsync(string NodeIP, string newOwner);
+        
+        [System.ServiceModel.OperationContractAttribute(Action="http://tempuri.org/getConfigurationOfBlade", ReplyAction="*")]
+        [System.ServiceModel.XmlSerializerFormatAttribute(SupportFaults=true)]
+        createDisks.bladeDirector.bladeSpec getConfigurationOfBlade(string NodeIP);
+        
+        [System.ServiceModel.OperationContractAttribute(Action="http://tempuri.org/getConfigurationOfBlade", ReplyAction="*")]
+        System.Threading.Tasks.Task<createDisks.bladeDirector.bladeSpec> getConfigurationOfBladeAsync(string NodeIP);
+        
+        [System.ServiceModel.OperationContractAttribute(Action="http://tempuri.org/getCurrentSnapshotForBlade", ReplyAction="*")]
+        [System.ServiceModel.XmlSerializerFormatAttribute(SupportFaults=true)]
+        string getCurrentSnapshotForBlade(string NodeIP);
+        
+        [System.ServiceModel.OperationContractAttribute(Action="http://tempuri.org/getCurrentSnapshotForBlade", ReplyAction="*")]
+        System.Threading.Tasks.Task<string> getCurrentSnapshotForBladeAsync(string NodeIP);
+        
+        [System.ServiceModel.OperationContractAttribute(Action="http://tempuri.org/selectSnapshotForBlade", ReplyAction="*")]
+        [System.ServiceModel.XmlSerializerFormatAttribute(SupportFaults=true)]
+        createDisks.bladeDirector.resultCode selectSnapshotForBlade(string NodeIP, string snapshotName);
+        
+        [System.ServiceModel.OperationContractAttribute(Action="http://tempuri.org/selectSnapshotForBlade", ReplyAction="*")]
+        System.Threading.Tasks.Task<createDisks.bladeDirector.resultCode> selectSnapshotForBladeAsync(string NodeIP, string snapshotName);
+    }
+    
+    /// <remarks/>
+    [System.CodeDom.Compiler.GeneratedCodeAttribute("System.Xml", "4.6.1085.0")]
+    [System.SerializableAttribute()]
+    [System.Diagnostics.DebuggerStepThroughAttribute()]
+    [System.ComponentModel.DesignerCategoryAttribute("code")]
+    [System.Xml.Serialization.XmlTypeAttribute(Namespace="http://tempuri.org/")]
+    public partial class resultCodeAndBladeName : object, System.ComponentModel.INotifyPropertyChanged {
+        
+        private resultCode codeField;
+        
+        private string bladeNameField;
+        
+        /// <remarks/>
+        [System.Xml.Serialization.XmlElementAttribute(Order=0)]
+        public resultCode code {
+            get {
+                return this.codeField;
+            }
+            set {
+                this.codeField = value;
+                this.RaisePropertyChanged("code");
+            }
+        }
+        
+        /// <remarks/>
+        [System.Xml.Serialization.XmlElementAttribute(Order=1)]
+        public string bladeName {
+            get {
+                return this.bladeNameField;
+            }
+            set {
+                this.bladeNameField = value;
+                this.RaisePropertyChanged("bladeName");
+            }
+        }
+        
+        public event System.ComponentModel.PropertyChangedEventHandler PropertyChanged;
+        
+        protected void RaisePropertyChanged(string propertyName) {
+            System.ComponentModel.PropertyChangedEventHandler propertyChanged = this.PropertyChanged;
+            if ((propertyChanged != null)) {
+                propertyChanged(this, new System.ComponentModel.PropertyChangedEventArgs(propertyName));
+            }
+        }
+    }
+    
+    /// <remarks/>
+    [System.CodeDom.Compiler.GeneratedCodeAttribute("System.Xml", "4.6.1085.0")]
+    [System.SerializableAttribute()]
+    [System.Xml.Serialization.XmlTypeAttribute(Namespace="http://tempuri.org/")]
+    public enum resultCode {
+        
+        /// <remarks/>
+        success,
+        
+        /// <remarks/>
+        bladeNotFound,
+        
+        /// <remarks/>
+        bladeInUse,
+        
+        /// <remarks/>
+        bladeQueueFull,
+        
+        /// <remarks/>
+        pending,
+        
+        /// <remarks/>
+        genericFail,
+    }
+    
+    /// <remarks/>
+    [System.Xml.Serialization.XmlIncludeAttribute(typeof(bladeOwnership))]
+    [System.CodeDom.Compiler.GeneratedCodeAttribute("System.Xml", "4.6.1085.0")]
+    [System.SerializableAttribute()]
+    [System.Diagnostics.DebuggerStepThroughAttribute()]
+    [System.ComponentModel.DesignerCategoryAttribute("code")]
+    [System.Xml.Serialization.XmlTypeAttribute(Namespace="http://tempuri.org/")]
+    public partial class bladeSpec : object, System.ComponentModel.INotifyPropertyChanged {
+        
+        private string iscsiIPField;
+        
+        private string bladeIPField;
+        
+        private string iLOIPField;
+        
+        private ushort iLOPortField;
+        
+        private string currentSnapshotField;
+        
+        /// <remarks/>
+        [System.Xml.Serialization.XmlElementAttribute(Order=0)]
+        public string iscsiIP {
+            get {
+                return this.iscsiIPField;
+            }
+            set {
+                this.iscsiIPField = value;
+                this.RaisePropertyChanged("iscsiIP");
+            }
+        }
+        
+        /// <remarks/>
+        [System.Xml.Serialization.XmlElementAttribute(Order=1)]
+        public string bladeIP {
+            get {
+                return this.bladeIPField;
+            }
+            set {
+                this.bladeIPField = value;
+                this.RaisePropertyChanged("bladeIP");
+            }
+        }
+        
+        /// <remarks/>
+        [System.Xml.Serialization.XmlElementAttribute(Order=2)]
+        public string iLOIP {
+            get {
+                return this.iLOIPField;
+            }
+            set {
+                this.iLOIPField = value;
+                this.RaisePropertyChanged("iLOIP");
+            }
+        }
+        
+        /// <remarks/>
+        [System.Xml.Serialization.XmlElementAttribute(Order=3)]
+        public ushort iLOPort {
+            get {
+                return this.iLOPortField;
+            }
+            set {
+                this.iLOPortField = value;
+                this.RaisePropertyChanged("iLOPort");
+            }
+        }
+        
+        /// <remarks/>
+        [System.Xml.Serialization.XmlElementAttribute(Order=4)]
+        public string currentSnapshot {
+            get {
+                return this.currentSnapshotField;
+            }
+            set {
+                this.currentSnapshotField = value;
+                this.RaisePropertyChanged("currentSnapshot");
+            }
+        }
+        
+        public event System.ComponentModel.PropertyChangedEventHandler PropertyChanged;
+        
+        protected void RaisePropertyChanged(string propertyName) {
+            System.ComponentModel.PropertyChangedEventHandler propertyChanged = this.PropertyChanged;
+            if ((propertyChanged != null)) {
+                propertyChanged(this, new System.ComponentModel.PropertyChangedEventArgs(propertyName));
+            }
+        }
+    }
+    
+    /// <remarks/>
+    [System.CodeDom.Compiler.GeneratedCodeAttribute("System.Xml", "4.6.1085.0")]
+    [System.SerializableAttribute()]
+    [System.Diagnostics.DebuggerStepThroughAttribute()]
+    [System.ComponentModel.DesignerCategoryAttribute("code")]
+    [System.Xml.Serialization.XmlTypeAttribute(Namespace="http://tempuri.org/")]
+    public partial class bladeOwnership : bladeSpec {
+        
+        private long bladeIDField;
+        
+        private bladeStatus stateField;
+        
+        private string currentOwnerField;
+        
+        private string nextOwnerField;
+        
+        private System.DateTime lastKeepAliveField;
+        
+        /// <remarks/>
+        [System.Xml.Serialization.XmlElementAttribute(Order=0)]
+        public long bladeID {
+            get {
+                return this.bladeIDField;
+            }
+            set {
+                this.bladeIDField = value;
+                this.RaisePropertyChanged("bladeID");
+            }
+        }
+        
+        /// <remarks/>
+        [System.Xml.Serialization.XmlElementAttribute(Order=1)]
+        public bladeStatus state {
+            get {
+                return this.stateField;
+            }
+            set {
+                this.stateField = value;
+                this.RaisePropertyChanged("state");
+            }
+        }
+        
+        /// <remarks/>
+        [System.Xml.Serialization.XmlElementAttribute(Order=2)]
+        public string currentOwner {
+            get {
+                return this.currentOwnerField;
+            }
+            set {
+                this.currentOwnerField = value;
+                this.RaisePropertyChanged("currentOwner");
+            }
+        }
+        
+        /// <remarks/>
+        [System.Xml.Serialization.XmlElementAttribute(Order=3)]
+        public string nextOwner {
+            get {
+                return this.nextOwnerField;
+            }
+            set {
+                this.nextOwnerField = value;
+                this.RaisePropertyChanged("nextOwner");
+            }
+        }
+        
+        /// <remarks/>
+        [System.Xml.Serialization.XmlElementAttribute(Order=4)]
+        public System.DateTime lastKeepAlive {
+            get {
+                return this.lastKeepAliveField;
+            }
+            set {
+                this.lastKeepAliveField = value;
+                this.RaisePropertyChanged("lastKeepAlive");
+            }
+        }
+    }
+    
+    /// <remarks/>
+    [System.CodeDom.Compiler.GeneratedCodeAttribute("System.Xml", "4.6.1085.0")]
+    [System.SerializableAttribute()]
+    [System.Xml.Serialization.XmlTypeAttribute(Namespace="http://tempuri.org/")]
+    public enum bladeStatus {
+        
+        /// <remarks/>
+        unused,
+        
+        /// <remarks/>
+        releaseRequested,
+        
+        /// <remarks/>
+        inUse,
     }
     
     [System.CodeDom.Compiler.GeneratedCodeAttribute("System.ServiceModel", "4.0.0.0")]
@@ -85,6 +382,14 @@ namespace createDisks.bladeDirector {
                 base(binding, remoteAddress) {
         }
         
+        public void keepAlive() {
+            base.Channel.keepAlive();
+        }
+        
+        public System.Threading.Tasks.Task keepAliveAsync() {
+            return base.Channel.keepAliveAsync();
+        }
+        
         public string ListNodes() {
             return base.Channel.ListNodes();
         }
@@ -99,6 +404,14 @@ namespace createDisks.bladeDirector {
         
         public System.Threading.Tasks.Task<string> getBladesByAllocatedServerAsync(string NodeIP) {
             return base.Channel.getBladesByAllocatedServerAsync(NodeIP);
+        }
+        
+        public createDisks.bladeDirector.resultCodeAndBladeName RequestAnySingleNode() {
+            return base.Channel.RequestAnySingleNode();
+        }
+        
+        public System.Threading.Tasks.Task<createDisks.bladeDirector.resultCodeAndBladeName> RequestAnySingleNodeAsync() {
+            return base.Channel.RequestAnySingleNodeAsync();
         }
         
         public string RequestNode(string NodeIP) {
@@ -117,6 +430,14 @@ namespace createDisks.bladeDirector {
             return base.Channel.GetBladeStatusAsync(NodeIP);
         }
         
+        public bool isBladeMine(string NodeIP) {
+            return base.Channel.isBladeMine(NodeIP);
+        }
+        
+        public System.Threading.Tasks.Task<bool> isBladeMineAsync(string NodeIP) {
+            return base.Channel.isBladeMineAsync(NodeIP);
+        }
+        
         public string releaseBlade(string NodeIP) {
             return base.Channel.releaseBlade(NodeIP);
         }
@@ -131,6 +452,30 @@ namespace createDisks.bladeDirector {
         
         public System.Threading.Tasks.Task<string> forceBladeAllocationAsync(string NodeIP, string newOwner) {
             return base.Channel.forceBladeAllocationAsync(NodeIP, newOwner);
+        }
+        
+        public createDisks.bladeDirector.bladeSpec getConfigurationOfBlade(string NodeIP) {
+            return base.Channel.getConfigurationOfBlade(NodeIP);
+        }
+        
+        public System.Threading.Tasks.Task<createDisks.bladeDirector.bladeSpec> getConfigurationOfBladeAsync(string NodeIP) {
+            return base.Channel.getConfigurationOfBladeAsync(NodeIP);
+        }
+        
+        public string getCurrentSnapshotForBlade(string NodeIP) {
+            return base.Channel.getCurrentSnapshotForBlade(NodeIP);
+        }
+        
+        public System.Threading.Tasks.Task<string> getCurrentSnapshotForBladeAsync(string NodeIP) {
+            return base.Channel.getCurrentSnapshotForBladeAsync(NodeIP);
+        }
+        
+        public createDisks.bladeDirector.resultCode selectSnapshotForBlade(string NodeIP, string snapshotName) {
+            return base.Channel.selectSnapshotForBlade(NodeIP, snapshotName);
+        }
+        
+        public System.Threading.Tasks.Task<createDisks.bladeDirector.resultCode> selectSnapshotForBladeAsync(string NodeIP, string snapshotName) {
+            return base.Channel.selectSnapshotForBladeAsync(NodeIP, snapshotName);
         }
     }
 }
