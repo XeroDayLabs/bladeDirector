@@ -54,7 +54,7 @@
       <DesignTime>True</DesignTime>
       <DependentUpon>Reference.svcmap</DependentUpon>
     </Compile>
-    <Compile Include="vmpools.cs" />
+    <Compile Include="machinePools.cs" />
     <Compile Include="VMWareHypervisorPool.cs" />
   </ItemGroup>
   <ItemGroup>
@@ -73,6 +73,9 @@
       <LastGenOutput>Settings.Designer.cs</LastGenOutput>
     </None>
     <None Include="Service References\bladeDirector\bladeDirectorClient.bladeDirector.bladeSpec.datasource">
+      <DependentUpon>Reference.svcmap</DependentUpon>
+    </None>
+    <None Include="Service References\bladeDirector\bladeDirectorClient.bladeDirector.resultCode.datasource">
       <DependentUpon>Reference.svcmap</DependentUpon>
     </None>
     <None Include="Service References\bladeDirector\bladeDirectorClient.bladeDirector.resultCodeAndBladeName.datasource">

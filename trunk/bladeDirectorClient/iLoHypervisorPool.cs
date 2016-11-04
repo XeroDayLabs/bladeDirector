@@ -133,7 +133,8 @@ namespace bladeDirectorClient
 
                     // Great, now we have ownership of the blade, so we can use it safely.
                     bladeSpec bladeConfig = director.getConfigurationOfBlade(allocatedBladeResult.bladeName);
-                    string snapshot = director.getCurrentSnapshotForBlade(allocatedBladeResult.bladeName) + "-clean";
+                    director.selectSnapshotForBlade(allocatedBladeResult.bladeName, "clean");
+                    string snapshot = director.getCurrentSnapshotForBlade(allocatedBladeResult.bladeName);
 
                     hypSpec_iLo spec = new hypSpec_iLo(
                         bladeConfig.bladeIP, iloHostUsername, iloHostPassword,
@@ -145,6 +146,7 @@ namespace bladeDirectorClient
                     checkPort(bladeConfig);
 
                     hypervisor_iLo toRet = new hypervisor_iLo(spec);
+                    toRet.checkSnapshotSanity();
                     toRet.setDisposalCallback(onDestruction);
                     return toRet;
                 }
