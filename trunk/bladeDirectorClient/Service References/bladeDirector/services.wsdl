@@ -149,6 +149,7 @@
           <s:element minOccurs="0" maxOccurs="1" name="bladeIP" type="s:string" />
           <s:element minOccurs="0" maxOccurs="1" name="iLOIP" type="s:string" />
           <s:element minOccurs="1" maxOccurs="1" name="iLOPort" type="s:unsignedShort" />
+          <s:element minOccurs="0" maxOccurs="1" name="currentSnapshot" type="s:string" />
         </s:sequence>
       </s:complexType>
       <s:complexType name="bladeOwnership">
@@ -185,10 +186,26 @@
           </s:sequence>
         </s:complexType>
       </s:element>
+      <s:element name="selectSnapshotForBlade">
+        <s:complexType>
+          <s:sequence>
+            <s:element minOccurs="0" maxOccurs="1" name="NodeIP" type="s:string" />
+            <s:element minOccurs="0" maxOccurs="1" name="snapshotName" type="s:string" />
+          </s:sequence>
+        </s:complexType>
+      </s:element>
+      <s:element name="selectSnapshotForBladeResponse">
+        <s:complexType>
+          <s:sequence>
+            <s:element minOccurs="1" maxOccurs="1" name="selectSnapshotForBladeResult" type="tns:resultCode" />
+          </s:sequence>
+        </s:complexType>
+      </s:element>
       <s:element name="string" nillable="true" type="s:string" />
       <s:element name="resultCodeAndBladeName" nillable="true" type="tns:resultCodeAndBladeName" />
       <s:element name="boolean" type="s:boolean" />
       <s:element name="bladeSpec" nillable="true" type="tns:bladeSpec" />
+      <s:element name="resultCode" type="tns:resultCode" />
     </s:schema>
   </wsdl:types>
   <wsdl:message name="keepAliveSoapIn">
@@ -257,6 +274,12 @@
   <wsdl:message name="getCurrentSnapshotForBladeSoapOut">
     <wsdl:part name="parameters" element="tns:getCurrentSnapshotForBladeResponse" />
   </wsdl:message>
+  <wsdl:message name="selectSnapshotForBladeSoapIn">
+    <wsdl:part name="parameters" element="tns:selectSnapshotForBlade" />
+  </wsdl:message>
+  <wsdl:message name="selectSnapshotForBladeSoapOut">
+    <wsdl:part name="parameters" element="tns:selectSnapshotForBladeResponse" />
+  </wsdl:message>
   <wsdl:message name="keepAliveHttpGetIn" />
   <wsdl:message name="keepAliveHttpGetOut" />
   <wsdl:message name="ListNodesHttpGetIn" />
@@ -315,6 +338,13 @@
   </wsdl:message>
   <wsdl:message name="getCurrentSnapshotForBladeHttpGetOut">
     <wsdl:part name="Body" element="tns:string" />
+  </wsdl:message>
+  <wsdl:message name="selectSnapshotForBladeHttpGetIn">
+    <wsdl:part name="NodeIP" type="s:string" />
+    <wsdl:part name="snapshotName" type="s:string" />
+  </wsdl:message>
+  <wsdl:message name="selectSnapshotForBladeHttpGetOut">
+    <wsdl:part name="Body" element="tns:resultCode" />
   </wsdl:message>
   <wsdl:message name="keepAliveHttpPostIn" />
   <wsdl:message name="keepAliveHttpPostOut" />
@@ -375,6 +405,13 @@
   <wsdl:message name="getCurrentSnapshotForBladeHttpPostOut">
     <wsdl:part name="Body" element="tns:string" />
   </wsdl:message>
+  <wsdl:message name="selectSnapshotForBladeHttpPostIn">
+    <wsdl:part name="NodeIP" type="s:string" />
+    <wsdl:part name="snapshotName" type="s:string" />
+  </wsdl:message>
+  <wsdl:message name="selectSnapshotForBladeHttpPostOut">
+    <wsdl:part name="Body" element="tns:resultCode" />
+  </wsdl:message>
   <wsdl:portType name="servicesSoap">
     <wsdl:operation name="keepAlive">
       <wsdl:input message="tns:keepAliveSoapIn" />
@@ -419,6 +456,10 @@
     <wsdl:operation name="getCurrentSnapshotForBlade">
       <wsdl:input message="tns:getCurrentSnapshotForBladeSoapIn" />
       <wsdl:output message="tns:getCurrentSnapshotForBladeSoapOut" />
+    </wsdl:operation>
+    <wsdl:operation name="selectSnapshotForBlade">
+      <wsdl:input message="tns:selectSnapshotForBladeSoapIn" />
+      <wsdl:output message="tns:selectSnapshotForBladeSoapOut" />
     </wsdl:operation>
   </wsdl:portType>
   <wsdl:portType name="servicesHttpGet">
@@ -466,6 +507,10 @@
       <wsdl:input message="tns:getCurrentSnapshotForBladeHttpGetIn" />
       <wsdl:output message="tns:getCurrentSnapshotForBladeHttpGetOut" />
     </wsdl:operation>
+    <wsdl:operation name="selectSnapshotForBlade">
+      <wsdl:input message="tns:selectSnapshotForBladeHttpGetIn" />
+      <wsdl:output message="tns:selectSnapshotForBladeHttpGetOut" />
+    </wsdl:operation>
   </wsdl:portType>
   <wsdl:portType name="servicesHttpPost">
     <wsdl:operation name="keepAlive">
@@ -511,6 +556,10 @@
     <wsdl:operation name="getCurrentSnapshotForBlade">
       <wsdl:input message="tns:getCurrentSnapshotForBladeHttpPostIn" />
       <wsdl:output message="tns:getCurrentSnapshotForBladeHttpPostOut" />
+    </wsdl:operation>
+    <wsdl:operation name="selectSnapshotForBlade">
+      <wsdl:input message="tns:selectSnapshotForBladeHttpPostIn" />
+      <wsdl:output message="tns:selectSnapshotForBladeHttpPostOut" />
     </wsdl:operation>
   </wsdl:portType>
   <wsdl:binding name="servicesSoap" type="tns:servicesSoap">
@@ -607,6 +656,15 @@
     </wsdl:operation>
     <wsdl:operation name="getCurrentSnapshotForBlade">
       <soap:operation soapAction="http://tempuri.org/getCurrentSnapshotForBlade" style="document" />
+      <wsdl:input>
+        <soap:body use="literal" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="selectSnapshotForBlade">
+      <soap:operation soapAction="http://tempuri.org/selectSnapshotForBlade" style="document" />
       <wsdl:input>
         <soap:body use="literal" />
       </wsdl:input>
@@ -716,6 +774,15 @@
         <soap12:body use="literal" />
       </wsdl:output>
     </wsdl:operation>
+    <wsdl:operation name="selectSnapshotForBlade">
+      <soap12:operation soapAction="http://tempuri.org/selectSnapshotForBlade" style="document" />
+      <wsdl:input>
+        <soap12:body use="literal" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap12:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
   </wsdl:binding>
   <wsdl:binding name="servicesHttpGet" type="tns:servicesHttpGet">
     <http:binding verb="GET" />
@@ -816,6 +883,15 @@
         <mime:mimeXml part="Body" />
       </wsdl:output>
     </wsdl:operation>
+    <wsdl:operation name="selectSnapshotForBlade">
+      <http:operation location="/selectSnapshotForBlade" />
+      <wsdl:input>
+        <http:urlEncoded />
+      </wsdl:input>
+      <wsdl:output>
+        <mime:mimeXml part="Body" />
+      </wsdl:output>
+    </wsdl:operation>
   </wsdl:binding>
   <wsdl:binding name="servicesHttpPost" type="tns:servicesHttpPost">
     <http:binding verb="POST" />
@@ -909,6 +985,15 @@
     </wsdl:operation>
     <wsdl:operation name="getCurrentSnapshotForBlade">
       <http:operation location="/getCurrentSnapshotForBlade" />
+      <wsdl:input>
+        <mime:content type="application/x-www-form-urlencoded" />
+      </wsdl:input>
+      <wsdl:output>
+        <mime:mimeXml part="Body" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="selectSnapshotForBlade">
+      <http:operation location="/selectSnapshotForBlade" />
       <wsdl:input>
         <mime:content type="application/x-www-form-urlencoded" />
       </wsdl:input>

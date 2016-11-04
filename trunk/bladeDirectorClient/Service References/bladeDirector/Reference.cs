@@ -91,6 +91,13 @@ namespace bladeDirectorClient.bladeDirector {
         
         [System.ServiceModel.OperationContractAttribute(Action="http://tempuri.org/getCurrentSnapshotForBlade", ReplyAction="*")]
         System.Threading.Tasks.Task<string> getCurrentSnapshotForBladeAsync(string NodeIP);
+        
+        [System.ServiceModel.OperationContractAttribute(Action="http://tempuri.org/selectSnapshotForBlade", ReplyAction="*")]
+        [System.ServiceModel.XmlSerializerFormatAttribute(SupportFaults=true)]
+        bladeDirectorClient.bladeDirector.resultCode selectSnapshotForBlade(string NodeIP, string snapshotName);
+        
+        [System.ServiceModel.OperationContractAttribute(Action="http://tempuri.org/selectSnapshotForBlade", ReplyAction="*")]
+        System.Threading.Tasks.Task<bladeDirectorClient.bladeDirector.resultCode> selectSnapshotForBladeAsync(string NodeIP, string snapshotName);
     }
     
     /// <remarks/>
@@ -181,6 +188,8 @@ namespace bladeDirectorClient.bladeDirector {
         
         private ushort iLOPortField;
         
+        private string currentSnapshotField;
+        
         /// <remarks/>
         [System.Xml.Serialization.XmlElementAttribute(Order=0)]
         public string iscsiIP {
@@ -226,6 +235,18 @@ namespace bladeDirectorClient.bladeDirector {
             set {
                 this.iLOPortField = value;
                 this.RaisePropertyChanged("iLOPort");
+            }
+        }
+        
+        /// <remarks/>
+        [System.Xml.Serialization.XmlElementAttribute(Order=4)]
+        public string currentSnapshot {
+            get {
+                return this.currentSnapshotField;
+            }
+            set {
+                this.currentSnapshotField = value;
+                this.RaisePropertyChanged("currentSnapshot");
             }
         }
         
@@ -447,6 +468,14 @@ namespace bladeDirectorClient.bladeDirector {
         
         public System.Threading.Tasks.Task<string> getCurrentSnapshotForBladeAsync(string NodeIP) {
             return base.Channel.getCurrentSnapshotForBladeAsync(NodeIP);
+        }
+        
+        public bladeDirectorClient.bladeDirector.resultCode selectSnapshotForBlade(string NodeIP, string snapshotName) {
+            return base.Channel.selectSnapshotForBlade(NodeIP, snapshotName);
+        }
+        
+        public System.Threading.Tasks.Task<bladeDirectorClient.bladeDirector.resultCode> selectSnapshotForBladeAsync(string NodeIP, string snapshotName) {
+            return base.Channel.selectSnapshotForBladeAsync(NodeIP, snapshotName);
         }
     }
 }
