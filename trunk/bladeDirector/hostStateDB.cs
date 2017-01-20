@@ -738,13 +738,13 @@ namespace bladeDirector
             {
                 Scp scp = new Tamir.SharpSsh.Scp(nodeIP, Properties.Settings.Default.ltspUsername, Properties.Settings.Default.ltspPassword);
                 scp.Connect();
-                applyBIOSFile = writeTempFile(Properties.Resources.applyBIOS);
+                applyBIOSFile = writeTempFile(Properties.Resources.applyBIOS, true);
                 scp.Put(applyBIOSFile, "applyBIOS.sh");
-                getBIOSFile = writeTempFile(Properties.Resources.getBIOS);
+                getBIOSFile = writeTempFile(Properties.Resources.getBIOS, true);
                 scp.Put(getBIOSFile, "getBIOS.sh");
                 conrepFile = writeTempFile(Properties.Resources.conrep);
                 scp.Put(conrepFile, "conrep");
-                conrepXmlFile = writeTempFile(Properties.Resources.conrep_xml);
+                conrepXmlFile = writeTempFile(Properties.Resources.conrep_xml, true);
                 scp.Put(conrepXmlFile, "conrep.xml");
                 if (biosConfigFile != null)
                 {
@@ -938,12 +938,17 @@ namespace bladeDirector
             return false;
         }
 
-        private static string writeTempFile(byte[] fileContents)
+        private static string writeTempFile(byte[] fileContents, bool convertNewlines = false)
         {
             string filename = Path.GetTempFileName();
             using (FileStream f = File.OpenWrite(filename))
             {
                 byte[] biosAsBytes = fileContents;
+                if (convertNewlines)
+                {
+                    string fileASCIIStr = Encoding.ASCII.GetString(fileContents);
+                    biosAsBytes = Encoding.ASCII.GetBytes(fileASCIIStr.Replace("\r\n", "\n"))
+                }
                 f.Write(biosAsBytes, 0, biosAsBytes.Length);
             }
             return filename;
