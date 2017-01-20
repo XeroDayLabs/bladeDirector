@@ -141,5 +141,38 @@ namespace bladeDirector
         {
             return hostStateDB.selectSnapshotForBlade(NodeIP, snapshotName);
         }
+
+        [WebMethod]
+        public string getLastDeployedBIOSForBlade(string NodeIP)
+        {
+            return hostStateDB.getLastDeployedBIOSForBlade(NodeIP);
+        }
+
+        [WebMethod]
+        public resultCode rebootAndStartDeployingBIOSToBlade(string NodeIP, string BIOSXML)
+        {
+            string requestorIP = HttpContext.Current.Request.UserHostAddress;
+            return hostStateDB.rebootAndStartDeployingBIOSToBlade(NodeIP, requestorIP, BIOSXML);
+        }
+
+        [WebMethod]
+        public resultCode rebootAndStartReadingBIOSConfiguration(string NodeIP)
+        {
+            string requestorIP = HttpContext.Current.Request.UserHostAddress;
+            return hostStateDB.rebootAndStartReadingBIOSConfiguration(NodeIP, requestorIP);
+        }
+
+        [WebMethod]
+        public resultCode checkBIOSDeployProgress(string NodeIP)
+        {
+            return hostStateDB.checkBIOSWriteProgress(NodeIP);
+        }
+
+        [WebMethod]
+        public resultCodeAndBIOSConfig checkBIOSReadProgress(string NodeIP)
+        {
+            return hostStateDB.checkBIOSReadProgress(NodeIP);
+        }
+
     }
 }

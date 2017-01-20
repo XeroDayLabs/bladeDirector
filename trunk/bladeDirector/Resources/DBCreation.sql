@@ -4,7 +4,8 @@ create table bladeConfiguration(
     bladeIP unique,
 	currentSnapshot,
     iLOIP unique,
-    iLOPort unique
+    iLOPort unique,
+	currentlyHavingBIOSDeployed
 	);
 
 create table bladeOwnership(

@@ -41,13 +41,20 @@ namespace bladeDirector
             if (state == null)
             {
                 Response.Write("#!ipxe\r\n");
-                Response.Write("prompt No blade configured at this IP address\r\n");
+                Response.Write("prompt No blade configured at this IP address (" + srcIP + ")\r\n");
                 Response.Write("reboot\r\n");
                 hostStateDB.addLogEvent("IPXE script for blade " + srcIP + " requested, but blade is not configured");
                 return;
             }
 
-            string script = Properties.Resources.ipxeTemplate;
+            // Select the appropriate template
+            string script;
+            if (state.currentlyHavingBIOSDeployed)
+                script = Properties.Resources.ipxeTemplateForBIOS;
+            else
+                script = Properties.Resources.ipxeTemplate;
+
+            
 
             lock (state)
             {
@@ -65,8 +72,10 @@ namespace bladeDirector
                 script = script.Replace("{BLADE_SNAPSHOT}", hostStateDB.getCurrentSnapshotForBlade(srcIP));
             }
             Response.Write(script);
-            hostStateDB.addLogEvent("IPXE script for blade " + srcIP + " generated (owner " + state.currentOwner + ")");
-
+            if (state.currentlyHavingBIOSDeployed)
+                hostStateDB.addLogEvent("IPXE script for blade " + srcIP + " generated (BIOS setting mode)");
+            else
+                hostStateDB.addLogEvent("IPXE script for blade " + srcIP + " generated (owner " + state.currentOwner + ")");
         }
     }
 }

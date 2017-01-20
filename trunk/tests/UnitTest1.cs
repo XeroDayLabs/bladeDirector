@@ -1,8 +1,11 @@
 ﻿using System;
+using System.IO;
 using System.Linq;
 using System.Threading;
 using bladeDirector;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using bladeSpec = bladeDirector.bladeSpec;
+using resultCode = bladeDirector.resultCode;
 
 namespace tests
 {
@@ -12,7 +15,7 @@ namespace tests
         [TestMethod]
         public void canInitWithBladesAndGetListBack()
         {
-            bladeDirector.services.initWithBlades(new[] { "1.1.1.1", "2.2.2.2", "3.3.3.3" });
+            bladeDirector.services.initWithBlades(new[] {"1.1.1.1", "2.2.2.2", "3.3.3.3"});
 
             services uut = new bladeDirector.services();
 
@@ -27,9 +30,9 @@ namespace tests
         [TestMethod]
         public void canGetBladeSpec()
         {
-            bladeSpec spec1Expected = new bladeSpec("blade1ip", "blade1iscsiIP", "blade1ILOIP", 111, "..");
-            bladeSpec spec2Expected = new bladeSpec("blade2ip", "blade2iscsiIP", "blade2ILOIP", 222, "..");
-            bladeDirector.services.initWithBlades(new [] { spec1Expected, spec2Expected });
+            bladeSpec spec1Expected = new bladeSpec("blade1ip", "blade1iscsiIP", "blade1ILOIP", 111, "..", false);
+            bladeSpec spec2Expected = new bladeSpec("blade2ip", "blade2iscsiIP", "blade2ILOIP", 222, "..", false);
+            bladeDirector.services.initWithBlades(new[] {spec1Expected, spec2Expected});
 
             services uut = new bladeDirector.services();
 
@@ -43,7 +46,7 @@ namespace tests
         [TestMethod]
         public void canAllocateBlade()
         {
-            bladeDirector.services.initWithBlades(new[] { "1.1.1.1", "2.2.2.2", "3.3.3.3" });
+            bladeDirector.services.initWithBlades(new[] {"1.1.1.1", "2.2.2.2", "3.3.3.3"});
             services uut = new bladeDirector.services();
 
             Assert.AreEqual(resultCode.success.ToString(), uut.RequestNode("1.1.1.1", "192.168.1.1"));
@@ -51,11 +54,11 @@ namespace tests
             string allocated = uut.getBladesByAllocatedServer("192.168.1.1");
             Assert.IsTrue(allocated.Contains("1.1.1.1"), "String '" + allocated + "' does not contain IP we allocated");
         }
-        
+
         [TestMethod]
         public void willReAllocateNode()
         {
-            bladeDirector.services.initWithBlades(new[] { "1.1.1.1", "2.2.2.2", "3.3.3.3" });
+            bladeDirector.services.initWithBlades(new[] {"1.1.1.1", "2.2.2.2", "3.3.3.3"});
             services uut = new bladeDirector.services();
 
             Assert.AreEqual(resultCode.success.ToString(), uut.RequestNode("1.1.1.1", "192.168.1.1"));
@@ -81,7 +84,7 @@ namespace tests
         [TestMethod]
         public void willReAllocateNodeAfterTimeout()
         {
-            bladeDirector.services.initWithBlades(new[] { "1.1.1.1", "2.2.2.2", "3.3.3.3" });
+            bladeDirector.services.initWithBlades(new[] {"1.1.1.1", "2.2.2.2", "3.3.3.3"});
             services uut = new bladeDirector.services();
             hostStateDB.setKeepAliveTimeout(TimeSpan.FromSeconds(10));
 
@@ -123,7 +126,7 @@ namespace tests
         [TestMethod]
         public void willTimeoutOnNoKeepalives()
         {
-            bladeDirector.services.initWithBlades(new[] { "1.1.1.1" });
+            bladeDirector.services.initWithBlades(new[] {"1.1.1.1"});
             services uut = new bladeDirector.services();
             hostStateDB.setKeepAliveTimeout(TimeSpan.FromSeconds(10));
 
@@ -136,7 +139,7 @@ namespace tests
         [TestMethod]
         public void willNotTimeoutWhenWeSendKeepalives()
         {
-            bladeDirector.services.initWithBlades(new[] { "1.1.1.1" });
+            bladeDirector.services.initWithBlades(new[] {"1.1.1.1"});
             services uut = new bladeDirector.services();
             hostStateDB.setKeepAliveTimeout(TimeSpan.FromSeconds(10));
 
@@ -154,7 +157,7 @@ namespace tests
         [TestMethod]
         public void canSetBladeSnapshot()
         {
-            bladeDirector.services.initWithBlades(new[] { "blade1ip" });
+            bladeDirector.services.initWithBlades(new[] {"blade1ip"});
 
             services uut = new bladeDirector.services();
 
@@ -164,6 +167,6 @@ namespace tests
             Assert.AreEqual(resultCode.success, uut.selectSnapshotForBlade("blade1ip", "bb"));
             Assert.AreEqual("blade1ip-1.1.1.1-bb", uut.getCurrentSnapshotForBlade("blade1ip"));
         }
-    
+
     }
 }

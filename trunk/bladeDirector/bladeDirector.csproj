@@ -22,11 +22,19 @@
     <TargetFrameworkProfile />
   </PropertyGroup>
   <ItemGroup>
+    <Reference Include="DiffieHellman">
+      <HintPath>..\..\thirdparty\sharpssh\DiffieHellman.dll</HintPath>
+    </Reference>
     <Reference Include="Microsoft.CSharp" />
+    <Reference Include="Org.Mentalis.Security">
+      <HintPath>..\..\thirdparty\sharpssh\Org.Mentalis.Security.dll</HintPath>
+    </Reference>
     <Reference Include="System.Data.DataSetExtensions" />
     <Reference Include="System.Data.SQLite">
       <HintPath>..\..\thirdparty\sqlite\System.Data.SQLite.dll</HintPath>
     </Reference>
+    <Reference Include="System.Runtime.Serialization" />
+    <Reference Include="System.ServiceModel" />
     <Reference Include="System.Web.DynamicData" />
     <Reference Include="System.Web.Entity" />
     <Reference Include="System.Web.ApplicationServices" />
@@ -41,21 +49,31 @@
     <Reference Include="System.Web.Services" />
     <Reference Include="System.EnterpriseServices" />
     <Reference Include="System.Xml.Linq" />
+    <Reference Include="Tamir.SharpSSH">
+      <HintPath>..\..\thirdparty\sharpssh\Tamir.SharpSSH.dll</HintPath>
+    </Reference>
   </ItemGroup>
   <ItemGroup>
     <Content Include="..\..\thirdparty\sqlite\SQLite.Interop.dll">
       <Link>SQLite.Interop.dll</Link>
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
+    <Content Include="deploy\conrep.xml" />
     <Content Include="getIPXEScript.aspx" />
     <Content Include="Global.asax" />
     <Content Include="Resources\DBCreation.sql" />
+    <Content Include="deploy\applyBIOS.sh" />
+    <Content Include="deploy\conrep" />
+    <None Include="deploy\getBIOS.sh" />
+    <None Include="Resources\ipxeTemplateForBIOS.txt" />
     <Content Include="services.asmx" />
     <None Include="Resources\ipxeTemplate.txt" />
     <Content Include="status.aspx" />
     <Content Include="Web.config" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="bladeOwnership.cs" />
+    <Compile Include="bladeSpec.cs" />
     <Compile Include="Global.asax.cs">
       <DependentUpon>Global.asax</DependentUpon>
     </Compile>
@@ -109,7 +127,10 @@
     </EmbeddedResource>
   </ItemGroup>
   <ItemGroup>
-    <WCFMetadata Include="Service References\" />
+    <ProjectReference Include="..\..\thirdparty\hypervisors\trunk\hypervisors\hypervisors.csproj">
+      <Project>{47995DD9-9F78-4313-809D-55C515EAF89E}</Project>
+      <Name>hypervisors</Name>
+    </ProjectReference>
   </ItemGroup>
   <PropertyGroup>
     <VisualStudioVersion Condition="'$(VisualStudioVersion)' == ''">10.0</VisualStudioVersion>

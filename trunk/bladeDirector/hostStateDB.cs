@@ -1,11 +1,18 @@
 ﻿using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Data.SQLite;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Net;
+using System.Net.NetworkInformation;
+using System.Net.Sockets;
+using System.Text;
 using System.Threading;
 using System.Web;
-using System.Xml.Serialization;
+using hypervisors;
+using Tamir.SharpSsh;
 
 namespace bladeDirector
 {
@@ -18,7 +25,7 @@ namespace bladeDirector
         private static SQLiteConnection conn = null;
         public static string dbFilename;
 
-        //public static List<bladeOwnership> bladeStates;
+        private static ConcurrentDictionary<string, biosThreadState> biosUpdateState = new ConcurrentDictionary<string, biosThreadState>();
 
         public static void init(string basePath)
         {
@@ -557,168 +564,410 @@ namespace bladeDirector
         {
             lock (connLock)
             {
-                string sqlCommand = "update bladeConfiguration set currentSnapshot=$newShot " +
-                                    "where bladeIP = $nodeIP";
-                using (SQLiteCommand cmd = new SQLiteCommand(sqlCommand, conn))
+                bladeOwnership reqBlade = getBladeByIP(nodeIp);
+                if (reqBlade == null)
+                    return resultCode.bladeNotFound;
+                reqBlade.currentSnapshot = newShot;
+                return reqBlade.updateInDB(conn);
+            }
+        }
+
+        public static string getLastDeployedBIOSForBlade(string nodeIp)
+        {
+            lock (connLock)
+            {
+                bladeOwnership reqBlade = getBladeByIP(nodeIp);
+                if (reqBlade == null)
+                    return null;
+
+                return reqBlade.lastDeployedBIOS;
+            }
+        }
+
+        public static resultCode rebootAndStartDeployingBIOSToBlade(string nodeIp, string requestorIP, string biosxml)
+        {
+            lock (connLock)
+            {
+                // This one is more complex. We need to:
+                //  1) set this blade to boot into LTSP
+                //  2) start the blade
+                //  3) wait for it to boot
+                //  4) SSH into it, and run conrep to configure the BIOS.
+                bladeOwnership reqBlade = getBladeByIP(nodeIp);
+
+                if (reqBlade.currentOwner != requestorIP)
+                    return resultCode.bladeInUse;
+                
+                // Mark the blade as BIOS-flashing. This will mean that, next time it boots, it will be served the LTSP image.
+                reqBlade.currentlyHavingBIOSDeployed = true;
+                reqBlade.updateInDB(conn);
+
+                biosThreadState newState = new biosThreadState(nodeIp, reqBlade.iLOIP, biosxml);
+                //lock (newState)
                 {
-                    cmd.Parameters.AddWithValue("$nodeIP" , nodeIp);
-                    cmd.Parameters.AddWithValue("$newShot", newShot);
-                    if (cmd.ExecuteNonQuery() == 1)
-                        return resultCode.success;
+                    if (biosUpdateState.TryAdd(nodeIp, newState) == false)
+                    {
+                        // the key was already present. Maybe it's finished a previous request.
+                        if (checkBIOSWriteProgress(nodeIp) != resultCode.pending)
+                        {
+                            biosThreadState tmp;
+                            biosUpdateState.TryRemove(nodeIp, out tmp);
+                            if (biosUpdateState.TryAdd(nodeIp, newState) == false)
+                                return resultCode.genericFail;
+                        }
+                        else
+                        {
+                            return resultCode.alreadyInProgress;
+                        }
+                    }
+
+                    // otherwise, go ahead and spin up a new thread to handle this update.
+                    newState.onBootFinish = SetBIOS;
+                    newState.rebootThread = new Thread(ltspBootThread);
+                    newState.rebootThread.Name = "Booting " + nodeIp + " to LTSP";
+                    newState.rebootThread.Start(newState);
+                }
+
+                return resultCode.pending;
+            }
+        }
+
+        public static resultCode rebootAndStartReadingBIOSConfiguration(string nodeIp, string requestorIP)
+        {
+            lock (connLock)
+            {
+                bladeOwnership reqBlade = getBladeByIP(nodeIp);
+
+                if (reqBlade.currentOwner != requestorIP)
+                    return resultCode.bladeInUse;
+
+                // Mark the blade as BIOS-flashing. This will mean that, next time it boots, it will be served the LTSP image.
+                reqBlade.currentlyHavingBIOSDeployed = true;
+                reqBlade.updateInDB(conn);
+
+                biosThreadState newState = new biosThreadState(nodeIp, reqBlade.iLOIP, null);
+                if (biosUpdateState.TryAdd(nodeIp, newState) == false)
+                {
+                    // the key was already present. Maybe it's finished a previous request.
+                    if (checkBIOSWriteProgress(nodeIp) != resultCode.pending)
+                    {
+                        biosThreadState tmp;
+                        biosUpdateState.TryRemove(nodeIp, out tmp);
+                        if (biosUpdateState.TryAdd(nodeIp, newState) == false)
+                            return resultCode.genericFail;
+                    }
+                    else
+                    {
+                        return resultCode.alreadyInProgress;
+                    }
+                }
+
+                // otherwise, go ahead and spin up a new thread to handle this update.
+                newState.onBootFinish = GetBIOS;
+                newState.rebootThread = new Thread(ltspBootThread);
+                newState.rebootThread.Name = "Booting " + nodeIp + " to LTSP";
+                newState.rebootThread.Start(newState);
+
+                return resultCode.pending;
+            }
+        }
+
+        public static resultCode checkBIOSWriteProgress(string nodeIp)
+        {
+            lock (connLock)
+            {
+                biosThreadState newState;
+                if (biosUpdateState.TryGetValue(nodeIp, out newState) == false)
+                    return resultCode.bladeNotFound;
+
+                if (newState.isFinished)
+                    return newState.result;
+                else
+                    return resultCode.pending;
+            }
+        }
+
+        public static resultCodeAndBIOSConfig checkBIOSReadProgress(string nodeIp)
+        {
+            lock (connLock)
+            {
+                biosThreadState newState;
+                if (biosUpdateState.TryGetValue(nodeIp, out newState) == false)
+                    return new resultCodeAndBIOSConfig( resultCode.bladeNotFound );
+
+                if (newState.isFinished)
+                    return new resultCodeAndBIOSConfig(newState);
+                else
+                    return new resultCodeAndBIOSConfig(resultCode.pending );
+            }
+        }
+
+        private static void ltspBootThread(Object o)
+        {
+            biosThreadState param = (biosThreadState)o;
+            param.result = resultCode.genericFail;
+            _ltspBootThreadStart(param);
+        }
+
+        private static void _ltspBootThreadStart(biosThreadState param)
+        {
+            // Power cycle it
+            hypervisor_iLo_HTTP hyp = new hypervisor_iLo_HTTP(param.iLoIP, Properties.Settings.Default.iloUsername, Properties.Settings.Default.iloPassword);
+            hyp.connect();
+            hyp.powerOff();
+            hyp.powerOn();
+
+            // Wait for it to boot.  Note that we don't ping the client repeatedly here - since the Ping class can cause 
+            // a BSoD.. ;_; Instead, we wait for port 22 (SSH) to be open.
+            param.connectDeadline = DateTime.Now + TimeSpan.FromMinutes(5);
+            param.biosUpdateSocket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
+            param.biosUpdateSocket.BeginConnect(new IPEndPoint(IPAddress.Parse(param.nodeIp), 22), param.onBootFinish, param);
+        }
+
+        private static List<string> copyDeploymentFilesToBlade(string nodeIP, string biosConfigFile)
+        {
+            List<string> toRet = new List<string>(5);
+
+            string applyBIOSFile = null;
+            string getBIOSFile = null;
+            string conrepFile = null;
+            string conrepXmlFile = null;
+            string newBiosFile = null;
+
+            try
+            {
+                Scp scp = new Tamir.SharpSsh.Scp(nodeIP, Properties.Settings.Default.ltspUsername, Properties.Settings.Default.ltspPassword);
+                scp.Connect();
+                applyBIOSFile = writeTempFile(Properties.Resources.applyBIOS);
+                scp.Put(applyBIOSFile, "applyBIOS.sh");
+                getBIOSFile = writeTempFile(Properties.Resources.getBIOS);
+                scp.Put(getBIOSFile, "getBIOS.sh");
+                conrepFile = writeTempFile(Properties.Resources.conrep);
+                scp.Put(conrepFile, "conrep");
+                conrepXmlFile = writeTempFile(Properties.Resources.conrep_xml);
+                scp.Put(conrepXmlFile, "conrep.xml");
+                if (biosConfigFile != null)
+                {
+                    newBiosFile = writeTempFile(Encoding.ASCII.GetBytes(biosConfigFile));
+                    scp.Put(newBiosFile, "newbios.xml");
                 }
             }
-            return resultCode.genericFail;
+            finally
+            {
+                foreach (string filename in new[] {applyBIOSFile, getBIOSFile, conrepFile, conrepXmlFile, newBiosFile})
+                {
+                    if (filename != null)
+                        toRet.Add(filename);
+                }
+
+            }
+            return toRet;
+        }
+
+        private static void GetBIOS(IAsyncResult ar)
+        {
+            biosThreadState state = (biosThreadState)ar.AsyncState;
+            if (retryIfFailedConnect(ar, state))
+                return;
+
+            List<string> tempFilesToCleanUp = null;
+            try
+            {
+                tempFilesToCleanUp = copyDeploymentFilesToBlade(state.nodeIp, null);
+
+                SshExec exec = new SshExec(state.nodeIp, Properties.Settings.Default.ltspUsername, Properties.Settings.Default.ltspPassword);
+                exec.Connect();
+                string stderr = String.Empty;
+                string stdout = String.Empty;
+                int returnCode = exec.RunCommand("bash ~/getBIOS.sh", ref stdout, ref stderr);
+
+                if (returnCode != 0)
+                {
+                    addLogEvent(string.Format("Reading BIOS on {0} resulted in error code {1}", state.nodeIp, returnCode));
+                    Debug.WriteLine("Faied bios deploy, error code " + returnCode);
+                    Debug.WriteLine("stdout " + stdout);
+                    Debug.WriteLine("stderr " + stderr);
+                    state.result = resultCode.genericFail;
+                }
+                else
+                {
+                    addLogEvent(string.Format("Deployed BIOS successfully to {0}", state.nodeIp));
+                    state.result = resultCode.success;
+                }
+
+                // Retrieve the output
+                Scp scp = new Tamir.SharpSsh.Scp(state.nodeIp, Properties.Settings.Default.ltspUsername, Properties.Settings.Default.ltspPassword);
+                scp.Connect();
+                string existingConfig = Path.GetTempFileName();
+                state.biosxml = null;
+                try
+                {
+                    scp.Get("currentbios.xml", existingConfig);
+                    state.biosxml = File.ReadAllText(existingConfig);
+                }
+                finally 
+                {
+                    deleteWithRetry(existingConfig);
+                }
+
+                // All done, now we can power off and return.
+                hypervisor_iLo_HTTP hyp = new hypervisor_iLo_HTTP(state.iLoIP, Properties.Settings.Default.iloUsername, Properties.Settings.Default.iloPassword);
+                hyp.connect();
+                hyp.powerOff();
+                lock (connLock)
+                {
+                    bladeOwnership reqBlade = getBladeByIP(state.nodeIp);
+                    reqBlade.currentlyHavingBIOSDeployed = false;
+                    reqBlade.updateInDB(conn);
+                }
+                state.isFinished = true;
+
+            }
+            finally
+            {
+                foreach (string filename in tempFilesToCleanUp)
+                    deleteWithRetry(filename);
+            }
+        }
+
+        private static void SetBIOS(IAsyncResult ar)
+        {
+            biosThreadState state = (biosThreadState) ar.AsyncState;
+            if (retryIfFailedConnect(ar, state))
+                return;
+
+            List<string> tempFilesToCleanUp = null;
+            try
+            {
+                // Okay, now the box is up :)
+                // SCP some needed files to it.
+                tempFilesToCleanUp = copyDeploymentFilesToBlade(state.nodeIp, state.biosxml);
+
+                // And execute the command to deploy the BIOS via SSH.
+                SshExec exec = new SshExec(state.nodeIp, Properties.Settings.Default.ltspUsername, Properties.Settings.Default.ltspPassword);
+                exec.Connect();
+                string stderr = String.Empty;
+                string stdout = String.Empty;
+                int returnCode = exec.RunCommand("bash ~/applyBIOS.sh", ref stdout, ref stderr);
+
+                if (returnCode != 0)
+                {
+                    addLogEvent(string.Format("Deploying BIOS on {0} resulted in error code {1}", state.nodeIp, returnCode));
+                    Debug.WriteLine("Faied bios deploy, error code " + returnCode);
+                    Debug.WriteLine("stdout " + stdout);
+                    Debug.WriteLine("stderr " + stderr);
+                    state.result = resultCode.genericFail;
+                }
+                else
+                {
+                    addLogEvent(string.Format("Deployed BIOS successfully to {0}", state.nodeIp));
+                    state.result = resultCode.success;
+                }
+
+                // All done, now we can power off and return.
+                hypervisor_iLo_HTTP hyp = new hypervisor_iLo_HTTP(state.iLoIP, Properties.Settings.Default.iloUsername, Properties.Settings.Default.iloPassword);
+                hyp.connect();
+                hyp.powerOff();
+                lock (connLock)
+                {
+                    bladeOwnership reqBlade = getBladeByIP(state.nodeIp);
+                    reqBlade.currentlyHavingBIOSDeployed = false;
+                    reqBlade.updateInDB(conn);
+                }
+                state.isFinished = true;
+            }
+            catch (Exception e)
+            {
+                addLogEvent(string.Format("Deploying BIOS on {0} resulted in exception {1}", state.nodeIp, e.ToString()));
+                state.result = resultCode.genericFail;
+                state.isFinished = true;
+            }
+            finally
+            {
+                // Clean up our temp files (with a retry in case they are in use right now)
+                foreach (string filename in tempFilesToCleanUp)
+                    deleteWithRetry(filename);
+            }
+        }
+
+        private static void deleteWithRetry(string filename)
+        {
+            while (File.Exists(filename))
+            {
+                DateTime deadline = DateTime.Now + TimeSpan.FromMinutes(1);
+                try
+                {
+                    File.Delete(filename);
+                }
+                catch (InvalidOperationException)
+                {
+                    if (DateTime.Now > deadline)
+                        throw;
+                    Thread.Sleep(100);
+                }
+            }
+        }
+
+        private static bool retryIfFailedConnect(IAsyncResult ar, biosThreadState state)
+        {
+            try
+            {
+                state.biosUpdateSocket.EndConnect(ar);
+            }
+            catch (SocketException)
+            {
+                // We failed to connect. Either report failure (if our timeout has expired), or start another connection attempt.
+                if (DateTime.Now > state.connectDeadline)
+                {
+                    state.result = resultCode.genericFail;
+                    state.isFinished = true;
+                    lock (connLock)
+                    {
+                        bladeOwnership reqBlade = getBladeByIP(state.nodeIp);
+                        reqBlade.currentlyHavingBIOSDeployed = false;
+                        reqBlade.updateInDB(conn);
+
+                        state.result = resultCode.genericFail;
+                        state.isFinished = true;
+                    }
+                }
+                // Otherwise, just keep retrying.
+                state.biosUpdateSocket.BeginConnect(new IPEndPoint(IPAddress.Parse(state.nodeIp), 22), state.onBootFinish, state);
+                return true;
+            }
+            return false;
+        }
+
+        private static string writeTempFile(byte[] fileContents)
+        {
+            string filename = Path.GetTempFileName();
+            using (FileStream f = File.OpenWrite(filename))
+            {
+                byte[] biosAsBytes = fileContents;
+                f.Write(biosAsBytes, 0, biosAsBytes.Length);
+            }
+            return filename;
         }
     }
 
-    [XmlInclude(typeof(bladeOwnership))]
-    public class bladeSpec
+    public class biosThreadState
     {
-        // If you add fields, don't forget to add them to the Equals() override too.
-        public string iscsiIP;
-        public string bladeIP;
-        public string iLOIP;
-        public ushort iLOPort;
-        public string currentSnapshot;
+        public string biosxml;
+        public string iLoIP;
+        public string nodeIp;
+        public bool isFinished;
+        public resultCode result;
+        public Socket biosUpdateSocket;
+        public DateTime connectDeadline;
+        public Thread rebootThread;
+        public AsyncCallback onBootFinish;
 
-        public bladeSpec()
+        public biosThreadState(string nodeIp, string iLoIP, string biosxml)
         {
-            // For XML serialisation
-        }
-
-        public bladeSpec(string newBladeIP, string newISCSIIP, string newILOIP, ushort newILOPort, string newCurrentSnapshot)
-        {
-            iscsiIP = newISCSIIP;
-            bladeIP = newBladeIP;
-            iLOPort = newILOPort;
-            iLOIP = newILOIP;
-            currentSnapshot = newCurrentSnapshot;
-        }
-
-        public bladeSpec clone()
-        {
-            return new bladeSpec(bladeIP, iscsiIP, iLOIP, iLOPort, currentSnapshot);
-        }
-
-        public override bool Equals(object obj)
-        {
-            bladeSpec compareTo = obj as bladeSpec;
-            if (compareTo == null)
-                return false;
-
-            if (iscsiIP != compareTo.iscsiIP)
-                return false;
-            if (bladeIP != compareTo.bladeIP)
-                return false;
-            if (iLOIP != compareTo.iLOIP)
-                return false;
-            if (iLOPort != compareTo.iLOPort)
-                return false;
-            if (currentSnapshot != compareTo.currentSnapshot)
-                return false;
-
-            return true;
-        }
-    }
-
-    [XmlInclude(typeof (bladeSpec))]
-    public class bladeOwnership : bladeSpec
-    {
-        public long bladeID;
-        public bladeStatus state = bladeStatus.unused;
-        public string currentOwner = null;
-        public string nextOwner = null;
-        public DateTime lastKeepAlive;
-
-        public bladeOwnership()
-        {
-            // For xml ser
-        }
-
-        public bladeOwnership(bladeSpec spec)
-            : base(spec.bladeIP, spec.iscsiIP, spec.iLOIP, spec.iLOPort, spec.currentSnapshot)
-        {
-            
-        }
-
-        public bladeOwnership(string newIPAddress, string newICSIIP, string newILOIP, ushort newILOPort, string newCurrentSnapshot)
-            : base(newIPAddress, newICSIIP, newILOIP, newILOPort, newCurrentSnapshot)
-        {
-        }
-
-        public bladeOwnership(SQLiteDataReader reader)
-        {
-            iscsiIP = (string)reader["iscsiIP"];
-            bladeID = (long)reader["id"];
-            bladeIP = (string)reader["bladeIP"];
-            iLOPort = ushort.Parse(reader["iLOPort"].ToString());
-            iLOIP = (string)reader["iLOIP"];
-
-            long enumIdx = (long)reader["state"];
-            state = (bladeStatus) ((int)enumIdx);
-            if (reader["currentOwner"] is System.DBNull)
-                currentOwner = null;
-            else
-                currentOwner = (string)reader["currentOwner"];
-            if (reader["nextOwner"] is System.DBNull)
-                nextOwner = null;
-            else
-                nextOwner = (string)reader["nextOwner"];
-
-            if (reader["currentSnapshot"] is System.DBNull)
-                currentSnapshot = "clean";
-            else
-                currentSnapshot = (string) reader["currentSnapshot"];
-
-            lastKeepAlive = DateTime.Parse((string)reader["lastKeepAlive"]);
-        }
-
-        public void createInDB(SQLiteConnection conn)
-        {
-
-            string cmd_bladeConfig = "insert into bladeConfiguration" +
-                                "(iscsiIP, bladeIP, iLoIP, iLOPort, currentSnapshot)" +
-                                " VALUES " +
-                                "($iscsiIP, $bladeIP, $iLoIP, $iLOPort, $currentSnapshot)";
-            using (SQLiteCommand cmd = new SQLiteCommand(cmd_bladeConfig, conn))
-            {
-                cmd.Parameters.AddWithValue("$iscsiIP", iscsiIP);
-                cmd.Parameters.AddWithValue("$bladeIP", bladeIP);
-                cmd.Parameters.AddWithValue("$iLoIP", iLOIP);
-                cmd.Parameters.AddWithValue("$iLOPort", iLOPort);
-                cmd.Parameters.AddWithValue("$currentSnapshot", currentSnapshot);
-                cmd.ExecuteNonQuery();
-                bladeID = (long)conn.LastInsertRowId;
-            }
-            
-            string cmd_bladeOwnership = "insert into bladeOwnership " +
-                                "(bladeConfigID, state, currentOwner, lastKeepAlive)" +
-                                " VALUES " +
-                                "($bladeConfigID, $state, $currentOwner, $lastKeepAlive)";
-            using (SQLiteCommand cmd = new SQLiteCommand(cmd_bladeOwnership, conn))
-            {
-                cmd.Parameters.AddWithValue("$bladeConfigID", bladeID);
-                cmd.Parameters.AddWithValue("$state", state);
-                cmd.Parameters.AddWithValue("$currentOwner", currentOwner);
-                cmd.Parameters.AddWithValue("$lastKeepAlive", lastKeepAlive);
-                cmd.ExecuteNonQuery();
-            }
-        }
-
-        public void updateInDB(SQLiteConnection conn)
-        {
-            string sqlCommand = "update bladeOwnership set " +
-                                "state = $state, currentOwner = $currentOwner, nextOwner = $nextOwner, lastKeepAlive = $lastKeepAlive " +
-                                "where bladeConfigID = $bladeID";
-            using (SQLiteCommand cmd = new SQLiteCommand(sqlCommand, conn))
-            {
-                cmd.Parameters.AddWithValue("$bladeID", bladeID);
-                cmd.Parameters.AddWithValue("$state", state);
-                cmd.Parameters.AddWithValue("$currentOwner", currentOwner);
-                cmd.Parameters.AddWithValue("$nextOwner", nextOwner);
-                cmd.Parameters.AddWithValue("$lastKeepAlive", lastKeepAlive);
-                cmd.ExecuteNonQuery();
-            }
+            this.nodeIp = nodeIp;
+            this.iLoIP = iLoIP;
+            this.biosxml = biosxml;
+            isFinished = false;
         }
     }
 
@@ -744,6 +993,30 @@ namespace bladeDirector
         public string bladeName;
     }
 
+    public class resultCodeAndBIOSConfig
+    {
+        public resultCode code;
+        public string BIOSConfig;
+
+        // For XML de/ser
+        // ReSharper disable once UnusedMember.Global
+        public resultCodeAndBIOSConfig()
+        {
+        }
+
+        public resultCodeAndBIOSConfig(resultCode newState)
+        {
+            this.code = newState;
+            this.BIOSConfig = null;
+        }
+
+        public resultCodeAndBIOSConfig(biosThreadState state)
+        {
+            this.code = state.result;
+            this.BIOSConfig = state.biosxml;
+        }
+    }
+
     public enum resultCode
     {
         success,
@@ -751,6 +1024,7 @@ namespace bladeDirector
         bladeInUse,
         bladeQueueFull,
         pending,
+        alreadyInProgress,
         genericFail
     }
 }

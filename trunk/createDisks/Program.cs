@@ -34,6 +34,21 @@ namespace createDisks
     {
         static void Main(string[] args)
         {
+            bool shouldDelete = false;
+            if (args.Length > 0)
+            {
+                if (args[0] == "-d")
+                {
+                    shouldDelete = true;
+                }
+                else
+                {
+                    Console.Write("Usage: createDisks <-d>\n");
+                    Console.Write("   -d: Delete iSCSI entries and snapshots (don't touch base image)\n");
+                    Console.Write("By default, will create new images.");
+                }
+            }
+
             List<itemToAdd> itemsToAdd = new List<itemToAdd>();
 
             string[] serverIPs = Properties.Settings.Default.debugServers.Split(',');
@@ -63,7 +78,51 @@ namespace createDisks
                 }
             }
 
+            if (shouldDelete)
+                deleteBlades(itemsToAdd.ToArray());
+            else
+                addBlades(itemsToAdd.ToArray());        
+        }
 
+        private static void deleteBlades(itemToAdd[] blades)
+        {
+            string nasIP = Properties.Settings.Default.iscsiServerIP;
+            string nasUsername = Properties.Settings.Default.iscsiServerUsername;
+            string nasPassword = Properties.Settings.Default.iscsiServerPassword;
+            Console.WriteLine("Connecting to NAS at " + nasIP);
+            FreeNAS nas = new FreeNAS(nasIP, nasUsername, nasPassword);
+
+            // Get some data from the NAS, so we don't have to keep querying it..
+            List<snapshot> snapshots = nas.getSnapshots();
+            List<iscsiTarget> iscsiTargets = nas.getISCSITargets();
+            List<iscsiExtent> iscsiExtents = nas.getExtents();
+            List<iscsiTargetToExtentMapping> tgtToExts = nas.getTargetToExtents();
+            List<volume> volumes = nas.getVolumes();
+
+            foreach (itemToAdd item in blades)
+            {
+                // Delete target-to-extent, target, and extent
+                iscsiTarget tgt = iscsiTargets.SingleOrDefault(x => x.targetName == item.cloneName);
+                if (tgt == null)
+                    continue;
+                iscsiTargetToExtentMapping tgtToExt = tgtToExts.Single(x => x.iscsi_target == tgt.id);
+                iscsiExtent ext = iscsiExtents.Single(x => x.id == tgtToExt.iscsi_extent);
+                nas.deleteISCSITargetToExtent(tgtToExt);
+                nas.deleteISCSITarget(tgt);
+                nas.deleteISCSIExtent(ext);
+
+                // Now delete the snapshot.
+                snapshot toDelete = snapshots.SingleOrDefault(x => x.name.Equals(item.cloneName, StringComparison.CurrentCultureIgnoreCase));
+                if (toDelete != null)
+                    nas.deleteSnapshot(toDelete);
+                // we can't delete the volume, because the FreeNAS API doesn't work properly ;_;
+                //volume vol = nas.findVolumeByName(volumes, item.cloneName);
+                //nas.deleteZVol(volumes.SingleOrDefault(), vol);
+            }
+        }
+
+        static void addBlades(itemToAdd[] itemsToAdd)
+        {
             string nasIP = Properties.Settings.Default.iscsiServerIP;
             string nasUsername = Properties.Settings.Default.iscsiServerUsername;
             string nasPassword = Properties.Settings.Default.iscsiServerPassword;
@@ -81,7 +140,7 @@ namespace createDisks
             createClonesAndExportViaiSCSI(nas, toClone, toCloneVolume, itemsToAdd);
 
             // Next, we must prepare each clone. Do this in parallel, per-server.
-            foreach (string serverIP in serverIPs)
+            foreach (string serverIP in itemsToAdd.Select(x => x.serverIP) )
             {
                 itemToAdd[] toPrep = itemsToAdd.Where(x => x.serverIP == serverIP).ToArray();
                 Task[] toWaitOn = new Task[toPrep.Length];
@@ -158,7 +217,7 @@ namespace createDisks
             nas.createSnapshot(toCloneVolume + "/" + itemToAdd.cloneName, itemToAdd.snapshotName);
         }
         
-        private static void createClonesAndExportViaiSCSI(FreeNAS nas, snapshot toClone, string toCloneVolume, List<itemToAdd> itemsToAdd)
+        private static void createClonesAndExportViaiSCSI(FreeNAS nas, snapshot toClone, string toCloneVolume, itemToAdd[] itemsToAdd)
         {
             // Now we can create snapshots
             foreach (itemToAdd itemToAdd in itemsToAdd)
@@ -295,10 +354,17 @@ namespace createDisks
             doReq(url, "DELETE", HttpStatusCode.NoContent);
         }
 
-        private void deleteZVol(volume parent, volume toDelete)
+        public void deleteZVol(volume parent, volume toDelete)
         {
-            string url = String.Format("http://{0}/api/v1.0/storage/volume/{1}/zvols/{2}", _serverIp, parent.name, toDelete.name);
+            string url = String.Format("http://{0}/api/v1.0/storage/volume/{1}/zvol/{2}/", _serverIp, parent.name, Uri.EscapeDataString(toDelete.name));
             doReq(url, "DELETE", HttpStatusCode.NoContent);
+        }
+
+        public void deleteVolume(volume toDelete)
+        {
+            string url = String.Format("http://{0}/api/v1.0/storage/volume/{1}/", _serverIp, toDelete.id);
+            string payload = "{ \"destroy\": true, \"cascade\": true} ";
+            doReq(url, "DELETE", HttpStatusCode.NoContent, payload);
         }
 
         public void deleteISCSIExtent(iscsiExtent extent)
@@ -311,6 +377,13 @@ namespace createDisks
         {
             string HTTPResponse = doReq("http://" + _serverIp + "/api/v1.0/storage/volume", "get", HttpStatusCode.OK).text;
             return JsonConvert.DeserializeObject<List<volume>>(HTTPResponse);
+        }
+
+        public zvol getVolume(volume parent)
+        {
+            string url = String.Format("http://{0}/api/v1.0/storage/volume/{1}", _serverIp, parent.id);
+            string HTTPResponse = doReq(url, "get", HttpStatusCode.OK).text;
+            return JsonConvert.DeserializeObject<zvol>(HTTPResponse);
         }
 
         public void cloneSnapshot(snapshot snapshot, string path)
@@ -379,7 +452,15 @@ namespace createDisks
             return JsonConvert.DeserializeObject<snapshot>(HTTPResponse);
         }
 
-        public void rollbackSnapshot(snapshot shotToRestore) //, volume parentVolume, volume clone)
+        public snapshot deleteSnapshot(snapshot toDelete)
+        {
+            string name = toDelete.fullname;
+            name = Uri.EscapeDataString(name);
+            string HTTPResponse = doReq("http://" + _serverIp + "/api/v1.0/storage/snapshot/" + name, "DELETE", HttpStatusCode.NoContent).text;
+            return JsonConvert.DeserializeObject<snapshot>(HTTPResponse);
+        }
+
+        public void rollbackSnapshot(snapshot shotToRestore)
         {
             // Oh no, FreeNAS doesn't export the 'rollback' command via the API! :( We need to log into the web UI and faff with 
             // that in order to rollback instead.
@@ -545,6 +626,21 @@ namespace createDisks
             string HTTPResponse = doReq("http://" + _serverIp + "/api/v1.0/services/iscsi/targetgroup/?format=json", "get", HttpStatusCode.OK).text;
             return JsonConvert.DeserializeObject<List<targetGroup>>(HTTPResponse);
         }
+    }
+
+    public class zvol
+    {
+        [JsonProperty("name")]
+        public string name { get; set; }
+
+        [JsonProperty("volsize")]
+        public int volSize { get; set; }
+
+        [JsonProperty("id")]
+        public int id { get; set; }
+
+        [JsonProperty("children")]
+        public zvol[] children { get; set; }
     }
 
     public class targetGroup
