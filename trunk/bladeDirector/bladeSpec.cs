@@ -1,4 +1,5 @@
 using System.Data.SQLite;
+using System.Runtime.InteropServices;
 using System.Xml.Serialization;
 
 namespace bladeDirector
@@ -13,13 +14,14 @@ namespace bladeDirector
         public ushort iLOPort;
         public string currentSnapshot;
         public bool currentlyHavingBIOSDeployed = false;
+        public string lastDeployedBIOS = null;
 
         public bladeSpec()
         {
             // For XML serialisation
         }
 
-        public bladeSpec(string newBladeIP, string newISCSIIP, string newILOIP, ushort newILOPort, string newCurrentSnapshot, bool newCurrentlyHavingBIOSDeployed)
+        public bladeSpec(string newBladeIP, string newISCSIIP, string newILOIP, ushort newILOPort, string newCurrentSnapshot, bool newCurrentlyHavingBIOSDeployed, string newCurrentBIOS)
         {
             iscsiIP = newISCSIIP;
             bladeIP = newBladeIP;
@@ -27,7 +29,27 @@ namespace bladeDirector
             iLOIP = newILOIP;
             currentSnapshot = newCurrentSnapshot;
             currentlyHavingBIOSDeployed = newCurrentlyHavingBIOSDeployed;
+            lastDeployedBIOS = newCurrentBIOS;
         }
+
+        protected bladeSpec(SQLiteDataReader reader)
+        {
+            iscsiIP = (string)reader["iscsiIP"];
+            bladeIP = (string)reader["bladeIP"];
+            iLOPort = ushort.Parse(reader["iLOPort"].ToString());
+            iLOIP = (string)reader["iLOIP"];
+            if (reader["currentSnapshot"] is System.DBNull)
+                currentSnapshot = "clean";
+            else
+                currentSnapshot = (string)reader["currentSnapshot"];
+
+            currentlyHavingBIOSDeployed = (long)reader["currentlyHavingBIOSDeployed"] != 0;
+
+            if (reader["lastDeployedBIOS"] is System.DBNull)
+                lastDeployedBIOS = null;
+            else
+                lastDeployedBIOS = (string)reader["lastDeployedBIOS"];
+}
 
         public override bool Equals(object obj)
         {
@@ -55,17 +77,38 @@ namespace bladeDirector
         {
             string cmdConfiguration = "update bladeConfiguration set " +
                 " currentSnapshot=$currentSnapshot, " +
-                " currentlyHavingBIOSDeployed=$currentlyHavingBIOSDeployed " +
+                " currentlyHavingBIOSDeployed=$currentlyHavingBIOSDeployed, " +
+                " lastDeployedBIOS=$lastDeployedBIOS " +
                 " where bladeIP = bladeIP";
             using (SQLiteCommand cmd = new SQLiteCommand(cmdConfiguration, conn))
             {
-                cmd.Parameters.AddWithValue("$currentSnapshot", currentSnapshot);
+                cmd.Parameters.AddWithValue("currentSnapshot", currentSnapshot);
                 cmd.Parameters.AddWithValue("currentlyHavingBIOSDeployed", currentlyHavingBIOSDeployed);
                 cmd.Parameters.AddWithValue("bladeIP", bladeIP);
-                if (cmd.ExecuteNonQuery() == 1)
-                    return resultCode.success;
+                cmd.Parameters.AddWithValue("lastDeployedBIOS", lastDeployedBIOS);
+                cmd.ExecuteNonQuery();
             }
-            return resultCode.genericFail;
+            return resultCode.success;
+        }
+
+        protected long createInDB(SQLiteConnection conn)
+        {
+            string cmd_bladeConfig = "insert into bladeConfiguration" +
+                                     "(iscsiIP, bladeIP, iLoIP, iLOPort, currentSnapshot, currentlyHavingBIOSDeployed, lastDeployedBIOS)" +
+                                     " VALUES " +
+                                     "($iscsiIP, $bladeIP, $iLoIP, $iLOPort, $currentSnapshot, $currentlyHavingBIOSDeployed, $lastDeployedBIOS)";
+            using (SQLiteCommand cmd = new SQLiteCommand(cmd_bladeConfig, conn))
+            {
+                cmd.Parameters.AddWithValue("$iscsiIP", iscsiIP);
+                cmd.Parameters.AddWithValue("$bladeIP", bladeIP);
+                cmd.Parameters.AddWithValue("$iLoIP", iLOIP);
+                cmd.Parameters.AddWithValue("$iLOPort", iLOPort);
+                cmd.Parameters.AddWithValue("$currentSnapshot", currentSnapshot);
+                cmd.Parameters.AddWithValue("$currentlyHavingBIOSDeployed", currentlyHavingBIOSDeployed ? 1 : 0);
+                cmd.Parameters.AddWithValue("$lastDeployedBIOS", lastDeployedBIOS);
+                cmd.ExecuteNonQuery();
+                return (long)conn.LastInsertRowId;
+            }            
         }
     }
 }

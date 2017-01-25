@@ -53,9 +53,7 @@ namespace bladeDirector
                 script = Properties.Resources.ipxeTemplateForBIOS;
             else
                 script = Properties.Resources.ipxeTemplate;
-
             
-
             lock (state)
             {
                 if (state.state == bladeStatus.unused)

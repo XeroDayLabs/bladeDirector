@@ -11,6 +11,7 @@ using System.Net.Sockets;
 using System.Text;
 using System.Threading;
 using System.Web;
+using System.Web.UI.WebControls;
 using hypervisors;
 using Tamir.SharpSsh;
 
@@ -308,7 +309,7 @@ namespace bladeDirector
             bladeSpec[] specs = new bladeSpec[bladeIPs.Length];
             int n = 0;
             foreach (string bladeIP in bladeIPs)
-                specs[n++] = new bladeOwnership(bladeIP, n.ToString(), n.ToString(), (ushort)n, null);
+                specs[n++] = new bladeOwnership(bladeIP, n.ToString(), n.ToString(), (ushort)n, null, null);
 
             initWithBlades(specs);
         }
@@ -327,7 +328,7 @@ namespace bladeDirector
 
         public static void addNode(bladeSpec spec)
         {
-            bladeOwnership newOwnership = new bladeOwnership(spec.bladeIP, spec.iscsiIP, spec.iLOIP, spec.iLOPort, spec.currentSnapshot);
+            bladeOwnership newOwnership = new bladeOwnership(spec.bladeIP, spec.iscsiIP, spec.iLOIP, spec.iLOPort, spec.currentSnapshot, spec.lastDeployedBIOS);
             newOwnership.currentOwner = null;
             newOwnership.nextOwner = null;
             newOwnership.lastKeepAlive = DateTime.Now;
@@ -374,7 +375,7 @@ namespace bladeDirector
             }
         }
 
-        public static resultCode releaseBlade(string NodeIP, string RequestorIP)
+        public static resultCode releaseBlade(string NodeIP, string RequestorIP, bool force = false)
         {
             lock (connLock)
             {
@@ -394,10 +395,13 @@ namespace bladeDirector
 
                         bladeOwnership reqBlade = new bladeOwnership(reader);
 
-                        if (reqBlade.currentOwner != RequestorIP)
+                        if (!force)
                         {
-                            addLogEvent("Requestor " + RequestorIP + " attempted to release blade " + NodeIP + " (failure: blade is not owned by requestor)");
-                            return resultCode.bladeInUse;
+                            if (reqBlade.currentOwner != RequestorIP)
+                            {
+                                addLogEvent("Requestor " + RequestorIP + " attempted to release blade " + NodeIP + " (failure: blade is not owned by requestor)");
+                                return resultCode.bladeInUse;
+                            }
                         }
 
                         // If there's no-one waiting, just set it to idle.
@@ -588,15 +592,18 @@ namespace bladeDirector
         {
             lock (connLock)
             {
-                // This one is more complex. We need to:
-                //  1) set this blade to boot into LTSP
-                //  2) start the blade
-                //  3) wait for it to boot
-                //  4) SSH into it, and run conrep to configure the BIOS.
                 bladeOwnership reqBlade = getBladeByIP(nodeIp);
 
                 if (reqBlade.currentOwner != requestorIP)
                     return resultCode.bladeInUse;
+                // First, check if this BIOS is already deployed.
+                if (reqBlade.lastDeployedBIOS == biosxml)
+                    return resultCode.noNeedLah;
+                //  We need to:
+                //  1) set this blade to boot into LTSP
+                //  2) start the blade
+                //  3) wait for it to boot
+                //  4) SSH into it, and run conrep to configure the BIOS.
                 
                 // Mark the blade as BIOS-flashing. This will mean that, next time it boots, it will be served the LTSP image.
                 reqBlade.currentlyHavingBIOSDeployed = true;
@@ -680,10 +687,14 @@ namespace bladeDirector
                 if (biosUpdateState.TryGetValue(nodeIp, out newState) == false)
                     return resultCode.bladeNotFound;
 
-                if (newState.isFinished)
-                    return newState.result;
-                else
+                if (!newState.isFinished)
                     return resultCode.pending;
+                
+                if (newState.result == resultCode.success)
+                {
+                    bladeOwnership bladeStatus = getBladeByIP(nodeIp);
+                }
+                return newState.result;
             }
         }
 
@@ -695,10 +706,14 @@ namespace bladeDirector
                 if (biosUpdateState.TryGetValue(nodeIp, out newState) == false)
                     return new resultCodeAndBIOSConfig( resultCode.bladeNotFound );
 
-                if (newState.isFinished)
-                    return new resultCodeAndBIOSConfig(newState);
-                else
+                if (!newState.isFinished)
                     return new resultCodeAndBIOSConfig(resultCode.pending );
+
+                if (newState.result == resultCode.success)
+                {
+                    bladeOwnership bladeStatus = getBladeByIP(nodeIp);
+                }
+                return new resultCodeAndBIOSConfig(newState);
             }
         }
 
@@ -818,6 +833,7 @@ namespace bladeDirector
                 {
                     bladeOwnership reqBlade = getBladeByIP(state.nodeIp);
                     reqBlade.currentlyHavingBIOSDeployed = false;
+                    reqBlade.lastDeployedBIOS = state.biosxml;
                     reqBlade.updateInDB(conn);
                 }
                 state.isFinished = true;
@@ -872,6 +888,7 @@ namespace bladeDirector
                 {
                     bladeOwnership reqBlade = getBladeByIP(state.nodeIp);
                     reqBlade.currentlyHavingBIOSDeployed = false;
+                    reqBlade.lastDeployedBIOS = state.biosxml;
                     reqBlade.updateInDB(conn);
                 }
                 state.isFinished = true;
@@ -885,8 +902,11 @@ namespace bladeDirector
             finally
             {
                 // Clean up our temp files (with a retry in case they are in use right now)
-                foreach (string filename in tempFilesToCleanUp)
-                    deleteWithRetry(filename);
+                if (tempFilesToCleanUp != null)
+                {
+                    foreach (string filename in tempFilesToCleanUp)
+                        deleteWithRetry(filename);
+                }
             }
         }
 
@@ -1030,6 +1050,7 @@ namespace bladeDirector
         bladeQueueFull,
         pending,
         alreadyInProgress,
-        genericFail
+        genericFail,
+        noNeedLah
     }
 }

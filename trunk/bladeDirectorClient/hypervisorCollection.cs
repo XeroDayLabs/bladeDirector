@@ -6,11 +6,11 @@ using hypervisors;
 
 namespace bladeDirectorClient
 {
-    public class hypervisorCollection : ConcurrentDictionary<string, hypervisor_iLo>, IDisposable
+    public class hypervisorCollection : ConcurrentDictionary<string, bladeDirectedHypervisor_iLo>, IDisposable
     {
         public void Dispose()
         {
-            foreach (hypervisor_iLo hyp in this.Values)
+            foreach (bladeDirectedHypervisor_iLo hyp in this.Values)
                 hyp.Dispose();
         }
     }

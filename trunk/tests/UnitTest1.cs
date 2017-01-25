@@ -30,8 +30,8 @@ namespace tests
         [TestMethod]
         public void canGetBladeSpec()
         {
-            bladeSpec spec1Expected = new bladeSpec("blade1ip", "blade1iscsiIP", "blade1ILOIP", 111, "..", false);
-            bladeSpec spec2Expected = new bladeSpec("blade2ip", "blade2iscsiIP", "blade2ILOIP", 222, "..", false);
+            bladeSpec spec1Expected = new bladeSpec("blade1ip", "blade1iscsiIP", "blade1ILOIP", 111, "..", false, null);
+            bladeSpec spec2Expected = new bladeSpec("blade2ip", "blade2iscsiIP", "blade2ILOIP", 222, "..", false, null);
             bladeDirector.services.initWithBlades(new[] {spec1Expected, spec2Expected});
 
             services uut = new bladeDirector.services();

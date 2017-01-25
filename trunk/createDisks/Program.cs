@@ -8,10 +8,13 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using createDisks.bladeDirector;
+using CommandLine;
+using CommandLine.Text;
 using hypervisors;
 using Newtonsoft.Json;
 using VMware.Vim;
 using Action = System.Action;
+using FileInfo = System.IO.FileInfo;
 using Task = System.Threading.Tasks.Task;
 
 namespace createDisks
@@ -30,25 +33,36 @@ namespace createDisks
         public string snapshotName;
     }
 
+    public class createDisksArgs
+    {
+        [Option('d', "delete", Required = false, DefaultValue = false, HelpText = "delete clones instead of creating them")]
+        public bool deleteClones { get; set; }
+
+        [Option('t', "tag", Required = false, DefaultValue = "clean", HelpText = "suffix for new clones")]
+        public string tagName { get; set; }
+
+        [Option('s', "script", Required = false, DefaultValue = null, HelpText = "Additional script to execute on blade after cloning")]
+        public string additionalScript { get; set; }
+
+        [OptionArray('c', "copy", Required = false, HelpText = "Additional directory to copy onto blade after cloning")]
+        public string[] additionalDeploymentItems { get; set; }
+
+        [Option('u', "directorURL", Required = false, DefaultValue = "alizbuild.xd.lan/bladedirector", HelpText = "URL to the blade director instance to use")]
+        public string bladeDirectorURL { get; set; }
+    }
+
     class Program
     {
         static void Main(string[] args)
         {
-            bool shouldDelete = false;
-            if (args.Length > 0)
-            {
-                if (args[0] == "-d")
-                {
-                    shouldDelete = true;
-                }
-                else
-                {
-                    Console.Write("Usage: createDisks <-d>\n");
-                    Console.Write("   -d: Delete iSCSI entries and snapshots (don't touch base image)\n");
-                    Console.Write("By default, will create new images.");
-                }
-            }
+            Parser parser = new CommandLine.Parser();
+            createDisksArgs parsedArgs = new createDisksArgs();
+            if (parser.ParseArgumentsStrict(args, parsedArgs, () => { Console.Write(HelpText.AutoBuild(parsedArgs).ToString()); }))
+                _Main(parsedArgs);
+        }
 
+        static void _Main(createDisksArgs args)
+        {
             List<itemToAdd> itemsToAdd = new List<itemToAdd>();
 
             string[] serverIPs = Properties.Settings.Default.debugServers.Split(',');
@@ -59,7 +73,7 @@ namespace createDisks
                 {
                     string nodeIP = "172.17.129." + (100 + int.Parse(bladeIP));
                     string nodeiLoIP = "172.17.2." + (100 + int.Parse(bladeIP));
-                    string cloneName = String.Format("{0}-{1}-clean", nodeIP, serverIP);
+                    string cloneName = String.Format("{0}-{1}-{2}", nodeIP, serverIP, args.tagName);
                     string computerName = String.Format("blade{0}", uint.Parse(bladeIP).ToString("D2"));
                     string snapshotName = cloneName;
 
@@ -78,10 +92,10 @@ namespace createDisks
                 }
             }
 
-            if (shouldDelete)
+            if (args.deleteClones)
                 deleteBlades(itemsToAdd.ToArray());
             else
-                addBlades(itemsToAdd.ToArray());        
+                addBlades(itemsToAdd.ToArray(), args.tagName, args.bladeDirectorURL, args.additionalScript, args.additionalDeploymentItems);
         }
 
         private static void deleteBlades(itemToAdd[] blades)
@@ -104,7 +118,10 @@ namespace createDisks
                 // Delete target-to-extent, target, and extent
                 iscsiTarget tgt = iscsiTargets.SingleOrDefault(x => x.targetName == item.cloneName);
                 if (tgt == null)
+                {
+                    Console.WriteLine("ISCSI target {0} not present, skipping", item.cloneName);
                     continue;
+                }
                 iscsiTargetToExtentMapping tgtToExt = tgtToExts.Single(x => x.iscsi_target == tgt.id);
                 iscsiExtent ext = iscsiExtents.Single(x => x.id == tgtToExt.iscsi_extent);
                 nas.deleteISCSITargetToExtent(tgtToExt);
@@ -115,13 +132,14 @@ namespace createDisks
                 snapshot toDelete = snapshots.SingleOrDefault(x => x.name.Equals(item.cloneName, StringComparison.CurrentCultureIgnoreCase));
                 if (toDelete != null)
                     nas.deleteSnapshot(toDelete);
-                // we can't delete the volume, because the FreeNAS API doesn't work properly ;_;
-                //volume vol = nas.findVolumeByName(volumes, item.cloneName);
-                //nas.deleteZVol(volumes.SingleOrDefault(), vol);
+
+                // And the volume.
+                volume vol = nas.findVolumeByName(volumes, item.cloneName);
+                nas.deleteZVol(vol);
             }
         }
 
-        static void addBlades(itemToAdd[] itemsToAdd)
+        static void addBlades(itemToAdd[] itemsToAdd, string tagName, string directorURL, string additionalScript, string[] additionalDeploymentItem)
         {
             string nasIP = Properties.Settings.Default.iscsiServerIP;
             string nasUsername = Properties.Settings.Default.iscsiServerUsername;
@@ -148,7 +166,7 @@ namespace createDisks
                 {
                     itemToAdd itemToAdd = toPrep[index];
 
-                    toWaitOn[index] = new Task(() => prepareCloneImage(itemToAdd, toCloneVolume));
+                    toWaitOn[index] = new Task(() => prepareCloneImage(itemToAdd, toCloneVolume, tagName, directorURL, additionalScript, additionalDeploymentItem));
                     toWaitOn[index].Start();
                 }
 
@@ -157,7 +175,7 @@ namespace createDisks
             }
         }
 
-        private static void prepareCloneImage(itemToAdd itemToAdd, string toCloneVolume)
+        private static void prepareCloneImage(itemToAdd itemToAdd, string toCloneVolume, string tagName, string directorURL, string additionalScript, string[] additionalDeploymentItem)
         {
             Console.WriteLine("Preparing " + itemToAdd.bladeIP + " for server " + itemToAdd.serverIP);
 
@@ -172,41 +190,42 @@ namespace createDisks
                 Properties.Settings.Default.iloHostUsername, Properties.Settings.Default.iloHostPassword,
                 itemToAdd.nodeiLoIP, Properties.Settings.Default.iloUsername, Properties.Settings.Default.iloPassword,
                 nasIP, nasUsername, nasPassword,
-                "", 0, "");
+                "", (ushort) itemToAdd.kernelDebugPort, "");
             hypervisor_iLo ilo = new hypervisor_iLo(spec);
             ilo.connect();
             ilo.powerOff();
 
             // We must ensure the blade is allocated to the required blade before we power it on. This will cause it to
             // use the required iSCSI root path.
-            string url = Properties.Settings.Default.directorURL;
+            string url = String.Format("http://{0}/services.asmx", directorURL);
             using (bladeDirector.servicesSoapClient bladeDirectorClient = new bladeDirector.servicesSoapClient("servicesSoap", url))
             {
                 string res = bladeDirectorClient.forceBladeAllocation(itemToAdd.bladeIP, itemToAdd.serverIP);
                 if (res != "success")
                     throw new Exception("Can't claim blade " + itemToAdd.bladeIP);
-                resultCode shotResCode = bladeDirectorClient.selectSnapshotForBlade(itemToAdd.bladeIP, "clean");
+                resultCode shotResCode = bladeDirectorClient.selectSnapshotForBlade(itemToAdd.bladeIP, tagName);
                 if (shotResCode != resultCode.success)
                     throw new Exception("Can't select snapshot on blade " + itemToAdd.bladeIP);
             }
             ilo.powerOn();
 
-            // and then use psexec to name it.
-            ilo.startExecutable("C:\\windows\\system32\\cmd", "/c wmic computersystem where caption='%COMPUTERNAME%' call rename " + itemToAdd.computerName);
-            
-            // Set the target of the kernel debugger, and enable it.
-            ilo.startExecutable("C:\\windows\\system32\\cmd", "/c bcdedit /dbgsettings net hostip:" + itemToAdd.serverIP + " port:" + itemToAdd.kernelDebugPort);
-            ilo.startExecutable("C:\\windows\\system32\\cmd", "/c bcdedit /debug on");
-            // Instruct WSUS to regen its SID so that it operates correctly
-            ilo.startExecutable("C:\\windows\\system32\\cmd", "/c reg delete \"HKLM\\Software\\Microsoft\\Windows\\CurrentVersion\\WindowsUpdate\" /v SusClientId /f");
-            ilo.startExecutable("C:\\windows\\system32\\cmd", "/c reg delete \"HKLM\\Software\\Microsoft\\Windows\\CurrentVersion\\WindowsUpdate\" /v SusClientIdValidation /f");
-            ilo.startExecutable("C:\\windows\\system32\\cmd", "/c reg add \"HKLM\\Software\\Microsoft\\Windows\\CurrentVersion\\WindowsUpdate\" /v TargetGroup /t REG_SZ /d \"blades\" /f");
-            ilo.startExecutable("C:\\windows\\system32\\cmd", "/c reg add \"HKLM\\Software\\Microsoft\\Windows\\CurrentVersion\\WindowsUpdate\" /v TargetGroupEnabled /t REG_DWORD /d 1 /f");
-            ilo.startExecutable("C:\\windows\\system32\\cmd", "/c net stop wuauserv");
-            ilo.startExecutable("C:\\windows\\system32\\cmd", "/c net start wuauserv");
-            ilo.startExecutable("C:\\windows\\system32\\cmd", "/c wuauclt.exe /resetauthorization /detectnow");
-            // Now we must wait for WSUS to do its thing. How do we do that? MSDN says "wait 10 minutes for a detection cycle to finish". :(
-            Thread.Sleep(TimeSpan.FromMinutes(1));
+            // Now deploy and execute our deployment script
+            string args = String.Format("{0} {1} {2}", itemToAdd.computerName, itemToAdd.serverIP, spec.kernelDebugPort);
+            copyAndRunScript(args, ilo);
+
+            // Copy any extra folders the user has requested that we deploy also, if there's an additional script we should
+            // execute, then do that now
+            if (additionalDeploymentItem != null)
+            {
+                ilo.mkdir("C:\\deployment");
+                foreach (string toCopy in additionalDeploymentItem)
+                    copyRecursive(ilo, toCopy, "C:\\deployment");
+                ilo.startExecutable("cmd.exe", string.Format("/c {0}", additionalScript), "C:\\deployment");
+            }
+            else
+            {
+                ilo.startExecutable("cmd.exe", string.Format("/c {0}", additionalScript), "C:\\");
+            }
 
             // That's all we need, so shut down the system.
             ilo.startExecutable("C:\\windows\\system32\\cmd", "/c shutdown -s -f -t 01");
@@ -216,7 +235,73 @@ namespace createDisks
 
             nas.createSnapshot(toCloneVolume + "/" + itemToAdd.cloneName, itemToAdd.snapshotName);
         }
-        
+
+        private static void copyRecursive(hypervisor_iLo ilo, string srcFileOrDir, string destPath)
+        {
+            FileAttributes attr = File.GetAttributes(srcFileOrDir);
+            if (attr.HasFlag(FileAttributes.Directory))
+            {
+                foreach (string srcDir in Directory.GetDirectories(srcFileOrDir))
+                {
+                    string fullPath = Path.Combine(destPath, Path.GetFileName(srcDir));
+                    ilo.mkdir(fullPath);
+                    foreach (string file in Directory.GetFiles(srcFileOrDir))
+                        copyRecursive(ilo, file, fullPath);
+                }
+
+                foreach (string srcFile in Directory.GetFiles(srcFileOrDir))
+                {
+                    try
+                    {
+                        ilo.copyToGuest(srcFile, Path.Combine(destPath, Path.GetFileName(srcFile)));
+                    }
+                    catch (IOException)
+                    {
+                        // The file probably already exists.
+                    }
+                }
+            }
+            else
+            {
+                try
+                {
+                    ilo.copyToGuest(srcFileOrDir, Path.Combine(destPath, Path.GetFileName(srcFileOrDir)));
+                }
+                catch (IOException)
+                {
+                    // The file probably already exists.
+                }
+            }
+        }
+
+        private static void copyAndRunScript(string scriptArgs, hypervisor_iLo ilo)
+        {
+            string deployFileName = Path.GetTempFileName();
+            try
+            {
+                File.WriteAllText(deployFileName, Properties.Resources.deployToBlade);
+                ilo.copyToGuest(deployFileName, "C:\\deployed.bat");
+                string args = String.Format("/c c:\\deployed.bat {0}", scriptArgs);
+                ilo.startExecutable("cmd.exe", args);
+            }
+            finally
+            {
+                DateTime deadline = DateTime.Now + TimeSpan.FromSeconds(10);
+                while (File.Exists(deployFileName))
+                {
+                    try
+                    {
+                        File.Delete(deployFileName);
+                    }
+                    catch (Exception)
+                    {
+                        if (DateTime.Now > deadline)
+                            throw;
+                    }
+                }
+            }
+        }
+
         private static void createClonesAndExportViaiSCSI(FreeNAS nas, snapshot toClone, string toCloneVolume, itemToAdd[] itemsToAdd)
         {
             // Now we can create snapshots
@@ -354,10 +439,21 @@ namespace createDisks
             doReq(url, "DELETE", HttpStatusCode.NoContent);
         }
 
-        public void deleteZVol(volume parent, volume toDelete)
+        public void deleteZVol(volume toDelete)
         {
-            string url = String.Format("http://{0}/api/v1.0/storage/volume/{1}/zvol/{2}/", _serverIp, parent.name, Uri.EscapeDataString(toDelete.name));
-            doReq(url, "DELETE", HttpStatusCode.NoContent);
+            // Oh no, the freenas API keeps returning HTTP 404 when I try to delete a volume! :( We ignore it and use the web UI
+            // instead. ;_;
+            DoNonAPIReq("", HttpStatusCode.OK);
+
+            string url = "account/login/";
+            string payloadStr = string.Format("username={0}&password={1}", _username, _password);
+            DoNonAPIReq(url, HttpStatusCode.OK, payloadStr);
+
+            // Now we can do the request to rollback the snapshot.
+            string resp = DoNonAPIReq("storage/zvol/delete/" + toDelete.path + "/", HttpStatusCode.OK, "");
+
+            if (resp.Contains("\"error\": true") || !resp.Contains("Volume successfully destroyed"))
+                throw new Exception("Volume deletion failed: " + resp);
         }
 
         public void deleteVolume(volume toDelete)
@@ -467,7 +563,6 @@ namespace createDisks
             //
             // First, do an initial GET to / so we can get a CSRF token and some cookies.
             DoNonAPIReq("", HttpStatusCode.OK);
-            //doInitialReq();
 
             // Now we can perform the login.
             string url = "account/login/";

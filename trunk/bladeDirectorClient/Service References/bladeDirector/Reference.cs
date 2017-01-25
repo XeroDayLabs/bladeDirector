@@ -98,10 +98,45 @@ namespace bladeDirectorClient.bladeDirector {
         
         [System.ServiceModel.OperationContractAttribute(Action="http://tempuri.org/selectSnapshotForBlade", ReplyAction="*")]
         System.Threading.Tasks.Task<bladeDirectorClient.bladeDirector.resultCode> selectSnapshotForBladeAsync(string NodeIP, string snapshotName);
+        
+        [System.ServiceModel.OperationContractAttribute(Action="http://tempuri.org/getLastDeployedBIOSForBlade", ReplyAction="*")]
+        [System.ServiceModel.XmlSerializerFormatAttribute(SupportFaults=true)]
+        string getLastDeployedBIOSForBlade(string NodeIP);
+        
+        [System.ServiceModel.OperationContractAttribute(Action="http://tempuri.org/getLastDeployedBIOSForBlade", ReplyAction="*")]
+        System.Threading.Tasks.Task<string> getLastDeployedBIOSForBladeAsync(string NodeIP);
+        
+        [System.ServiceModel.OperationContractAttribute(Action="http://tempuri.org/rebootAndStartDeployingBIOSToBlade", ReplyAction="*")]
+        [System.ServiceModel.XmlSerializerFormatAttribute(SupportFaults=true)]
+        bladeDirectorClient.bladeDirector.resultCode rebootAndStartDeployingBIOSToBlade(string NodeIP, string BIOSXML);
+        
+        [System.ServiceModel.OperationContractAttribute(Action="http://tempuri.org/rebootAndStartDeployingBIOSToBlade", ReplyAction="*")]
+        System.Threading.Tasks.Task<bladeDirectorClient.bladeDirector.resultCode> rebootAndStartDeployingBIOSToBladeAsync(string NodeIP, string BIOSXML);
+        
+        [System.ServiceModel.OperationContractAttribute(Action="http://tempuri.org/rebootAndStartReadingBIOSConfiguration", ReplyAction="*")]
+        [System.ServiceModel.XmlSerializerFormatAttribute(SupportFaults=true)]
+        bladeDirectorClient.bladeDirector.resultCode rebootAndStartReadingBIOSConfiguration(string NodeIP);
+        
+        [System.ServiceModel.OperationContractAttribute(Action="http://tempuri.org/rebootAndStartReadingBIOSConfiguration", ReplyAction="*")]
+        System.Threading.Tasks.Task<bladeDirectorClient.bladeDirector.resultCode> rebootAndStartReadingBIOSConfigurationAsync(string NodeIP);
+        
+        [System.ServiceModel.OperationContractAttribute(Action="http://tempuri.org/checkBIOSDeployProgress", ReplyAction="*")]
+        [System.ServiceModel.XmlSerializerFormatAttribute(SupportFaults=true)]
+        bladeDirectorClient.bladeDirector.resultCode checkBIOSDeployProgress(string NodeIP);
+        
+        [System.ServiceModel.OperationContractAttribute(Action="http://tempuri.org/checkBIOSDeployProgress", ReplyAction="*")]
+        System.Threading.Tasks.Task<bladeDirectorClient.bladeDirector.resultCode> checkBIOSDeployProgressAsync(string NodeIP);
+        
+        [System.ServiceModel.OperationContractAttribute(Action="http://tempuri.org/checkBIOSReadProgress", ReplyAction="*")]
+        [System.ServiceModel.XmlSerializerFormatAttribute(SupportFaults=true)]
+        bladeDirectorClient.bladeDirector.resultCodeAndBIOSConfig checkBIOSReadProgress(string NodeIP);
+        
+        [System.ServiceModel.OperationContractAttribute(Action="http://tempuri.org/checkBIOSReadProgress", ReplyAction="*")]
+        System.Threading.Tasks.Task<bladeDirectorClient.bladeDirector.resultCodeAndBIOSConfig> checkBIOSReadProgressAsync(string NodeIP);
     }
     
     /// <remarks/>
-    [System.CodeDom.Compiler.GeneratedCodeAttribute("System.Xml", "4.6.1085.0")]
+    [System.CodeDom.Compiler.GeneratedCodeAttribute("System.Xml", "4.6.1087.0")]
     [System.SerializableAttribute()]
     [System.Diagnostics.DebuggerStepThroughAttribute()]
     [System.ComponentModel.DesignerCategoryAttribute("code")]
@@ -147,7 +182,7 @@ namespace bladeDirectorClient.bladeDirector {
     }
     
     /// <remarks/>
-    [System.CodeDom.Compiler.GeneratedCodeAttribute("System.Xml", "4.6.1085.0")]
+    [System.CodeDom.Compiler.GeneratedCodeAttribute("System.Xml", "4.6.1087.0")]
     [System.SerializableAttribute()]
     [System.Xml.Serialization.XmlTypeAttribute(Namespace="http://tempuri.org/")]
     public enum resultCode {
@@ -168,12 +203,61 @@ namespace bladeDirectorClient.bladeDirector {
         pending,
         
         /// <remarks/>
+        alreadyInProgress,
+        
+        /// <remarks/>
         genericFail,
     }
     
     /// <remarks/>
+    [System.CodeDom.Compiler.GeneratedCodeAttribute("System.Xml", "4.6.1087.0")]
+    [System.SerializableAttribute()]
+    [System.Diagnostics.DebuggerStepThroughAttribute()]
+    [System.ComponentModel.DesignerCategoryAttribute("code")]
+    [System.Xml.Serialization.XmlTypeAttribute(Namespace="http://tempuri.org/")]
+    public partial class resultCodeAndBIOSConfig : object, System.ComponentModel.INotifyPropertyChanged {
+        
+        private resultCode codeField;
+        
+        private string bIOSConfigField;
+        
+        /// <remarks/>
+        [System.Xml.Serialization.XmlElementAttribute(Order=0)]
+        public resultCode code {
+            get {
+                return this.codeField;
+            }
+            set {
+                this.codeField = value;
+                this.RaisePropertyChanged("code");
+            }
+        }
+        
+        /// <remarks/>
+        [System.Xml.Serialization.XmlElementAttribute(Order=1)]
+        public string BIOSConfig {
+            get {
+                return this.bIOSConfigField;
+            }
+            set {
+                this.bIOSConfigField = value;
+                this.RaisePropertyChanged("BIOSConfig");
+            }
+        }
+        
+        public event System.ComponentModel.PropertyChangedEventHandler PropertyChanged;
+        
+        protected void RaisePropertyChanged(string propertyName) {
+            System.ComponentModel.PropertyChangedEventHandler propertyChanged = this.PropertyChanged;
+            if ((propertyChanged != null)) {
+                propertyChanged(this, new System.ComponentModel.PropertyChangedEventArgs(propertyName));
+            }
+        }
+    }
+    
+    /// <remarks/>
     [System.Xml.Serialization.XmlIncludeAttribute(typeof(bladeOwnership))]
-    [System.CodeDom.Compiler.GeneratedCodeAttribute("System.Xml", "4.6.1085.0")]
+    [System.CodeDom.Compiler.GeneratedCodeAttribute("System.Xml", "4.6.1087.0")]
     [System.SerializableAttribute()]
     [System.Diagnostics.DebuggerStepThroughAttribute()]
     [System.ComponentModel.DesignerCategoryAttribute("code")]
@@ -189,6 +273,8 @@ namespace bladeDirectorClient.bladeDirector {
         private ushort iLOPortField;
         
         private string currentSnapshotField;
+        
+        private bool currentlyHavingBIOSDeployedField;
         
         /// <remarks/>
         [System.Xml.Serialization.XmlElementAttribute(Order=0)]
@@ -250,6 +336,18 @@ namespace bladeDirectorClient.bladeDirector {
             }
         }
         
+        /// <remarks/>
+        [System.Xml.Serialization.XmlElementAttribute(Order=5)]
+        public bool currentlyHavingBIOSDeployed {
+            get {
+                return this.currentlyHavingBIOSDeployedField;
+            }
+            set {
+                this.currentlyHavingBIOSDeployedField = value;
+                this.RaisePropertyChanged("currentlyHavingBIOSDeployed");
+            }
+        }
+        
         public event System.ComponentModel.PropertyChangedEventHandler PropertyChanged;
         
         protected void RaisePropertyChanged(string propertyName) {
@@ -261,7 +359,7 @@ namespace bladeDirectorClient.bladeDirector {
     }
     
     /// <remarks/>
-    [System.CodeDom.Compiler.GeneratedCodeAttribute("System.Xml", "4.6.1085.0")]
+    [System.CodeDom.Compiler.GeneratedCodeAttribute("System.Xml", "4.6.1087.0")]
     [System.SerializableAttribute()]
     [System.Diagnostics.DebuggerStepThroughAttribute()]
     [System.ComponentModel.DesignerCategoryAttribute("code")]
@@ -277,6 +375,8 @@ namespace bladeDirectorClient.bladeDirector {
         private string nextOwnerField;
         
         private System.DateTime lastKeepAliveField;
+        
+        private string lastDeployedBIOSField;
         
         /// <remarks/>
         [System.Xml.Serialization.XmlElementAttribute(Order=0)]
@@ -337,10 +437,22 @@ namespace bladeDirectorClient.bladeDirector {
                 this.RaisePropertyChanged("lastKeepAlive");
             }
         }
+        
+        /// <remarks/>
+        [System.Xml.Serialization.XmlElementAttribute(Order=5)]
+        public string lastDeployedBIOS {
+            get {
+                return this.lastDeployedBIOSField;
+            }
+            set {
+                this.lastDeployedBIOSField = value;
+                this.RaisePropertyChanged("lastDeployedBIOS");
+            }
+        }
     }
     
     /// <remarks/>
-    [System.CodeDom.Compiler.GeneratedCodeAttribute("System.Xml", "4.6.1085.0")]
+    [System.CodeDom.Compiler.GeneratedCodeAttribute("System.Xml", "4.6.1087.0")]
     [System.SerializableAttribute()]
     [System.Xml.Serialization.XmlTypeAttribute(Namespace="http://tempuri.org/")]
     public enum bladeStatus {
@@ -476,6 +588,46 @@ namespace bladeDirectorClient.bladeDirector {
         
         public System.Threading.Tasks.Task<bladeDirectorClient.bladeDirector.resultCode> selectSnapshotForBladeAsync(string NodeIP, string snapshotName) {
             return base.Channel.selectSnapshotForBladeAsync(NodeIP, snapshotName);
+        }
+        
+        public string getLastDeployedBIOSForBlade(string NodeIP) {
+            return base.Channel.getLastDeployedBIOSForBlade(NodeIP);
+        }
+        
+        public System.Threading.Tasks.Task<string> getLastDeployedBIOSForBladeAsync(string NodeIP) {
+            return base.Channel.getLastDeployedBIOSForBladeAsync(NodeIP);
+        }
+        
+        public bladeDirectorClient.bladeDirector.resultCode rebootAndStartDeployingBIOSToBlade(string NodeIP, string BIOSXML) {
+            return base.Channel.rebootAndStartDeployingBIOSToBlade(NodeIP, BIOSXML);
+        }
+        
+        public System.Threading.Tasks.Task<bladeDirectorClient.bladeDirector.resultCode> rebootAndStartDeployingBIOSToBladeAsync(string NodeIP, string BIOSXML) {
+            return base.Channel.rebootAndStartDeployingBIOSToBladeAsync(NodeIP, BIOSXML);
+        }
+        
+        public bladeDirectorClient.bladeDirector.resultCode rebootAndStartReadingBIOSConfiguration(string NodeIP) {
+            return base.Channel.rebootAndStartReadingBIOSConfiguration(NodeIP);
+        }
+        
+        public System.Threading.Tasks.Task<bladeDirectorClient.bladeDirector.resultCode> rebootAndStartReadingBIOSConfigurationAsync(string NodeIP) {
+            return base.Channel.rebootAndStartReadingBIOSConfigurationAsync(NodeIP);
+        }
+        
+        public bladeDirectorClient.bladeDirector.resultCode checkBIOSDeployProgress(string NodeIP) {
+            return base.Channel.checkBIOSDeployProgress(NodeIP);
+        }
+        
+        public System.Threading.Tasks.Task<bladeDirectorClient.bladeDirector.resultCode> checkBIOSDeployProgressAsync(string NodeIP) {
+            return base.Channel.checkBIOSDeployProgressAsync(NodeIP);
+        }
+        
+        public bladeDirectorClient.bladeDirector.resultCodeAndBIOSConfig checkBIOSReadProgress(string NodeIP) {
+            return base.Channel.checkBIOSReadProgress(NodeIP);
+        }
+        
+        public System.Threading.Tasks.Task<bladeDirectorClient.bladeDirector.resultCodeAndBIOSConfig> checkBIOSReadProgressAsync(string NodeIP) {
+            return base.Channel.checkBIOSReadProgressAsync(NodeIP);
         }
     }
 }

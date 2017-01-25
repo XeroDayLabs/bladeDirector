@@ -55,7 +55,7 @@ namespace bladeDirectorClient
 
                         checkPort(bladeConfig);
 
-                        hypervisor_iLo newHyp = new hypervisor_iLo(spec);
+                        bladeDirectedHypervisor_iLo newHyp = new bladeDirectedHypervisor_iLo(spec);
                         newHyp.setDisposalCallback(onDestruction);
                         newHyp.checkSnapshotSanity();
                         if (!toRet.TryAdd(bladeConfig.bladeIP, newHyp))
@@ -81,7 +81,7 @@ namespace bladeDirectorClient
             }
         }
 
-        public hypervisor_iLo createSingleHypervisor()
+        public bladeDirectedHypervisor_iLo createSingleHypervisor()
         {
             return createSingleHypervisor(
                 Properties.Settings.Default.iloHostUsername,
@@ -94,7 +94,7 @@ namespace bladeDirectorClient
                 Properties.Settings.Default.iloKernelKey);
         }
 
-        public hypervisor_iLo createSingleHypervisor(string iloHostUsername, string iloHostPassword,
+        public bladeDirectedHypervisor_iLo createSingleHypervisor(string iloHostUsername, string iloHostPassword,
             string iloUsername, string iloPassword,
             string iloISCSIIP, string iloISCSIUsername, string iloISCSIPassword,
             string iloKernelKey)
@@ -145,7 +145,7 @@ namespace bladeDirectorClient
 
                     checkPort(bladeConfig);
 
-                    hypervisor_iLo toRet = new hypervisor_iLo(spec);
+                    bladeDirectedHypervisor_iLo toRet = new bladeDirectedHypervisor_iLo(spec);
                     toRet.checkSnapshotSanity();
                     toRet.setDisposalCallback(onDestruction);
                     return toRet;
@@ -198,6 +198,33 @@ namespace bladeDirectorClient
             {
                 director.releaseBlade(obj.kernelDebugIPOrHostname);
             }
+        }
+    }
+
+    public class bladeDirectedHypervisor_iLo : hypervisor_iLo
+    {
+        public bladeDirectedHypervisor_iLo(hypSpec_iLo spec) : base(spec)
+        {
+        }
+
+        public void setBIOSConfig(string newBiosXML)
+        {
+            hypSpec_iLo spec = getConnectionSpec();
+            using (servicesSoapClient director = new servicesSoapClient("servicesSoap"))
+            {
+                director.rebootAndStartDeployingBIOSToBlade(spec.kernelDebugIPOrHostname, newBiosXML);
+
+                resultCode res;
+                do
+                {
+                    res = director.checkBIOSDeployProgress(spec.kernelDebugIPOrHostname);
+                } while (res != resultCode.pending);
+
+                if (res != resultCode.success)
+                {
+                    throw new Exception("Failed to write bios to " + spec.kernelDebugIPOrHostname + ", error " + res);
+                }
+            }            
         }
     }
 }

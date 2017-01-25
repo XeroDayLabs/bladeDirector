@@ -78,6 +78,9 @@
     <None Include="Service References\bladeDirector\bladeDirectorClient.bladeDirector.resultCode.datasource">
       <DependentUpon>Reference.svcmap</DependentUpon>
     </None>
+    <None Include="Service References\bladeDirector\bladeDirectorClient.bladeDirector.resultCodeAndBIOSConfig.datasource">
+      <DependentUpon>Reference.svcmap</DependentUpon>
+    </None>
     <None Include="Service References\bladeDirector\bladeDirectorClient.bladeDirector.resultCodeAndBladeName.datasource">
       <DependentUpon>Reference.svcmap</DependentUpon>
     </None>

@@ -13,6 +13,52 @@
         table.settingGroup { width: 100%;border-style: solid; border-color: gray; background: black }
         td.tableSpacer { background: transparent }
     </style>
+    
+    <script type="text/javascript" src="jquery.js"></script>
+    <script type="text/javascript">
+
+        function showDetail(elem, id) {
+            var clickedRow = $(elem[0]).parents('tr');
+            clickedRow.next('tr').slideToggle();
+        }
+
+        function showPXEConfig(elem, bladeIP) {
+            var parentCell = $(elem[0]).parent('td')[0];
+            var textControl = $(parentCell).children('div')[0];
+            doShow('getIPXEScript.aspx?hostip=' + bladeIP, textControl);
+        }
+
+        function showBIOSConfig(elem, bladeIP) {
+            var parentCell = $(elem[0]).parent('td')[0];
+            var textControl = $(parentCell).children('div')[0];
+            doShow('getBIOSConfig.ashx?hostip=' + bladeIP, textControl);
+        }
+
+        function hideConfig(elem, bladeIP) {
+            var parentCell = $(elem[0]).parent('td')[0];
+            var textControl = $(parentCell).children('div')[0];
+            $(textControl).slideUp();
+        }
+
+        function doShow(url, ctrl)
+        {
+            $(ctrl).slideUp();
+
+            $.ajax({
+                type: "GET",
+                url: url,
+                control: ctrl,
+                async: true,
+                success: function (text) {
+                    ctrl = this.control;
+                    ctrl.innerText = text;
+                    $(ctrl).slideDown();
+                }
+            });
+        }
+
+    </script>
+
 </head>
 <body>
     <form id="form1" runat="server">
@@ -28,7 +74,7 @@
     </div>
 
     <br/><br/>
-
+        
     <div>
         <table class="settingGroup">
             <tr>

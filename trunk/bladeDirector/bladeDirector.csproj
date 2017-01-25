@@ -61,10 +61,14 @@
     <Content Include="deploy\conrep.xml" />
     <Content Include="getIPXEScript.aspx" />
     <Content Include="Global.asax" />
+    <Content Include="jquery.js">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
     <Content Include="Resources\DBCreation.sql" />
     <Content Include="deploy\applyBIOS.sh" />
     <Content Include="deploy\conrep" />
     <None Include="deploy\getBIOS.sh" />
+    <Content Include="getBIOSConfig.ashx" />
     <None Include="Resources\ipxeTemplateForBIOS.txt" />
     <Content Include="services.asmx" />
     <None Include="Resources\ipxeTemplate.txt" />
@@ -74,6 +78,9 @@
   <ItemGroup>
     <Compile Include="bladeOwnership.cs" />
     <Compile Include="bladeSpec.cs" />
+    <Compile Include="getBIOSConfig.ashx.cs">
+      <DependentUpon>getBIOSConfig.ashx</DependentUpon>
+    </Compile>
     <Compile Include="Global.asax.cs">
       <DependentUpon>Global.asax</DependentUpon>
     </Compile>
