@@ -4,3 +4,7 @@
 [submodule "thirdparty/sqlite"]
 	path = thirdparty/sqlite
 	url = ../sqlite
+[submodule "ThirdParty/bootMenuSelector"]
+	path = ThirdParty/bootMenuSelector
+	url = ../bootMenuSelector
+	branch = master

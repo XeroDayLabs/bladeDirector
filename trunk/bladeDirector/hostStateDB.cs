@@ -513,12 +513,18 @@ namespace bladeDirector
                     resultCode res = tryRequestNode(reqBlade.bladeIP, requestorIP);
                     if (res == resultCode.success || res == resultCode.pending)
                     {
+                        prepareBlade(reqBlade);
                         return new resultCodeAndBladeName() { bladeName = reqBlade.bladeIP, code = res };
                     }
                 }
             }
             // Otherwise, all blades have full queues.
             return new resultCodeAndBladeName() { bladeName = null, code = resultCode.bladeQueueFull };
+        }
+
+        private static void prepareBlade(bladeOwnership blade)
+        {
+            bootMenuServiceController.Program.add(IPAddress.Parse(blade.bladeIP));
         }
 
         public static void keepAlive(string requestorIP)

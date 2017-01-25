@@ -134,6 +134,10 @@
     </EmbeddedResource>
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\..\thirdparty\bootMenuSelector\bootMenuServiceController\bootMenuServiceController.csproj">
+      <Project>{ed068b2a-5339-4540-a9c6-1f8ab6d4aace}</Project>
+      <Name>bootMenuServiceController</Name>
+    </ProjectReference>
     <ProjectReference Include="..\..\thirdparty\hypervisors\trunk\hypervisors\hypervisors.csproj">
       <Project>{47995DD9-9F78-4313-809D-55C515EAF89E}</Project>
       <Name>hypervisors</Name>
