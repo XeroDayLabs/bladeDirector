@@ -7,39 +7,42 @@
     <title></title>
     <style>
         body { background: purple }
-        tr { background-color: blue; color: white }
+        td { background-color: blue; color: white }
         td.timedout {background-color: pink }
+        td.invisible  { background-color: transparent; border-width: 0px }
         th { background-color: lightgoldenrodyellow; color: black }
-        table.settingGroup { width: 100%;border-style: solid; border-color: gray; background: black }
+        table.settingGroup { width: 100%; border-style: solid; border-color: gray; background: black }
         td.tableSpacer { background: transparent }
+        div.fixedSize {font-family: monospace; border-style: solid; border-color: gray; }
     </style>
     
     <script type="text/javascript" src="jquery.js"></script>
     <script type="text/javascript">
 
-        function showDetail(elem, id) {
+        function toggleDetail(elem, id) {
             var clickedRow = $(elem[0]).parents('tr');
-            clickedRow.next('tr').slideToggle();
+            var rowToHide = clickedRow.next('tr');
+            if ($(rowToHide).is(":hidden"))
+                elem[0].src = "images/expanded.png";
+             else
+                elem[0].src = "images/collapsed.png";
+            rowToHide.slideToggle();
         }
 
-        function showPXEConfig(elem, bladeIP) {
+
+        function toggleConfigBox(elem, url) {
             var parentCell = $(elem[0]).parent('td')[0];
             var textControl = $(parentCell).children('div')[0];
-            doShow('getIPXEScript.aspx?hostip=' + bladeIP, textControl);
-        }
 
-        function showBIOSConfig(elem, bladeIP) {
-            var parentCell = $(elem[0]).parent('td')[0];
-            var textControl = $(parentCell).children('div')[0];
-            doShow('getBIOSConfig.ashx?hostip=' + bladeIP, textControl);
+            if ($(textControl).is(":hidden")) {
+                elem[0].src = "images/expanded.png";
+                doShow(url, textControl);
+            } else {
+                elem[0].src = "images/collapsed.png";
+                $(textControl).slideUp();
+            }
         }
-
-        function hideConfig(elem, bladeIP) {
-            var parentCell = $(elem[0]).parent('td')[0];
-            var textControl = $(parentCell).children('div')[0];
-            $(textControl).slideUp();
-        }
-
+        
         function doShow(url, ctrl)
         {
             $(ctrl).slideUp();

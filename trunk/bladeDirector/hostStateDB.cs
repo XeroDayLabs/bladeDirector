@@ -236,6 +236,7 @@ namespace bladeDirector
                 reqBlade.nextOwner = requestorID;
                 reqBlade.updateInDB(conn);
 
+                prepareBlade(reqBlade);
                 addLogEvent("Blade " + requestorID + " requested blade " + bladeIP + "(success, requestor added to blade queue)");
                 return resultCode.pending;
             }
@@ -512,10 +513,7 @@ namespace bladeDirector
                 {
                     resultCode res = tryRequestNode(reqBlade.bladeIP, requestorIP);
                     if (res == resultCode.success || res == resultCode.pending)
-                    {
-                        prepareBlade(reqBlade);
                         return new resultCodeAndBladeName() { bladeName = reqBlade.bladeIP, code = res };
-                    }
                 }
             }
             // Otherwise, all blades have full queues.

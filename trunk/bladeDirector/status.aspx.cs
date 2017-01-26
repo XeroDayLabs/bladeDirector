@@ -31,8 +31,10 @@ namespace bladeDirector
                 // First, assemble the always-visible status row
                 TableRow newRow = new TableRow();
 
-                newRow.Cells.Add(makeTableCell(new Button() {
-                        Text = "Details", OnClientClick = "javascript:showDetail($(this), " + bladeInfo.bladeID + "); return false;" 
+                newRow.Cells.Add(makeTableCell(new ImageButton() {
+                        ImageUrl = "images/collapsed.png",
+                        AlternateText = "Details",
+                        OnClientClick = "javascript:toggleDetail($(this), " + bladeInfo.bladeID + "); return false;" 
                 }));
                 newRow.Cells.Add(new TableCell() {Text = bladeInfo.state.ToString()});
                 newRow.Cells.Add(new TableCell() {Text = bladeInfo.bladeIP});
@@ -47,7 +49,7 @@ namespace bladeDirector
                         cssClass = "timedout";
                     TableCell cell = new TableCell
                     {
-                        Text = (DateTime.Now - bladeInfo.lastKeepAlive).ToString(),
+                        Text = formatDateTimeForWeb((DateTime.Now - bladeInfo.lastKeepAlive)),
                         CssClass = cssClass
                     };
                     newRow.Cells.Add(cell);
@@ -77,43 +79,64 @@ namespace bladeDirector
             }
         }
 
+        private string formatDateTimeForWeb(TimeSpan toshow)
+        {
+            if (toshow > TimeSpan.FromHours(24))
+                return " > 24 hours ";
+            return String.Format("{0}h {1}m {2}s", toshow.Hours, toshow.Minutes, toshow.Seconds );
+        }
+
         private TableRow makeDetailRow(bladeOwnership bladeInfo)
         {
             Table detailTable = new Table();
 
             TableRow pxeScriptRow = new TableRow();
-            pxeScriptRow.Cells.Add(new TableCell() {Text = "Current PXE script: "});
             pxeScriptRow.Cells.Add(makeTableCell(
-                makeJSHyperLink("show", string.Format(@"javascript:showPXEConfig($(this), ""{0}""); return false;", bladeInfo.bladeIP)),
-                makeJSHyperLink("hide", string.Format(@"javascript:hideConfig($(this), ""{0}""); return false;", bladeInfo.bladeIP)), 
-                new HtmlGenericControl("div")
+                makeImageButton("show", "images/collapsed.png", string.Format(@"javascript:toggleConfigBox($(this), ""getIPXEScript.aspx?hostip={0}""); return false;", bladeInfo.bladeIP)),
+                new Label() { Text = "Current PXE script" },
+                makeInvisibleDiv()
                 ));
-
             detailTable.Rows.Add(pxeScriptRow);
 
             TableRow biosConfigRow = new TableRow();
-            biosConfigRow.Cells.Add(new TableCell() { Text = "Current BIOS configuration: "});
             biosConfigRow.Cells.Add(makeTableCell(
-                makeJSHyperLink("show", string.Format(@"javascript:showBIOSConfig($(this), ""{0}""); return false;", bladeInfo.bladeIP)),
-                makeJSHyperLink("hide", string.Format(@"javascript:hideConfig($(this), ""{0}""); return false;", bladeInfo.bladeIP)),
-                new HtmlGenericControl("div")));
+                makeImageButton("show", "images/collapsed.png", string.Format(@"javascript:toggleConfigBox($(this), ""getBIOSConfig.ashx?hostip={0}""); return false;", bladeInfo.bladeIP)),
+                new Label() { Text = "Current BIOS configuration", CssClass = "fixedSize" },
+                makeInvisibleDiv()
+                ));
             detailTable.Rows.Add(biosConfigRow);
 
             TableHeaderRow toRet = new TableHeaderRow();
+            TableCell paddingCell = new TableCell { CssClass = "invisible" };
+            toRet.Cells.Add(paddingCell);
             TableCell tc = new TableCell();
-            tc.ColumnSpan = 8;
+            tc.ColumnSpan = 7;
             tc.Controls.Add(detailTable);
             toRet.Cells.Add(tc);
             toRet.Style.Add("display", "none");
             return toRet;
         }
 
-        private HyperLink makeJSHyperLink(string text, string onClick)
+        private static HtmlGenericControl makeInvisibleDiv()
         {
-            HyperLink hl = new HyperLink() {Text = text};
-            hl.Attributes.Add("onclick", onClick);
-            hl.Attributes.Add("href", "#");
-            return hl;
+            HtmlGenericControl toRet = new HtmlGenericControl("div");
+            toRet.Style.Add("display", "none");
+            toRet.Attributes["class"] = "fixedSize";
+
+            return toRet;
+        }
+
+        private Control makeImageButton(string text, string imageURL, string onClick, bool isVisible = true)
+        {
+            ImageButton toRet = new ImageButton()
+            {
+                ImageUrl = imageURL,
+                AlternateText = text,
+                OnClientClick = onClick,
+                Visible = isVisible
+            };
+
+            return toRet;
         }
 
         private TableCell makeTableCell(params Control[] innerControl)
@@ -121,6 +144,7 @@ namespace bladeDirector
             TableCell tc = new TableCell();
             foreach (Control control in innerControl)
                 tc.Controls.Add(control);
+
             return tc;
         }
 
