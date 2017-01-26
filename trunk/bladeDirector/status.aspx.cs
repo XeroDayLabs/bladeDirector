@@ -90,6 +90,19 @@ namespace bladeDirector
         {
             Table detailTable = new Table();
 
+            TableRow miscTR = new TableRow();
+            miscTR.Cells.Add(makeTableCell(
+                new Label() { Text = "Blade DB ID: " },
+                new Label() { Text = bladeInfo.bladeID.ToString() + "<br/>", CssClass = "fixedSize"},
+                new Label() { Text = "ISCSI IP: "},
+                new Label() { Text = bladeInfo.iscsiIP.ToString() + "<br/>", CssClass = "fixedSize" },
+                new Label() { Text = "Kernel debug port: " },
+                new Label() { Text = bladeInfo.iLOPort.ToString() + "<br/>", CssClass = "fixedSize" },
+                new Label() { Text = "Is currently having BIOS config deployed: " },
+                new Label() { Text = bladeInfo.currentlyHavingBIOSDeployed .ToString() + "<br/>", CssClass = "fixedSize"}
+            ));
+            detailTable.Rows.Add(miscTR);
+
             TableRow pxeScriptRow = new TableRow();
             pxeScriptRow.Cells.Add(makeTableCell(
                 makeImageButton("show", "images/collapsed.png", string.Format(@"javascript:toggleConfigBox($(this), ""getIPXEScript.aspx?hostip={0}""); return false;", bladeInfo.bladeIP)),
@@ -101,7 +114,7 @@ namespace bladeDirector
             TableRow biosConfigRow = new TableRow();
             biosConfigRow.Cells.Add(makeTableCell(
                 makeImageButton("show", "images/collapsed.png", string.Format(@"javascript:toggleConfigBox($(this), ""getBIOSConfig.ashx?hostip={0}""); return false;", bladeInfo.bladeIP)),
-                new Label() { Text = "Current BIOS configuration", CssClass = "fixedSize" },
+                new Label() { Text = "Current BIOS configuration" },
                 makeInvisibleDiv()
                 ));
             detailTable.Rows.Add(biosConfigRow);
@@ -144,7 +157,7 @@ namespace bladeDirector
             TableCell tc = new TableCell();
             foreach (Control control in innerControl)
                 tc.Controls.Add(control);
-
+            tc.VerticalAlign = VerticalAlign.Middle;
             return tc;
         }
 

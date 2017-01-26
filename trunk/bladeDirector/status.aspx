@@ -13,7 +13,9 @@
         th { background-color: lightgoldenrodyellow; color: black }
         table.settingGroup { width: 100%; border-style: solid; border-color: gray; background: black }
         td.tableSpacer { background: transparent }
-        div.fixedSize {font-family: monospace; border-style: solid; border-color: gray; }
+        div.fixedSize {font-family: monospace;color: pink; border-style: solid; border-color: gray; }
+        input { vertical-align: middle; horiz-align: center }
+        span.fixedSize {font-family: monospace; color: pink }
     </style>
     
     <script type="text/javascript" src="jquery.js"></script>
