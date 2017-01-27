@@ -37,7 +37,8 @@ namespace tests
             networkService.resultCode result;
     
             result = uut.rebootAndStartDeployingBIOSToBlade(bladeIP, testBiosXML);
-            if (result != networkService.resultCode.success && result != networkService.resultCode.noNeedLah)
+            if (result != networkService.resultCode.pending &&
+                result != networkService.resultCode.noNeedLah)
                 Assert.Fail("checkBIOSDeployProgress returned " + result + ", but we expected success or noNeedLah");
 
             while (result == networkService.resultCode.pending)
