@@ -98,10 +98,45 @@ namespace createDisks.bladeDirector {
         
         [System.ServiceModel.OperationContractAttribute(Action="http://tempuri.org/selectSnapshotForBlade", ReplyAction="*")]
         System.Threading.Tasks.Task<createDisks.bladeDirector.resultCode> selectSnapshotForBladeAsync(string NodeIP, string snapshotName);
+        
+        [System.ServiceModel.OperationContractAttribute(Action="http://tempuri.org/getLastDeployedBIOSForBlade", ReplyAction="*")]
+        [System.ServiceModel.XmlSerializerFormatAttribute(SupportFaults=true)]
+        string getLastDeployedBIOSForBlade(string NodeIP);
+        
+        [System.ServiceModel.OperationContractAttribute(Action="http://tempuri.org/getLastDeployedBIOSForBlade", ReplyAction="*")]
+        System.Threading.Tasks.Task<string> getLastDeployedBIOSForBladeAsync(string NodeIP);
+        
+        [System.ServiceModel.OperationContractAttribute(Action="http://tempuri.org/rebootAndStartDeployingBIOSToBlade", ReplyAction="*")]
+        [System.ServiceModel.XmlSerializerFormatAttribute(SupportFaults=true)]
+        createDisks.bladeDirector.resultCode rebootAndStartDeployingBIOSToBlade(string NodeIP, string BIOSXML);
+        
+        [System.ServiceModel.OperationContractAttribute(Action="http://tempuri.org/rebootAndStartDeployingBIOSToBlade", ReplyAction="*")]
+        System.Threading.Tasks.Task<createDisks.bladeDirector.resultCode> rebootAndStartDeployingBIOSToBladeAsync(string NodeIP, string BIOSXML);
+        
+        [System.ServiceModel.OperationContractAttribute(Action="http://tempuri.org/rebootAndStartReadingBIOSConfiguration", ReplyAction="*")]
+        [System.ServiceModel.XmlSerializerFormatAttribute(SupportFaults=true)]
+        createDisks.bladeDirector.resultCode rebootAndStartReadingBIOSConfiguration(string NodeIP);
+        
+        [System.ServiceModel.OperationContractAttribute(Action="http://tempuri.org/rebootAndStartReadingBIOSConfiguration", ReplyAction="*")]
+        System.Threading.Tasks.Task<createDisks.bladeDirector.resultCode> rebootAndStartReadingBIOSConfigurationAsync(string NodeIP);
+        
+        [System.ServiceModel.OperationContractAttribute(Action="http://tempuri.org/checkBIOSDeployProgress", ReplyAction="*")]
+        [System.ServiceModel.XmlSerializerFormatAttribute(SupportFaults=true)]
+        createDisks.bladeDirector.resultCode checkBIOSDeployProgress(string NodeIP);
+        
+        [System.ServiceModel.OperationContractAttribute(Action="http://tempuri.org/checkBIOSDeployProgress", ReplyAction="*")]
+        System.Threading.Tasks.Task<createDisks.bladeDirector.resultCode> checkBIOSDeployProgressAsync(string NodeIP);
+        
+        [System.ServiceModel.OperationContractAttribute(Action="http://tempuri.org/checkBIOSReadProgress", ReplyAction="*")]
+        [System.ServiceModel.XmlSerializerFormatAttribute(SupportFaults=true)]
+        createDisks.bladeDirector.resultCodeAndBIOSConfig checkBIOSReadProgress(string NodeIP);
+        
+        [System.ServiceModel.OperationContractAttribute(Action="http://tempuri.org/checkBIOSReadProgress", ReplyAction="*")]
+        System.Threading.Tasks.Task<createDisks.bladeDirector.resultCodeAndBIOSConfig> checkBIOSReadProgressAsync(string NodeIP);
     }
     
     /// <remarks/>
-    [System.CodeDom.Compiler.GeneratedCodeAttribute("System.Xml", "4.6.1085.0")]
+    [System.CodeDom.Compiler.GeneratedCodeAttribute("System.Xml", "4.6.1087.0")]
     [System.SerializableAttribute()]
     [System.Diagnostics.DebuggerStepThroughAttribute()]
     [System.ComponentModel.DesignerCategoryAttribute("code")]
@@ -147,7 +182,7 @@ namespace createDisks.bladeDirector {
     }
     
     /// <remarks/>
-    [System.CodeDom.Compiler.GeneratedCodeAttribute("System.Xml", "4.6.1085.0")]
+    [System.CodeDom.Compiler.GeneratedCodeAttribute("System.Xml", "4.6.1087.0")]
     [System.SerializableAttribute()]
     [System.Xml.Serialization.XmlTypeAttribute(Namespace="http://tempuri.org/")]
     public enum resultCode {
@@ -168,12 +203,64 @@ namespace createDisks.bladeDirector {
         pending,
         
         /// <remarks/>
+        alreadyInProgress,
+        
+        /// <remarks/>
         genericFail,
+        
+        /// <remarks/>
+        noNeedLah,
+    }
+    
+    /// <remarks/>
+    [System.CodeDom.Compiler.GeneratedCodeAttribute("System.Xml", "4.6.1087.0")]
+    [System.SerializableAttribute()]
+    [System.Diagnostics.DebuggerStepThroughAttribute()]
+    [System.ComponentModel.DesignerCategoryAttribute("code")]
+    [System.Xml.Serialization.XmlTypeAttribute(Namespace="http://tempuri.org/")]
+    public partial class resultCodeAndBIOSConfig : object, System.ComponentModel.INotifyPropertyChanged {
+        
+        private resultCode codeField;
+        
+        private string bIOSConfigField;
+        
+        /// <remarks/>
+        [System.Xml.Serialization.XmlElementAttribute(Order=0)]
+        public resultCode code {
+            get {
+                return this.codeField;
+            }
+            set {
+                this.codeField = value;
+                this.RaisePropertyChanged("code");
+            }
+        }
+        
+        /// <remarks/>
+        [System.Xml.Serialization.XmlElementAttribute(Order=1)]
+        public string BIOSConfig {
+            get {
+                return this.bIOSConfigField;
+            }
+            set {
+                this.bIOSConfigField = value;
+                this.RaisePropertyChanged("BIOSConfig");
+            }
+        }
+        
+        public event System.ComponentModel.PropertyChangedEventHandler PropertyChanged;
+        
+        protected void RaisePropertyChanged(string propertyName) {
+            System.ComponentModel.PropertyChangedEventHandler propertyChanged = this.PropertyChanged;
+            if ((propertyChanged != null)) {
+                propertyChanged(this, new System.ComponentModel.PropertyChangedEventArgs(propertyName));
+            }
+        }
     }
     
     /// <remarks/>
     [System.Xml.Serialization.XmlIncludeAttribute(typeof(bladeOwnership))]
-    [System.CodeDom.Compiler.GeneratedCodeAttribute("System.Xml", "4.6.1085.0")]
+    [System.CodeDom.Compiler.GeneratedCodeAttribute("System.Xml", "4.6.1087.0")]
     [System.SerializableAttribute()]
     [System.Diagnostics.DebuggerStepThroughAttribute()]
     [System.ComponentModel.DesignerCategoryAttribute("code")]
@@ -189,6 +276,10 @@ namespace createDisks.bladeDirector {
         private ushort iLOPortField;
         
         private string currentSnapshotField;
+        
+        private bool currentlyHavingBIOSDeployedField;
+        
+        private string lastDeployedBIOSField;
         
         /// <remarks/>
         [System.Xml.Serialization.XmlElementAttribute(Order=0)]
@@ -250,6 +341,30 @@ namespace createDisks.bladeDirector {
             }
         }
         
+        /// <remarks/>
+        [System.Xml.Serialization.XmlElementAttribute(Order=5)]
+        public bool currentlyHavingBIOSDeployed {
+            get {
+                return this.currentlyHavingBIOSDeployedField;
+            }
+            set {
+                this.currentlyHavingBIOSDeployedField = value;
+                this.RaisePropertyChanged("currentlyHavingBIOSDeployed");
+            }
+        }
+        
+        /// <remarks/>
+        [System.Xml.Serialization.XmlElementAttribute(Order=6)]
+        public string lastDeployedBIOS {
+            get {
+                return this.lastDeployedBIOSField;
+            }
+            set {
+                this.lastDeployedBIOSField = value;
+                this.RaisePropertyChanged("lastDeployedBIOS");
+            }
+        }
+        
         public event System.ComponentModel.PropertyChangedEventHandler PropertyChanged;
         
         protected void RaisePropertyChanged(string propertyName) {
@@ -261,7 +376,7 @@ namespace createDisks.bladeDirector {
     }
     
     /// <remarks/>
-    [System.CodeDom.Compiler.GeneratedCodeAttribute("System.Xml", "4.6.1085.0")]
+    [System.CodeDom.Compiler.GeneratedCodeAttribute("System.Xml", "4.6.1087.0")]
     [System.SerializableAttribute()]
     [System.Diagnostics.DebuggerStepThroughAttribute()]
     [System.ComponentModel.DesignerCategoryAttribute("code")]
@@ -340,7 +455,7 @@ namespace createDisks.bladeDirector {
     }
     
     /// <remarks/>
-    [System.CodeDom.Compiler.GeneratedCodeAttribute("System.Xml", "4.6.1085.0")]
+    [System.CodeDom.Compiler.GeneratedCodeAttribute("System.Xml", "4.6.1087.0")]
     [System.SerializableAttribute()]
     [System.Xml.Serialization.XmlTypeAttribute(Namespace="http://tempuri.org/")]
     public enum bladeStatus {
@@ -476,6 +591,46 @@ namespace createDisks.bladeDirector {
         
         public System.Threading.Tasks.Task<createDisks.bladeDirector.resultCode> selectSnapshotForBladeAsync(string NodeIP, string snapshotName) {
             return base.Channel.selectSnapshotForBladeAsync(NodeIP, snapshotName);
+        }
+        
+        public string getLastDeployedBIOSForBlade(string NodeIP) {
+            return base.Channel.getLastDeployedBIOSForBlade(NodeIP);
+        }
+        
+        public System.Threading.Tasks.Task<string> getLastDeployedBIOSForBladeAsync(string NodeIP) {
+            return base.Channel.getLastDeployedBIOSForBladeAsync(NodeIP);
+        }
+        
+        public createDisks.bladeDirector.resultCode rebootAndStartDeployingBIOSToBlade(string NodeIP, string BIOSXML) {
+            return base.Channel.rebootAndStartDeployingBIOSToBlade(NodeIP, BIOSXML);
+        }
+        
+        public System.Threading.Tasks.Task<createDisks.bladeDirector.resultCode> rebootAndStartDeployingBIOSToBladeAsync(string NodeIP, string BIOSXML) {
+            return base.Channel.rebootAndStartDeployingBIOSToBladeAsync(NodeIP, BIOSXML);
+        }
+        
+        public createDisks.bladeDirector.resultCode rebootAndStartReadingBIOSConfiguration(string NodeIP) {
+            return base.Channel.rebootAndStartReadingBIOSConfiguration(NodeIP);
+        }
+        
+        public System.Threading.Tasks.Task<createDisks.bladeDirector.resultCode> rebootAndStartReadingBIOSConfigurationAsync(string NodeIP) {
+            return base.Channel.rebootAndStartReadingBIOSConfigurationAsync(NodeIP);
+        }
+        
+        public createDisks.bladeDirector.resultCode checkBIOSDeployProgress(string NodeIP) {
+            return base.Channel.checkBIOSDeployProgress(NodeIP);
+        }
+        
+        public System.Threading.Tasks.Task<createDisks.bladeDirector.resultCode> checkBIOSDeployProgressAsync(string NodeIP) {
+            return base.Channel.checkBIOSDeployProgressAsync(NodeIP);
+        }
+        
+        public createDisks.bladeDirector.resultCodeAndBIOSConfig checkBIOSReadProgress(string NodeIP) {
+            return base.Channel.checkBIOSReadProgress(NodeIP);
+        }
+        
+        public System.Threading.Tasks.Task<createDisks.bladeDirector.resultCodeAndBIOSConfig> checkBIOSReadProgressAsync(string NodeIP) {
+            return base.Channel.checkBIOSReadProgressAsync(NodeIP);
         }
     }
 }

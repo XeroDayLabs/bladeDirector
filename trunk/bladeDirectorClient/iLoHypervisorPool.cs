@@ -32,7 +32,7 @@ namespace bladeDirectorClient
             string iloKernelKey)
         {
             startKeepaliveThreadIfNotRunning();
-            using (servicesSoapClient director = new servicesSoapClient("servicesSoap"))
+            using (servicesSoapClient director = new servicesSoapClient("servicesSoap", machinePools.bladeDirectorURL))
             {
                 string[] nodes = director.ListNodes().Split(',');
 
@@ -81,7 +81,7 @@ namespace bladeDirectorClient
             }
         }
 
-        public bladeDirectedHypervisor_iLo createSingleHypervisor()
+        public bladeDirectedHypervisor_iLo createSingleHypervisor(string snapshotName)
         {
             return createSingleHypervisor(
                 Properties.Settings.Default.iloHostUsername,
@@ -91,13 +91,15 @@ namespace bladeDirectorClient
                 Properties.Settings.Default.iloISCSIIP,
                 Properties.Settings.Default.iloISCSIUsername,
                 Properties.Settings.Default.iloISCSIPassword,
-                Properties.Settings.Default.iloKernelKey);
+                Properties.Settings.Default.iloKernelKey,
+                snapshotName);
         }
 
         public bladeDirectedHypervisor_iLo createSingleHypervisor(string iloHostUsername, string iloHostPassword,
             string iloUsername, string iloPassword,
             string iloISCSIIP, string iloISCSIUsername, string iloISCSIPassword,
-            string iloKernelKey)
+            string iloKernelKey, 
+            string snapshotName)
         {
             startKeepaliveThreadIfNotRunning();
 
@@ -117,7 +119,7 @@ namespace bladeDirectorClient
                         Thread.Sleep(TimeSpan.FromSeconds(5));
                         continue;
                     }
-                    throw new Exception("Blade director returned unexpected return status '" + allocatedBladeResult + "'");
+                    throw new Exception("Blade director returned unexpected return status '" + allocatedBladeResult.code + "'");
                 }
 
                 // Now, wait until our blade is available.
@@ -133,7 +135,8 @@ namespace bladeDirectorClient
 
                     // Great, now we have ownership of the blade, so we can use it safely.
                     bladeSpec bladeConfig = director.getConfigurationOfBlade(allocatedBladeResult.bladeName);
-                    director.selectSnapshotForBlade(allocatedBladeResult.bladeName, "clean");
+                    if (director.selectSnapshotForBlade(allocatedBladeResult.bladeName, snapshotName) != resultCode.success)
+                        throw new Exception("Can't find snapshot " + snapshotName);
                     string snapshot = director.getCurrentSnapshotForBlade(allocatedBladeResult.bladeName);
 
                     hypSpec_iLo spec = new hypSpec_iLo(
@@ -176,7 +179,7 @@ namespace bladeDirectorClient
 
         private void keepaliveThreadMain()
         {
-            using (servicesSoapClient director = new servicesSoapClient("servicesSoap"))
+            using (servicesSoapClient director = new servicesSoapClient("servicesSoap", machinePools.bladeDirectorURL))
             {
                 while (true)
                 {
@@ -194,7 +197,7 @@ namespace bladeDirectorClient
                 releasedBlade.powerOff();
             }
             // And notify the director that this blade is no longer in use.
-            using (servicesSoapClient director = new servicesSoapClient("servicesSoap"))
+            using (servicesSoapClient director = new servicesSoapClient("servicesSoap", machinePools.bladeDirectorURL))
             {
                 director.releaseBlade(obj.kernelDebugIPOrHostname);
             }
@@ -210,7 +213,7 @@ namespace bladeDirectorClient
         public void setBIOSConfig(string newBiosXML)
         {
             hypSpec_iLo spec = getConnectionSpec();
-            using (servicesSoapClient director = new servicesSoapClient("servicesSoap"))
+            using (servicesSoapClient director = new servicesSoapClient("servicesSoap", machinePools.bladeDirectorURL))
             {
                 director.rebootAndStartDeployingBIOSToBlade(spec.kernelDebugIPOrHostname, newBiosXML);
 
@@ -218,13 +221,11 @@ namespace bladeDirectorClient
                 do
                 {
                     res = director.checkBIOSDeployProgress(spec.kernelDebugIPOrHostname);
-                } while (res != resultCode.pending);
+                } while (res == resultCode.pending);
 
-                if (res != resultCode.success)
-                {
+                if (res != resultCode.success && res != resultCode.noNeedLah)
                     throw new Exception("Failed to write bios to " + spec.kernelDebugIPOrHostname + ", error " + res);
-                }
-            }            
+            }
         }
     }
 }

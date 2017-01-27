@@ -106,6 +106,9 @@
     <None Include="Service References\bladeDirector\createDisks.bladeDirector.resultCode.datasource">
       <DependentUpon>Reference.svcmap</DependentUpon>
     </None>
+    <None Include="Service References\bladeDirector\createDisks.bladeDirector.resultCodeAndBIOSConfig.datasource">
+      <DependentUpon>Reference.svcmap</DependentUpon>
+    </None>
     <None Include="Service References\bladeDirector\createDisks.bladeDirector.resultCodeAndBladeName.datasource">
       <DependentUpon>Reference.svcmap</DependentUpon>
     </None>

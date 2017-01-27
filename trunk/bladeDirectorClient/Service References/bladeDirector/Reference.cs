@@ -207,6 +207,9 @@ namespace bladeDirectorClient.bladeDirector {
         
         /// <remarks/>
         genericFail,
+        
+        /// <remarks/>
+        noNeedLah,
     }
     
     /// <remarks/>
@@ -275,6 +278,8 @@ namespace bladeDirectorClient.bladeDirector {
         private string currentSnapshotField;
         
         private bool currentlyHavingBIOSDeployedField;
+        
+        private string lastDeployedBIOSField;
         
         /// <remarks/>
         [System.Xml.Serialization.XmlElementAttribute(Order=0)]
@@ -348,6 +353,18 @@ namespace bladeDirectorClient.bladeDirector {
             }
         }
         
+        /// <remarks/>
+        [System.Xml.Serialization.XmlElementAttribute(Order=6)]
+        public string lastDeployedBIOS {
+            get {
+                return this.lastDeployedBIOSField;
+            }
+            set {
+                this.lastDeployedBIOSField = value;
+                this.RaisePropertyChanged("lastDeployedBIOS");
+            }
+        }
+        
         public event System.ComponentModel.PropertyChangedEventHandler PropertyChanged;
         
         protected void RaisePropertyChanged(string propertyName) {
@@ -375,8 +392,6 @@ namespace bladeDirectorClient.bladeDirector {
         private string nextOwnerField;
         
         private System.DateTime lastKeepAliveField;
-        
-        private string lastDeployedBIOSField;
         
         /// <remarks/>
         [System.Xml.Serialization.XmlElementAttribute(Order=0)]
@@ -435,18 +450,6 @@ namespace bladeDirectorClient.bladeDirector {
             set {
                 this.lastKeepAliveField = value;
                 this.RaisePropertyChanged("lastKeepAlive");
-            }
-        }
-        
-        /// <remarks/>
-        [System.Xml.Serialization.XmlElementAttribute(Order=5)]
-        public string lastDeployedBIOS {
-            get {
-                return this.lastDeployedBIOSField;
-            }
-            set {
-                this.lastDeployedBIOSField = value;
-                this.RaisePropertyChanged("lastDeployedBIOS");
             }
         }
     }

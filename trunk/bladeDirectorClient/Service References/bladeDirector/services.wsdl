@@ -57,6 +57,7 @@
           <s:enumeration value="pending" />
           <s:enumeration value="alreadyInProgress" />
           <s:enumeration value="genericFail" />
+          <s:enumeration value="noNeedLah" />
         </s:restriction>
       </s:simpleType>
       <s:element name="RequestNode">
@@ -152,6 +153,7 @@
           <s:element minOccurs="1" maxOccurs="1" name="iLOPort" type="s:unsignedShort" />
           <s:element minOccurs="0" maxOccurs="1" name="currentSnapshot" type="s:string" />
           <s:element minOccurs="1" maxOccurs="1" name="currentlyHavingBIOSDeployed" type="s:boolean" />
+          <s:element minOccurs="0" maxOccurs="1" name="lastDeployedBIOS" type="s:string" />
         </s:sequence>
       </s:complexType>
       <s:complexType name="bladeOwnership">
@@ -163,7 +165,6 @@
               <s:element minOccurs="0" maxOccurs="1" name="currentOwner" type="s:string" />
               <s:element minOccurs="0" maxOccurs="1" name="nextOwner" type="s:string" />
               <s:element minOccurs="1" maxOccurs="1" name="lastKeepAlive" type="s:dateTime" />
-              <s:element minOccurs="0" maxOccurs="1" name="lastDeployedBIOS" type="s:string" />
             </s:sequence>
           </s:extension>
         </s:complexContent>
