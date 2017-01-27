@@ -39,16 +39,17 @@ namespace tests
             result = uut.rebootAndStartDeployingBIOSToBlade(bladeIP, testBiosXML);
             if (result != networkService.resultCode.success && result != networkService.resultCode.noNeedLah)
                 Assert.Fail("checkBIOSDeployProgress returned " + result + ", but we expected success or noNeedLah");
-            do
+
+            while (result == networkService.resultCode.pending)
             {
                 uut.keepAlive();
                 Thread.Sleep(TimeSpan.FromSeconds(5));
                 result = uut.checkBIOSDeployProgress(bladeIP);
-            } while (result == networkService.resultCode.pending);
 
-            // Either of these codes are okay here.
-            if (result != networkService.resultCode.success && result != networkService.resultCode.noNeedLah)
-                Assert.Fail("checkBIOSDeployProgress returned " + result + ", but we expected success or noNeedLah");
+                if (result != networkService.resultCode.success && 
+                    result != networkService.resultCode.pending   )
+                    Assert.Fail("checkBIOSDeployProgress returned " + result + ", but we expected success or noNeedLah");
+            }
 
             // Now check it wrote OK by reading it back and comparing the numlock key state.
             Assert.AreEqual(networkService.resultCode.pending, uut.rebootAndStartReadingBIOSConfiguration(bladeIP));
