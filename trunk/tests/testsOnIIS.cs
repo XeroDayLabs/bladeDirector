@@ -43,7 +43,11 @@ namespace tests
                 result = uut.checkBIOSDeployProgress(bladeIP);
             } while (result == networkService.resultCode.pending);
 
-            Assert.AreEqual(networkService.resultCode.success, result);
+            // Either of these codes are okay here.
+            if (result != networkService.resultCode.success && result != networkService.resultCode.noNeedLah)
+            {
+                Assert.Fail("checkBIOSDeployProgress returned " + result + ", but we expected success or noNeedLah");
+            }
 
             // Now check it wrote OK by reading it back and comparing the numlock key state.
             Assert.AreEqual(networkService.resultCode.pending, uut.rebootAndStartReadingBIOSConfiguration(bladeIP));
@@ -55,6 +59,7 @@ namespace tests
                 resultAndReadBack = uut.checkBIOSReadProgress(bladeIP);
             } while (resultAndReadBack.code == networkService.resultCode.pending);
 
+            // We should definitely have written the config, so we don't permit the 'no need' code here.
             Assert.AreEqual(networkService.resultCode.success, resultAndReadBack.code);
 
             return resultAndReadBack;
