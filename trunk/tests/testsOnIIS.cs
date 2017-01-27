@@ -34,8 +34,11 @@ namespace tests
 
         private static resultCodeAndBIOSConfig writeBIOSAndReadBack(servicesSoapClient uut, string bladeIP, string testBiosXML)
         {
-            Assert.AreEqual(networkService.resultCode.pending, uut.rebootAndStartDeployingBIOSToBlade(bladeIP, testBiosXML));
             networkService.resultCode result;
+    
+            result = uut.rebootAndStartDeployingBIOSToBlade(bladeIP, testBiosXML);
+            if (result != networkService.resultCode.success && result != networkService.resultCode.noNeedLah)
+                Assert.Fail("checkBIOSDeployProgress returned " + result + ", but we expected success or noNeedLah");
             do
             {
                 uut.keepAlive();
@@ -45,9 +48,7 @@ namespace tests
 
             // Either of these codes are okay here.
             if (result != networkService.resultCode.success && result != networkService.resultCode.noNeedLah)
-            {
                 Assert.Fail("checkBIOSDeployProgress returned " + result + ", but we expected success or noNeedLah");
-            }
 
             // Now check it wrote OK by reading it back and comparing the numlock key state.
             Assert.AreEqual(networkService.resultCode.pending, uut.rebootAndStartReadingBIOSConfiguration(bladeIP));
