@@ -204,6 +204,7 @@ namespace bladeDirector
                     reqBlade.updateInDB(conn);
 
                     addLogEvent("Blade " + requestorID + " requested blade " + bladeIP + "(success, blade was idle)");
+                    notifyBootDirectorOfNode(reqBlade);
                     return resultCode.success;
                 }
 
@@ -221,6 +222,7 @@ namespace bladeDirector
                 if (reqBlade.nextOwner == requestorID)
                 {
                     addLogEvent("Blade " + requestorID + " requested blade " + bladeIP + "(success, requestor was already in queue)");
+                    notifyBootDirectorOfNode(reqBlade);
                     return resultCode.success;
                 }
 
@@ -236,7 +238,6 @@ namespace bladeDirector
                 reqBlade.nextOwner = requestorID;
                 reqBlade.updateInDB(conn);
 
-                prepareBlade(reqBlade);
                 addLogEvent("Blade " + requestorID + " requested blade " + bladeIP + "(success, requestor added to blade queue)");
                 return resultCode.pending;
             }
@@ -520,7 +521,7 @@ namespace bladeDirector
             return new resultCodeAndBladeName() { bladeName = null, code = resultCode.bladeQueueFull };
         }
 
-        private static void prepareBlade(bladeOwnership blade)
+        private static void notifyBootDirectorOfNode(bladeOwnership blade)
         {
             bootMenuServiceController.Program.add(IPAddress.Parse(blade.bladeIP));
         }
