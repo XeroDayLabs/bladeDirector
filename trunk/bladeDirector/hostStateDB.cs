@@ -736,6 +736,7 @@ namespace bladeDirector
             hyp.connect();
             hyp.powerOff();
             hyp.powerOn();
+            hyp.logout();
 
             // Wait for it to boot.  Note that we don't ping the client repeatedly here - since the Ping class can cause 
             // a BSoD.. ;_; Instead, we wait for port 22 (SSH) to be open.
@@ -834,6 +835,7 @@ namespace bladeDirector
                 hypervisor_iLo_HTTP hyp = new hypervisor_iLo_HTTP(state.iLoIP, Properties.Settings.Default.iloUsername, Properties.Settings.Default.iloPassword);
                 hyp.connect();
                 hyp.powerOff();
+                hyp.logout();
                 lock (connLock)
                 {
                     bladeOwnership reqBlade = getBladeByIP(state.nodeIp);
@@ -889,6 +891,7 @@ namespace bladeDirector
                 hypervisor_iLo_HTTP hyp = new hypervisor_iLo_HTTP(state.iLoIP, Properties.Settings.Default.iloUsername, Properties.Settings.Default.iloPassword);
                 hyp.connect();
                 hyp.powerOff();
+                hyp.logout();
                 lock (connLock)
                 {
                     bladeOwnership reqBlade = getBladeByIP(state.nodeIp);

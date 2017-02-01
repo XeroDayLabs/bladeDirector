@@ -191,49 +191,51 @@ namespace createDisks
                 itemToAdd.nodeiLoIP, Properties.Settings.Default.iloUsername, Properties.Settings.Default.iloPassword,
                 nasIP, nasUsername, nasPassword,
                 "", (ushort) itemToAdd.kernelDebugPort, "");
-            hypervisor_iLo ilo = new hypervisor_iLo(spec);
-            ilo.connect();
-            ilo.powerOff();
-
-            // We must ensure the blade is allocated to the required blade before we power it on. This will cause it to
-            // use the required iSCSI root path.
-            string url = String.Format("http://{0}/services.asmx", directorURL);
-            using (bladeDirector.servicesSoapClient bladeDirectorClient = new bladeDirector.servicesSoapClient("servicesSoap", url))
+            using (hypervisor_iLo ilo = new hypervisor_iLo(spec))
             {
-                string res = bladeDirectorClient.forceBladeAllocation(itemToAdd.bladeIP, itemToAdd.serverIP);
-                if (res != "success")
-                    throw new Exception("Can't claim blade " + itemToAdd.bladeIP);
-                resultCode shotResCode = bladeDirectorClient.selectSnapshotForBlade(itemToAdd.bladeIP, tagName);
-                if (shotResCode != resultCode.success)
-                    throw new Exception("Can't select snapshot on blade " + itemToAdd.bladeIP);
+                ilo.connect();
+                ilo.powerOff();
+
+                // We must ensure the blade is allocated to the required blade before we power it on. This will cause it to
+                // use the required iSCSI root path.
+                string url = String.Format("http://{0}/services.asmx", directorURL);
+                using (bladeDirector.servicesSoapClient bladeDirectorClient = new bladeDirector.servicesSoapClient("servicesSoap", url))
+                {
+                    string res = bladeDirectorClient.forceBladeAllocation(itemToAdd.bladeIP, itemToAdd.serverIP);
+                    if (res != "success")
+                        throw new Exception("Can't claim blade " + itemToAdd.bladeIP);
+                    resultCode shotResCode = bladeDirectorClient.selectSnapshotForBlade(itemToAdd.bladeIP, tagName);
+                    if (shotResCode != resultCode.success)
+                        throw new Exception("Can't select snapshot on blade " + itemToAdd.bladeIP);
+                }
+                ilo.powerOn();
+
+                // Now deploy and execute our deployment script
+                string args = String.Format("{0} {1} {2}", itemToAdd.computerName, itemToAdd.serverIP, spec.kernelDebugPort);
+                copyAndRunScript(args, ilo);
+
+                // Copy any extra folders the user has requested that we deploy also, if there's an additional script we should
+                // execute, then do that now
+                if (additionalDeploymentItem != null)
+                {
+                    ilo.mkdir("C:\\deployment");
+                    foreach (string toCopy in additionalDeploymentItem)
+                        copyRecursive(ilo, toCopy, "C:\\deployment");
+                    ilo.startExecutable("cmd.exe", string.Format("/c {0}", additionalScript), "C:\\deployment");
+                }
+                else
+                {
+                    ilo.startExecutable("cmd.exe", string.Format("/c {0}", additionalScript), "C:\\");
+                }
+
+                // That's all we need, so shut down the system.
+                ilo.startExecutable("C:\\windows\\system32\\cmd", "/c shutdown -s -f -t 01");
+
+                // Once it has shut down totally, we can take the snapshot of it.
+                ilo.WaitForStatus(false, TimeSpan.FromMinutes(1));
+
+                nas.createSnapshot(toCloneVolume + "/" + itemToAdd.cloneName, itemToAdd.snapshotName);
             }
-            ilo.powerOn();
-
-            // Now deploy and execute our deployment script
-            string args = String.Format("{0} {1} {2}", itemToAdd.computerName, itemToAdd.serverIP, spec.kernelDebugPort);
-            copyAndRunScript(args, ilo);
-
-            // Copy any extra folders the user has requested that we deploy also, if there's an additional script we should
-            // execute, then do that now
-            if (additionalDeploymentItem != null)
-            {
-                ilo.mkdir("C:\\deployment");
-                foreach (string toCopy in additionalDeploymentItem)
-                    copyRecursive(ilo, toCopy, "C:\\deployment");
-                ilo.startExecutable("cmd.exe", string.Format("/c {0}", additionalScript), "C:\\deployment");
-            }
-            else
-            {
-                ilo.startExecutable("cmd.exe", string.Format("/c {0}", additionalScript), "C:\\");
-            }
-
-            // That's all we need, so shut down the system.
-            ilo.startExecutable("C:\\windows\\system32\\cmd", "/c shutdown -s -f -t 01");
-
-            // Once it has shut down totally, we can take the snapshot of it.
-            ilo.WaitForStatus(false, TimeSpan.FromMinutes(1));
-
-            nas.createSnapshot(toCloneVolume + "/" + itemToAdd.cloneName, itemToAdd.snapshotName);
         }
 
         private static void copyRecursive(hypervisor_iLo ilo, string srcFileOrDir, string destPath)
