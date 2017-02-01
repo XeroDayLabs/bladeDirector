@@ -22,6 +22,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "bladeDirectorClient", "trun
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "bootMenuServiceController", "thirdparty\bootMenuSelector\bootMenuServiceController\bootMenuServiceController.csproj", "{ED068B2A-5339-4540-A9C6-1F8AB6D4AACE}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "bootMenu", "thirdparty\bootMenuSelector\bootMenuSelector\bootMenu.csproj", "{1839696E-F40A-4D5D-BC38-3634AB3D7965}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -73,6 +75,12 @@ Global
 		{ED068B2A-5339-4540-A9C6-1F8AB6D4AACE}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{ED068B2A-5339-4540-A9C6-1F8AB6D4AACE}.Release|Any CPU.Build.0 = Release|Any CPU
 		{ED068B2A-5339-4540-A9C6-1F8AB6D4AACE}.Release|x64.ActiveCfg = Release|Any CPU
+		{1839696E-F40A-4D5D-BC38-3634AB3D7965}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{1839696E-F40A-4D5D-BC38-3634AB3D7965}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{1839696E-F40A-4D5D-BC38-3634AB3D7965}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{1839696E-F40A-4D5D-BC38-3634AB3D7965}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{1839696E-F40A-4D5D-BC38-3634AB3D7965}.Release|Any CPU.Build.0 = Release|Any CPU
+		{1839696E-F40A-4D5D-BC38-3634AB3D7965}.Release|x64.ActiveCfg = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -80,5 +88,6 @@ Global
 	GlobalSection(NestedProjects) = preSolution
 		{47995DD9-9F78-4313-809D-55C515EAF89E} = {6C6808C2-C6C4-4AE7-8309-12312E9D2B83}
 		{ED068B2A-5339-4540-A9C6-1F8AB6D4AACE} = {6C6808C2-C6C4-4AE7-8309-12312E9D2B83}
+		{1839696E-F40A-4D5D-BC38-3634AB3D7965} = {6C6808C2-C6C4-4AE7-8309-12312E9D2B83}
 	EndGlobalSection
 EndGlobal
