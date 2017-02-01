@@ -157,15 +157,15 @@ namespace tests
         [TestMethod]
         public void canSetBladeSnapshot()
         {
-            bladeDirector.services.initWithBlades(new[] {"blade1ip"});
+            bladeDirector.services.initWithBlades(new[] {"1.2.3.4"});
 
             services uut = new bladeDirector.services();
 
             // Default should be "<ip>-<owner>-<snapshot name>". Snapshot name should default to 'clean'.
-            Assert.AreEqual("success", uut.RequestNode("blade1ip", "1.1.1.1"));
-            Assert.AreEqual("blade1ip-1.1.1.1-clean", uut.getCurrentSnapshotForBlade("blade1ip"));
-            Assert.AreEqual(resultCode.success, uut.selectSnapshotForBlade("blade1ip", "bb"));
-            Assert.AreEqual("blade1ip-1.1.1.1-bb", uut.getCurrentSnapshotForBlade("blade1ip"));
+            Assert.AreEqual("success", uut.RequestNode("1.2.3.4", "1.1.1.1"));
+            Assert.AreEqual("blade1ip-1.1.1.1-clean", uut.getCurrentSnapshotForBlade("1.2.3.4"));
+            Assert.AreEqual(resultCode.success, uut.selectSnapshotForBlade("1.2.3.4", "bb"));
+            Assert.AreEqual("blade1ip-1.1.1.1-bb", uut.getCurrentSnapshotForBlade("1.2.3.4"));
         }
 
     }
