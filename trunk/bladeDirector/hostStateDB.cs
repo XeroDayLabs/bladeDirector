@@ -523,7 +523,7 @@ namespace bladeDirector
 
         private static void notifyBootDirectorOfNode(bladeOwnership blade)
         {
-            bootMenuServiceController.Program.add(IPAddress.Parse(blade.bladeIP));
+            bootMenuServiceController.Program.add(IPAddress.Parse(blade.iLOIP));
         }
 
         public static void keepAlive(string requestorIP)
