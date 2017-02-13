@@ -70,6 +70,13 @@
     <None Include="deploy\getBIOS.sh" />
     <Content Include="getBIOSConfig.ashx" />
     <None Include="Resources\ipxeTemplateForBIOS.txt" />
+    <None Include="Service References\bootMenuWCF\bootMenuController.disco" />
+    <None Include="Service References\bootMenuWCF\configuration91.svcinfo" />
+    <None Include="Service References\bootMenuWCF\configuration.svcinfo" />
+    <None Include="Service References\bootMenuWCF\Reference.svcmap">
+      <Generator>WCF Proxy Generator</Generator>
+      <LastGenOutput>Reference.cs</LastGenOutput>
+    </None>
     <Content Include="services.asmx" />
     <None Include="Resources\ipxeTemplate.txt" />
     <Content Include="status.aspx" />
@@ -103,6 +110,11 @@
       <DesignTimeSharedInput>True</DesignTimeSharedInput>
       <DependentUpon>Settings.settings</DependentUpon>
     </Compile>
+    <Compile Include="Service References\bootMenuWCF\Reference.cs">
+      <AutoGen>True</AutoGen>
+      <DesignTime>True</DesignTime>
+      <DependentUpon>Reference.svcmap</DependentUpon>
+    </Compile>
     <Compile Include="services.asmx.cs">
       <DependentUpon>services.asmx</DependentUpon>
       <SubType>Component</SubType>
@@ -120,6 +132,13 @@
       <Generator>SettingsSingleFileGenerator</Generator>
       <LastGenOutput>Settings.Designer.cs</LastGenOutput>
     </None>
+    <None Include="Service References\bootMenuWCF\bootMenuController.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="Service References\bootMenuWCF\bootMenuController1.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="Service References\bootMenuWCF\bootMenuWCF.wsdl" />
     <None Include="Web.Debug.config">
       <DependentUpon>Web.config</DependentUpon>
     </None>
@@ -134,10 +153,6 @@
     </EmbeddedResource>
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\..\thirdparty\bootMenuSelector\bootMenuServiceController\bootMenuServiceController.csproj">
-      <Project>{ed068b2a-5339-4540-a9c6-1f8ab6d4aace}</Project>
-      <Name>bootMenuServiceController</Name>
-    </ProjectReference>
     <ProjectReference Include="..\..\thirdparty\hypervisors\trunk\hypervisors\hypervisors.csproj">
       <Project>{47995DD9-9F78-4313-809D-55C515EAF89E}</Project>
       <Name>hypervisors</Name>
@@ -145,6 +160,12 @@
   </ItemGroup>
   <ItemGroup>
     <Folder Include="images\" />
+  </ItemGroup>
+  <ItemGroup>
+    <WCFMetadata Include="Service References\" />
+  </ItemGroup>
+  <ItemGroup>
+    <WCFMetadataStorage Include="Service References\bootMenuWCF\" />
   </ItemGroup>
   <PropertyGroup>
     <VisualStudioVersion Condition="'$(VisualStudioVersion)' == ''">10.0</VisualStudioVersion>

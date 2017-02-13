@@ -8,10 +8,13 @@ using System.Linq;
 using System.Net;
 using System.Net.NetworkInformation;
 using System.Net.Sockets;
+using System.ServiceModel;
 using System.Text;
 using System.Threading;
 using System.Web;
+using System.Web.Services.Description;
 using System.Web.UI.WebControls;
+using bladeDirector.bootMenuWCF;
 using hypervisors;
 using Tamir.SharpSsh;
 
@@ -523,7 +526,13 @@ namespace bladeDirector
 
         private static void notifyBootDirectorOfNode(bladeOwnership blade)
         {
-            bootMenuServiceController.Program.add(IPAddress.Parse(blade.iLOIP));
+            Uri wcfURI = new Uri("http://localhost/bootMenuController");
+            BasicHttpBinding myBind = new BasicHttpBinding();
+            
+            using (BootMenuWCFClient client = new BootMenuWCFClient(myBind, new EndpointAddress(wcfURI)))
+            {
+                client.addMachine(blade.iLOIP);
+            }
         }
 
         public static void keepAlive(string requestorIP)
