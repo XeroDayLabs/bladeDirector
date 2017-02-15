@@ -104,7 +104,7 @@ namespace bladeDirectorClient
             startKeepaliveThreadIfNotRunning();
 
             // We request a blade from the blade director, and use them for all our tests, blocking if none are available.
-            using (servicesSoapClient director = new servicesSoapClient("servicesSoap"))
+            using (servicesSoapClient director = new servicesSoapClient("servicesSoap", machinePools.bladeDirectorURL))
             {
                 // Request a node. If all queues are full, then wait and retry until we get one.
                 resultCodeAndBladeName allocatedBladeResult;
@@ -215,9 +215,13 @@ namespace bladeDirectorClient
             hypSpec_iLo spec = getConnectionSpec();
             using (servicesSoapClient director = new servicesSoapClient("servicesSoap", machinePools.bladeDirectorURL))
             {
-                director.rebootAndStartDeployingBIOSToBlade(spec.kernelDebugIPOrHostname, newBiosXML);
+                resultCode res = director.rebootAndStartDeployingBIOSToBlade(spec.kernelDebugIPOrHostname, newBiosXML);
+                if (res == resultCode.noNeedLah)
+                    return;
 
-                resultCode res;
+                if (res != resultCode.pending)
+                    throw new Exception("Failed to start BIOS write to " + spec.kernelDebugIPOrHostname + ", error " + res);
+
                 do
                 {
                     res = director.checkBIOSDeployProgress(spec.kernelDebugIPOrHostname);
