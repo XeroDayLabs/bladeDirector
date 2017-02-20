@@ -79,7 +79,7 @@ namespace bladeDirector
                 " currentSnapshot=$currentSnapshot, " +
                 " currentlyHavingBIOSDeployed=$currentlyHavingBIOSDeployed, " +
                 " lastDeployedBIOS=$lastDeployedBIOS " +
-                " where bladeIP = bladeIP";
+                " where bladeIP = $bladeIP";
             using (SQLiteCommand cmd = new SQLiteCommand(cmdConfiguration, conn))
             {
                 cmd.Parameters.AddWithValue("currentSnapshot", currentSnapshot);
