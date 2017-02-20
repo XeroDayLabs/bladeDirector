@@ -158,7 +158,7 @@ namespace createDisks
             createClonesAndExportViaiSCSI(nas, toClone, toCloneVolume, itemsToAdd);
 
             // Next, we must prepare each clone. Do this in parallel, per-server.
-            foreach (string serverIP in itemsToAdd.Select(x => x.serverIP) )
+            foreach (string serverIP in itemsToAdd.Select(x => x.serverIP).Distinct())
             {
                 itemToAdd[] toPrep = itemsToAdd.Where(x => x.serverIP == serverIP).ToArray();
                 Task[] toWaitOn = new Task[toPrep.Length];
