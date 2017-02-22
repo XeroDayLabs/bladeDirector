@@ -44,6 +44,9 @@ namespace createDisks
         [Option('s', "script", Required = false, DefaultValue = null, HelpText = "Additional script to execute on blade after cloning")]
         public string additionalScript { get; set; }
 
+        [Option('r', "repair", Required = false, DefaultValue = false, HelpText = "Do not do a full clone - only make missing iscsi configuration items")]
+        public bool repair { get; set; }
+
         [OptionArray('c', "copy", Required = false, HelpText = "Additional directory to copy onto blade after cloning")]
         public string[] additionalDeploymentItems { get; set; }
 
@@ -95,7 +98,7 @@ namespace createDisks
             if (args.deleteClones)
                 deleteBlades(itemsToAdd.ToArray());
             else
-                addBlades(itemsToAdd.ToArray(), args.tagName, args.bladeDirectorURL, args.additionalScript, args.additionalDeploymentItems);
+                addBlades(itemsToAdd.ToArray(), args.tagName, args.bladeDirectorURL, args.additionalScript, args.additionalDeploymentItems, args.repair);
         }
 
         private static void deleteBlades(itemToAdd[] blades)
@@ -139,7 +142,7 @@ namespace createDisks
             }
         }
 
-        static void addBlades(itemToAdd[] itemsToAdd, string tagName, string directorURL, string additionalScript, string[] additionalDeploymentItem)
+        static void addBlades(itemToAdd[] itemsToAdd, string tagName, string directorURL, string additionalScript, string[] additionalDeploymentItem, bool repairMode)
         {
             string nasIP = Properties.Settings.Default.iscsiServerIP;
             string nasUsername = Properties.Settings.Default.iscsiServerUsername;
@@ -155,23 +158,29 @@ namespace createDisks
                 throw new Exception("Snapshot not found");
             string toCloneVolume = toClone.fullname.Split('/')[0];
 
-            createClonesAndExportViaiSCSI(nas, toClone, toCloneVolume, itemsToAdd);
+            if (!repairMode)
+                createClones(nas, toClone, toCloneVolume, itemsToAdd);
 
-            // Next, we must prepare each clone. Do this in parallel, per-server.
-            foreach (string serverIP in itemsToAdd.Select(x => x.serverIP).Distinct())
+            exportClonesViaiSCSI(nas, itemsToAdd);
+
+            if (!repairMode)
             {
-                itemToAdd[] toPrep = itemsToAdd.Where(x => x.serverIP == serverIP).ToArray();
-                Task[] toWaitOn = new Task[toPrep.Length];
-                for (int index = 0; index < toPrep.Length; index++)
+                // Next, we must prepare each clone. Do this in parallel, per-server.
+                foreach (string serverIP in itemsToAdd.Select(x => x.serverIP).Distinct())
                 {
-                    itemToAdd itemToAdd = toPrep[index];
+                    itemToAdd[] toPrep = itemsToAdd.Where(x => x.serverIP == serverIP).ToArray();
+                    Task[] toWaitOn = new Task[toPrep.Length];
+                    for (int index = 0; index < toPrep.Length; index++)
+                    {
+                        itemToAdd itemToAdd = toPrep[index];
 
-                    toWaitOn[index] = new Task(() => prepareCloneImage(itemToAdd, toCloneVolume, tagName, directorURL, additionalScript, additionalDeploymentItem));
-                    toWaitOn[index].Start();
+                        toWaitOn[index] = new Task(() => prepareCloneImage(itemToAdd, toCloneVolume, tagName, directorURL, additionalScript, additionalDeploymentItem));
+                        toWaitOn[index].Start();
+                    }
+
+                    foreach (Task task in toWaitOn)
+                        task.Wait();
                 }
-
-                foreach (Task task in toWaitOn)
-                    task.Wait();
             }
         }
 
@@ -304,7 +313,7 @@ namespace createDisks
             }
         }
 
-        private static void createClonesAndExportViaiSCSI(FreeNAS nas, snapshot toClone, string toCloneVolume, itemToAdd[] itemsToAdd)
+        private static void createClones(FreeNAS nas, snapshot toClone, string toCloneVolume, itemToAdd[] itemsToAdd)
         {
             // Now we can create snapshots
             foreach (itemToAdd itemToAdd in itemsToAdd)
@@ -313,7 +322,10 @@ namespace createDisks
                 string fullCloneName = String.Format("{0}/{1}", toCloneVolume, itemToAdd.cloneName);
                 nas.cloneSnapshot(toClone, fullCloneName);
             }
+        }
 
+        private static void exportClonesViaiSCSI(FreeNAS nas, itemToAdd[] itemsToAdd)
+        {
             // Now expose each via iSCSI.
             targetGroup tgtGrp = nas.getTargetGroups()[0];
             foreach (itemToAdd itemToAdd in itemsToAdd)
@@ -323,18 +335,28 @@ namespace createDisks
                 iscsiTarget toAdd = new iscsiTarget();
                 toAdd.targetAlias = itemToAdd.cloneName;
                 toAdd.targetName = itemToAdd.cloneName;
-                iscsiTarget newTarget = nas.addISCSITarget(toAdd);
+                iscsiTarget newTarget = nas.getISCSITargets().SingleOrDefault(x => x.targetName == itemToAdd.cloneName);
+                if (newTarget == null)
+                    newTarget = nas.addISCSITarget(toAdd);
 
-                iscsiExtent newExtent = new iscsiExtent()
+                iscsiExtent newExtent = nas.getExtents().SingleOrDefault(x => x.iscsi_target_extent_name == toAdd.targetName);
+
+                if (newExtent == null)
                 {
-                    iscsi_target_extent_name = toAdd.targetName,
-                    iscsi_target_extent_path = String.Format("zvol/SSDs/{0}", toAdd.targetName)
-                };
-                newExtent = nas.addISCSIExtent(newExtent);
+                    newExtent = nas.addISCSIExtent(new iscsiExtent()
+                    {
+                        iscsi_target_extent_name = toAdd.targetName,
+                        iscsi_target_extent_path = String.Format("zvol/SSDs/{0}", toAdd.targetName)
+                    });
+                }
 
-                nas.addTargetGroup(tgtGrp, newTarget);
+                targetGroup newTgtGroup = nas.getTargetGroups().SingleOrDefault(x => x.iscsi_target == newTarget.id);
+                if (newTgtGroup == null)
+                    nas.addTargetGroup(tgtGrp, newTarget);
 
-                nas.addISCSITargetToExtent(newTarget.id, newExtent);
+                iscsiTargetToExtentMapping newTToE = nas.getTargetToExtents().SingleOrDefault(x => x.iscsi_target == newTarget.id);
+                if (newTToE == null)
+                    nas.addISCSITargetToExtent(newTarget.id, newExtent);
             }
         }
     }
@@ -362,6 +384,10 @@ namespace createDisks
 
         private resp doReq(string url, string method, HttpStatusCode expectedCode, string payload = null)
         {
+            if (url.Contains("?"))
+                url = url + "&limit=999999";
+            else
+                url = url + "?limit=999999";
             HttpWebRequest req = (HttpWebRequest)WebRequest.Create(url);
             req.Method = method;
             CredentialCache cred = new CredentialCache();
@@ -536,7 +562,7 @@ namespace createDisks
 
         public List<snapshot> getSnapshots()
         {
-            string HTTPResponse = doReq("http://" + _serverIp + "/api/v1.0/storage/snapshot/?format=json", "get", HttpStatusCode.OK).text;
+            string HTTPResponse = doReq("http://" + _serverIp + "/api/v1.0/storage/snapshot/", "get", HttpStatusCode.OK).text;
             return JsonConvert.DeserializeObject<List<snapshot>>(HTTPResponse);
         }
 
@@ -714,13 +740,13 @@ namespace createDisks
 
         public List<iscsiPortal> getPortals()
         {
-            string HTTPResponse = doReq("http://" + _serverIp + "/api/v1.0/services/iscsi/portal/?format=json", "get", HttpStatusCode.OK).text;
+            string HTTPResponse = doReq("http://" + _serverIp + "/api/v1.0/services/iscsi/portal/", "get", HttpStatusCode.OK).text;
             return JsonConvert.DeserializeObject<List<iscsiPortal>>(HTTPResponse);
         }
 
         public List<targetGroup> getTargetGroups()
         {
-            string HTTPResponse = doReq("http://" + _serverIp + "/api/v1.0/services/iscsi/targetgroup/?format=json", "get", HttpStatusCode.OK).text;
+            string HTTPResponse = doReq("http://" + _serverIp + "/api/v1.0/services/iscsi/targetgroup/", "get", HttpStatusCode.OK).text;
             return JsonConvert.DeserializeObject<List<targetGroup>>(HTTPResponse);
         }
     }
@@ -743,7 +769,7 @@ namespace createDisks
     public class targetGroup
     {
         [JsonProperty("id")]
-        public string id { get; set; }
+        public int id { get; set; }
 
         [JsonProperty("iscsi_target")]
         public int iscsi_target { get; set; }
