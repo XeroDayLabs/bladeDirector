@@ -125,11 +125,15 @@ namespace createDisks
                     Console.WriteLine("ISCSI target {0} not present, skipping", item.cloneName);
                     continue;
                 }
-                iscsiTargetToExtentMapping tgtToExt = tgtToExts.Single(x => x.iscsi_target == tgt.id);
-                iscsiExtent ext = iscsiExtents.Single(x => x.id == tgtToExt.iscsi_extent);
-                nas.deleteISCSITargetToExtent(tgtToExt);
+                iscsiTargetToExtentMapping tgtToExt = tgtToExts.SingleOrDefault(x => x.iscsi_target == tgt.id);
+                if (tgtToExt != null)
+                {
+                    iscsiExtent ext = iscsiExtents.SingleOrDefault(x => x.id == tgtToExt.iscsi_extent);
+                    nas.deleteISCSITargetToExtent(tgtToExt);
+                    if (ext != null)
+                        nas.deleteISCSIExtent(ext);
+                }
                 nas.deleteISCSITarget(tgt);
-                nas.deleteISCSIExtent(ext);
 
                 // Now delete the snapshot.
                 snapshot toDelete = snapshots.SingleOrDefault(x => x.name.Equals(item.cloneName, StringComparison.CurrentCultureIgnoreCase));
@@ -138,7 +142,8 @@ namespace createDisks
 
                 // And the volume.
                 volume vol = nas.findVolumeByName(volumes, item.cloneName);
-                nas.deleteZVol(vol);
+                if (vol != null)
+                    nas.deleteZVol(vol);
             }
         }
 

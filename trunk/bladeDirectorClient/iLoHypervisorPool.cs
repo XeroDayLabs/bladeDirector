@@ -44,7 +44,7 @@ namespace bladeDirectorClient
                         string res = director.RequestNode(nodeName);
 
                         bladeSpec bladeConfig = director.getConfigurationOfBlade(nodeName);
-                        string snapshot = director.getCurrentSnapshotForBlade(nodeName) + "-clean";
+                        string snapshot = director.getCurrentSnapshotForBlade(nodeName);
 
                         hypSpec_iLo spec = new hypSpec_iLo(
                             bladeConfig.bladeIP, iloHostUsername, iloHostPassword,
@@ -145,7 +145,7 @@ namespace bladeDirectorClient
                         iloISCSIIP, iloISCSIUsername, iloISCSIPassword,
                         snapshot, bladeConfig.iLOPort, iloKernelKey
                         );
-
+                    
                     checkPort(bladeConfig);
 
                     bladeDirectedHypervisor_iLo toRet = new bladeDirectedHypervisor_iLo(spec);
@@ -184,7 +184,11 @@ namespace bladeDirectorClient
                 while (true)
                 {
                     Thread.Sleep(TimeSpan.FromSeconds(3));
-                    director.keepAlive();
+                    try
+                    {
+                        director.keepAlive();
+                    }
+                    catch (TimeoutException) { }
                 }
             }
         }
