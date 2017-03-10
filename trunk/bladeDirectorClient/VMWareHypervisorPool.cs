@@ -86,7 +86,7 @@ namespace bladeDirectorClient
 
                     try
                     {
-                        hypervisor_vmware toRet = new hypervisor_vmware(hypKVP.Key);
+                        hypervisor_vmware toRet = new hypervisor_vmware(hypKVP.Key, clientExecutionMethod.smb);
                         toRet.setDisposalCallback(onDestruction);
                         return toRet;
                     }
