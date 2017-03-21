@@ -13,7 +13,7 @@ namespace bladeDirectorClient
         private readonly object keepaliveThreadLock = new object();
         private Thread keepaliveThread = null;
 
-        public hypervisorCollection requestAsManyHypervisorsAsPossible()
+        public hypervisorCollection requestAsManyHypervisorsAsPossible(string snapshotName)
         {
             return requestAsManyHypervisorsAsPossible(
                 Properties.Settings.Default.iloHostUsername,
@@ -23,13 +23,14 @@ namespace bladeDirectorClient
                 Properties.Settings.Default.iloISCSIIP,
                 Properties.Settings.Default.iloISCSIUsername,
                 Properties.Settings.Default.iloISCSIPassword,
-                Properties.Settings.Default.iloKernelKey);
+                Properties.Settings.Default.iloKernelKey,
+                snapshotName);
         }
 
         public hypervisorCollection requestAsManyHypervisorsAsPossible(string iloHostUsername, string iloHostPassword,
             string iloUsername, string iloPassword,
             string iloISCSIIP, string iloISCSIUsername, string iloISCSIPassword,
-            string iloKernelKey)
+            string iloKernelKey, string snapshotName)
         {
             startKeepaliveThreadIfNotRunning();
             using (servicesSoapClient director = new servicesSoapClient("servicesSoap", machinePools.bladeDirectorURL))
@@ -44,6 +45,8 @@ namespace bladeDirectorClient
                         string res = director.RequestNode(nodeName);
 
                         bladeSpec bladeConfig = director.getConfigurationOfBlade(nodeName);
+                        if (director.selectSnapshotForBlade(nodeName, snapshotName) != resultCode.success)
+                            throw new Exception("Can't find snapshot " + snapshotName);
                         string snapshot = director.getCurrentSnapshotForBlade(nodeName);
 
                         hypSpec_iLo spec = new hypSpec_iLo(
