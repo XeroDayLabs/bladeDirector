@@ -251,8 +251,7 @@ namespace bladeDirector
             lock (connLock)
             {
                 string sqlCommand = "select * from bladeOwnership " +
-                                    "join bladeConfiguration on bladeOwnership.bladeConfigID = bladeConfiguration.id " +
-                                    "where bladeOwnership.currentOwner = $bladeIP";
+                                    "join bladeConfiguration on bladeOwnership.bladeConfigID = bladeConfiguration.id ";
                 using (SQLiteCommand cmd = new SQLiteCommand(sqlCommand, conn))
                 {
                     cmd.Parameters.AddWithValue("$bladeIP", reqBladeIP);
