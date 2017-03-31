@@ -5,7 +5,7 @@ REM Name the computer according to our parameters
 wmic computersystem where caption='%COMPUTERNAME%' call rename %1
 
 REM enable the kernel debugger
-bcdedit /dbgsettings net hostip:%2 port:%3
+bcdedit /dbgsettings net hostip:%2 port:%3 key:2ruq4dcwk2vpn.izgzci34d724.2m4t6xj32njhz.xj1k5i6yzx39
 bcdedit /debug on
 
 REM drop down to a single CPU

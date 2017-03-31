@@ -209,6 +209,7 @@ namespace createDisks
             {
                 ilo.connect();
                 ilo.powerOff();
+                Console.WriteLine(itemToAdd.bladeIP + " powered down, allocating via bladeDirector");
 
                 // We must ensure the blade is allocated to the required blade before we power it on. This will cause it to
                 // use the required iSCSI root path.
@@ -222,7 +223,9 @@ namespace createDisks
                     if (shotResCode != resultCode.success)
                         throw new Exception("Can't select snapshot on blade " + itemToAdd.bladeIP);
                 }
+                Console.WriteLine(itemToAdd.bladeIP + " allocated, powering up");
                 ilo.powerOn();
+                Console.WriteLine(itemToAdd.bladeIP + " powered up, deploying");
 
                 // Now deploy and execute our deployment script
                 string args = String.Format("{0} {1} {2}", itemToAdd.computerName, itemToAdd.serverIP, spec.kernelDebugPort);
@@ -242,13 +245,18 @@ namespace createDisks
                     ilo.startExecutable("cmd.exe", string.Format("/c {0}", additionalScript), "C:\\");
                 }
 
+                Console.WriteLine(itemToAdd.bladeIP + " deployed, shutting down");
+
                 // That's all we need, so shut down the system.
                 ilo.startExecutable("C:\\windows\\system32\\cmd", "/c shutdown -s -f -t 01");
 
                 // Once it has shut down totally, we can take the snapshot of it.
                 ilo.WaitForStatus(false, TimeSpan.FromMinutes(1));
 
+                Console.WriteLine(itemToAdd.bladeIP + " turned off, creating snapshot");
+
                 nas.createSnapshot(toCloneVolume + "/" + itemToAdd.cloneName, itemToAdd.snapshotName);
+                Console.WriteLine(itemToAdd.bladeIP + " complete");
             }
         }
 

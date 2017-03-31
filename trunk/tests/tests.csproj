@@ -89,6 +89,10 @@
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\bladeDirectorClient\bladeDirectorClient.csproj">
+      <Project>{4ABB1CC9-0C59-48F3-BE95-0FA21C420055}</Project>
+      <Name>bladeDirectorClient</Name>
+    </ProjectReference>
     <ProjectReference Include="..\bladeDirector\bladeDirector.csproj">
       <Project>{2f67cd72-58aa-423b-8d9a-4e438686b132}</Project>
       <Name>bladeDirector</Name>
