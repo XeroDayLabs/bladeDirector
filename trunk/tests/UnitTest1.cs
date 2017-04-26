@@ -49,7 +49,7 @@ namespace tests
             bladeDirector.services.initWithBlades(new[] {"1.1.1.1", "2.2.2.2", "3.3.3.3"});
             services uut = new bladeDirector.services();
 
-            Assert.AreEqual(resultCode.success.ToString(), uut.RequestNode("1.1.1.1", "192.168.1.1"));
+            Assert.AreEqual(resultCode.success, uut.RequestNode("1.1.1.1", "192.168.1.1"));
 
             string allocated = uut.getBladesByAllocatedServer("192.168.1.1");
             Assert.IsTrue(allocated.Contains("1.1.1.1"), "String '" + allocated + "' does not contain IP we allocated");
@@ -61,24 +61,24 @@ namespace tests
             bladeDirector.services.initWithBlades(new[] {"1.1.1.1", "2.2.2.2", "3.3.3.3"});
             services uut = new bladeDirector.services();
 
-            Assert.AreEqual(resultCode.success.ToString(), uut.RequestNode("1.1.1.1", "192.168.1.1"));
+            Assert.AreEqual(resultCode.success, uut.RequestNode("1.1.1.1", "192.168.1.1"));
 
             // First, the node should be ours.
-            Assert.AreEqual(GetBladeStatusResult.yours.ToString(), uut.GetBladeStatus("1.1.1.1", "192.168.1.1"));
+            Assert.AreEqual(GetBladeStatusResult.yours, uut.GetBladeStatus("1.1.1.1", "192.168.1.1"));
 
             // Then, someoene else requests it..
-            Assert.AreEqual(resultCode.pending.ToString(), uut.RequestNode("1.1.1.1", "192.168.2.2"));
+            Assert.AreEqual(resultCode.pending, uut.RequestNode("1.1.1.1", "192.168.2.2"));
 
             // and it should be pending.
-            Assert.AreEqual(GetBladeStatusResult.releasePending.ToString(), uut.GetBladeStatus("1.1.1.1", "192.168.1.1"));
-            Assert.AreEqual(GetBladeStatusResult.releasePending.ToString(), uut.GetBladeStatus("1.1.1.1", "192.168.2.2"));
+            Assert.AreEqual(GetBladeStatusResult.releasePending, uut.GetBladeStatus("1.1.1.1", "192.168.1.1"));
+            Assert.AreEqual(GetBladeStatusResult.releasePending, uut.GetBladeStatus("1.1.1.1", "192.168.2.2"));
 
             // Then, we release it.. 
-            Assert.AreEqual(resultCode.success.ToString(), uut.releaseBladeDbg("1.1.1.1", "192.168.1.1"));
+            Assert.AreEqual(resultCode.success, uut.releaseBladeDbg("1.1.1.1", "192.168.1.1"));
 
             // and it should belong to the second requestor.
-            Assert.AreEqual(GetBladeStatusResult.notYours.ToString(), uut.GetBladeStatus("1.1.1.1", "192.168.1.1"));
-            Assert.AreEqual(GetBladeStatusResult.yours.ToString(), uut.GetBladeStatus("1.1.1.1", "192.168.2.2"));
+            Assert.AreEqual(GetBladeStatusResult.notYours, uut.GetBladeStatus("1.1.1.1", "192.168.1.1"));
+            Assert.AreEqual(GetBladeStatusResult.yours, uut.GetBladeStatus("1.1.1.1", "192.168.2.2"));
         }
 
         [TestMethod]
@@ -88,8 +88,8 @@ namespace tests
             services uut = new bladeDirector.services();
             hostStateDB.setKeepAliveTimeout(TimeSpan.FromSeconds(10));
 
-            Assert.AreEqual(resultCode.success.ToString(), uut.RequestNode("1.1.1.1", "192.168.1.1"));
-            Assert.AreEqual(resultCode.pending.ToString(), uut.RequestNode("1.1.1.1", "192.168.2.2"));
+            Assert.AreEqual(resultCode.success, uut.RequestNode("1.1.1.1", "192.168.1.1"));
+            Assert.AreEqual(resultCode.pending, uut.RequestNode("1.1.1.1", "192.168.2.2"));
 
             // 1.1 has it, 2.2 is queued
             Assert.IsTrue(uut.isBladeMine("1.1.1.1", "192.168.1.1"));
@@ -113,14 +113,14 @@ namespace tests
             bladeDirector.services.initWithBlades(new[] {"1.1.1.1", "2.2.2.2", "3.3.3.3"});
             services uut = new bladeDirector.services();
 
-            Assert.AreEqual(resultCode.success.ToString(), uut.RequestNode("1.1.1.1", "192.168.1.1"));
+            Assert.AreEqual(resultCode.success, uut.RequestNode("1.1.1.1", "192.168.1.1"));
 
-            Assert.AreEqual(GetBladeStatusResult.yours.ToString(), uut.GetBladeStatus("1.1.1.1", "192.168.1.1"));
+            Assert.AreEqual(GetBladeStatusResult.yours, uut.GetBladeStatus("1.1.1.1", "192.168.1.1"));
 
             uut.forceBladeAllocation("1.1.1.1", "192.168.2.2");
 
-            Assert.AreEqual(GetBladeStatusResult.notYours.ToString(), uut.GetBladeStatus("1.1.1.1", "192.168.1.1"));
-            Assert.AreEqual(GetBladeStatusResult.yours.ToString(), uut.GetBladeStatus("1.1.1.1", "192.168.2.2"));
+            Assert.AreEqual(GetBladeStatusResult.notYours, uut.GetBladeStatus("1.1.1.1", "192.168.1.1"));
+            Assert.AreEqual(GetBladeStatusResult.yours, uut.GetBladeStatus("1.1.1.1", "192.168.2.2"));
         }
 
         [TestMethod]
@@ -130,10 +130,10 @@ namespace tests
             services uut = new bladeDirector.services();
             hostStateDB.setKeepAliveTimeout(TimeSpan.FromSeconds(10));
 
-            Assert.AreEqual(resultCode.success.ToString(), uut.RequestNode("1.1.1.1", "192.168.1.1"));
-            Assert.AreEqual(GetBladeStatusResult.yours.ToString(), uut.GetBladeStatus("1.1.1.1", "192.168.1.1"));
+            Assert.AreEqual(resultCode.success, uut.RequestNode("1.1.1.1", "192.168.1.1"));
+            Assert.AreEqual(GetBladeStatusResult.yours, uut.GetBladeStatus("1.1.1.1", "192.168.1.1"));
             Thread.Sleep(TimeSpan.FromSeconds(11));
-            Assert.AreEqual(GetBladeStatusResult.unused.ToString(), uut.GetBladeStatus("1.1.1.1", "192.168.1.1"));
+            Assert.AreEqual(GetBladeStatusResult.unused, uut.GetBladeStatus("1.1.1.1", "192.168.1.1"));
         }
 
         [TestMethod]
@@ -143,15 +143,15 @@ namespace tests
             services uut = new bladeDirector.services();
             hostStateDB.setKeepAliveTimeout(TimeSpan.FromSeconds(10));
 
-            Assert.AreEqual(resultCode.success.ToString(), uut.RequestNode("1.1.1.1", "192.168.1.1"));
-            Assert.AreEqual(GetBladeStatusResult.yours.ToString(), uut.GetBladeStatus("1.1.1.1", "192.168.1.1"));
+            Assert.AreEqual(resultCode.success, uut.RequestNode("1.1.1.1", "192.168.1.1"));
+            Assert.AreEqual(GetBladeStatusResult.yours, uut.GetBladeStatus("1.1.1.1", "192.168.1.1"));
 
             for (int i = 0; i < 11; i++)
             {
                 uut._keepAlive("192.168.1.1");
                 Thread.Sleep(TimeSpan.FromSeconds(1));
             }
-            Assert.AreEqual(GetBladeStatusResult.yours.ToString(), uut.GetBladeStatus("1.1.1.1", "192.168.1.1"));
+            Assert.AreEqual(GetBladeStatusResult.yours, uut.GetBladeStatus("1.1.1.1", "192.168.1.1"));
         }
 
         [TestMethod]
@@ -161,11 +161,11 @@ namespace tests
 
             services uut = new bladeDirector.services();
 
-            // Default should be "<ip>-<owner>-<snapshot name>". Snapshot name should default to 'clean'.
-            Assert.AreEqual("success", uut.RequestNode("1.2.3.4", "1.1.1.1"));
-            Assert.AreEqual("1.2.3.4-1.1.1.1-clean", uut.getCurrentSnapshotForBlade("1.2.3.4"));
+            // Default snapshot name should be 'clean'.
+            Assert.AreEqual(resultCode.success, uut.RequestNode("1.2.3.4", "1.1.1.1"));
+            Assert.AreEqual("1.2.3.4-clean", uut.getCurrentSnapshotForBlade("1.2.3.4"));
             Assert.AreEqual(resultCode.success, uut.selectSnapshotForBlade("1.2.3.4", "bb"));
-            Assert.AreEqual("1.2.3.4-1.1.1.1-bb", uut.getCurrentSnapshotForBlade("1.2.3.4"));
+            Assert.AreEqual("1.2.3.4-bb", uut.getCurrentSnapshotForBlade("1.2.3.4"));
         }
 
     }

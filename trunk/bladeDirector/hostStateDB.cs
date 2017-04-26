@@ -505,11 +505,18 @@ namespace bladeDirector
             }
 
             // Turn off the blade. We do this even if the blade will be used by someone else after this release.
-            hypSpec_iLo hypSpec = new hypSpec_iLo(reqBlade.bladeIP, Properties.Settings.Default.esxiUsername, Properties.Settings.Default.ltspPassword, 
+            hypSpec_iLo hypSpec = new hypSpec_iLo(reqBlade.bladeIP, Properties.Settings.Default.esxiUsername, Properties.Settings.Default.ltspPassword,
                 reqBlade.iLOIP, Properties.Settings.Default.iloUsername, Properties.Settings.Default.iloPassword, null, null, null, reqBlade.currentSnapshot, 0, null);
             using (hypervisor_iLo hyp = new hypervisor_iLo(hypSpec, clientExecutionMethod.smb))
             {
-                hyp.powerOff();
+                try
+                {
+                    hyp.powerOff();
+                }
+                catch (Exception)
+                {
+                    // Nevermind.
+                }
             }
 
             // Reset any VM-server the blade may be
