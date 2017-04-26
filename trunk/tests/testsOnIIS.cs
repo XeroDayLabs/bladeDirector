@@ -33,7 +33,7 @@ namespace tests
                 resultAndReadBack = writeBIOSAndReadBack(uut, res.bladeName, testBiosXML);
                 Assert.IsTrue(resultAndReadBack.BIOSConfig.Contains("<Section name=\"NumLock\">On</Section>"));
 
-                Assert.AreEqual("success", uut.releaseBladeOrVM(res.bladeName));
+                Assert.AreEqual(networkService.resultCode.success, uut.releaseBladeOrVM(res.bladeName));
             }
         }
 
@@ -44,7 +44,7 @@ namespace tests
             result = uut.rebootAndStartDeployingBIOSToBlade(bladeIP, testBiosXML);
             if (result != networkService.resultCode.pending &&
                 result != networkService.resultCode.noNeedLah)
-                Assert.Fail("checkBIOSDeployProgress returned " + result + ", but we expected success or noNeedLah");
+                Assert.Fail("rebootAndStartDeployingBIOSToBlade returned " + result + ", but we expected success or noNeedLah");
 
             while (result == networkService.resultCode.pending)
             {
