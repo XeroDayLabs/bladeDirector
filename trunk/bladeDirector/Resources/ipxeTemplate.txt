@@ -6,5 +6,4 @@ set net1/ip {BLADE_IP_ISCSI}
 set net1/netmask {BLADE_NETMASK_ISCSI}
 set net1/gateway 0.0.0.0
 set keep-san 1
-echo booting with SAN device "sanboot iscsi:192.168.66.254::::iqn.2016-06.lan.xd.store:{BLADE_SNAPSHOT}"
-sanboot iscsi:192.168.66.254::::iqn.2016-06.lan.xd.store:{BLADE_SNAPSHOT}
+sanboot iscsi:192.168.191.254::::iqn.2016-06.lan.xd.store:{BLADE_SNAPSHOT}

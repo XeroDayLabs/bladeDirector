@@ -9,16 +9,16 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "tests", "tests\tests.csproj
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "createDisks", "createDisks\createDisks.csproj", "{40DADAE3-E73B-4B87-90A8-EC315D0AED76}"
 EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "thirdparty", "..\thirdparty", "{6C6808C2-C6C4-4AE7-8309-12312E9D2B83}"
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "thirdparty", "thirdparty", "{6C6808C2-C6C4-4AE7-8309-12312E9D2B83}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "hypervisors", "..\thirdparty\hypervisors\trunk\hypervisors\hypervisors.csproj", "{47995DD9-9F78-4313-809D-55C515EAF89E}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{FC044D82-66F4-4B0B-800D-12484BFBC4B8}"
-	ProjectSection(SolutionItems) = preProject
-		TestSettings.testsettings = ..\TestSettings.testsettings
-	EndProjectSection
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "bladeDirectorClient", "bladeDirectorClient\bladeDirectorClient.csproj", "{4ABB1CC9-0C59-48F3-BE95-0FA21C420055}"
+	ProjectSection(ProjectDependencies) = postProject
+		{2F67CD72-58AA-423B-8D9A-4E438686B132} = {2F67CD72-58AA-423B-8D9A-4E438686B132}
+	EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

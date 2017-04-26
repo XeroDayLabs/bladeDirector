@@ -3,8 +3,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
-using System.Net;
-using System.Text;
+using System.ServiceModel;
 using System.Threading;
 using System.Threading.Tasks;
 using createDisks.bladeDirector;
@@ -22,7 +21,7 @@ namespace createDisks
     /// <summary>
     /// This class holds enough information to make a clone, extent, and target, when combined with a template snapshot.
     /// </summary>
-    class itemToAdd
+    public class itemToAdd
     {
         public string serverIP;
         public string bladeIP;
@@ -31,6 +30,7 @@ namespace createDisks
         public string computerName;
         public uint kernelDebugPort;
         public string snapshotName;
+        public string kernelDebugKey;
     }
 
     public class createDisksArgs
@@ -52,19 +52,24 @@ namespace createDisks
 
         [Option('u', "directorURL", Required = false, DefaultValue = "alizbuild.xd.lan/bladedirector", HelpText = "URL to the blade director instance to use")]
         public string bladeDirectorURL { get; set; }
+
+        [Option('b', "baseSnapshot", Required = false, DefaultValue = "bladeBaseStablesnapshot", HelpText = "Snapshot to base clones on")]
+        public string baseSnapshot { get; set; }
     }
 
-    class Program
+    public class Program
     {
+        public delegate hypervisorWithSpec<T> hypCreateDelegate<T>(itemToAdd hyp, FreeNAS hostingNAS);
+
         static void Main(string[] args)
         {
             Parser parser = new CommandLine.Parser();
             createDisksArgs parsedArgs = new createDisksArgs();
-            if (parser.ParseArgumentsStrict(args, parsedArgs, () => { Console.Write(HelpText.AutoBuild(parsedArgs).ToString()); }))
+            if (parser.ParseArgumentsStrict(args, parsedArgs, () => { Debug.Write(HelpText.AutoBuild(parsedArgs).ToString()); }))
                 _Main(parsedArgs);
         }
 
-        static void _Main(createDisksArgs args)
+        public static void _Main(createDisksArgs args)
         {
             List<itemToAdd> itemsToAdd = new List<itemToAdd>();
 
@@ -80,7 +85,7 @@ namespace createDisks
                     string computerName = String.Format("blade{0}", uint.Parse(bladeIP).ToString("D2"));
                     string snapshotName = cloneName;
 
-                    var itemToAdd = new itemToAdd
+                    itemToAdd itemToAdd = new itemToAdd
                     {
                         serverIP = serverIP,
                         bladeIP = nodeIP,
@@ -88,6 +93,7 @@ namespace createDisks
                         nodeiLoIP = nodeiLoIP,
                         computerName = computerName,
                         kernelDebugPort = (51000 + uint.Parse(bladeIP)),
+                        kernelDebugKey = Properties.Settings.Default.kernelDebugKey,
                         snapshotName = snapshotName
                     };
 
@@ -98,15 +104,59 @@ namespace createDisks
             if (args.deleteClones)
                 deleteBlades(itemsToAdd.ToArray());
             else
-                addBlades(itemsToAdd.ToArray(), args.tagName, args.bladeDirectorURL, args.additionalScript, args.additionalDeploymentItems, args.repair);
+                addBlades<hypSpec_iLo>(itemsToAdd.ToArray(), args.tagName, args.bladeDirectorURL, args.baseSnapshot, args.additionalScript, args.additionalDeploymentItems, args.repair, makeILOHyp);
         }
 
-        private static void deleteBlades(itemToAdd[] blades)
+        private static hypervisorWithSpec<hypSpec_iLo> makeILOHyp(itemToAdd hyp, FreeNAS hostingnas)
+        {
+            return new hypervisor_iLo(new hypSpec_iLo(
+                hyp.bladeIP,
+                Properties.Settings.Default.iloHostUsername, Properties.Settings.Default.iloHostPassword,
+                hyp.nodeiLoIP, Properties.Settings.Default.iloUsername, Properties.Settings.Default.iloPassword,
+                Properties.Settings.Default.iscsiServerIP, Properties.Settings.Default.iscsiServerUsername, Properties.Settings.Default.iscsiServerPassword,
+                "", (ushort)hyp.kernelDebugPort, hyp.kernelDebugKey));
+        }
+
+        public static bool doesConfigExist(itemToAdd blade, string tagName)
         {
             string nasIP = Properties.Settings.Default.iscsiServerIP;
             string nasUsername = Properties.Settings.Default.iscsiServerUsername;
             string nasPassword = Properties.Settings.Default.iscsiServerPassword;
-            Console.WriteLine("Connecting to NAS at " + nasIP);
+
+            FreeNAS nas = new FreeNAS(nasIP, nasUsername, nasPassword);
+
+            // Get some data from the NAS, so we don't have to keep querying it..
+            List<snapshot> snapshots = nas.getSnapshots();
+            List<iscsiTarget> iscsiTargets = nas.getISCSITargets();
+            List<iscsiTargetToExtentMapping> tgtToExts = nas.getTargetToExtents();
+            List<volume> volumes = nas.getVolumes();
+
+            blade.cloneName = String.Format("{0}-{1}", blade.bladeIP, tagName);
+
+            iscsiTarget tgt = iscsiTargets.SingleOrDefault(x => x.targetName == blade.cloneName);
+            if (tgt == null)
+                return false;
+            iscsiTargetToExtentMapping tgtToExt = tgtToExts.SingleOrDefault(x => x.iscsi_target == tgt.id);
+            if (tgtToExt == null)
+                return false;
+
+            snapshot theSnapshot = snapshots.SingleOrDefault(x => x.name.Equals(blade.cloneName, StringComparison.CurrentCultureIgnoreCase));
+            if (theSnapshot == null)
+                return false;
+
+            volume vol = nas.findVolumeByName(volumes, blade.cloneName);
+            if (vol == null)
+                return false;
+
+            return true;
+        }
+
+        public static void deleteBlades(itemToAdd[] blades)
+        {
+            string nasIP = Properties.Settings.Default.iscsiServerIP;
+            string nasUsername = Properties.Settings.Default.iscsiServerUsername;
+            string nasPassword = Properties.Settings.Default.iscsiServerPassword;
+            Debug.WriteLine("Connecting to NAS at " + nasIP);
             FreeNAS nas = new FreeNAS(nasIP, nasUsername, nasPassword);
 
             // Get some data from the NAS, so we don't have to keep querying it..
@@ -120,58 +170,100 @@ namespace createDisks
             {
                 // Delete target-to-extent, target, and extent
                 iscsiTarget tgt = iscsiTargets.SingleOrDefault(x => x.targetName == item.cloneName);
-                if (tgt == null)
+                if (tgt != null)
+                    nas.deleteISCSITarget(tgt);
+
+                iscsiExtent ext = iscsiExtents.SingleOrDefault(x => x.iscsi_target_extent_name == item.cloneName);
+                if (ext != null)
+                    nas.deleteISCSIExtent(ext);
+                /*
+                if (tgt != null || ext != null)
                 {
-                    Console.WriteLine("ISCSI target {0} not present, skipping", item.cloneName);
-                    continue;
-                }
-                iscsiTargetToExtentMapping tgtToExt = tgtToExts.SingleOrDefault(x => x.iscsi_target == tgt.id);
-                if (tgtToExt != null)
-                {
-                    iscsiExtent ext = iscsiExtents.SingleOrDefault(x => x.id == tgtToExt.iscsi_extent);
-                    nas.deleteISCSITargetToExtent(tgtToExt);
-                    if (ext != null)
-                        nas.deleteISCSIExtent(ext);
-                }
-                nas.deleteISCSITarget(tgt);
+                    iscsiTargetToExtentMapping tgtToExt = tgtToExts.SingleOrDefault(x => 
+                        ( tgt != null && (x.iscsi_target == tgt.id) || 
+                        ( ext != null && (x.iscsi_extent == ext.id   ))));
+                    if (tgtToExt != null)
+                    {
+                        nas.deleteISCSITargetToExtent(tgtToExt);
+                    }
+                }*/
 
                 // Now delete the snapshot.
-                snapshot toDelete = snapshots.SingleOrDefault(x => x.name.Equals(item.cloneName, StringComparison.CurrentCultureIgnoreCase));
+                snapshot toDelete = snapshots.SingleOrDefault(x => x.name.Equals(item.snapshotName, StringComparison.CurrentCultureIgnoreCase));
                 if (toDelete != null)
                     nas.deleteSnapshot(toDelete);
 
-                // And the volume.
-                volume vol = nas.findVolumeByName(volumes, item.cloneName);
+                // And the volume. Use a retry here since freenas will return before the iscsi deletion is complete,
+                    volume vol = nas.findVolumeByName(volumes, item.cloneName);
                 if (vol != null)
-                    nas.deleteZVol(vol);
+                {
+                    DateTime deadline = DateTime.Now + TimeSpan.FromMinutes(4);
+                    while (true)
+                    {
+                        try
+                        {
+                            nas.deleteZVol(vol);
+                            break;
+                        }
+                        catch (Exception)
+                        {
+                            if (DateTime.Now > deadline)
+                                throw;
+                            Thread.Sleep(TimeSpan.FromSeconds(15));
+                        }
+                    }
+                }
             }
         }
 
-        static void addBlades(itemToAdd[] itemsToAdd, string tagName, string directorURL, string additionalScript, string[] additionalDeploymentItem, bool repairMode)
+        public static void addBlades<T>(itemToAdd[] itemsToAdd, string tagName, string directorURL, string baseSnapshot, string additionalScript, string[] additionalDeploymentItem, bool repairMode, hypCreateDelegate<T> createHyp, DateTime deadline = default(DateTime))
         {
+            if (deadline == default(DateTime))
+                deadline = DateTime.MaxValue;
+
             string nasIP = Properties.Settings.Default.iscsiServerIP;
             string nasUsername = Properties.Settings.Default.iscsiServerUsername;
             string nasPassword = Properties.Settings.Default.iscsiServerPassword;
-            Console.WriteLine("Connecting to NAS at " + nasIP);
+            Debug.WriteLine("Connecting to NAS at " + nasIP);
 
             FreeNAS nas = new FreeNAS(nasIP, nasUsername, nasPassword);
 
+            if (DateTime.Now > deadline) throw new TimeoutException();
+
             // Get the snapshot we'll be cloning
             List<snapshot> snapshots = nas.getSnapshots();
-            snapshot toClone = snapshots.SingleOrDefault(x => x.name.Equals(Properties.Settings.Default.iscsiBaseName, StringComparison.CurrentCultureIgnoreCase));
+            snapshot toClone = snapshots.SingleOrDefault(x => x.name.Equals(baseSnapshot, StringComparison.CurrentCultureIgnoreCase));
             if (toClone == null)
                 throw new Exception("Snapshot not found");
             string toCloneVolume = toClone.fullname.Split('/')[0];
 
+            if (DateTime.Now > deadline) throw new TimeoutException();
+
             if (!repairMode)
                 createClones(nas, toClone, toCloneVolume, itemsToAdd);
 
+            if (DateTime.Now > deadline) throw new TimeoutException();
+
             exportClonesViaiSCSI(nas, itemsToAdd);
+
+            if (DateTime.Now > deadline) throw new TimeoutException();
 
             if (!repairMode)
             {
+                string[] serverIPs = itemsToAdd.Select(x => x.serverIP).Distinct().ToArray();
+
+                // Ensure there are sufficient threads in the worker pool so that we can prepare everything at the same time.
+                int wkrThreadCount;
+                int completionPortThreads;
+                ThreadPool.GetAvailableThreads(out wkrThreadCount, out completionPortThreads);
+
+                if (wkrThreadCount < serverIPs.Length)
+                    ThreadPool.SetMaxThreads(wkrThreadCount + serverIPs.Length, completionPortThreads);
+
                 // Next, we must prepare each clone. Do this in parallel, per-server.
-                foreach (string serverIP in itemsToAdd.Select(x => x.serverIP).Distinct())
+                CancellationTokenSource tkn = new CancellationTokenSource();
+
+                foreach (string serverIP in serverIPs)
                 {
                     itemToAdd[] toPrep = itemsToAdd.Where(x => x.serverIP == serverIP).ToArray();
                     Task[] toWaitOn = new Task[toPrep.Length];
@@ -179,20 +271,32 @@ namespace createDisks
                     {
                         itemToAdd itemToAdd = toPrep[index];
 
-                        toWaitOn[index] = new Task(() => prepareCloneImage(itemToAdd, toCloneVolume, tagName, directorURL, additionalScript, additionalDeploymentItem));
+                        toWaitOn[index] = new Task(() =>
+                        {
+                            using (hypervisorWithSpec<T> hyp = createHyp(itemToAdd, nas))
+                            {
+                                prepareCloneImage(itemToAdd, toCloneVolume, tagName, directorURL, additionalScript, additionalDeploymentItem, hyp, nas);
+                            }
+                        }, tkn.Token);
                         toWaitOn[index].Start();
                     }
 
-                    foreach (Task task in toWaitOn)
-                        task.Wait();
+                    try
+                    {
+                        Task.WaitAll(toWaitOn, -1, tkn.Token);
+                    }
+                    catch (AggregateException)
+                    {
+                        tkn.Cancel(false);
+
+                        throw;
+                    }
                 }
             }
         }
 
         private static void prepareCloneImage(itemToAdd itemToAdd, string toCloneVolume, string tagName, string directorURL, string additionalScript, string[] additionalDeploymentItem)
         {
-            Console.WriteLine("Preparing " + itemToAdd.bladeIP + " for server " + itemToAdd.serverIP);
-
             string nasIP = Properties.Settings.Default.iscsiServerIP;
             string nasUsername = Properties.Settings.Default.iscsiServerUsername;
             string nasPassword = Properties.Settings.Default.iscsiServerPassword;
@@ -204,63 +308,83 @@ namespace createDisks
                 Properties.Settings.Default.iloHostUsername, Properties.Settings.Default.iloHostPassword,
                 itemToAdd.nodeiLoIP, Properties.Settings.Default.iloUsername, Properties.Settings.Default.iloPassword,
                 nasIP, nasUsername, nasPassword,
-                "", (ushort) itemToAdd.kernelDebugPort, "");
+                "", (ushort) itemToAdd.kernelDebugPort, itemToAdd.kernelDebugKey);
+
             using (hypervisor_iLo ilo = new hypervisor_iLo(spec))
             {
-                ilo.connect();
-                ilo.powerOff();
-                Console.WriteLine(itemToAdd.bladeIP + " powered down, allocating via bladeDirector");
-
-                // We must ensure the blade is allocated to the required blade before we power it on. This will cause it to
-                // use the required iSCSI root path.
-                string url = String.Format("http://{0}/services.asmx", directorURL);
-                using (bladeDirector.servicesSoapClient bladeDirectorClient = new bladeDirector.servicesSoapClient("servicesSoap", url))
-                {
-                    string res = bladeDirectorClient.forceBladeAllocation(itemToAdd.bladeIP, itemToAdd.serverIP);
-                    if (res != "success")
-                        throw new Exception("Can't claim blade " + itemToAdd.bladeIP);
-                    resultCode shotResCode = bladeDirectorClient.selectSnapshotForBlade(itemToAdd.bladeIP, tagName);
-                    if (shotResCode != resultCode.success)
-                        throw new Exception("Can't select snapshot on blade " + itemToAdd.bladeIP);
-                }
-                Console.WriteLine(itemToAdd.bladeIP + " allocated, powering up");
-                ilo.powerOn();
-                Console.WriteLine(itemToAdd.bladeIP + " powered up, deploying");
-
-                // Now deploy and execute our deployment script
-                string args = String.Format("{0} {1} {2}", itemToAdd.computerName, itemToAdd.serverIP, spec.kernelDebugPort);
-                copyAndRunScript(args, ilo);
-
-                // Copy any extra folders the user has requested that we deploy also, if there's an additional script we should
-                // execute, then do that now
-                if (additionalDeploymentItem != null)
-                {
-                    ilo.mkdir("C:\\deployment");
-                    foreach (string toCopy in additionalDeploymentItem)
-                        copyRecursive(ilo, toCopy, "C:\\deployment");
-                    ilo.startExecutable("cmd.exe", string.Format("/c {0}", additionalScript), "C:\\deployment");
-                }
-                else
-                {
-                    ilo.startExecutable("cmd.exe", string.Format("/c {0}", additionalScript), "C:\\");
-                }
-
-                Console.WriteLine(itemToAdd.bladeIP + " deployed, shutting down");
-
-                // That's all we need, so shut down the system.
-                ilo.startExecutable("C:\\windows\\system32\\cmd", "/c shutdown -s -f -t 01");
-
-                // Once it has shut down totally, we can take the snapshot of it.
-                ilo.WaitForStatus(false, TimeSpan.FromMinutes(1));
-
-                Console.WriteLine(itemToAdd.bladeIP + " turned off, creating snapshot");
-
-                nas.createSnapshot(toCloneVolume + "/" + itemToAdd.cloneName, itemToAdd.snapshotName);
-                Console.WriteLine(itemToAdd.bladeIP + " complete");
+                prepareCloneImage(itemToAdd, toCloneVolume, tagName, directorURL, additionalScript, additionalDeploymentItem, ilo, nas);
             }
         }
 
-        private static void copyRecursive(hypervisor_iLo ilo, string srcFileOrDir, string destPath)
+        public static void prepareCloneImage<T>(
+            itemToAdd itemToAdd, string toCloneVolume, string tagName, string directorURL, 
+            string additionalScript, string[] additionalDeploymentItem, hypervisorWithSpec<T> hyp, FreeNAS nas)
+        {
+            Debug.WriteLine("Preparing " + itemToAdd.bladeIP + " for server " + itemToAdd.serverIP);
+
+            hyp.connect();
+            hyp.powerOff();
+            Debug.WriteLine(itemToAdd.bladeIP + " powered down, allocating via bladeDirector");
+
+            // We must ensure the blade is allocated to the required blade before we power it on. This will cause it to
+            // use the required iSCSI root path.
+            EndpointAddress ep = new EndpointAddress(String.Format("http://{0}/services.asmx", directorURL));
+            BasicHttpBinding binding = new BasicHttpBinding();
+            using (bladeDirector.servicesSoapClient bladeDirectorClient = new bladeDirector.servicesSoapClient(binding, ep))
+            {
+                bladeDirectorClient.Open();
+                string res = bladeDirectorClient.forceBladeAllocation(itemToAdd.bladeIP, itemToAdd.serverIP);
+                if (res != "success")
+                    throw new Exception("Can't claim blade " + itemToAdd.bladeIP);
+                resultCode shotResCode = bladeDirectorClient.selectSnapshotForBlade(itemToAdd.bladeIP, tagName);
+                if (shotResCode != resultCode.success)
+                    throw new Exception("Can't select snapshot on blade " + itemToAdd.bladeIP);
+            }
+            Debug.WriteLine(itemToAdd.bladeIP + " allocated, powering up");
+            hyp.powerOn();
+            Debug.WriteLine(itemToAdd.bladeIP + " powered up, deploying");
+
+            // Now deploy and execute our deployment script
+            string args ;
+            if (itemToAdd.serverIP == null || itemToAdd.kernelDebugPort == 0 || itemToAdd.kernelDebugKey == null)
+                args = String.Format("{0}", itemToAdd.computerName);
+            else
+                args = String.Format("{0} {1} {2} {3}", itemToAdd.computerName, itemToAdd.serverIP, itemToAdd.kernelDebugPort, itemToAdd.kernelDebugKey);
+
+            copyAndRunScript(args, hyp);
+
+            // Copy any extra folders the user has requested that we deploy also, if there's an additional script we should
+            // execute, then do that now
+            if (additionalDeploymentItem != null)
+            {
+                hypervisor_iLo.doWithRetryOnSomeExceptions(() => hyp.mkdir("C:\\deployment") );
+                foreach (string toCopy in additionalDeploymentItem)
+                    copyRecursive(hyp, toCopy, "C:\\deployment");
+
+                if (additionalScript != null)
+                    hypervisor_iLo.doWithRetryOnSomeExceptions(() =>hyp.startExecutable("cmd.exe", string.Format("/c {0}", additionalScript), "C:\\deployment"));
+            }
+            else
+            {
+                if (additionalScript != null)
+                    hypervisor_iLo.doWithRetryOnSomeExceptions(() => hyp.startExecutable("cmd.exe", string.Format("/c {0}", additionalScript), "C:\\"));
+            }
+
+            Debug.WriteLine(itemToAdd.bladeIP + " deployed, shutting down");
+
+            // That's all we need, so shut down the system.
+            hypervisor_iLo.doWithRetryOnSomeExceptions(() => hyp.startExecutable("C:\\windows\\system32\\cmd", "/c shutdown -s -f -t 01"));
+
+            // Once it has shut down totally, we can take the snapshot of it.
+            hyp.WaitForStatus(false, TimeSpan.FromMinutes(1));
+
+            Debug.WriteLine(itemToAdd.bladeIP + " turned off, creating snapshot");
+
+            nas.createSnapshot(toCloneVolume + "/" + itemToAdd.cloneName, itemToAdd.snapshotName);
+            Debug.WriteLine(itemToAdd.bladeIP + " complete");
+        }
+
+        private static void copyRecursive(hypervisor hyp, string srcFileOrDir, string destPath)
         {
             FileAttributes attr = File.GetAttributes(srcFileOrDir);
             if (attr.HasFlag(FileAttributes.Directory))
@@ -268,16 +392,24 @@ namespace createDisks
                 foreach (string srcDir in Directory.GetDirectories(srcFileOrDir))
                 {
                     string fullPath = Path.Combine(destPath, Path.GetFileName(srcDir));
-                    ilo.mkdir(fullPath);
+                    hypervisor_iLo.doWithRetryOnSomeExceptions(() => { hyp.mkdir(fullPath); });
                     foreach (string file in Directory.GetFiles(srcFileOrDir))
-                        copyRecursive(ilo, file, fullPath);
+                    {
+                        hypervisor_iLo.doWithRetryOnSomeExceptions(() =>
+                        {
+                            copyRecursive(hyp, file, fullPath);
+                        });
+                    }
                 }
 
                 foreach (string srcFile in Directory.GetFiles(srcFileOrDir))
                 {
                     try
                     {
-                        ilo.copyToGuest(srcFile, Path.Combine(destPath, Path.GetFileName(srcFile)));
+                        hypervisor_iLo.doWithRetryOnSomeExceptions(() =>
+                        {
+                            hyp.copyToGuest(srcFile, Path.Combine(destPath, Path.GetFileName(srcFile)));
+                        });
                     }
                     catch (IOException)
                     {
@@ -289,7 +421,10 @@ namespace createDisks
             {
                 try
                 {
-                    ilo.copyToGuest(srcFileOrDir, Path.Combine(destPath, Path.GetFileName(srcFileOrDir)));
+                    hypervisor_iLo.doWithRetryOnSomeExceptions(() =>
+                    {
+                        hyp.copyToGuest(srcFileOrDir, Path.Combine(destPath, Path.GetFileName(srcFileOrDir)));
+                    });
                 }
                 catch (IOException)
                 {
@@ -298,15 +433,21 @@ namespace createDisks
             }
         }
 
-        private static void copyAndRunScript(string scriptArgs, hypervisor_iLo ilo)
+        private static void copyAndRunScript(string scriptArgs, hypervisor hyp)
         {
             string deployFileName = Path.GetTempFileName();
             try
             {
                 File.WriteAllText(deployFileName, Properties.Resources.deployToBlade);
-                ilo.copyToGuest(deployFileName, "C:\\deployed.bat");
+                hypervisor_iLo.doWithRetryOnSomeExceptions(() =>
+                {
+                    hyp.copyToGuest(deployFileName, "C:\\deployed.bat");
+                });
                 string args = String.Format("/c c:\\deployed.bat {0}", scriptArgs);
-                ilo.startExecutable("cmd.exe", args);
+                hypervisor_iLo.doWithRetryOnSomeExceptions(() =>
+                {
+                    hyp.startExecutable("cmd.exe", args);
+                });
             }
             finally
             {
@@ -331,7 +472,7 @@ namespace createDisks
             // Now we can create snapshots
             foreach (itemToAdd itemToAdd in itemsToAdd)
             {
-                Console.WriteLine("Creating snapshot clones for server '" + itemToAdd.serverIP + "' node '" + itemToAdd.bladeIP + "'");
+                Debug.WriteLine("Creating snapshot clones for server '" + itemToAdd.serverIP + "' node '" + itemToAdd.bladeIP + "'");
                 string fullCloneName = String.Format("{0}/{1}", toCloneVolume, itemToAdd.cloneName);
                 nas.cloneSnapshot(toClone, fullCloneName);
             }
@@ -343,7 +484,7 @@ namespace createDisks
             targetGroup tgtGrp = nas.getTargetGroups()[0];
             foreach (itemToAdd itemToAdd in itemsToAdd)
             {
-                Console.WriteLine("Creating iSCSI target/extent/link for server '" + itemToAdd.serverIP + "' node '" + itemToAdd.bladeIP + "'");
+                Debug.WriteLine("Creating iSCSI target/extent/link for server '" + itemToAdd.serverIP + "' node '" + itemToAdd.bladeIP + "'");
 
                 iscsiTarget toAdd = new iscsiTarget();
                 toAdd.targetAlias = itemToAdd.cloneName;
@@ -375,394 +516,11 @@ namespace createDisks
     }
 
 
-
-    public class FreeNAS
+    public enum hypervisorType
     {
-        private readonly string _serverIp;
-        private readonly string _username;
-        private readonly string _password;
-        private readonly CookieContainer cookies = new CookieContainer();
-
-        public FreeNAS(string serverIP, string username, string password)
-        {
-            _serverIp = serverIP;
-            _username = username;
-            _password = password;
-        }
-
-        public class resp
-        {
-            public string text;
-        }
-
-        private resp doReq(string url, string method, HttpStatusCode expectedCode, string payload = null)
-        {
-            if (url.Contains("?"))
-                url = url + "&limit=999999";
-            else
-                url = url + "?limit=999999";
-            HttpWebRequest req = (HttpWebRequest)WebRequest.Create(url);
-            req.Method = method;
-            CredentialCache cred = new CredentialCache();
-            cred.Add(new Uri(url), "Basic", new NetworkCredential(_username, _password));
-            req.Credentials = cred;
-            req.PreAuthenticate = true;
-
-            if (payload != null)
-            {
-                req.ContentType = "application/json";
-                Byte[] dataBytes = Encoding.ASCII.GetBytes(payload);
-                req.ContentLength = dataBytes.Length;
-                using (Stream stream = req.GetRequestStream())
-                {
-                    stream.Write(dataBytes, 0, dataBytes.Length);
-                }
-            }
-
-            try
-            {
-                using (HttpWebResponse resp = (HttpWebResponse)req.GetResponse())
-                {
-                    using (Stream respStream = resp.GetResponseStream())
-                    {
-                        using (StreamReader respStreamReader = new StreamReader(respStream))
-                        {
-                            string contentString = respStreamReader.ReadToEnd();
-
-                            if (resp.StatusCode != expectedCode)
-                                throw new Exception("FreeNAS API call failed, status " + resp.StatusCode + ", URL " + url + " HTTP response body " + contentString);
-
-                            return new resp() { text = contentString };
-                        }
-                    }
-                }
-            }
-            catch (WebException e)
-            {
-                using (Stream respStream = e.Response.GetResponseStream())
-                {
-                    using (StreamReader respStreamReader = new StreamReader(respStream))
-                    {
-                        string contentString = respStreamReader.ReadToEnd();
-                        throw new Exception("FreeNAS API call failed, status " + ((HttpWebResponse)e.Response).StatusCode + ", URL " + url + " HTTP response body " + contentString);
-                    }
-                }
-            }
-        }
-
-        public List<iscsiTarget> getISCSITargets()
-        {
-            string HTTPResponse = doReq("http://" + _serverIp + "/api/v1.0/services/iscsi/target/", "get", HttpStatusCode.OK).text;
-            return JsonConvert.DeserializeObject<List<iscsiTarget>>(HTTPResponse);
-        }
-
-        public void deleteISCSITarget(iscsiTarget target)
-        {
-            string url = String.Format("http://{0}/api/v1.0/services/iscsi/target/{1}", _serverIp, target.id);
-            doReq(url, "DELETE", HttpStatusCode.NoContent);
-        }
-
-        public List<iscsiTargetToExtentMapping> getTargetToExtents()
-        {
-            string HTTPResponse = doReq("http://" + _serverIp + "/api/v1.0/services/iscsi/targettoextent/", "get", HttpStatusCode.OK).text;
-            return JsonConvert.DeserializeObject<List<iscsiTargetToExtentMapping>>(HTTPResponse);
-        }
-
-        public List<iscsiExtent> getExtents()
-        {
-            string HTTPResponse = doReq("http://" + _serverIp + "/api/v1.0/services/iscsi/extent/", "get", HttpStatusCode.OK).text;
-            return JsonConvert.DeserializeObject<List<iscsiExtent>>(HTTPResponse);
-        }
-
-        public void deleteISCSITargetToExtent(iscsiTargetToExtentMapping tgtToExtent)
-        {
-            string url = String.Format("http://{0}/api/v1.0/services/iscsi/targettoextent/{1}", _serverIp, tgtToExtent.id);
-            doReq(url, "DELETE", HttpStatusCode.NoContent);
-        }
-
-        public void deleteZVol(volume toDelete)
-        {
-            // Oh no, the freenas API keeps returning HTTP 404 when I try to delete a volume! :( We ignore it and use the web UI
-            // instead. ;_;
-            DoNonAPIReq("", HttpStatusCode.OK);
-
-            string url = "account/login/";
-            string payloadStr = string.Format("username={0}&password={1}", _username, _password);
-            DoNonAPIReq(url, HttpStatusCode.OK, payloadStr);
-
-            // Now we can do the request to rollback the snapshot.
-            string resp = DoNonAPIReq("storage/zvol/delete/" + toDelete.path + "/", HttpStatusCode.OK, "");
-
-            if (resp.Contains("\"error\": true") || !resp.Contains("Volume successfully destroyed"))
-                throw new Exception("Volume deletion failed: " + resp);
-        }
-
-        public void deleteVolume(volume toDelete)
-        {
-            string url = String.Format("http://{0}/api/v1.0/storage/volume/{1}/", _serverIp, toDelete.id);
-            string payload = "{ \"destroy\": true, \"cascade\": true} ";
-            doReq(url, "DELETE", HttpStatusCode.NoContent, payload);
-        }
-
-        public void deleteISCSIExtent(iscsiExtent extent)
-        {
-            string url = String.Format("http://{0}/api/v1.0/services/iscsi/extent/{1}", _serverIp, extent.id);
-            doReq(url, "DELETE", HttpStatusCode.NoContent);
-        }
-
-        public List<volume> getVolumes()
-        {
-            string HTTPResponse = doReq("http://" + _serverIp + "/api/v1.0/storage/volume", "get", HttpStatusCode.OK).text;
-            return JsonConvert.DeserializeObject<List<volume>>(HTTPResponse);
-        }
-
-        public zvol getVolume(volume parent)
-        {
-            string url = String.Format("http://{0}/api/v1.0/storage/volume/{1}", _serverIp, parent.id);
-            string HTTPResponse = doReq(url, "get", HttpStatusCode.OK).text;
-            return JsonConvert.DeserializeObject<zvol>(HTTPResponse);
-        }
-
-        public void cloneSnapshot(snapshot snapshot, string path)
-        {
-            string url = String.Format("http://{0}/api/v1.0/storage/snapshot/{1}/clone/", _serverIp, snapshot.fullname);
-            string payload = String.Format("{{\"name\": \"{0}\" }}", path);
-            doReq(url, "POST", HttpStatusCode.Accepted, payload);
-        }
-
-        public volume findVolumeByMountpoint(List<volume> vols, string mountpoint)
-        {
-            if (vols == null)
-                return null;
-
-            volume toRet = vols.SingleOrDefault(x => x.mountpoint == mountpoint);
-            if (toRet != null)
-                return toRet;
-
-            if (vols.All(x => x.children != null && x.children.Count == 0) || vols.Count == 0)
-                return null;
-
-            foreach (volume vol in vols)
-            {
-                volume maybeThis = findVolumeByMountpoint(vol.children, mountpoint);
-                if (maybeThis != null)
-                    return maybeThis;
-            }
-            return null;
-        }
-
-        public volume findVolumeByName(List<volume> vols, string name)
-        {
-            if (vols == null)
-                return null;
-
-            volume toRet = vols.SingleOrDefault(x => x.name == name);
-            if (toRet != null)
-                return toRet;
-
-            if (vols.All(x => x.children != null && x.children.Count == 0) || vols.Count == 0)
-                return null;
-
-            foreach (volume vol in vols)
-            {
-                volume maybeThis = findVolumeByName(vol.children, name);
-                if (maybeThis != null)
-                    return maybeThis;
-            }
-
-            return null;
-        }
-
-        public List<snapshot> getSnapshots()
-        {
-            string HTTPResponse = doReq("http://" + _serverIp + "/api/v1.0/storage/snapshot/", "get", HttpStatusCode.OK).text;
-            return JsonConvert.DeserializeObject<List<snapshot>>(HTTPResponse);
-        }
-
-        public snapshot createSnapshot(string dataset, string name)
-        {
-            string payload = String.Format("{{\"dataset\": \"{0}\", " +
-                                             "\"name\": \"{1}\" " +
-                                           "}}", dataset, name);
-
-            string HTTPResponse = doReq("http://" + _serverIp + "/api/v1.0/storage/snapshot/", "post", HttpStatusCode.Created, payload).text;
-            return JsonConvert.DeserializeObject<snapshot>(HTTPResponse);
-        }
-
-        public snapshot deleteSnapshot(snapshot toDelete)
-        {
-            string name = toDelete.fullname;
-            name = Uri.EscapeDataString(name);
-            string HTTPResponse = doReq("http://" + _serverIp + "/api/v1.0/storage/snapshot/" + name, "DELETE", HttpStatusCode.NoContent).text;
-            return JsonConvert.DeserializeObject<snapshot>(HTTPResponse);
-        }
-
-        public void rollbackSnapshot(snapshot shotToRestore)
-        {
-            // Oh no, FreeNAS doesn't export the 'rollback' command via the API! :( We need to log into the web UI and faff with 
-            // that in order to rollback instead.
-            //
-            // First, do an initial GET to / so we can get a CSRF token and some cookies.
-            DoNonAPIReq("", HttpStatusCode.OK);
-
-            // Now we can perform the login.
-            string url = "account/login/";
-            string payloadStr = string.Format("username={0}&password={1}", _username, _password);
-            DoNonAPIReq(url, HttpStatusCode.OK, payloadStr);
-
-            // Now we can do the request to rollback the snapshot.
-            string resp = DoNonAPIReq("storage/snapshot/rollback/" + shotToRestore.fullname + "/", HttpStatusCode.OK, "");
-
-            if (resp.Contains("\"error\": true") || !resp.Contains("Rollback successful."))
-                throw new Exception("Rollback failed: " + resp);
-        }
-
-        private string DoNonAPIReq(string urlRel, HttpStatusCode expectedCode, string postVars = null)
-        {
-            Uri url = new Uri(String.Format("http://{0}/{1}", _serverIp, urlRel), UriKind.Absolute);
-            HttpWebRequest req = WebRequest.CreateHttp(url);
-            req.UserAgent = "Mozilla/5.0 (Windows NT 6.3; WOW64; rv:42.0) Gecko/20100101 Firefox/42.0";
-            req.Accept = "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8";
-            req.CookieContainer = cookies;
-
-            if (postVars != null)
-            {
-                req.Method = "POST";
-                string csrfToken = cookies.GetCookies(url)["csrftoken"].Value;
-                string payload = postVars + "&csrfmiddlewaretoken=" + csrfToken;
-                Byte[] payloadBytes = Encoding.ASCII.GetBytes(payload);
-                req.ContentLength = payloadBytes.Length;
-                req.ContentType = "application/x-www-form-urlencoded";
-                req.Headers.Add("form_id", "form_str");
-                using (Stream s = req.GetRequestStream())
-                {
-                    s.Write(payloadBytes, 0, payloadBytes.Length);
-                }
-            }
-
-            HttpWebResponse resp = null;
-            try
-            {
-                using (resp = (HttpWebResponse)req.GetResponse())
-                {
-                    if (resp.StatusCode != expectedCode)
-                        throw new Exception("Statuss code was " + resp.StatusCode + " but expected " + expectedCode + " while requesting " + urlRel);
-
-                    using (Stream respStream = resp.GetResponseStream())
-                    {
-                        using (StreamReader respStreamReader = new StreamReader(respStream))
-                        {
-                            return respStreamReader.ReadToEnd();
-                        }
-                    }
-                }
-            }
-            catch (WebException e)
-            {
-                string respText;
-                using (Stream respStream = e.Response.GetResponseStream())
-                {
-                    using (StreamReader respStreamReader = new StreamReader(respStream))
-                    {
-                        respText = respStreamReader.ReadToEnd();
-                    }
-                }
-
-                Debug.WriteLine(e.Message);
-                Debug.WriteLine(respText);
-
-                throw;
-            }
-        }
-
-        public iscsiTarget addISCSITarget(iscsiTarget toAdd)
-        {
-            string payload = String.Format("{{\"iscsi_target_name\": \"{0}\", " +
-                                             "\"iscsi_target_alias\": \"{1}\" " +
-                                           "}}", toAdd.targetName, toAdd.targetAlias);
-            string HTTPResponse = doReq("http://" + _serverIp + "/api/v1.0/services/iscsi/target/", "POST", HttpStatusCode.Created, payload).text;
-            iscsiTarget created = JsonConvert.DeserializeObject<iscsiTarget>(HTTPResponse);
-
-            return created;
-        }
-
-        public iscsiTargetToExtentMapping addISCSITargetToExtent(int targetID, iscsiExtent extent)
-        {
-            string payload = String.Format("{{" +
-                                           "\"iscsi_target\": \"{0}\", " +
-                                           "\"iscsi_extent\": \"{1}\", " +
-                                           "\"iscsi_lunid\": null " +
-                                           "}}", targetID, extent.id);
-            string HTTPResponse = doReq("http://" + _serverIp + "/api/v1.0/services/iscsi/targettoextent/", "POST", HttpStatusCode.Created, payload).text;
-            iscsiTargetToExtentMapping created = JsonConvert.DeserializeObject<iscsiTargetToExtentMapping>(HTTPResponse);
-
-            return created;
-        }
-
-        public targetGroup addTargetGroup(targetGroup toAdd, iscsiTarget target)
-        {
-            string payload = String.Format("{{\"iscsi_target\": \"{0}\", " +
-                                             "\"iscsi_target_authgroup\": \"{1}\", " +
-                                             "\"iscsi_target_authtype\": \"{2}\", " +
-                                             "\"iscsi_target_portalgroup\": \"{3}\", " +
-                                             "\"iscsi_target_initiatorgroup\": \"{4}\", " +
-                                             "\"iscsi_target_initialdigest\": \"{5}\" " +
-                                           "}}", target.id,
-                                           toAdd.iscsi_target_authgroup, toAdd.iscsi_target_authtype, toAdd.iscsi_target_portalgroup,
-                                           toAdd.iscsi_target_initiatorgroup, toAdd.iscsi_target_initialdigest);
-            string HTTPResponse = doReq("http://" + _serverIp + "/api/v1.0/services/iscsi/targetgroup/", "POST", HttpStatusCode.Created, payload).text;
-            targetGroup created = JsonConvert.DeserializeObject<targetGroup>(HTTPResponse);
-
-            return created;
-        }
-
-        public volume findParentVolume(List<volume> vols, volume volToFind)
-        {
-            volume toRet = vols.SingleOrDefault(x => x.children.Count(y => y.name == volToFind.name && x.volType == "dataset") > 0);
-            if (toRet != null)
-                return toRet;
-
-            if (vols.All(x => x.children.Count == 0) || vols.Count == 0)
-                return null;
-
-            foreach (volume vol in vols)
-                return findParentVolume(vol.children, volToFind);
-
-            return null;
-        }
-
-        public iscsiExtent addISCSIExtent(iscsiExtent extent)
-        {
-            // Chop off leading '/dev/' from path
-            string extentPath = extent.iscsi_target_extent_path;
-            if (extentPath.StartsWith("/dev/"))
-                extentPath = extentPath.Substring(5);
-            string payload = String.Format("{{" +
-                                           "\"iscsi_target_extent_type\": \"{0}\", " +
-                                           "\"iscsi_target_extent_name\": \"{1}\", " +
-                                           //"\"iscsi_target_extent_filesize\": \"{2}\", " +
-                                           "\"iscsi_target_extent_disk\": \"{3}\" " +
-                                           "}}", "Disk", extent.iscsi_target_extent_name,
-                extent.iscsi_target_extent_filesize, extentPath);
-            string HTTPResponse = doReq("http://" + _serverIp + "/api/v1.0/services/iscsi/extent/", "POST", HttpStatusCode.Created, payload).text;
-            iscsiExtent created = JsonConvert.DeserializeObject<iscsiExtent>(HTTPResponse);
-
-            return created;
-
-        }
-
-        public List<iscsiPortal> getPortals()
-        {
-            string HTTPResponse = doReq("http://" + _serverIp + "/api/v1.0/services/iscsi/portal/", "get", HttpStatusCode.OK).text;
-            return JsonConvert.DeserializeObject<List<iscsiPortal>>(HTTPResponse);
-        }
-
-        public List<targetGroup> getTargetGroups()
-        {
-            string HTTPResponse = doReq("http://" + _serverIp + "/api/v1.0/services/iscsi/targetgroup/", "get", HttpStatusCode.OK).text;
-            return JsonConvert.DeserializeObject<List<targetGroup>>(HTTPResponse);
-        }
+        ilo, vmware
     }
+
 
     public class zvol
     {

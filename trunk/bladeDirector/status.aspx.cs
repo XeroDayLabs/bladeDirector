@@ -24,9 +24,9 @@ namespace bladeDirector
 
             tblBladeStatus.Rows.Add(headerRow);
 
-            List<bladeOwnership> allBladeInfo = hostStateDB.getAllBladeInfo();
+            List<bladeSpec> allBladeInfo = hostStateDB.getAllBladeInfo();
 
-            foreach (bladeOwnership bladeInfo in allBladeInfo)
+            foreach (bladeSpec bladeInfo in allBladeInfo)
             {
                 // First, assemble the always-visible status row
                 TableRow newRow = new TableRow();
@@ -86,7 +86,7 @@ namespace bladeDirector
             return String.Format("{0}h {1}m {2}s", toshow.Hours, toshow.Minutes, toshow.Seconds );
         }
 
-        private TableRow makeDetailRow(bladeOwnership bladeInfo)
+        private TableRow makeDetailRow(bladeSpec bladeInfo)
         {
             Table detailTable = new Table();
 
@@ -99,7 +99,9 @@ namespace bladeDirector
                 new Label() { Text = "Kernel debug port: " },
                 new Label() { Text = bladeInfo.iLOPort.ToString() + "<br/>", CssClass = "fixedSize" },
                 new Label() { Text = "Is currently having BIOS config deployed: " },
-                new Label() { Text = bladeInfo.currentlyHavingBIOSDeployed .ToString() + "<br/>", CssClass = "fixedSize"}
+                new Label() { Text = bladeInfo.currentlyHavingBIOSDeployed.ToString() + "<br/>", CssClass = "fixedSize" },
+                new Label() { Text = "Is currently acting as VM server: " },
+                new Label() { Text = bladeInfo.currentlyBeingAVMServer.ToString() + "<br/>", CssClass = "fixedSize"}
             ));
             detailTable.Rows.Add(miscTR);
 
@@ -119,6 +121,37 @@ namespace bladeDirector
                 ));
             detailTable.Rows.Add(biosConfigRow);
 
+            // And add rows for any VMs.
+            vmSpec[] VMs = hostStateDB.getVMByVMServerIP(bladeInfo.bladeIP);
+            if (VMs.Length > 0)
+            {
+                TableRow VMHeaderRow = new TableRow();
+                VMHeaderRow.Cells.Add(new TableHeaderCell() { Text = "" });
+                VMHeaderRow.Cells.Add(new TableHeaderCell() { Text = "Child VM IP" });
+                VMHeaderRow.Cells.Add(new TableHeaderCell() { Text = "iSCSI IP" });
+                VMHeaderRow.Cells.Add(new TableHeaderCell() { Text = "Current owner" });
+                VMHeaderRow.Cells.Add(new TableHeaderCell() { Text = "Next owner" });
+                VMHeaderRow.Cells.Add(new TableHeaderCell() { Text = "Current snapshot" });
+                detailTable.Rows.Add(VMHeaderRow);
+            }
+            foreach (vmSpec vmInfo in VMs)
+            {
+                TableRow thisVMRow = new TableRow();
+
+                thisVMRow.Cells.Add(makeTableCell(
+                    makeImageButton("show", "images/collapsed.png", string.Format(@"javascript:toggleConfigBox($(this), ""getIPXEScript.aspx?hostip={0}""); return false;", vmInfo.VMIP)),
+                    new Label() { Text = "Current PXE script" },
+                    makeInvisibleDiv()
+                    ));
+
+                thisVMRow.Cells.Add(new TableCell() { Text = vmInfo.VMIP });
+                thisVMRow.Cells.Add(new TableCell() { Text = vmInfo.iscsiIP });
+                thisVMRow.Cells.Add(new TableCell() { Text = vmInfo.currentOwner });
+                thisVMRow.Cells.Add(new TableCell() { Text = vmInfo.nextOwner });
+                thisVMRow.Cells.Add(new TableCell() { Text = vmInfo.currentSnapshot });
+                detailTable.Rows.Add(thisVMRow);
+            }
+
             TableHeaderRow toRet = new TableHeaderRow();
             TableCell paddingCell = new TableCell { CssClass = "invisible" };
             toRet.Cells.Add(paddingCell);
@@ -127,6 +160,7 @@ namespace bladeDirector
             tc.Controls.Add(detailTable);
             toRet.Cells.Add(tc);
             toRet.Style.Add("display", "none");
+
             return toRet;
         }
 
@@ -165,7 +199,7 @@ namespace bladeDirector
         {
             Button clicked = (Button) sender;
 
-            hostStateDB.releaseBlade(clicked.CommandArgument, "console", true);
+            hostStateDB.releaseBladeOrVM(clicked.CommandArgument, "console", true);
         }
 
         protected void cmdReset_Click(object sender, EventArgs e)
@@ -175,7 +209,7 @@ namespace bladeDirector
 
         protected void cmdAddNode_Click(object sender, EventArgs e)
         {
-            bladeOwnership newBlade = new bladeOwnership(txtNewNodeIP.Text, txtNewISCSI.Text, txtNewIloIP.Text, ushort.Parse(txtNewPort.Text), "-clean", null);
+            bladeSpec newBlade = new bladeSpec(txtNewNodeIP.Text, txtNewISCSI.Text, txtNewIloIP.Text, ushort.Parse(txtNewPort.Text), false, null);
             hostStateDB.addNode(newBlade);
         }
     }

@@ -45,7 +45,7 @@ namespace bladeDirectorClient
                 {
                     foreach (string nodeName in nodes)
                     {
-                        string res = director.RequestNode(nodeName);
+                        resultCode res = director.RequestNode(nodeName);
 
                         bladeSpec bladeConfig = director.getConfigurationOfBlade(nodeName);
                         if (director.selectSnapshotForBlade(nodeName, snapshotName) != resultCode.success)
@@ -221,7 +221,7 @@ namespace bladeDirectorClient
                 }
                 catch (Exception)
                 {
-                    director.releaseBlade(allocatedBladeResult.bladeName);
+                    director.releaseBladeOrVM(allocatedBladeResult.bladeName);
                     throw;
                 }
             }
@@ -269,7 +269,7 @@ namespace bladeDirectorClient
             // And notify the director that this blade is no longer in use.
             using (servicesSoapClient director = new servicesSoapClient("servicesSoap", machinePools.bladeDirectorURL))
             {
-                director.releaseBlade(obj.kernelDebugIPOrHostname);
+                director.releaseBladeOrVM(obj.kernelDebugIPOrHostname);
             }
         }
     }

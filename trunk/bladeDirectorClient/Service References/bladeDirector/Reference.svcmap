@@ -19,11 +19,11 @@
     <ServiceContractMappings />
   </ClientOptions>
   <MetadataSources>
-    <MetadataSource Address="http://alizbuild.xd.lan/bladedirector/services.asmx" Protocol="http" SourceId="1" />
+    <MetadataSource Address="http://localhost/bladedirector/services.asmx" Protocol="http" SourceId="1" />
   </MetadataSources>
   <Metadata>
-    <MetadataFile FileName="services.disco" MetadataType="Disco" ID="d53512be-8068-4d82-a43e-2152839c389c" SourceId="1" SourceUrl="http://alizbuild.xd.lan/bladedirector/services.asmx?disco" />
-    <MetadataFile FileName="services.wsdl" MetadataType="Wsdl" ID="2ba9b818-f713-43da-898d-5da39747ad73" SourceId="1" SourceUrl="http://alizbuild.xd.lan/bladedirector/services.asmx?wsdl" />
+    <MetadataFile FileName="services1.wsdl" MetadataType="Wsdl" ID="a1f40e82-c2f1-499a-90f0-d6dcfbff43f1" SourceId="1" SourceUrl="http://localhost/bladedirector/services.asmx?wsdl" />
+    <MetadataFile FileName="services1.disco" MetadataType="Disco" ID="7a695ecc-adfa-4a28-8e17-f009d0c08900" SourceId="1" SourceUrl="http://localhost/bladedirector/services.asmx?disco" />
   </Metadata>
   <Extensions>
     <ExtensionFile FileName="configuration91.svcinfo" Name="configuration91.svcinfo" />

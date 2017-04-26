@@ -44,6 +44,7 @@
     <PlatformTarget>AnyCPU</PlatformTarget>
     <ErrorReport>prompt</ErrorReport>
     <CodeAnalysisRuleSet>MinimumRecommendedRules.ruleset</CodeAnalysisRuleSet>
+    <UseVSHostingProcess>false</UseVSHostingProcess>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Release|AnyCPU'">
     <OutputPath>bin\Release\</OutputPath>
@@ -74,10 +75,16 @@
     </Otherwise>
   </Choose>
   <ItemGroup>
+    <Compile Include="keepalive.cs" />
     <Compile Include="Properties\Resources.Designer.cs">
       <AutoGen>True</AutoGen>
       <DesignTime>True</DesignTime>
       <DependentUpon>Resources.resx</DependentUpon>
+    </Compile>
+    <Compile Include="Properties\Settings.Designer.cs">
+      <AutoGen>True</AutoGen>
+      <DesignTimeSharedInput>True</DesignTimeSharedInput>
+      <DependentUpon>Settings.settings</DependentUpon>
     </Compile>
     <Compile Include="Service References\networkService\Reference.cs">
       <AutoGen>True</AutoGen>
@@ -85,10 +92,15 @@
       <DependentUpon>Reference.svcmap</DependentUpon>
     </Compile>
     <Compile Include="testsOnIIS.cs" />
+    <Compile Include="testsOnIISWithESXi.cs" />
     <Compile Include="UnitTest1.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\..\thirdparty\hypervisors\trunk\hypervisors\hypervisors.csproj">
+      <Project>{47995dd9-9f78-4313-809d-55c515eaf89e}</Project>
+      <Name>hypervisors</Name>
+    </ProjectReference>
     <ProjectReference Include="..\bladeDirectorClient\bladeDirectorClient.csproj">
       <Project>{4ABB1CC9-0C59-48F3-BE95-0FA21C420055}</Project>
       <Name>bladeDirectorClient</Name>
@@ -103,8 +115,15 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="app.config" />
+    <None Include="Properties\Settings.settings">
+      <Generator>SettingsSingleFileGenerator</Generator>
+      <LastGenOutput>Settings.Designer.cs</LastGenOutput>
+    </None>
     <None Include="Service References\networkService\services.wsdl" />
     <None Include="Service References\networkService\tests.networkService.bladeSpec.datasource">
+      <DependentUpon>Reference.svcmap</DependentUpon>
+    </None>
+    <None Include="Service References\networkService\tests.networkService.GetBladeStatusResult.datasource">
       <DependentUpon>Reference.svcmap</DependentUpon>
     </None>
     <None Include="Service References\networkService\tests.networkService.resultCode.datasource">
@@ -142,6 +161,9 @@
     </EmbeddedResource>
   </ItemGroup>
   <ItemGroup>
+    <None Include="Service References\networkService\tests.networkService.vmSpec.datasource">
+      <DependentUpon>Reference.svcmap</DependentUpon>
+    </None>
     <None Include="testBIOS.xml" />
   </ItemGroup>
   <Choose>

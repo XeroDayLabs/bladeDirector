@@ -46,6 +46,7 @@
         <s:sequence>
           <s:element minOccurs="1" maxOccurs="1" name="code" type="tns:resultCode" />
           <s:element minOccurs="0" maxOccurs="1" name="bladeName" type="s:string" />
+          <s:element minOccurs="0" maxOccurs="1" name="waitToken" type="s:string" />
         </s:sequence>
       </s:complexType>
       <s:simpleType name="resultCode">
@@ -58,6 +59,7 @@
           <s:enumeration value="alreadyInProgress" />
           <s:enumeration value="genericFail" />
           <s:enumeration value="noNeedLah" />
+          <s:enumeration value="unknown" />
         </s:restriction>
       </s:simpleType>
       <s:element name="RequestNode">
@@ -70,7 +72,7 @@
       <s:element name="RequestNodeResponse">
         <s:complexType>
           <s:sequence>
-            <s:element minOccurs="0" maxOccurs="1" name="RequestNodeResult" type="s:string" />
+            <s:element minOccurs="1" maxOccurs="1" name="RequestNodeResult" type="tns:resultCode" />
           </s:sequence>
         </s:complexType>
       </s:element>
@@ -84,10 +86,19 @@
       <s:element name="GetBladeStatusResponse">
         <s:complexType>
           <s:sequence>
-            <s:element minOccurs="0" maxOccurs="1" name="GetBladeStatusResult" type="s:string" />
+            <s:element minOccurs="1" maxOccurs="1" name="GetBladeStatusResult" type="tns:GetBladeStatusResult" />
           </s:sequence>
         </s:complexType>
       </s:element>
+      <s:simpleType name="GetBladeStatusResult">
+        <s:restriction base="s:string">
+          <s:enumeration value="bladeNotFound" />
+          <s:enumeration value="unused" />
+          <s:enumeration value="yours" />
+          <s:enumeration value="releasePending" />
+          <s:enumeration value="notYours" />
+        </s:restriction>
+      </s:simpleType>
       <s:element name="isBladeMine">
         <s:complexType>
           <s:sequence>
@@ -102,17 +113,33 @@
           </s:sequence>
         </s:complexType>
       </s:element>
-      <s:element name="releaseBlade">
+      <s:element name="releaseBladeOrVM">
         <s:complexType>
           <s:sequence>
             <s:element minOccurs="0" maxOccurs="1" name="NodeIP" type="s:string" />
           </s:sequence>
         </s:complexType>
       </s:element>
-      <s:element name="releaseBladeResponse">
+      <s:element name="releaseBladeOrVMResponse">
         <s:complexType>
           <s:sequence>
-            <s:element minOccurs="0" maxOccurs="1" name="releaseBladeResult" type="s:string" />
+            <s:element minOccurs="1" maxOccurs="1" name="releaseBladeOrVMResult" type="tns:resultCode" />
+          </s:sequence>
+        </s:complexType>
+      </s:element>
+      <s:element name="releaseBladeDbg">
+        <s:complexType>
+          <s:sequence>
+            <s:element minOccurs="0" maxOccurs="1" name="nodeIP" type="s:string" />
+            <s:element minOccurs="0" maxOccurs="1" name="requestorIP" type="s:string" />
+            <s:element minOccurs="1" maxOccurs="1" name="force" type="s:boolean" />
+          </s:sequence>
+        </s:complexType>
+      </s:element>
+      <s:element name="releaseBladeDbgResponse">
+        <s:complexType>
+          <s:sequence>
+            <s:element minOccurs="1" maxOccurs="1" name="releaseBladeDbgResult" type="tns:resultCode" />
           </s:sequence>
         </s:complexType>
       </s:element>
@@ -127,7 +154,7 @@
       <s:element name="forceBladeAllocationResponse">
         <s:complexType>
           <s:sequence>
-            <s:element minOccurs="0" maxOccurs="1" name="forceBladeAllocationResult" type="s:string" />
+            <s:element minOccurs="1" maxOccurs="1" name="forceBladeAllocationResult" type="tns:resultCode" />
           </s:sequence>
         </s:complexType>
       </s:element>
@@ -146,36 +173,57 @@
         </s:complexType>
       </s:element>
       <s:complexType name="bladeSpec">
-        <s:sequence>
-          <s:element minOccurs="0" maxOccurs="1" name="iscsiIP" type="s:string" />
-          <s:element minOccurs="0" maxOccurs="1" name="bladeIP" type="s:string" />
-          <s:element minOccurs="0" maxOccurs="1" name="iLOIP" type="s:string" />
-          <s:element minOccurs="1" maxOccurs="1" name="iLOPort" type="s:unsignedShort" />
-          <s:element minOccurs="0" maxOccurs="1" name="currentSnapshot" type="s:string" />
-          <s:element minOccurs="1" maxOccurs="1" name="currentlyHavingBIOSDeployed" type="s:boolean" />
-          <s:element minOccurs="0" maxOccurs="1" name="lastDeployedBIOS" type="s:string" />
-        </s:sequence>
-      </s:complexType>
-      <s:complexType name="bladeOwnership">
         <s:complexContent mixed="false">
-          <s:extension base="tns:bladeSpec">
+          <s:extension base="tns:bladeOwnership">
             <s:sequence>
+              <s:element minOccurs="0" maxOccurs="1" name="iscsiIP" type="s:string" />
+              <s:element minOccurs="0" maxOccurs="1" name="bladeIP" type="s:string" />
+              <s:element minOccurs="0" maxOccurs="1" name="iLOIP" type="s:string" />
+              <s:element minOccurs="1" maxOccurs="1" name="iLOPort" type="s:unsignedShort" />
+              <s:element minOccurs="0" maxOccurs="1" name="iLoUsername" type="s:string" />
+              <s:element minOccurs="0" maxOccurs="1" name="iLoPassword" type="s:string" />
+              <s:element minOccurs="1" maxOccurs="1" name="currentlyHavingBIOSDeployed" type="s:boolean" />
+              <s:element minOccurs="1" maxOccurs="1" name="currentlyBeingAVMServer" type="s:boolean" />
+              <s:element minOccurs="0" maxOccurs="1" name="lastDeployedBIOS" type="s:string" />
               <s:element minOccurs="1" maxOccurs="1" name="bladeID" type="s:long" />
-              <s:element minOccurs="1" maxOccurs="1" name="state" type="tns:bladeStatus" />
-              <s:element minOccurs="0" maxOccurs="1" name="currentOwner" type="s:string" />
-              <s:element minOccurs="0" maxOccurs="1" name="nextOwner" type="s:string" />
-              <s:element minOccurs="1" maxOccurs="1" name="lastKeepAlive" type="s:dateTime" />
+              <s:element minOccurs="0" maxOccurs="1" name="ESXiUsername" type="s:string" />
+              <s:element minOccurs="0" maxOccurs="1" name="ESXiPassword" type="s:string" />
             </s:sequence>
           </s:extension>
         </s:complexContent>
+      </s:complexType>
+      <s:complexType name="bladeOwnership">
+        <s:sequence>
+          <s:element minOccurs="1" maxOccurs="1" name="state" type="tns:bladeStatus" />
+          <s:element minOccurs="0" maxOccurs="1" name="currentOwner" type="s:string" />
+          <s:element minOccurs="0" maxOccurs="1" name="nextOwner" type="s:string" />
+          <s:element minOccurs="1" maxOccurs="1" name="lastKeepAlive" type="s:dateTime" />
+          <s:element minOccurs="1" maxOccurs="1" name="ownershipRowID" nillable="true" type="s:long" />
+          <s:element minOccurs="0" maxOccurs="1" name="currentSnapshot" type="s:string" />
+        </s:sequence>
       </s:complexType>
       <s:simpleType name="bladeStatus">
         <s:restriction base="s:string">
           <s:enumeration value="unused" />
           <s:enumeration value="releaseRequested" />
+          <s:enumeration value="inUseByDirector" />
           <s:enumeration value="inUse" />
         </s:restriction>
       </s:simpleType>
+      <s:element name="getConfigurationOfBladeByID">
+        <s:complexType>
+          <s:sequence>
+            <s:element minOccurs="1" maxOccurs="1" name="NodeID" type="s:int" />
+          </s:sequence>
+        </s:complexType>
+      </s:element>
+      <s:element name="getConfigurationOfBladeByIDResponse">
+        <s:complexType>
+          <s:sequence>
+            <s:element minOccurs="0" maxOccurs="1" name="getConfigurationOfBladeByIDResult" type="tns:bladeSpec" />
+          </s:sequence>
+        </s:complexType>
+      </s:element>
       <s:element name="getCurrentSnapshotForBlade">
         <s:complexType>
           <s:sequence>
@@ -282,12 +330,89 @@
           <s:element minOccurs="0" maxOccurs="1" name="BIOSConfig" type="s:string" />
         </s:sequence>
       </s:complexType>
+      <s:element name="RequestAnySingleVM">
+        <s:complexType>
+          <s:sequence>
+            <s:element minOccurs="0" maxOccurs="1" name="hwSpec" type="tns:VMHardwareSpec" />
+            <s:element minOccurs="0" maxOccurs="1" name="swSpec" type="tns:VMSoftwareSpec" />
+          </s:sequence>
+        </s:complexType>
+      </s:element>
+      <s:complexType name="VMHardwareSpec">
+        <s:sequence>
+          <s:element minOccurs="1" maxOccurs="1" name="memoryMB" type="s:int" />
+          <s:element minOccurs="1" maxOccurs="1" name="cpuCount" type="s:int" />
+        </s:sequence>
+      </s:complexType>
+      <s:complexType name="VMSoftwareSpec">
+        <s:sequence>
+          <s:element minOccurs="0" maxOccurs="1" name="debuggerHost" type="s:string" />
+          <s:element minOccurs="1" maxOccurs="1" name="debuggerPort" type="s:unsignedShort" />
+          <s:element minOccurs="0" maxOccurs="1" name="debuggerKey" type="s:string" />
+          <s:element minOccurs="1" maxOccurs="1" name="forceRecreate" type="s:boolean" />
+        </s:sequence>
+      </s:complexType>
+      <s:element name="RequestAnySingleVMResponse">
+        <s:complexType>
+          <s:sequence>
+            <s:element minOccurs="0" maxOccurs="1" name="RequestAnySingleVMResult" type="tns:resultCodeAndBladeName" />
+          </s:sequence>
+        </s:complexType>
+      </s:element>
+      <s:element name="getProgressOfVMRequest">
+        <s:complexType>
+          <s:sequence>
+            <s:element minOccurs="0" maxOccurs="1" name="waitToken" type="s:string" />
+          </s:sequence>
+        </s:complexType>
+      </s:element>
+      <s:element name="getProgressOfVMRequestResponse">
+        <s:complexType>
+          <s:sequence>
+            <s:element minOccurs="0" maxOccurs="1" name="getProgressOfVMRequestResult" type="tns:resultCodeAndBladeName" />
+          </s:sequence>
+        </s:complexType>
+      </s:element>
+      <s:element name="getConfigurationOfVM">
+        <s:complexType>
+          <s:sequence>
+            <s:element minOccurs="0" maxOccurs="1" name="bladeName" type="s:string" />
+          </s:sequence>
+        </s:complexType>
+      </s:element>
+      <s:element name="getConfigurationOfVMResponse">
+        <s:complexType>
+          <s:sequence>
+            <s:element minOccurs="0" maxOccurs="1" name="getConfigurationOfVMResult" type="tns:vmSpec" />
+          </s:sequence>
+        </s:complexType>
+      </s:element>
+      <s:complexType name="vmSpec">
+        <s:complexContent mixed="false">
+          <s:extension base="tns:bladeOwnership">
+            <s:sequence>
+              <s:element minOccurs="1" maxOccurs="1" name="parentBladeID" type="s:long" />
+              <s:element minOccurs="0" maxOccurs="1" name="iscsiIP" type="s:string" />
+              <s:element minOccurs="0" maxOccurs="1" name="VMIP" type="s:string" />
+              <s:element minOccurs="1" maxOccurs="1" name="vmSpecID" type="s:int" />
+              <s:element minOccurs="0" maxOccurs="1" name="eth0MAC" type="s:string" />
+              <s:element minOccurs="0" maxOccurs="1" name="eth1MAC" type="s:string" />
+              <s:element minOccurs="0" maxOccurs="1" name="displayName" type="s:string" />
+              <s:element minOccurs="0" maxOccurs="1" name="username" type="s:string" />
+              <s:element minOccurs="0" maxOccurs="1" name="password" type="s:string" />
+              <s:element minOccurs="0" maxOccurs="1" name="hwSpec" type="tns:VMHardwareSpec" />
+            </s:sequence>
+          </s:extension>
+        </s:complexContent>
+      </s:complexType>
       <s:element name="string" nillable="true" type="s:string" />
       <s:element name="resultCodeAndBladeName" nillable="true" type="tns:resultCodeAndBladeName" />
+      <s:element name="resultCode" type="tns:resultCode" />
+      <s:element name="GetBladeStatusResult" type="tns:GetBladeStatusResult" />
       <s:element name="boolean" type="s:boolean" />
       <s:element name="bladeSpec" nillable="true" type="tns:bladeSpec" />
-      <s:element name="resultCode" type="tns:resultCode" />
       <s:element name="resultCodeAndBIOSConfig" nillable="true" type="tns:resultCodeAndBIOSConfig" />
+      <s:element name="vmSpec" nillable="true" type="tns:vmSpec" />
     </s:schema>
   </wsdl:types>
   <wsdl:message name="keepAliveSoapIn">
@@ -332,11 +457,17 @@
   <wsdl:message name="isBladeMineSoapOut">
     <wsdl:part name="parameters" element="tns:isBladeMineResponse" />
   </wsdl:message>
-  <wsdl:message name="releaseBladeSoapIn">
-    <wsdl:part name="parameters" element="tns:releaseBlade" />
+  <wsdl:message name="releaseBladeOrVMSoapIn">
+    <wsdl:part name="parameters" element="tns:releaseBladeOrVM" />
   </wsdl:message>
-  <wsdl:message name="releaseBladeSoapOut">
-    <wsdl:part name="parameters" element="tns:releaseBladeResponse" />
+  <wsdl:message name="releaseBladeOrVMSoapOut">
+    <wsdl:part name="parameters" element="tns:releaseBladeOrVMResponse" />
+  </wsdl:message>
+  <wsdl:message name="releaseBladeDbgSoapIn">
+    <wsdl:part name="parameters" element="tns:releaseBladeDbg" />
+  </wsdl:message>
+  <wsdl:message name="releaseBladeDbgSoapOut">
+    <wsdl:part name="parameters" element="tns:releaseBladeDbgResponse" />
   </wsdl:message>
   <wsdl:message name="forceBladeAllocationSoapIn">
     <wsdl:part name="parameters" element="tns:forceBladeAllocation" />
@@ -349,6 +480,12 @@
   </wsdl:message>
   <wsdl:message name="getConfigurationOfBladeSoapOut">
     <wsdl:part name="parameters" element="tns:getConfigurationOfBladeResponse" />
+  </wsdl:message>
+  <wsdl:message name="getConfigurationOfBladeByIDSoapIn">
+    <wsdl:part name="parameters" element="tns:getConfigurationOfBladeByID" />
+  </wsdl:message>
+  <wsdl:message name="getConfigurationOfBladeByIDSoapOut">
+    <wsdl:part name="parameters" element="tns:getConfigurationOfBladeByIDResponse" />
   </wsdl:message>
   <wsdl:message name="getCurrentSnapshotForBladeSoapIn">
     <wsdl:part name="parameters" element="tns:getCurrentSnapshotForBlade" />
@@ -392,6 +529,24 @@
   <wsdl:message name="checkBIOSReadProgressSoapOut">
     <wsdl:part name="parameters" element="tns:checkBIOSReadProgressResponse" />
   </wsdl:message>
+  <wsdl:message name="RequestAnySingleVMSoapIn">
+    <wsdl:part name="parameters" element="tns:RequestAnySingleVM" />
+  </wsdl:message>
+  <wsdl:message name="RequestAnySingleVMSoapOut">
+    <wsdl:part name="parameters" element="tns:RequestAnySingleVMResponse" />
+  </wsdl:message>
+  <wsdl:message name="getProgressOfVMRequestSoapIn">
+    <wsdl:part name="parameters" element="tns:getProgressOfVMRequest" />
+  </wsdl:message>
+  <wsdl:message name="getProgressOfVMRequestSoapOut">
+    <wsdl:part name="parameters" element="tns:getProgressOfVMRequestResponse" />
+  </wsdl:message>
+  <wsdl:message name="getConfigurationOfVMSoapIn">
+    <wsdl:part name="parameters" element="tns:getConfigurationOfVM" />
+  </wsdl:message>
+  <wsdl:message name="getConfigurationOfVMSoapOut">
+    <wsdl:part name="parameters" element="tns:getConfigurationOfVMResponse" />
+  </wsdl:message>
   <wsdl:message name="keepAliveHttpGetIn" />
   <wsdl:message name="keepAliveHttpGetOut" />
   <wsdl:message name="ListNodesHttpGetIn" />
@@ -412,13 +567,13 @@
     <wsdl:part name="NodeIP" type="s:string" />
   </wsdl:message>
   <wsdl:message name="RequestNodeHttpGetOut">
-    <wsdl:part name="Body" element="tns:string" />
+    <wsdl:part name="Body" element="tns:resultCode" />
   </wsdl:message>
   <wsdl:message name="GetBladeStatusHttpGetIn">
     <wsdl:part name="NodeIP" type="s:string" />
   </wsdl:message>
   <wsdl:message name="GetBladeStatusHttpGetOut">
-    <wsdl:part name="Body" element="tns:string" />
+    <wsdl:part name="Body" element="tns:GetBladeStatusResult" />
   </wsdl:message>
   <wsdl:message name="isBladeMineHttpGetIn">
     <wsdl:part name="NodeIP" type="s:string" />
@@ -426,23 +581,37 @@
   <wsdl:message name="isBladeMineHttpGetOut">
     <wsdl:part name="Body" element="tns:boolean" />
   </wsdl:message>
-  <wsdl:message name="releaseBladeHttpGetIn">
+  <wsdl:message name="releaseBladeOrVMHttpGetIn">
     <wsdl:part name="NodeIP" type="s:string" />
   </wsdl:message>
-  <wsdl:message name="releaseBladeHttpGetOut">
-    <wsdl:part name="Body" element="tns:string" />
+  <wsdl:message name="releaseBladeOrVMHttpGetOut">
+    <wsdl:part name="Body" element="tns:resultCode" />
+  </wsdl:message>
+  <wsdl:message name="releaseBladeDbgHttpGetIn">
+    <wsdl:part name="nodeIP" type="s:string" />
+    <wsdl:part name="requestorIP" type="s:string" />
+    <wsdl:part name="force" type="s:string" />
+  </wsdl:message>
+  <wsdl:message name="releaseBladeDbgHttpGetOut">
+    <wsdl:part name="Body" element="tns:resultCode" />
   </wsdl:message>
   <wsdl:message name="forceBladeAllocationHttpGetIn">
     <wsdl:part name="NodeIP" type="s:string" />
     <wsdl:part name="newOwner" type="s:string" />
   </wsdl:message>
   <wsdl:message name="forceBladeAllocationHttpGetOut">
-    <wsdl:part name="Body" element="tns:string" />
+    <wsdl:part name="Body" element="tns:resultCode" />
   </wsdl:message>
   <wsdl:message name="getConfigurationOfBladeHttpGetIn">
     <wsdl:part name="NodeIP" type="s:string" />
   </wsdl:message>
   <wsdl:message name="getConfigurationOfBladeHttpGetOut">
+    <wsdl:part name="Body" element="tns:bladeSpec" />
+  </wsdl:message>
+  <wsdl:message name="getConfigurationOfBladeByIDHttpGetIn">
+    <wsdl:part name="NodeID" type="s:string" />
+  </wsdl:message>
+  <wsdl:message name="getConfigurationOfBladeByIDHttpGetOut">
     <wsdl:part name="Body" element="tns:bladeSpec" />
   </wsdl:message>
   <wsdl:message name="getCurrentSnapshotForBladeHttpGetIn">
@@ -489,6 +658,18 @@
   <wsdl:message name="checkBIOSReadProgressHttpGetOut">
     <wsdl:part name="Body" element="tns:resultCodeAndBIOSConfig" />
   </wsdl:message>
+  <wsdl:message name="getProgressOfVMRequestHttpGetIn">
+    <wsdl:part name="waitToken" type="s:string" />
+  </wsdl:message>
+  <wsdl:message name="getProgressOfVMRequestHttpGetOut">
+    <wsdl:part name="Body" element="tns:resultCodeAndBladeName" />
+  </wsdl:message>
+  <wsdl:message name="getConfigurationOfVMHttpGetIn">
+    <wsdl:part name="bladeName" type="s:string" />
+  </wsdl:message>
+  <wsdl:message name="getConfigurationOfVMHttpGetOut">
+    <wsdl:part name="Body" element="tns:vmSpec" />
+  </wsdl:message>
   <wsdl:message name="keepAliveHttpPostIn" />
   <wsdl:message name="keepAliveHttpPostOut" />
   <wsdl:message name="ListNodesHttpPostIn" />
@@ -509,13 +690,13 @@
     <wsdl:part name="NodeIP" type="s:string" />
   </wsdl:message>
   <wsdl:message name="RequestNodeHttpPostOut">
-    <wsdl:part name="Body" element="tns:string" />
+    <wsdl:part name="Body" element="tns:resultCode" />
   </wsdl:message>
   <wsdl:message name="GetBladeStatusHttpPostIn">
     <wsdl:part name="NodeIP" type="s:string" />
   </wsdl:message>
   <wsdl:message name="GetBladeStatusHttpPostOut">
-    <wsdl:part name="Body" element="tns:string" />
+    <wsdl:part name="Body" element="tns:GetBladeStatusResult" />
   </wsdl:message>
   <wsdl:message name="isBladeMineHttpPostIn">
     <wsdl:part name="NodeIP" type="s:string" />
@@ -523,23 +704,37 @@
   <wsdl:message name="isBladeMineHttpPostOut">
     <wsdl:part name="Body" element="tns:boolean" />
   </wsdl:message>
-  <wsdl:message name="releaseBladeHttpPostIn">
+  <wsdl:message name="releaseBladeOrVMHttpPostIn">
     <wsdl:part name="NodeIP" type="s:string" />
   </wsdl:message>
-  <wsdl:message name="releaseBladeHttpPostOut">
-    <wsdl:part name="Body" element="tns:string" />
+  <wsdl:message name="releaseBladeOrVMHttpPostOut">
+    <wsdl:part name="Body" element="tns:resultCode" />
+  </wsdl:message>
+  <wsdl:message name="releaseBladeDbgHttpPostIn">
+    <wsdl:part name="nodeIP" type="s:string" />
+    <wsdl:part name="requestorIP" type="s:string" />
+    <wsdl:part name="force" type="s:string" />
+  </wsdl:message>
+  <wsdl:message name="releaseBladeDbgHttpPostOut">
+    <wsdl:part name="Body" element="tns:resultCode" />
   </wsdl:message>
   <wsdl:message name="forceBladeAllocationHttpPostIn">
     <wsdl:part name="NodeIP" type="s:string" />
     <wsdl:part name="newOwner" type="s:string" />
   </wsdl:message>
   <wsdl:message name="forceBladeAllocationHttpPostOut">
-    <wsdl:part name="Body" element="tns:string" />
+    <wsdl:part name="Body" element="tns:resultCode" />
   </wsdl:message>
   <wsdl:message name="getConfigurationOfBladeHttpPostIn">
     <wsdl:part name="NodeIP" type="s:string" />
   </wsdl:message>
   <wsdl:message name="getConfigurationOfBladeHttpPostOut">
+    <wsdl:part name="Body" element="tns:bladeSpec" />
+  </wsdl:message>
+  <wsdl:message name="getConfigurationOfBladeByIDHttpPostIn">
+    <wsdl:part name="NodeID" type="s:string" />
+  </wsdl:message>
+  <wsdl:message name="getConfigurationOfBladeByIDHttpPostOut">
     <wsdl:part name="Body" element="tns:bladeSpec" />
   </wsdl:message>
   <wsdl:message name="getCurrentSnapshotForBladeHttpPostIn">
@@ -586,6 +781,18 @@
   <wsdl:message name="checkBIOSReadProgressHttpPostOut">
     <wsdl:part name="Body" element="tns:resultCodeAndBIOSConfig" />
   </wsdl:message>
+  <wsdl:message name="getProgressOfVMRequestHttpPostIn">
+    <wsdl:part name="waitToken" type="s:string" />
+  </wsdl:message>
+  <wsdl:message name="getProgressOfVMRequestHttpPostOut">
+    <wsdl:part name="Body" element="tns:resultCodeAndBladeName" />
+  </wsdl:message>
+  <wsdl:message name="getConfigurationOfVMHttpPostIn">
+    <wsdl:part name="bladeName" type="s:string" />
+  </wsdl:message>
+  <wsdl:message name="getConfigurationOfVMHttpPostOut">
+    <wsdl:part name="Body" element="tns:vmSpec" />
+  </wsdl:message>
   <wsdl:portType name="servicesSoap">
     <wsdl:operation name="keepAlive">
       <wsdl:input message="tns:keepAliveSoapIn" />
@@ -615,9 +822,13 @@
       <wsdl:input message="tns:isBladeMineSoapIn" />
       <wsdl:output message="tns:isBladeMineSoapOut" />
     </wsdl:operation>
-    <wsdl:operation name="releaseBlade">
-      <wsdl:input message="tns:releaseBladeSoapIn" />
-      <wsdl:output message="tns:releaseBladeSoapOut" />
+    <wsdl:operation name="releaseBladeOrVM">
+      <wsdl:input message="tns:releaseBladeOrVMSoapIn" />
+      <wsdl:output message="tns:releaseBladeOrVMSoapOut" />
+    </wsdl:operation>
+    <wsdl:operation name="releaseBladeDbg">
+      <wsdl:input message="tns:releaseBladeDbgSoapIn" />
+      <wsdl:output message="tns:releaseBladeDbgSoapOut" />
     </wsdl:operation>
     <wsdl:operation name="forceBladeAllocation">
       <wsdl:input message="tns:forceBladeAllocationSoapIn" />
@@ -626,6 +837,10 @@
     <wsdl:operation name="getConfigurationOfBlade">
       <wsdl:input message="tns:getConfigurationOfBladeSoapIn" />
       <wsdl:output message="tns:getConfigurationOfBladeSoapOut" />
+    </wsdl:operation>
+    <wsdl:operation name="getConfigurationOfBladeByID">
+      <wsdl:input message="tns:getConfigurationOfBladeByIDSoapIn" />
+      <wsdl:output message="tns:getConfigurationOfBladeByIDSoapOut" />
     </wsdl:operation>
     <wsdl:operation name="getCurrentSnapshotForBlade">
       <wsdl:input message="tns:getCurrentSnapshotForBladeSoapIn" />
@@ -654,6 +869,18 @@
     <wsdl:operation name="checkBIOSReadProgress">
       <wsdl:input message="tns:checkBIOSReadProgressSoapIn" />
       <wsdl:output message="tns:checkBIOSReadProgressSoapOut" />
+    </wsdl:operation>
+    <wsdl:operation name="RequestAnySingleVM">
+      <wsdl:input message="tns:RequestAnySingleVMSoapIn" />
+      <wsdl:output message="tns:RequestAnySingleVMSoapOut" />
+    </wsdl:operation>
+    <wsdl:operation name="getProgressOfVMRequest">
+      <wsdl:input message="tns:getProgressOfVMRequestSoapIn" />
+      <wsdl:output message="tns:getProgressOfVMRequestSoapOut" />
+    </wsdl:operation>
+    <wsdl:operation name="getConfigurationOfVM">
+      <wsdl:input message="tns:getConfigurationOfVMSoapIn" />
+      <wsdl:output message="tns:getConfigurationOfVMSoapOut" />
     </wsdl:operation>
   </wsdl:portType>
   <wsdl:portType name="servicesHttpGet">
@@ -685,9 +912,13 @@
       <wsdl:input message="tns:isBladeMineHttpGetIn" />
       <wsdl:output message="tns:isBladeMineHttpGetOut" />
     </wsdl:operation>
-    <wsdl:operation name="releaseBlade">
-      <wsdl:input message="tns:releaseBladeHttpGetIn" />
-      <wsdl:output message="tns:releaseBladeHttpGetOut" />
+    <wsdl:operation name="releaseBladeOrVM">
+      <wsdl:input message="tns:releaseBladeOrVMHttpGetIn" />
+      <wsdl:output message="tns:releaseBladeOrVMHttpGetOut" />
+    </wsdl:operation>
+    <wsdl:operation name="releaseBladeDbg">
+      <wsdl:input message="tns:releaseBladeDbgHttpGetIn" />
+      <wsdl:output message="tns:releaseBladeDbgHttpGetOut" />
     </wsdl:operation>
     <wsdl:operation name="forceBladeAllocation">
       <wsdl:input message="tns:forceBladeAllocationHttpGetIn" />
@@ -696,6 +927,10 @@
     <wsdl:operation name="getConfigurationOfBlade">
       <wsdl:input message="tns:getConfigurationOfBladeHttpGetIn" />
       <wsdl:output message="tns:getConfigurationOfBladeHttpGetOut" />
+    </wsdl:operation>
+    <wsdl:operation name="getConfigurationOfBladeByID">
+      <wsdl:input message="tns:getConfigurationOfBladeByIDHttpGetIn" />
+      <wsdl:output message="tns:getConfigurationOfBladeByIDHttpGetOut" />
     </wsdl:operation>
     <wsdl:operation name="getCurrentSnapshotForBlade">
       <wsdl:input message="tns:getCurrentSnapshotForBladeHttpGetIn" />
@@ -724,6 +959,14 @@
     <wsdl:operation name="checkBIOSReadProgress">
       <wsdl:input message="tns:checkBIOSReadProgressHttpGetIn" />
       <wsdl:output message="tns:checkBIOSReadProgressHttpGetOut" />
+    </wsdl:operation>
+    <wsdl:operation name="getProgressOfVMRequest">
+      <wsdl:input message="tns:getProgressOfVMRequestHttpGetIn" />
+      <wsdl:output message="tns:getProgressOfVMRequestHttpGetOut" />
+    </wsdl:operation>
+    <wsdl:operation name="getConfigurationOfVM">
+      <wsdl:input message="tns:getConfigurationOfVMHttpGetIn" />
+      <wsdl:output message="tns:getConfigurationOfVMHttpGetOut" />
     </wsdl:operation>
   </wsdl:portType>
   <wsdl:portType name="servicesHttpPost">
@@ -755,9 +998,13 @@
       <wsdl:input message="tns:isBladeMineHttpPostIn" />
       <wsdl:output message="tns:isBladeMineHttpPostOut" />
     </wsdl:operation>
-    <wsdl:operation name="releaseBlade">
-      <wsdl:input message="tns:releaseBladeHttpPostIn" />
-      <wsdl:output message="tns:releaseBladeHttpPostOut" />
+    <wsdl:operation name="releaseBladeOrVM">
+      <wsdl:input message="tns:releaseBladeOrVMHttpPostIn" />
+      <wsdl:output message="tns:releaseBladeOrVMHttpPostOut" />
+    </wsdl:operation>
+    <wsdl:operation name="releaseBladeDbg">
+      <wsdl:input message="tns:releaseBladeDbgHttpPostIn" />
+      <wsdl:output message="tns:releaseBladeDbgHttpPostOut" />
     </wsdl:operation>
     <wsdl:operation name="forceBladeAllocation">
       <wsdl:input message="tns:forceBladeAllocationHttpPostIn" />
@@ -766,6 +1013,10 @@
     <wsdl:operation name="getConfigurationOfBlade">
       <wsdl:input message="tns:getConfigurationOfBladeHttpPostIn" />
       <wsdl:output message="tns:getConfigurationOfBladeHttpPostOut" />
+    </wsdl:operation>
+    <wsdl:operation name="getConfigurationOfBladeByID">
+      <wsdl:input message="tns:getConfigurationOfBladeByIDHttpPostIn" />
+      <wsdl:output message="tns:getConfigurationOfBladeByIDHttpPostOut" />
     </wsdl:operation>
     <wsdl:operation name="getCurrentSnapshotForBlade">
       <wsdl:input message="tns:getCurrentSnapshotForBladeHttpPostIn" />
@@ -794,6 +1045,14 @@
     <wsdl:operation name="checkBIOSReadProgress">
       <wsdl:input message="tns:checkBIOSReadProgressHttpPostIn" />
       <wsdl:output message="tns:checkBIOSReadProgressHttpPostOut" />
+    </wsdl:operation>
+    <wsdl:operation name="getProgressOfVMRequest">
+      <wsdl:input message="tns:getProgressOfVMRequestHttpPostIn" />
+      <wsdl:output message="tns:getProgressOfVMRequestHttpPostOut" />
+    </wsdl:operation>
+    <wsdl:operation name="getConfigurationOfVM">
+      <wsdl:input message="tns:getConfigurationOfVMHttpPostIn" />
+      <wsdl:output message="tns:getConfigurationOfVMHttpPostOut" />
     </wsdl:operation>
   </wsdl:portType>
   <wsdl:binding name="servicesSoap" type="tns:servicesSoap">
@@ -861,8 +1120,17 @@
         <soap:body use="literal" />
       </wsdl:output>
     </wsdl:operation>
-    <wsdl:operation name="releaseBlade">
-      <soap:operation soapAction="http://tempuri.org/releaseBlade" style="document" />
+    <wsdl:operation name="releaseBladeOrVM">
+      <soap:operation soapAction="http://tempuri.org/releaseBladeOrVM" style="document" />
+      <wsdl:input>
+        <soap:body use="literal" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="releaseBladeDbg">
+      <soap:operation soapAction="http://tempuri.org/releaseBladeDbg" style="document" />
       <wsdl:input>
         <soap:body use="literal" />
       </wsdl:input>
@@ -881,6 +1149,15 @@
     </wsdl:operation>
     <wsdl:operation name="getConfigurationOfBlade">
       <soap:operation soapAction="http://tempuri.org/getConfigurationOfBlade" style="document" />
+      <wsdl:input>
+        <soap:body use="literal" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="getConfigurationOfBladeByID">
+      <soap:operation soapAction="http://tempuri.org/getConfigurationOfBladeByID" style="document" />
       <wsdl:input>
         <soap:body use="literal" />
       </wsdl:input>
@@ -944,6 +1221,33 @@
     </wsdl:operation>
     <wsdl:operation name="checkBIOSReadProgress">
       <soap:operation soapAction="http://tempuri.org/checkBIOSReadProgress" style="document" />
+      <wsdl:input>
+        <soap:body use="literal" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="RequestAnySingleVM">
+      <soap:operation soapAction="http://tempuri.org/RequestAnySingleVM" style="document" />
+      <wsdl:input>
+        <soap:body use="literal" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="getProgressOfVMRequest">
+      <soap:operation soapAction="http://tempuri.org/getProgressOfVMRequest" style="document" />
+      <wsdl:input>
+        <soap:body use="literal" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="getConfigurationOfVM">
+      <soap:operation soapAction="http://tempuri.org/getConfigurationOfVM" style="document" />
       <wsdl:input>
         <soap:body use="literal" />
       </wsdl:input>
@@ -1017,8 +1321,17 @@
         <soap12:body use="literal" />
       </wsdl:output>
     </wsdl:operation>
-    <wsdl:operation name="releaseBlade">
-      <soap12:operation soapAction="http://tempuri.org/releaseBlade" style="document" />
+    <wsdl:operation name="releaseBladeOrVM">
+      <soap12:operation soapAction="http://tempuri.org/releaseBladeOrVM" style="document" />
+      <wsdl:input>
+        <soap12:body use="literal" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap12:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="releaseBladeDbg">
+      <soap12:operation soapAction="http://tempuri.org/releaseBladeDbg" style="document" />
       <wsdl:input>
         <soap12:body use="literal" />
       </wsdl:input>
@@ -1037,6 +1350,15 @@
     </wsdl:operation>
     <wsdl:operation name="getConfigurationOfBlade">
       <soap12:operation soapAction="http://tempuri.org/getConfigurationOfBlade" style="document" />
+      <wsdl:input>
+        <soap12:body use="literal" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap12:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="getConfigurationOfBladeByID">
+      <soap12:operation soapAction="http://tempuri.org/getConfigurationOfBladeByID" style="document" />
       <wsdl:input>
         <soap12:body use="literal" />
       </wsdl:input>
@@ -1100,6 +1422,33 @@
     </wsdl:operation>
     <wsdl:operation name="checkBIOSReadProgress">
       <soap12:operation soapAction="http://tempuri.org/checkBIOSReadProgress" style="document" />
+      <wsdl:input>
+        <soap12:body use="literal" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap12:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="RequestAnySingleVM">
+      <soap12:operation soapAction="http://tempuri.org/RequestAnySingleVM" style="document" />
+      <wsdl:input>
+        <soap12:body use="literal" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap12:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="getProgressOfVMRequest">
+      <soap12:operation soapAction="http://tempuri.org/getProgressOfVMRequest" style="document" />
+      <wsdl:input>
+        <soap12:body use="literal" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap12:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="getConfigurationOfVM">
+      <soap12:operation soapAction="http://tempuri.org/getConfigurationOfVM" style="document" />
       <wsdl:input>
         <soap12:body use="literal" />
       </wsdl:input>
@@ -1171,8 +1520,17 @@
         <mime:mimeXml part="Body" />
       </wsdl:output>
     </wsdl:operation>
-    <wsdl:operation name="releaseBlade">
-      <http:operation location="/releaseBlade" />
+    <wsdl:operation name="releaseBladeOrVM">
+      <http:operation location="/releaseBladeOrVM" />
+      <wsdl:input>
+        <http:urlEncoded />
+      </wsdl:input>
+      <wsdl:output>
+        <mime:mimeXml part="Body" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="releaseBladeDbg">
+      <http:operation location="/releaseBladeDbg" />
       <wsdl:input>
         <http:urlEncoded />
       </wsdl:input>
@@ -1191,6 +1549,15 @@
     </wsdl:operation>
     <wsdl:operation name="getConfigurationOfBlade">
       <http:operation location="/getConfigurationOfBlade" />
+      <wsdl:input>
+        <http:urlEncoded />
+      </wsdl:input>
+      <wsdl:output>
+        <mime:mimeXml part="Body" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="getConfigurationOfBladeByID">
+      <http:operation location="/getConfigurationOfBladeByID" />
       <wsdl:input>
         <http:urlEncoded />
       </wsdl:input>
@@ -1254,6 +1621,24 @@
     </wsdl:operation>
     <wsdl:operation name="checkBIOSReadProgress">
       <http:operation location="/checkBIOSReadProgress" />
+      <wsdl:input>
+        <http:urlEncoded />
+      </wsdl:input>
+      <wsdl:output>
+        <mime:mimeXml part="Body" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="getProgressOfVMRequest">
+      <http:operation location="/getProgressOfVMRequest" />
+      <wsdl:input>
+        <http:urlEncoded />
+      </wsdl:input>
+      <wsdl:output>
+        <mime:mimeXml part="Body" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="getConfigurationOfVM">
+      <http:operation location="/getConfigurationOfVM" />
       <wsdl:input>
         <http:urlEncoded />
       </wsdl:input>
@@ -1325,8 +1710,17 @@
         <mime:mimeXml part="Body" />
       </wsdl:output>
     </wsdl:operation>
-    <wsdl:operation name="releaseBlade">
-      <http:operation location="/releaseBlade" />
+    <wsdl:operation name="releaseBladeOrVM">
+      <http:operation location="/releaseBladeOrVM" />
+      <wsdl:input>
+        <mime:content type="application/x-www-form-urlencoded" />
+      </wsdl:input>
+      <wsdl:output>
+        <mime:mimeXml part="Body" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="releaseBladeDbg">
+      <http:operation location="/releaseBladeDbg" />
       <wsdl:input>
         <mime:content type="application/x-www-form-urlencoded" />
       </wsdl:input>
@@ -1345,6 +1739,15 @@
     </wsdl:operation>
     <wsdl:operation name="getConfigurationOfBlade">
       <http:operation location="/getConfigurationOfBlade" />
+      <wsdl:input>
+        <mime:content type="application/x-www-form-urlencoded" />
+      </wsdl:input>
+      <wsdl:output>
+        <mime:mimeXml part="Body" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="getConfigurationOfBladeByID">
+      <http:operation location="/getConfigurationOfBladeByID" />
       <wsdl:input>
         <mime:content type="application/x-www-form-urlencoded" />
       </wsdl:input>
@@ -1408,6 +1811,24 @@
     </wsdl:operation>
     <wsdl:operation name="checkBIOSReadProgress">
       <http:operation location="/checkBIOSReadProgress" />
+      <wsdl:input>
+        <mime:content type="application/x-www-form-urlencoded" />
+      </wsdl:input>
+      <wsdl:output>
+        <mime:mimeXml part="Body" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="getProgressOfVMRequest">
+      <http:operation location="/getProgressOfVMRequest" />
+      <wsdl:input>
+        <mime:content type="application/x-www-form-urlencoded" />
+      </wsdl:input>
+      <wsdl:output>
+        <mime:mimeXml part="Body" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="getConfigurationOfVM">
+      <http:operation location="/getConfigurationOfVM" />
       <wsdl:input>
         <mime:content type="application/x-www-form-urlencoded" />
       </wsdl:input>

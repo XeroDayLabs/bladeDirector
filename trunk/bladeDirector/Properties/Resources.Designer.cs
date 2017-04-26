@@ -91,27 +91,31 @@ namespace bladeDirector.Properties {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to create table bladeConfiguration(
+        ///   Looks up a localized string similar to create table bladeOwnership(
         ///	id integer primary key autoincrement,
+        ///	state,
+        ///	currentOwner,
+        ///	nextOwner,
+        ///	lastKeepAlive
+        ///	);
+        ///
+        ///create table bladeConfiguration(
+        ///	id integer primary key autoincrement,
+        ///	ownershipID unique,
         ///    iscsiIP unique,
         ///    bladeIP unique,
         ///	currentSnapshot,
         ///    iLOIP unique,
         ///    iLOPort unique,
-        ///	currentlyHavingBIOSDeployed
+        ///	currentlyHavingBIOSDeployed,
+        ///	currentlyBeingAVMServer,
+        ///	lastDeployedBIOS,
+        ///
+        ///	foreign key (ownershipID) references bladeOwnership(id)
         ///	);
         ///
-        ///create table bladeOwnership(
-        ///	id integer primary key autoincrement,
-        ///	bladeConfigID,
-        ///	state,
-        ///	currentOwner,
-        ///	nextOwner,
-        ///	lastKeepAlive,
-        ///
-        ///	foreign key (bladeConfigID) references bladeConfigurations(id)
-        ///	);
-        ///.
+        ///create table VMConfiguration(
+        ///	id inte [rest of string was truncated]&quot;;.
         /// </summary>
         internal static string DBCreation {
             get {
@@ -165,6 +169,17 @@ namespace bladeDirector.Properties {
         internal static string ipxeTemplateForBIOS {
             get {
                 return ResourceManager.GetString("ipxeTemplateForBIOS", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to #!ipxe
+        ///
+        ///chain tftp://172.17.128.253/boot/x86/local/esxi/pxelinux.0.
+        /// </summary>
+        internal static string ipxeTemplateForESXi {
+            get {
+                return ResourceManager.GetString("ipxeTemplateForESXi", resourceCulture);
             }
         }
     }

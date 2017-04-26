@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.ServiceModel.Web;
 using System.Web;
 using System.Web.Services;
 
@@ -24,6 +25,7 @@ namespace bladeDirector
 
         public static void initWithBlades(bladeSpec[] spec)
         {
+            hostStateDB.dbFilename = ":memory:";
             hostStateDB.initWithBlades(spec);
         }
 
@@ -31,10 +33,10 @@ namespace bladeDirector
         public void keepAlive()
         {
             string srcIp = HttpContext.Current.Request.UserHostAddress;
-            keepAlive(srcIp);
+            _keepAlive(srcIp);
         }
 
-        public void keepAlive(string srcIP)
+        public void _keepAlive(string srcIP)
         {
             hostStateDB.keepAlive(srcIP);
         }
@@ -57,39 +59,31 @@ namespace bladeDirector
         public resultCodeAndBladeName RequestAnySingleNode()
         {
             string srcIp = HttpContext.Current.Request.UserHostAddress;
-            return RequestAnySingleNode(srcIp);
-        }
-
-        public resultCodeAndBladeName RequestAnySingleNode(string NodeIP)
-        {
-            resultCodeAndBladeName s = hostStateDB.RequestAnySingleNode(NodeIP);
-            return s;
+            return hostStateDB.RequestAnySingleNode(srcIp);
         }
 
         [WebMethod]
-        public string RequestNode(string NodeIP)
+        public resultCode RequestNode(string NodeIP)
         {
             string srcIp = HttpContext.Current.Request.UserHostAddress;
             return RequestNode(NodeIP, srcIp);
         }
 
-        public string RequestNode(string NodeIP, string requestorIP)
+        public resultCode RequestNode(string NodeIP, string requestorIP)
         {
-            resultCode s = hostStateDB.tryRequestNode(NodeIP, requestorIP);
-            return  s.ToString();
+            return hostStateDB.tryRequestNode(NodeIP, requestorIP);
         }
 
         [WebMethod]
-        public string GetBladeStatus(string NodeIP)
+        public GetBladeStatusResult GetBladeStatus(string NodeIP)
         {
             string srcIp = HttpContext.Current.Request.UserHostAddress;
             return GetBladeStatus(NodeIP, srcIp);
         }
 
-        public string GetBladeStatus(string nodeIP, string requestorIP)
+        public GetBladeStatusResult GetBladeStatus(string nodeIP, string requestorIP)
         {
-            GetBladeStatusResult s = hostStateDB.getBladeStatus(nodeIP, requestorIP);
-            return s.ToString();
+            return hostStateDB.getBladeStatus(nodeIP, requestorIP);
         }
 
         [WebMethod]
@@ -105,23 +99,22 @@ namespace bladeDirector
         }
 
         [WebMethod]
-        public string releaseBlade(string NodeIP)
+        public resultCode releaseBladeOrVM(string NodeIP)
         {
             string srcIp = HttpContext.Current.Request.UserHostAddress;
-            return releaseBlade(NodeIP, srcIp);
-        }
-
-        public string releaseBlade(string nodeIP, string requestorIP)
-        {
-            resultCode s = hostStateDB.releaseBlade(nodeIP, requestorIP);
-            return s.ToString();
+            return hostStateDB.releaseBladeOrVM(NodeIP, srcIp, false);
         }
 
         [WebMethod]
-        public string forceBladeAllocation(string NodeIP, string newOwner)
+        public resultCode releaseBladeDbg(string nodeIP, string requestorIP, bool force = false)
         {
-            resultCode s = hostStateDB.forceBladeAllocation(NodeIP, newOwner);
-            return s.ToString();
+            return hostStateDB.releaseBladeOrVM(nodeIP, requestorIP, force);
+        }
+
+        [WebMethod]
+        public resultCode forceBladeAllocation(string NodeIP, string newOwner)
+        {
+            return hostStateDB.forceBladeAllocation(NodeIP, newOwner);
         }
 
         [WebMethod]
@@ -131,15 +124,21 @@ namespace bladeDirector
         }
 
         [WebMethod]
+        public bladeSpec getConfigurationOfBladeByID(int NodeID)
+        {
+            return hostStateDB.getConfigurationOfBladeByID(NodeID);
+        }
+        
+        [WebMethod]
         public string getCurrentSnapshotForBlade(string NodeIP)
         {
-            return hostStateDB.getCurrentSnapshotForBlade(NodeIP);
+            return hostStateDB.getCurrentSnapshotForBladeOrVM(NodeIP);
         }
 
         [WebMethod]
         public resultCode selectSnapshotForBlade(string NodeIP, string snapshotName)
         {
-            return hostStateDB.selectSnapshotForBlade(NodeIP, snapshotName);
+            return hostStateDB.selectSnapshotForBladeOrVM(NodeIP, snapshotName);
         }
 
         [WebMethod]
@@ -172,6 +171,30 @@ namespace bladeDirector
         public resultCodeAndBIOSConfig checkBIOSReadProgress(string NodeIP)
         {
             return hostStateDB.checkBIOSReadProgress(NodeIP);
+        }
+
+        [WebMethod]
+        public resultCodeAndBladeName RequestAnySingleVM(VMHardwareSpec hwSpec, VMSoftwareSpec swSpec)
+        {
+            string requestorIP = HttpContext.Current.Request.UserHostAddress;
+            return hostStateDB.RequestAnySingleVM(requestorIP, hwSpec, swSpec);
+        }
+
+        public resultCodeAndBladeName RequestAnySingleVM(VMHardwareSpec hwSpec, VMSoftwareSpec swSpec, string requestorIP)
+        {
+            return hostStateDB.RequestAnySingleVM(requestorIP, hwSpec, swSpec);
+        }
+
+        [WebMethod]
+        public resultCodeAndBladeName getProgressOfVMRequest(string waitToken)
+        {
+            return hostStateDB.RequestAnySingleVM_getProgress(waitToken);
+        }
+
+        [WebMethod]
+        public vmSpec getConfigurationOfVM(string bladeName)
+        {
+            return hostStateDB.getVMByIP(bladeName);
         }
 
     }

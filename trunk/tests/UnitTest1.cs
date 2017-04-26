@@ -30,8 +30,8 @@ namespace tests
         [TestMethod]
         public void canGetBladeSpec()
         {
-            bladeSpec spec1Expected = new bladeSpec("blade1ip", "blade1iscsiIP", "blade1ILOIP", 111, "..", false, null);
-            bladeSpec spec2Expected = new bladeSpec("blade2ip", "blade2iscsiIP", "blade2ILOIP", 222, "..", false, null);
+            bladeSpec spec1Expected = new bladeSpec("blade1ip", "blade1iscsiIP", "blade1ILOIP", 111, false, null);
+            bladeSpec spec2Expected = new bladeSpec("blade2ip", "blade2iscsiIP", "blade2ILOIP", 222, false, null);
             bladeDirector.services.initWithBlades(new[] {spec1Expected, spec2Expected});
 
             services uut = new bladeDirector.services();
@@ -74,7 +74,7 @@ namespace tests
             Assert.AreEqual(GetBladeStatusResult.releasePending.ToString(), uut.GetBladeStatus("1.1.1.1", "192.168.2.2"));
 
             // Then, we release it.. 
-            Assert.AreEqual(resultCode.success.ToString(), uut.releaseBlade("1.1.1.1", "192.168.1.1"));
+            Assert.AreEqual(resultCode.success.ToString(), uut.releaseBladeDbg("1.1.1.1", "192.168.1.1"));
 
             // and it should belong to the second requestor.
             Assert.AreEqual(GetBladeStatusResult.notYours.ToString(), uut.GetBladeStatus("1.1.1.1", "192.168.1.1"));
@@ -98,7 +98,7 @@ namespace tests
             // Now let 1.1 timeout
             for (int i = 0; i < 11; i++)
             {
-                uut.keepAlive("192.168.2.2");
+                uut._keepAlive("192.168.2.2");
                 Thread.Sleep(TimeSpan.FromSeconds(1));
             }
 
@@ -148,7 +148,7 @@ namespace tests
 
             for (int i = 0; i < 11; i++)
             {
-                uut.keepAlive("192.168.1.1");
+                uut._keepAlive("192.168.1.1");
                 Thread.Sleep(TimeSpan.FromSeconds(1));
             }
             Assert.AreEqual(GetBladeStatusResult.yours.ToString(), uut.GetBladeStatus("1.1.1.1", "192.168.1.1"));

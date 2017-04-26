@@ -38,6 +38,7 @@ namespace tests.networkService {
         
         [System.ServiceModel.OperationContractAttribute(Action="http://tempuri.org/RequestAnySingleNode", ReplyAction="*")]
         [System.ServiceModel.XmlSerializerFormatAttribute(SupportFaults=true)]
+        [System.ServiceModel.ServiceKnownTypeAttribute(typeof(bladeOwnership))]
         tests.networkService.resultCodeAndBladeName RequestAnySingleNode();
         
         [System.ServiceModel.OperationContractAttribute(Action="http://tempuri.org/RequestAnySingleNode", ReplyAction="*")]
@@ -45,48 +46,71 @@ namespace tests.networkService {
         
         [System.ServiceModel.OperationContractAttribute(Action="http://tempuri.org/RequestNode", ReplyAction="*")]
         [System.ServiceModel.XmlSerializerFormatAttribute(SupportFaults=true)]
-        string RequestNode(string NodeIP);
+        [System.ServiceModel.ServiceKnownTypeAttribute(typeof(bladeOwnership))]
+        tests.networkService.resultCode RequestNode(string NodeIP);
         
         [System.ServiceModel.OperationContractAttribute(Action="http://tempuri.org/RequestNode", ReplyAction="*")]
-        System.Threading.Tasks.Task<string> RequestNodeAsync(string NodeIP);
+        System.Threading.Tasks.Task<tests.networkService.resultCode> RequestNodeAsync(string NodeIP);
         
         [System.ServiceModel.OperationContractAttribute(Action="http://tempuri.org/GetBladeStatus", ReplyAction="*")]
         [System.ServiceModel.XmlSerializerFormatAttribute(SupportFaults=true)]
-        string GetBladeStatus(string NodeIP);
+        [System.ServiceModel.ServiceKnownTypeAttribute(typeof(bladeOwnership))]
+        tests.networkService.GetBladeStatusResult GetBladeStatus(string NodeIP);
         
         [System.ServiceModel.OperationContractAttribute(Action="http://tempuri.org/GetBladeStatus", ReplyAction="*")]
-        System.Threading.Tasks.Task<string> GetBladeStatusAsync(string NodeIP);
+        System.Threading.Tasks.Task<tests.networkService.GetBladeStatusResult> GetBladeStatusAsync(string NodeIP);
         
         [System.ServiceModel.OperationContractAttribute(Action="http://tempuri.org/isBladeMine", ReplyAction="*")]
         [System.ServiceModel.XmlSerializerFormatAttribute(SupportFaults=true)]
+        [System.ServiceModel.ServiceKnownTypeAttribute(typeof(bladeOwnership))]
         bool isBladeMine(string NodeIP);
         
         [System.ServiceModel.OperationContractAttribute(Action="http://tempuri.org/isBladeMine", ReplyAction="*")]
         System.Threading.Tasks.Task<bool> isBladeMineAsync(string NodeIP);
         
-        [System.ServiceModel.OperationContractAttribute(Action="http://tempuri.org/releaseBlade", ReplyAction="*")]
+        [System.ServiceModel.OperationContractAttribute(Action="http://tempuri.org/releaseBladeOrVM", ReplyAction="*")]
         [System.ServiceModel.XmlSerializerFormatAttribute(SupportFaults=true)]
-        string releaseBlade(string NodeIP);
+        [System.ServiceModel.ServiceKnownTypeAttribute(typeof(bladeOwnership))]
+        tests.networkService.resultCode releaseBladeOrVM(string NodeIP);
         
-        [System.ServiceModel.OperationContractAttribute(Action="http://tempuri.org/releaseBlade", ReplyAction="*")]
-        System.Threading.Tasks.Task<string> releaseBladeAsync(string NodeIP);
+        [System.ServiceModel.OperationContractAttribute(Action="http://tempuri.org/releaseBladeOrVM", ReplyAction="*")]
+        System.Threading.Tasks.Task<tests.networkService.resultCode> releaseBladeOrVMAsync(string NodeIP);
+        
+        [System.ServiceModel.OperationContractAttribute(Action="http://tempuri.org/releaseBladeDbg", ReplyAction="*")]
+        [System.ServiceModel.XmlSerializerFormatAttribute(SupportFaults=true)]
+        [System.ServiceModel.ServiceKnownTypeAttribute(typeof(bladeOwnership))]
+        tests.networkService.resultCode releaseBladeDbg(string nodeIP, string requestorIP, bool force);
+        
+        [System.ServiceModel.OperationContractAttribute(Action="http://tempuri.org/releaseBladeDbg", ReplyAction="*")]
+        System.Threading.Tasks.Task<tests.networkService.resultCode> releaseBladeDbgAsync(string nodeIP, string requestorIP, bool force);
         
         [System.ServiceModel.OperationContractAttribute(Action="http://tempuri.org/forceBladeAllocation", ReplyAction="*")]
         [System.ServiceModel.XmlSerializerFormatAttribute(SupportFaults=true)]
-        string forceBladeAllocation(string NodeIP, string newOwner);
+        [System.ServiceModel.ServiceKnownTypeAttribute(typeof(bladeOwnership))]
+        tests.networkService.resultCode forceBladeAllocation(string NodeIP, string newOwner);
         
         [System.ServiceModel.OperationContractAttribute(Action="http://tempuri.org/forceBladeAllocation", ReplyAction="*")]
-        System.Threading.Tasks.Task<string> forceBladeAllocationAsync(string NodeIP, string newOwner);
+        System.Threading.Tasks.Task<tests.networkService.resultCode> forceBladeAllocationAsync(string NodeIP, string newOwner);
         
         [System.ServiceModel.OperationContractAttribute(Action="http://tempuri.org/getConfigurationOfBlade", ReplyAction="*")]
         [System.ServiceModel.XmlSerializerFormatAttribute(SupportFaults=true)]
+        [System.ServiceModel.ServiceKnownTypeAttribute(typeof(bladeOwnership))]
         tests.networkService.bladeSpec getConfigurationOfBlade(string NodeIP);
         
         [System.ServiceModel.OperationContractAttribute(Action="http://tempuri.org/getConfigurationOfBlade", ReplyAction="*")]
         System.Threading.Tasks.Task<tests.networkService.bladeSpec> getConfigurationOfBladeAsync(string NodeIP);
         
+        [System.ServiceModel.OperationContractAttribute(Action="http://tempuri.org/getConfigurationOfBladeByID", ReplyAction="*")]
+        [System.ServiceModel.XmlSerializerFormatAttribute(SupportFaults=true)]
+        [System.ServiceModel.ServiceKnownTypeAttribute(typeof(bladeOwnership))]
+        tests.networkService.bladeSpec getConfigurationOfBladeByID(int NodeID);
+        
+        [System.ServiceModel.OperationContractAttribute(Action="http://tempuri.org/getConfigurationOfBladeByID", ReplyAction="*")]
+        System.Threading.Tasks.Task<tests.networkService.bladeSpec> getConfigurationOfBladeByIDAsync(int NodeID);
+        
         [System.ServiceModel.OperationContractAttribute(Action="http://tempuri.org/getCurrentSnapshotForBlade", ReplyAction="*")]
         [System.ServiceModel.XmlSerializerFormatAttribute(SupportFaults=true)]
+        [System.ServiceModel.ServiceKnownTypeAttribute(typeof(bladeOwnership))]
         string getCurrentSnapshotForBlade(string NodeIP);
         
         [System.ServiceModel.OperationContractAttribute(Action="http://tempuri.org/getCurrentSnapshotForBlade", ReplyAction="*")]
@@ -94,6 +118,7 @@ namespace tests.networkService {
         
         [System.ServiceModel.OperationContractAttribute(Action="http://tempuri.org/selectSnapshotForBlade", ReplyAction="*")]
         [System.ServiceModel.XmlSerializerFormatAttribute(SupportFaults=true)]
+        [System.ServiceModel.ServiceKnownTypeAttribute(typeof(bladeOwnership))]
         tests.networkService.resultCode selectSnapshotForBlade(string NodeIP, string snapshotName);
         
         [System.ServiceModel.OperationContractAttribute(Action="http://tempuri.org/selectSnapshotForBlade", ReplyAction="*")]
@@ -101,6 +126,7 @@ namespace tests.networkService {
         
         [System.ServiceModel.OperationContractAttribute(Action="http://tempuri.org/getLastDeployedBIOSForBlade", ReplyAction="*")]
         [System.ServiceModel.XmlSerializerFormatAttribute(SupportFaults=true)]
+        [System.ServiceModel.ServiceKnownTypeAttribute(typeof(bladeOwnership))]
         string getLastDeployedBIOSForBlade(string NodeIP);
         
         [System.ServiceModel.OperationContractAttribute(Action="http://tempuri.org/getLastDeployedBIOSForBlade", ReplyAction="*")]
@@ -108,6 +134,7 @@ namespace tests.networkService {
         
         [System.ServiceModel.OperationContractAttribute(Action="http://tempuri.org/rebootAndStartDeployingBIOSToBlade", ReplyAction="*")]
         [System.ServiceModel.XmlSerializerFormatAttribute(SupportFaults=true)]
+        [System.ServiceModel.ServiceKnownTypeAttribute(typeof(bladeOwnership))]
         tests.networkService.resultCode rebootAndStartDeployingBIOSToBlade(string NodeIP, string BIOSXML);
         
         [System.ServiceModel.OperationContractAttribute(Action="http://tempuri.org/rebootAndStartDeployingBIOSToBlade", ReplyAction="*")]
@@ -115,6 +142,7 @@ namespace tests.networkService {
         
         [System.ServiceModel.OperationContractAttribute(Action="http://tempuri.org/rebootAndStartReadingBIOSConfiguration", ReplyAction="*")]
         [System.ServiceModel.XmlSerializerFormatAttribute(SupportFaults=true)]
+        [System.ServiceModel.ServiceKnownTypeAttribute(typeof(bladeOwnership))]
         tests.networkService.resultCode rebootAndStartReadingBIOSConfiguration(string NodeIP);
         
         [System.ServiceModel.OperationContractAttribute(Action="http://tempuri.org/rebootAndStartReadingBIOSConfiguration", ReplyAction="*")]
@@ -122,6 +150,7 @@ namespace tests.networkService {
         
         [System.ServiceModel.OperationContractAttribute(Action="http://tempuri.org/checkBIOSDeployProgress", ReplyAction="*")]
         [System.ServiceModel.XmlSerializerFormatAttribute(SupportFaults=true)]
+        [System.ServiceModel.ServiceKnownTypeAttribute(typeof(bladeOwnership))]
         tests.networkService.resultCode checkBIOSDeployProgress(string NodeIP);
         
         [System.ServiceModel.OperationContractAttribute(Action="http://tempuri.org/checkBIOSDeployProgress", ReplyAction="*")]
@@ -129,10 +158,35 @@ namespace tests.networkService {
         
         [System.ServiceModel.OperationContractAttribute(Action="http://tempuri.org/checkBIOSReadProgress", ReplyAction="*")]
         [System.ServiceModel.XmlSerializerFormatAttribute(SupportFaults=true)]
+        [System.ServiceModel.ServiceKnownTypeAttribute(typeof(bladeOwnership))]
         tests.networkService.resultCodeAndBIOSConfig checkBIOSReadProgress(string NodeIP);
         
         [System.ServiceModel.OperationContractAttribute(Action="http://tempuri.org/checkBIOSReadProgress", ReplyAction="*")]
         System.Threading.Tasks.Task<tests.networkService.resultCodeAndBIOSConfig> checkBIOSReadProgressAsync(string NodeIP);
+        
+        [System.ServiceModel.OperationContractAttribute(Action="http://tempuri.org/RequestAnySingleVM", ReplyAction="*")]
+        [System.ServiceModel.XmlSerializerFormatAttribute(SupportFaults=true)]
+        [System.ServiceModel.ServiceKnownTypeAttribute(typeof(bladeOwnership))]
+        tests.networkService.resultCodeAndBladeName RequestAnySingleVM(tests.networkService.VMHardwareSpec hwSpec, tests.networkService.VMSoftwareSpec swSpec);
+        
+        [System.ServiceModel.OperationContractAttribute(Action="http://tempuri.org/RequestAnySingleVM", ReplyAction="*")]
+        System.Threading.Tasks.Task<tests.networkService.resultCodeAndBladeName> RequestAnySingleVMAsync(tests.networkService.VMHardwareSpec hwSpec, tests.networkService.VMSoftwareSpec swSpec);
+        
+        [System.ServiceModel.OperationContractAttribute(Action="http://tempuri.org/getProgressOfVMRequest", ReplyAction="*")]
+        [System.ServiceModel.XmlSerializerFormatAttribute(SupportFaults=true)]
+        [System.ServiceModel.ServiceKnownTypeAttribute(typeof(bladeOwnership))]
+        tests.networkService.resultCodeAndBladeName getProgressOfVMRequest(string waitToken);
+        
+        [System.ServiceModel.OperationContractAttribute(Action="http://tempuri.org/getProgressOfVMRequest", ReplyAction="*")]
+        System.Threading.Tasks.Task<tests.networkService.resultCodeAndBladeName> getProgressOfVMRequestAsync(string waitToken);
+        
+        [System.ServiceModel.OperationContractAttribute(Action="http://tempuri.org/getConfigurationOfVM", ReplyAction="*")]
+        [System.ServiceModel.XmlSerializerFormatAttribute(SupportFaults=true)]
+        [System.ServiceModel.ServiceKnownTypeAttribute(typeof(bladeOwnership))]
+        tests.networkService.vmSpec getConfigurationOfVM(string bladeName);
+        
+        [System.ServiceModel.OperationContractAttribute(Action="http://tempuri.org/getConfigurationOfVM", ReplyAction="*")]
+        System.Threading.Tasks.Task<tests.networkService.vmSpec> getConfigurationOfVMAsync(string bladeName);
     }
     
     /// <remarks/>
@@ -146,6 +200,8 @@ namespace tests.networkService {
         private resultCode codeField;
         
         private string bladeNameField;
+        
+        private string waitTokenField;
         
         /// <remarks/>
         [System.Xml.Serialization.XmlElementAttribute(Order=0)]
@@ -168,6 +224,18 @@ namespace tests.networkService {
             set {
                 this.bladeNameField = value;
                 this.RaisePropertyChanged("bladeName");
+            }
+        }
+        
+        /// <remarks/>
+        [System.Xml.Serialization.XmlElementAttribute(Order=2)]
+        public string waitToken {
+            get {
+                return this.waitTokenField;
+            }
+            set {
+                this.waitTokenField = value;
+                this.RaisePropertyChanged("waitToken");
             }
         }
         
@@ -210,6 +278,83 @@ namespace tests.networkService {
         
         /// <remarks/>
         noNeedLah,
+        
+        /// <remarks/>
+        unknown,
+    }
+    
+    /// <remarks/>
+    [System.CodeDom.Compiler.GeneratedCodeAttribute("System.Xml", "4.6.1087.0")]
+    [System.SerializableAttribute()]
+    [System.Diagnostics.DebuggerStepThroughAttribute()]
+    [System.ComponentModel.DesignerCategoryAttribute("code")]
+    [System.Xml.Serialization.XmlTypeAttribute(Namespace="http://tempuri.org/")]
+    public partial class VMSoftwareSpec : object, System.ComponentModel.INotifyPropertyChanged {
+        
+        private string debuggerHostField;
+        
+        private ushort debuggerPortField;
+        
+        private string debuggerKeyField;
+        
+        private bool forceRecreateField;
+        
+        /// <remarks/>
+        [System.Xml.Serialization.XmlElementAttribute(Order=0)]
+        public string debuggerHost {
+            get {
+                return this.debuggerHostField;
+            }
+            set {
+                this.debuggerHostField = value;
+                this.RaisePropertyChanged("debuggerHost");
+            }
+        }
+        
+        /// <remarks/>
+        [System.Xml.Serialization.XmlElementAttribute(Order=1)]
+        public ushort debuggerPort {
+            get {
+                return this.debuggerPortField;
+            }
+            set {
+                this.debuggerPortField = value;
+                this.RaisePropertyChanged("debuggerPort");
+            }
+        }
+        
+        /// <remarks/>
+        [System.Xml.Serialization.XmlElementAttribute(Order=2)]
+        public string debuggerKey {
+            get {
+                return this.debuggerKeyField;
+            }
+            set {
+                this.debuggerKeyField = value;
+                this.RaisePropertyChanged("debuggerKey");
+            }
+        }
+        
+        /// <remarks/>
+        [System.Xml.Serialization.XmlElementAttribute(Order=3)]
+        public bool forceRecreate {
+            get {
+                return this.forceRecreateField;
+            }
+            set {
+                this.forceRecreateField = value;
+                this.RaisePropertyChanged("forceRecreate");
+            }
+        }
+        
+        public event System.ComponentModel.PropertyChangedEventHandler PropertyChanged;
+        
+        protected void RaisePropertyChanged(string propertyName) {
+            System.ComponentModel.PropertyChangedEventHandler propertyChanged = this.PropertyChanged;
+            if ((propertyChanged != null)) {
+                propertyChanged(this, new System.ComponentModel.PropertyChangedEventArgs(propertyName));
+            }
+        }
     }
     
     /// <remarks/>
@@ -259,13 +404,330 @@ namespace tests.networkService {
     }
     
     /// <remarks/>
-    [System.Xml.Serialization.XmlIncludeAttribute(typeof(bladeOwnership))]
     [System.CodeDom.Compiler.GeneratedCodeAttribute("System.Xml", "4.6.1087.0")]
     [System.SerializableAttribute()]
     [System.Diagnostics.DebuggerStepThroughAttribute()]
     [System.ComponentModel.DesignerCategoryAttribute("code")]
     [System.Xml.Serialization.XmlTypeAttribute(Namespace="http://tempuri.org/")]
-    public partial class bladeSpec : object, System.ComponentModel.INotifyPropertyChanged {
+    public partial class VMHardwareSpec : object, System.ComponentModel.INotifyPropertyChanged {
+        
+        private int memoryMBField;
+        
+        private int cpuCountField;
+        
+        /// <remarks/>
+        [System.Xml.Serialization.XmlElementAttribute(Order=0)]
+        public int memoryMB {
+            get {
+                return this.memoryMBField;
+            }
+            set {
+                this.memoryMBField = value;
+                this.RaisePropertyChanged("memoryMB");
+            }
+        }
+        
+        /// <remarks/>
+        [System.Xml.Serialization.XmlElementAttribute(Order=1)]
+        public int cpuCount {
+            get {
+                return this.cpuCountField;
+            }
+            set {
+                this.cpuCountField = value;
+                this.RaisePropertyChanged("cpuCount");
+            }
+        }
+        
+        public event System.ComponentModel.PropertyChangedEventHandler PropertyChanged;
+        
+        protected void RaisePropertyChanged(string propertyName) {
+            System.ComponentModel.PropertyChangedEventHandler propertyChanged = this.PropertyChanged;
+            if ((propertyChanged != null)) {
+                propertyChanged(this, new System.ComponentModel.PropertyChangedEventArgs(propertyName));
+            }
+        }
+    }
+    
+    /// <remarks/>
+    [System.Xml.Serialization.XmlIncludeAttribute(typeof(vmSpec))]
+    [System.Xml.Serialization.XmlIncludeAttribute(typeof(bladeSpec))]
+    [System.CodeDom.Compiler.GeneratedCodeAttribute("System.Xml", "4.6.1087.0")]
+    [System.SerializableAttribute()]
+    [System.Diagnostics.DebuggerStepThroughAttribute()]
+    [System.ComponentModel.DesignerCategoryAttribute("code")]
+    [System.Xml.Serialization.XmlTypeAttribute(Namespace="http://tempuri.org/")]
+    public partial class bladeOwnership : object, System.ComponentModel.INotifyPropertyChanged {
+        
+        private bladeStatus stateField;
+        
+        private string currentOwnerField;
+        
+        private string nextOwnerField;
+        
+        private System.DateTime lastKeepAliveField;
+        
+        private System.Nullable<long> ownershipRowIDField;
+        
+        private string currentSnapshotField;
+        
+        /// <remarks/>
+        [System.Xml.Serialization.XmlElementAttribute(Order=0)]
+        public bladeStatus state {
+            get {
+                return this.stateField;
+            }
+            set {
+                this.stateField = value;
+                this.RaisePropertyChanged("state");
+            }
+        }
+        
+        /// <remarks/>
+        [System.Xml.Serialization.XmlElementAttribute(Order=1)]
+        public string currentOwner {
+            get {
+                return this.currentOwnerField;
+            }
+            set {
+                this.currentOwnerField = value;
+                this.RaisePropertyChanged("currentOwner");
+            }
+        }
+        
+        /// <remarks/>
+        [System.Xml.Serialization.XmlElementAttribute(Order=2)]
+        public string nextOwner {
+            get {
+                return this.nextOwnerField;
+            }
+            set {
+                this.nextOwnerField = value;
+                this.RaisePropertyChanged("nextOwner");
+            }
+        }
+        
+        /// <remarks/>
+        [System.Xml.Serialization.XmlElementAttribute(Order=3)]
+        public System.DateTime lastKeepAlive {
+            get {
+                return this.lastKeepAliveField;
+            }
+            set {
+                this.lastKeepAliveField = value;
+                this.RaisePropertyChanged("lastKeepAlive");
+            }
+        }
+        
+        /// <remarks/>
+        [System.Xml.Serialization.XmlElementAttribute(IsNullable=true, Order=4)]
+        public System.Nullable<long> ownershipRowID {
+            get {
+                return this.ownershipRowIDField;
+            }
+            set {
+                this.ownershipRowIDField = value;
+                this.RaisePropertyChanged("ownershipRowID");
+            }
+        }
+        
+        /// <remarks/>
+        [System.Xml.Serialization.XmlElementAttribute(Order=5)]
+        public string currentSnapshot {
+            get {
+                return this.currentSnapshotField;
+            }
+            set {
+                this.currentSnapshotField = value;
+                this.RaisePropertyChanged("currentSnapshot");
+            }
+        }
+        
+        public event System.ComponentModel.PropertyChangedEventHandler PropertyChanged;
+        
+        protected void RaisePropertyChanged(string propertyName) {
+            System.ComponentModel.PropertyChangedEventHandler propertyChanged = this.PropertyChanged;
+            if ((propertyChanged != null)) {
+                propertyChanged(this, new System.ComponentModel.PropertyChangedEventArgs(propertyName));
+            }
+        }
+    }
+    
+    /// <remarks/>
+    [System.CodeDom.Compiler.GeneratedCodeAttribute("System.Xml", "4.6.1087.0")]
+    [System.SerializableAttribute()]
+    [System.Xml.Serialization.XmlTypeAttribute(Namespace="http://tempuri.org/")]
+    public enum bladeStatus {
+        
+        /// <remarks/>
+        unused,
+        
+        /// <remarks/>
+        releaseRequested,
+        
+        /// <remarks/>
+        inUseByDirector,
+        
+        /// <remarks/>
+        inUse,
+    }
+    
+    /// <remarks/>
+    [System.CodeDom.Compiler.GeneratedCodeAttribute("System.Xml", "4.6.1087.0")]
+    [System.SerializableAttribute()]
+    [System.Diagnostics.DebuggerStepThroughAttribute()]
+    [System.ComponentModel.DesignerCategoryAttribute("code")]
+    [System.Xml.Serialization.XmlTypeAttribute(Namespace="http://tempuri.org/")]
+    public partial class vmSpec : bladeOwnership {
+        
+        private long parentBladeIDField;
+        
+        private string iscsiIPField;
+        
+        private string vMIPField;
+        
+        private int vmSpecIDField;
+        
+        private string eth0MACField;
+        
+        private string eth1MACField;
+        
+        private string displayNameField;
+        
+        private string usernameField;
+        
+        private string passwordField;
+        
+        private VMHardwareSpec hwSpecField;
+        
+        /// <remarks/>
+        [System.Xml.Serialization.XmlElementAttribute(Order=0)]
+        public long parentBladeID {
+            get {
+                return this.parentBladeIDField;
+            }
+            set {
+                this.parentBladeIDField = value;
+                this.RaisePropertyChanged("parentBladeID");
+            }
+        }
+        
+        /// <remarks/>
+        [System.Xml.Serialization.XmlElementAttribute(Order=1)]
+        public string iscsiIP {
+            get {
+                return this.iscsiIPField;
+            }
+            set {
+                this.iscsiIPField = value;
+                this.RaisePropertyChanged("iscsiIP");
+            }
+        }
+        
+        /// <remarks/>
+        [System.Xml.Serialization.XmlElementAttribute(Order=2)]
+        public string VMIP {
+            get {
+                return this.vMIPField;
+            }
+            set {
+                this.vMIPField = value;
+                this.RaisePropertyChanged("VMIP");
+            }
+        }
+        
+        /// <remarks/>
+        [System.Xml.Serialization.XmlElementAttribute(Order=3)]
+        public int vmSpecID {
+            get {
+                return this.vmSpecIDField;
+            }
+            set {
+                this.vmSpecIDField = value;
+                this.RaisePropertyChanged("vmSpecID");
+            }
+        }
+        
+        /// <remarks/>
+        [System.Xml.Serialization.XmlElementAttribute(Order=4)]
+        public string eth0MAC {
+            get {
+                return this.eth0MACField;
+            }
+            set {
+                this.eth0MACField = value;
+                this.RaisePropertyChanged("eth0MAC");
+            }
+        }
+        
+        /// <remarks/>
+        [System.Xml.Serialization.XmlElementAttribute(Order=5)]
+        public string eth1MAC {
+            get {
+                return this.eth1MACField;
+            }
+            set {
+                this.eth1MACField = value;
+                this.RaisePropertyChanged("eth1MAC");
+            }
+        }
+        
+        /// <remarks/>
+        [System.Xml.Serialization.XmlElementAttribute(Order=6)]
+        public string displayName {
+            get {
+                return this.displayNameField;
+            }
+            set {
+                this.displayNameField = value;
+                this.RaisePropertyChanged("displayName");
+            }
+        }
+        
+        /// <remarks/>
+        [System.Xml.Serialization.XmlElementAttribute(Order=7)]
+        public string username {
+            get {
+                return this.usernameField;
+            }
+            set {
+                this.usernameField = value;
+                this.RaisePropertyChanged("username");
+            }
+        }
+        
+        /// <remarks/>
+        [System.Xml.Serialization.XmlElementAttribute(Order=8)]
+        public string password {
+            get {
+                return this.passwordField;
+            }
+            set {
+                this.passwordField = value;
+                this.RaisePropertyChanged("password");
+            }
+        }
+        
+        /// <remarks/>
+        [System.Xml.Serialization.XmlElementAttribute(Order=9)]
+        public VMHardwareSpec hwSpec {
+            get {
+                return this.hwSpecField;
+            }
+            set {
+                this.hwSpecField = value;
+                this.RaisePropertyChanged("hwSpec");
+            }
+        }
+    }
+    
+    /// <remarks/>
+    [System.CodeDom.Compiler.GeneratedCodeAttribute("System.Xml", "4.6.1087.0")]
+    [System.SerializableAttribute()]
+    [System.Diagnostics.DebuggerStepThroughAttribute()]
+    [System.ComponentModel.DesignerCategoryAttribute("code")]
+    [System.Xml.Serialization.XmlTypeAttribute(Namespace="http://tempuri.org/")]
+    public partial class bladeSpec : bladeOwnership {
         
         private string iscsiIPField;
         
@@ -275,11 +737,21 @@ namespace tests.networkService {
         
         private ushort iLOPortField;
         
-        private string currentSnapshotField;
+        private string iLoUsernameField;
+        
+        private string iLoPasswordField;
         
         private bool currentlyHavingBIOSDeployedField;
         
+        private bool currentlyBeingAVMServerField;
+        
         private string lastDeployedBIOSField;
+        
+        private long bladeIDField;
+        
+        private string eSXiUsernameField;
+        
+        private string eSXiPasswordField;
         
         /// <remarks/>
         [System.Xml.Serialization.XmlElementAttribute(Order=0)]
@@ -331,18 +803,30 @@ namespace tests.networkService {
         
         /// <remarks/>
         [System.Xml.Serialization.XmlElementAttribute(Order=4)]
-        public string currentSnapshot {
+        public string iLoUsername {
             get {
-                return this.currentSnapshotField;
+                return this.iLoUsernameField;
             }
             set {
-                this.currentSnapshotField = value;
-                this.RaisePropertyChanged("currentSnapshot");
+                this.iLoUsernameField = value;
+                this.RaisePropertyChanged("iLoUsername");
             }
         }
         
         /// <remarks/>
         [System.Xml.Serialization.XmlElementAttribute(Order=5)]
+        public string iLoPassword {
+            get {
+                return this.iLoPasswordField;
+            }
+            set {
+                this.iLoPasswordField = value;
+                this.RaisePropertyChanged("iLoPassword");
+            }
+        }
+        
+        /// <remarks/>
+        [System.Xml.Serialization.XmlElementAttribute(Order=6)]
         public bool currentlyHavingBIOSDeployed {
             get {
                 return this.currentlyHavingBIOSDeployedField;
@@ -354,7 +838,19 @@ namespace tests.networkService {
         }
         
         /// <remarks/>
-        [System.Xml.Serialization.XmlElementAttribute(Order=6)]
+        [System.Xml.Serialization.XmlElementAttribute(Order=7)]
+        public bool currentlyBeingAVMServer {
+            get {
+                return this.currentlyBeingAVMServerField;
+            }
+            set {
+                this.currentlyBeingAVMServerField = value;
+                this.RaisePropertyChanged("currentlyBeingAVMServer");
+            }
+        }
+        
+        /// <remarks/>
+        [System.Xml.Serialization.XmlElementAttribute(Order=8)]
         public string lastDeployedBIOS {
             get {
                 return this.lastDeployedBIOSField;
@@ -365,36 +861,8 @@ namespace tests.networkService {
             }
         }
         
-        public event System.ComponentModel.PropertyChangedEventHandler PropertyChanged;
-        
-        protected void RaisePropertyChanged(string propertyName) {
-            System.ComponentModel.PropertyChangedEventHandler propertyChanged = this.PropertyChanged;
-            if ((propertyChanged != null)) {
-                propertyChanged(this, new System.ComponentModel.PropertyChangedEventArgs(propertyName));
-            }
-        }
-    }
-    
-    /// <remarks/>
-    [System.CodeDom.Compiler.GeneratedCodeAttribute("System.Xml", "4.6.1087.0")]
-    [System.SerializableAttribute()]
-    [System.Diagnostics.DebuggerStepThroughAttribute()]
-    [System.ComponentModel.DesignerCategoryAttribute("code")]
-    [System.Xml.Serialization.XmlTypeAttribute(Namespace="http://tempuri.org/")]
-    public partial class bladeOwnership : bladeSpec {
-        
-        private long bladeIDField;
-        
-        private bladeStatus stateField;
-        
-        private string currentOwnerField;
-        
-        private string nextOwnerField;
-        
-        private System.DateTime lastKeepAliveField;
-        
         /// <remarks/>
-        [System.Xml.Serialization.XmlElementAttribute(Order=0)]
+        [System.Xml.Serialization.XmlElementAttribute(Order=9)]
         public long bladeID {
             get {
                 return this.bladeIDField;
@@ -406,50 +874,26 @@ namespace tests.networkService {
         }
         
         /// <remarks/>
-        [System.Xml.Serialization.XmlElementAttribute(Order=1)]
-        public bladeStatus state {
+        [System.Xml.Serialization.XmlElementAttribute(Order=10)]
+        public string ESXiUsername {
             get {
-                return this.stateField;
+                return this.eSXiUsernameField;
             }
             set {
-                this.stateField = value;
-                this.RaisePropertyChanged("state");
+                this.eSXiUsernameField = value;
+                this.RaisePropertyChanged("ESXiUsername");
             }
         }
         
         /// <remarks/>
-        [System.Xml.Serialization.XmlElementAttribute(Order=2)]
-        public string currentOwner {
+        [System.Xml.Serialization.XmlElementAttribute(Order=11)]
+        public string ESXiPassword {
             get {
-                return this.currentOwnerField;
+                return this.eSXiPasswordField;
             }
             set {
-                this.currentOwnerField = value;
-                this.RaisePropertyChanged("currentOwner");
-            }
-        }
-        
-        /// <remarks/>
-        [System.Xml.Serialization.XmlElementAttribute(Order=3)]
-        public string nextOwner {
-            get {
-                return this.nextOwnerField;
-            }
-            set {
-                this.nextOwnerField = value;
-                this.RaisePropertyChanged("nextOwner");
-            }
-        }
-        
-        /// <remarks/>
-        [System.Xml.Serialization.XmlElementAttribute(Order=4)]
-        public System.DateTime lastKeepAlive {
-            get {
-                return this.lastKeepAliveField;
-            }
-            set {
-                this.lastKeepAliveField = value;
-                this.RaisePropertyChanged("lastKeepAlive");
+                this.eSXiPasswordField = value;
+                this.RaisePropertyChanged("ESXiPassword");
             }
         }
     }
@@ -458,16 +902,22 @@ namespace tests.networkService {
     [System.CodeDom.Compiler.GeneratedCodeAttribute("System.Xml", "4.6.1087.0")]
     [System.SerializableAttribute()]
     [System.Xml.Serialization.XmlTypeAttribute(Namespace="http://tempuri.org/")]
-    public enum bladeStatus {
+    public enum GetBladeStatusResult {
+        
+        /// <remarks/>
+        bladeNotFound,
         
         /// <remarks/>
         unused,
         
         /// <remarks/>
-        releaseRequested,
+        yours,
         
         /// <remarks/>
-        inUse,
+        releasePending,
+        
+        /// <remarks/>
+        notYours,
     }
     
     [System.CodeDom.Compiler.GeneratedCodeAttribute("System.ServiceModel", "4.0.0.0")]
@@ -529,19 +979,19 @@ namespace tests.networkService {
             return base.Channel.RequestAnySingleNodeAsync();
         }
         
-        public string RequestNode(string NodeIP) {
+        public tests.networkService.resultCode RequestNode(string NodeIP) {
             return base.Channel.RequestNode(NodeIP);
         }
         
-        public System.Threading.Tasks.Task<string> RequestNodeAsync(string NodeIP) {
+        public System.Threading.Tasks.Task<tests.networkService.resultCode> RequestNodeAsync(string NodeIP) {
             return base.Channel.RequestNodeAsync(NodeIP);
         }
         
-        public string GetBladeStatus(string NodeIP) {
+        public tests.networkService.GetBladeStatusResult GetBladeStatus(string NodeIP) {
             return base.Channel.GetBladeStatus(NodeIP);
         }
         
-        public System.Threading.Tasks.Task<string> GetBladeStatusAsync(string NodeIP) {
+        public System.Threading.Tasks.Task<tests.networkService.GetBladeStatusResult> GetBladeStatusAsync(string NodeIP) {
             return base.Channel.GetBladeStatusAsync(NodeIP);
         }
         
@@ -553,19 +1003,27 @@ namespace tests.networkService {
             return base.Channel.isBladeMineAsync(NodeIP);
         }
         
-        public string releaseBlade(string NodeIP) {
-            return base.Channel.releaseBlade(NodeIP);
+        public tests.networkService.resultCode releaseBladeOrVM(string NodeIP) {
+            return base.Channel.releaseBladeOrVM(NodeIP);
         }
         
-        public System.Threading.Tasks.Task<string> releaseBladeAsync(string NodeIP) {
-            return base.Channel.releaseBladeAsync(NodeIP);
+        public System.Threading.Tasks.Task<tests.networkService.resultCode> releaseBladeOrVMAsync(string NodeIP) {
+            return base.Channel.releaseBladeOrVMAsync(NodeIP);
         }
         
-        public string forceBladeAllocation(string NodeIP, string newOwner) {
+        public tests.networkService.resultCode releaseBladeDbg(string nodeIP, string requestorIP, bool force) {
+            return base.Channel.releaseBladeDbg(nodeIP, requestorIP, force);
+        }
+        
+        public System.Threading.Tasks.Task<tests.networkService.resultCode> releaseBladeDbgAsync(string nodeIP, string requestorIP, bool force) {
+            return base.Channel.releaseBladeDbgAsync(nodeIP, requestorIP, force);
+        }
+        
+        public tests.networkService.resultCode forceBladeAllocation(string NodeIP, string newOwner) {
             return base.Channel.forceBladeAllocation(NodeIP, newOwner);
         }
         
-        public System.Threading.Tasks.Task<string> forceBladeAllocationAsync(string NodeIP, string newOwner) {
+        public System.Threading.Tasks.Task<tests.networkService.resultCode> forceBladeAllocationAsync(string NodeIP, string newOwner) {
             return base.Channel.forceBladeAllocationAsync(NodeIP, newOwner);
         }
         
@@ -575,6 +1033,14 @@ namespace tests.networkService {
         
         public System.Threading.Tasks.Task<tests.networkService.bladeSpec> getConfigurationOfBladeAsync(string NodeIP) {
             return base.Channel.getConfigurationOfBladeAsync(NodeIP);
+        }
+        
+        public tests.networkService.bladeSpec getConfigurationOfBladeByID(int NodeID) {
+            return base.Channel.getConfigurationOfBladeByID(NodeID);
+        }
+        
+        public System.Threading.Tasks.Task<tests.networkService.bladeSpec> getConfigurationOfBladeByIDAsync(int NodeID) {
+            return base.Channel.getConfigurationOfBladeByIDAsync(NodeID);
         }
         
         public string getCurrentSnapshotForBlade(string NodeIP) {
@@ -631,6 +1097,30 @@ namespace tests.networkService {
         
         public System.Threading.Tasks.Task<tests.networkService.resultCodeAndBIOSConfig> checkBIOSReadProgressAsync(string NodeIP) {
             return base.Channel.checkBIOSReadProgressAsync(NodeIP);
+        }
+        
+        public tests.networkService.resultCodeAndBladeName RequestAnySingleVM(tests.networkService.VMHardwareSpec hwSpec, tests.networkService.VMSoftwareSpec swSpec) {
+            return base.Channel.RequestAnySingleVM(hwSpec, swSpec);
+        }
+        
+        public System.Threading.Tasks.Task<tests.networkService.resultCodeAndBladeName> RequestAnySingleVMAsync(tests.networkService.VMHardwareSpec hwSpec, tests.networkService.VMSoftwareSpec swSpec) {
+            return base.Channel.RequestAnySingleVMAsync(hwSpec, swSpec);
+        }
+        
+        public tests.networkService.resultCodeAndBladeName getProgressOfVMRequest(string waitToken) {
+            return base.Channel.getProgressOfVMRequest(waitToken);
+        }
+        
+        public System.Threading.Tasks.Task<tests.networkService.resultCodeAndBladeName> getProgressOfVMRequestAsync(string waitToken) {
+            return base.Channel.getProgressOfVMRequestAsync(waitToken);
+        }
+        
+        public tests.networkService.vmSpec getConfigurationOfVM(string bladeName) {
+            return base.Channel.getConfigurationOfVM(bladeName);
+        }
+        
+        public System.Threading.Tasks.Task<tests.networkService.vmSpec> getConfigurationOfVMAsync(string bladeName) {
+            return base.Channel.getConfigurationOfVMAsync(bladeName);
         }
     }
 }

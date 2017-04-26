@@ -20,7 +20,7 @@ namespace bladeDirector
                 return;
             }
 
-            bladeOwnership res = hostStateDB.getBladeByIP(context.Request.QueryString["hostip"]);
+            bladeSpec res = hostStateDB.getBladeByIP(context.Request.QueryString["hostip"]);
             if (res == null)
             {
                 context.Response.Write("Blade not found");

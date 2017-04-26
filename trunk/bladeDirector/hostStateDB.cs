@@ -15,8 +15,10 @@ using System.Web;
 using System.Web.Services.Description;
 using System.Web.UI.WebControls;
 using bladeDirector.bootMenuWCF;
+using createDisks;
 using hypervisors;
 using Tamir.SharpSsh;
+using Tamir.SharpSsh.jsch;
 
 namespace bladeDirector
 {
@@ -30,6 +32,7 @@ namespace bladeDirector
         public static string dbFilename;
 
         private static ConcurrentDictionary<string, biosThreadState> biosUpdateState = new ConcurrentDictionary<string, biosThreadState>();
+        private static Dictionary<string, VMThreadState> VMDeployState = new Dictionary<string, VMThreadState>();
 
         public static void init(string basePath)
         {
@@ -138,20 +141,20 @@ namespace bladeDirector
             }
         }
 
-        public static List<bladeOwnership> getAllBladeInfo()
+        public static List<bladeSpec> getAllBladeInfo()
         {
             lock (connLock)
             {
-                string sqlCommand = "select * from bladeOwnership " +
-                                    "join bladeConfiguration on bladeOwnership.bladeConfigID = bladeConfiguration.id ";
+                string sqlCommand = "select *, bladeOwnership.id as bladeOwnershipID, bladeConfiguration.id as bladeConfigurationID from bladeOwnership " +
+                                    "join bladeConfiguration on bladeOwnership.id = bladeConfiguration.ownershipID ";
                 using (SQLiteCommand cmd = new SQLiteCommand(sqlCommand, conn))
                 {
                     using (SQLiteDataReader reader = cmd.ExecuteReader())
                     {
-                        List<bladeOwnership> toRet = new List<bladeOwnership>();
+                        List<bladeSpec> toRet = new List<bladeSpec>();
 
                         while (reader.Read())
-                            toRet.Add(new bladeOwnership(reader));
+                            toRet.Add(new bladeSpec(reader));
 
                         return toRet.ToList();
                     }
@@ -159,12 +162,28 @@ namespace bladeDirector
             }
         }
 
-        public static bladeOwnership getBladeByIP(string IP)
+        public static bladeOwnership getBladeOrVMOwnershipByIP(string IP)
         {
             lock (connLock)
             {
-                string sqlCommand = "select * from bladeOwnership " +
-                                    "join bladeConfiguration on bladeOwnership.bladeConfigID = bladeConfiguration.id " +
+                bladeOwnership toRet = getBladeByIP(IP);
+                if (toRet != null)
+                    return toRet;
+
+                toRet = getVMByIP(IP);
+                if (toRet != null)
+                    return toRet;
+
+                return null;
+            }
+        }
+
+        public static bladeSpec getBladeByIP(string IP)
+        {
+            lock (connLock)
+            {
+                string sqlCommand = "select *, bladeOwnership.id as bladeOwnershipID, bladeConfiguration.id as bladeConfigurationID from bladeOwnership " +
+                                    "join bladeConfiguration on bladeOwnership.id = bladeConfiguration.ownershipID " +
                                     "where bladeConfiguration.bladeIP = $bladeIP";
                 using (SQLiteCommand cmd = new SQLiteCommand(sqlCommand, conn))
                 {
@@ -173,7 +192,7 @@ namespace bladeDirector
                     {
                         if (reader.Read())
                         {
-                            return new bladeOwnership(reader);
+                            return new bladeSpec(reader);
                         }
                         else
                         {
@@ -185,11 +204,63 @@ namespace bladeDirector
             }
         }
 
+        public static vmSpec getVMByIP(string bladeName)
+        {
+            lock (connLock)
+            {
+                string sqlCommand = "select *, bladeOwnership.id as bladeOwnershipID, VMConfiguration.id as vmConfigurationID from bladeOwnership " +
+                                    "join VMConfiguration on bladeOwnership.id = VMConfiguration.ownershipID " +
+                                    "where VMConfiguration.VMIP = $VMIP";
+                using (SQLiteCommand cmd = new SQLiteCommand(sqlCommand, conn))
+                {
+                    cmd.Parameters.AddWithValue("$VMIP", bladeName);
+                    using (SQLiteDataReader reader = cmd.ExecuteReader())
+                    {
+                        if (reader.Read())
+                        {
+                            return new vmSpec(reader);
+                        }
+                        else
+                        {
+                            // No records returned.
+                            return null;
+                        }
+                    }
+                }
+            }
+        }
+
+        public static vmSpec[] getVMByVMServerIP(string vmServerIP)
+        {
+            List<vmSpec> toRet = new List<vmSpec>();
+
+            lock (connLock)
+            {
+                string sqlCommand = "select *, VMConfiguration.id as vmConfigurationID, " +
+                                    "bladeownership.id as bladeOwnershipID, " +
+                                    "bladeConfiguration.id as bladeConfigurationID from bladeConfiguration " +
+                                    "join vmConfiguration on vmConfiguration.parentbladeID = bladeConfiguration.ID " +
+                                    "join bladeownership on bladeownership.id = vmConfiguration.ownershipID " +
+                                    "where bladeConfiguration.bladeIP = $vmServerIP";
+                using (SQLiteCommand cmd = new SQLiteCommand(sqlCommand, conn))
+                {
+                    cmd.Parameters.AddWithValue("$vmServerIP", vmServerIP);
+                    using (SQLiteDataReader reader = cmd.ExecuteReader())
+                    {
+                        while (reader.Read())
+                            toRet.Add(new vmSpec(reader));
+                    }
+                }
+            }
+
+            return toRet.ToArray();
+        }
+
         public static resultCode tryRequestNode(string bladeIP, string requestorID)
         {
             lock (connLock)
             {
-                bladeOwnership reqBlade = getBladeByIP(bladeIP);
+                bladeSpec reqBlade = getBladeByIP(bladeIP);
                 if (reqBlade == null)
                 {
                     addLogEvent("Blade " + requestorID + " requested blade " + bladeIP + "(not found)");
@@ -250,8 +321,8 @@ namespace bladeDirector
         {
             lock (connLock)
             {
-                string sqlCommand = "select * from bladeOwnership " +
-                                    "join bladeConfiguration on bladeOwnership.bladeConfigID = bladeConfiguration.id ";
+                string sqlCommand = "select *, bladeOwnership.id as bladeOwnershipID, bladeConfiguration.id as bladeConfigurationID from bladeOwnership " +
+                                    "join bladeConfiguration on bladeOwnership.id = bladeConfiguration.ownershipID ";
                 using (SQLiteCommand cmd = new SQLiteCommand(sqlCommand, conn))
                 {
                     cmd.Parameters.AddWithValue("$bladeIP", reqBladeIP);
@@ -259,24 +330,25 @@ namespace bladeDirector
                     {
                         while (reader.Read())
                         {
-                            checkKeepAlives(new bladeOwnership(reader));
+                            checkKeepAlives(new bladeSpec(reader));
                         }
                     }
                 }
             }
         }
 
-        private static bladeOwnership checkKeepAlives(bladeOwnership reqBlade)
+        private static bladeSpec checkKeepAlives(bladeSpec reqBlade)
         {
             lock (connLock)
             {
                 if (reqBlade.state != bladeStatus.unused)
                 {
-                    if (reqBlade.lastKeepAlive + keepAliveTimeout < DateTime.Now)
+                    if (reqBlade.lastKeepAlive + keepAliveTimeout < DateTime.Now &&
+                        reqBlade.state != bladeStatus.inUseByDirector)
                     {
                         // Oh no, the blade owner failed to send a keepalive in time!
                         addLogEvent("Requestor " + reqBlade.currentOwner + " failed to keepalive for " + reqBlade.bladeIP + ", releasing blade");
-                        releaseBlade(reqBlade.bladeIP, reqBlade.currentOwner);
+                        releaseBladeOrVM(reqBlade.bladeIP, reqBlade.currentOwner);
 
                         return getBladeByIP(reqBlade.bladeIP);
                     }
@@ -292,7 +364,7 @@ namespace bladeDirector
                 checkKeepAlives(NodeIP);
 
                 string sqlCommand = "select bladeIP from bladeOwnership " +
-                                    "join bladeConfiguration on bladeOwnership.bladeConfigID = bladeConfiguration.id " +
+                                    "join bladeConfiguration on bladeOwnership.id = bladeConfiguration.ownershipID " +
                                     "where bladeOwnership.currentOwner = $bladeOwner";
                 using (SQLiteCommand cmd = new SQLiteCommand(sqlCommand, conn))
                 {
@@ -313,7 +385,7 @@ namespace bladeDirector
             bladeSpec[] specs = new bladeSpec[bladeIPs.Length];
             int n = 0;
             foreach (string bladeIP in bladeIPs)
-                specs[n++] = new bladeOwnership(bladeIP, n.ToString(), n.ToString(), (ushort)n, null, null);
+                specs[n++] = new bladeSpec(bladeIP, n.ToString(), n.ToString(), (ushort)n, false, null);
 
             initWithBlades(specs);
         }
@@ -332,13 +404,7 @@ namespace bladeDirector
 
         public static void addNode(bladeSpec spec)
         {
-            bladeOwnership newOwnership = new bladeOwnership(spec.bladeIP, spec.iscsiIP, spec.iLOIP, spec.iLOPort, spec.currentSnapshot, spec.lastDeployedBIOS);
-            newOwnership.currentOwner = null;
-            newOwnership.nextOwner = null;
-            newOwnership.lastKeepAlive = DateTime.Now;
-            newOwnership.state = bladeStatus.unused;
-
-            newOwnership.createInDB(conn);
+            spec.createInDB(conn);
         }
 
         public static GetBladeStatusResult getBladeStatus(string nodeIp, string requestorIp)
@@ -347,8 +413,8 @@ namespace bladeDirector
             {
                 checkKeepAlives(requestorIp);
 
-                string sqlCommand = "select * from bladeOwnership " +
-                                    "join bladeConfiguration on bladeOwnership.bladeConfigID = bladeConfiguration.id " +
+                string sqlCommand = "select *, bladeOwnership.id as bladeOwnershipID, bladeConfiguration.id as bladeConfigurationID from bladeOwnership " +
+                                    "join bladeConfiguration on bladeOwnership.id = bladeConfiguration.ownershipID " +
                                     "where bladeConfiguration.bladeIP = $bladeIP";
                 using (SQLiteCommand cmd = new SQLiteCommand(sqlCommand, conn))
                 {
@@ -358,7 +424,7 @@ namespace bladeDirector
                         if (!reader.Read())
                             return GetBladeStatusResult.bladeNotFound;
 
-                        bladeOwnership reqBlade = new bladeOwnership(reader);
+                        bladeSpec reqBlade = new bladeSpec(reader);
 
                         switch (reqBlade.state)
                         {
@@ -371,6 +437,8 @@ namespace bladeDirector
                                     return GetBladeStatusResult.yours;
                                 else
                                     return GetBladeStatusResult.notYours;
+                            case bladeStatus.inUseByDirector:
+                                return GetBladeStatusResult.notYours;
                             default:
                                 throw new ArgumentOutOfRangeException();
                         }
@@ -379,62 +447,139 @@ namespace bladeDirector
             }
         }
 
-        public static resultCode releaseBlade(string NodeIP, string RequestorIP, bool force = false)
+        public static resultCode releaseBladeOrVM(string NodeIP, string RequestorIP, bool force = false)
         {
             lock (connLock)
             {
-                string sqlCommand = "select * from bladeOwnership " +
-                                    "join bladeConfiguration on bladeOwnership.bladeConfigID = bladeConfiguration.id " +
+                string sqlCommand = "select *, bladeOwnership.id as bladeOwnershipID, bladeConfiguration.id as bladeConfigurationID from bladeOwnership " +
+                                    "join bladeConfiguration on bladeOwnership.id = bladeConfiguration.ownershipID " +
                                     "where bladeConfiguration.bladeIP = $bladeIP";
                 using (SQLiteCommand cmd = new SQLiteCommand(sqlCommand, conn))
                 {
                     cmd.Parameters.AddWithValue("$bladeIP", NodeIP);
                     using (SQLiteDataReader reader = cmd.ExecuteReader())
                     {
-                        if (!reader.Read())
+                        if (reader.Read())
                         {
-                            addLogEvent("Requestor " + RequestorIP + " attempted to release blade " + NodeIP + " (blade not found)");
-                            return resultCode.bladeNotFound;
-                        }
-
-                        bladeOwnership reqBlade = new bladeOwnership(reader);
-
-                        if (!force)
-                        {
-                            if (reqBlade.currentOwner != RequestorIP)
-                            {
-                                addLogEvent("Requestor " + RequestorIP + " attempted to release blade " + NodeIP + " (failure: blade is not owned by requestor)");
-                                return resultCode.bladeInUse;
-                            }
-                        }
-
-                        // If there's no-one waiting, just set it to idle.
-                        if (reqBlade.state == bladeStatus.inUse)
-                        {
-                            reqBlade.state = bladeStatus.unused;
-                            reqBlade.currentOwner = null;
-                            reqBlade.updateInDB(conn);
-                            addLogEvent("Requestor " + RequestorIP + " attempted to release blade " + NodeIP + " (success, blade is now idle)");
-                            return resultCode.success;
-                        }
-                        // If there's someone waiting, allocate it to that blade.
-                        if (reqBlade.state == bladeStatus.releaseRequested)
-                        {
-                            addLogEvent("Requestor " + RequestorIP + " attempted to release blade " + NodeIP + " (success, blade is now owned by queue entry " + reqBlade.nextOwner + ")");
-
-                            reqBlade.state = bladeStatus.inUse;
-                            reqBlade.currentOwner = reqBlade.nextOwner;
-                            reqBlade.nextOwner = null;
-                            reqBlade.lastKeepAlive = DateTime.Now;
-                            reqBlade.updateInDB(conn);
-
+                            bladeSpec reqBladeSpec = new bladeSpec(reader);
+                            reqBladeSpec.currentlyBeingAVMServer = reqBladeSpec.currentlyHavingBIOSDeployed = false;
+                            reqBladeSpec.updateInDB(conn);
+                            releaseBlade(reqBladeSpec, RequestorIP, force);
                             return resultCode.success;
                         }
                     }
                 }
-                addLogEvent("Requestor " + RequestorIP + " attempted to release blade " + NodeIP + " (generic failure)");
-                return resultCode.genericFail;
+
+                // Maybe its a VM
+                sqlCommand = "select *, bladeOwnership.id as bladeOwnershipID, vmConfiguration.id as vmConfigurationID from bladeOwnership " +
+                                "join vmConfiguration on bladeOwnership.id = vmConfiguration.ownershipID " +
+                                "where vmConfiguration.VMIP = $VMIP";
+                using (SQLiteCommand cmd = new SQLiteCommand(sqlCommand, conn))
+                {
+                    cmd.Parameters.AddWithValue("$VMIP", NodeIP);
+                    using (SQLiteDataReader reader = cmd.ExecuteReader())
+                    {
+                        if (reader.Read())
+                        {
+                            releaseVM(new vmSpec(reader));
+                            return resultCode.success;
+                        }
+                    }
+                }
+
+                // Neither a blade nor a VM
+                addLogEvent("Requestor " + RequestorIP + " attempted to release blade " + NodeIP + " (blade not found)");
+                return resultCode.bladeNotFound;
             }
+        }
+
+        private static void releaseBlade(bladeSpec reqBlade, string RequestorIP, bool force)
+        {
+            if (!force)
+            {
+                if (reqBlade.currentOwner != RequestorIP)
+                {
+                    addLogEvent("Requestor " + RequestorIP + " attempted to release blade " + reqBlade.bladeIP + " (failure: blade is not owned by requestor)");
+                    return;
+                }
+            }
+
+            // Turn off the blade. We do this even if the blade will be used by someone else after this release.
+            hypSpec_iLo hypSpec = new hypSpec_iLo(reqBlade.bladeIP, Properties.Settings.Default.esxiUsername, Properties.Settings.Default.ltspPassword, 
+                reqBlade.iLOIP, Properties.Settings.Default.iloUsername, Properties.Settings.Default.iloPassword, null, null, null, reqBlade.currentSnapshot, 0, null);
+            using (hypervisor_iLo hyp = new hypervisor_iLo(hypSpec, clientExecutionMethod.smb))
+            {
+                hyp.powerOff();
+            }
+
+            // Reset any VM-server the blade may be
+            reqBlade.currentlyBeingAVMServer = reqBlade.currentlyHavingBIOSDeployed = false;
+            foreach (vmSpec child in getVMByVMServerIP(reqBlade.bladeIP))
+            {
+                lock (VMDeployState)
+                {
+                    if (VMDeployState.ContainsKey(child.VMIP.ToString()) &&
+                        VMDeployState[child.VMIP].currentProgress.code != resultCode.pending  )
+                    {
+                        // Ahh, this VM is currently being deployed. We can't release it until the thread doing the deployment
+                        VMDeployState[child.VMIP].deployDeadline = DateTime.MinValue;
+                        while (VMDeployState[child.VMIP].currentProgress.code == resultCode.pending)
+                        {
+                            logEvents.Add("Waiting for VM deploy on " + child.VMIP + " to cancel");
+                            Thread.Sleep(TimeSpan.FromSeconds(10));
+                        }
+                    }
+
+                    lock (connLock)
+                    {
+                        child.deleteInDB(conn);
+                    }
+                }
+            }
+
+            // If there's someone waiting, allocate it to that blade.
+            if (reqBlade.state == bladeStatus.releaseRequested)
+            {
+                addLogEvent("Requestor " + RequestorIP + " attempted to release blade " + reqBlade.bladeIP + " (success, blade is now owned by queue entry " + reqBlade.nextOwner + ")");
+
+                reqBlade.state = bladeStatus.inUse;
+                reqBlade.currentOwner = reqBlade.nextOwner;
+                reqBlade.nextOwner = null;
+                reqBlade.lastKeepAlive = DateTime.Now;
+                reqBlade.updateInDB(conn);
+            }
+            else
+            {
+                // There's no-one waiting, so set it to idle.
+                //if (reqBlade.state == bladeStatus.inUse || force)
+                reqBlade.state = bladeStatus.unused;
+                reqBlade.currentOwner = null;
+                reqBlade.nextOwner = null;
+                reqBlade.updateInDB(conn);
+                addLogEvent("Requestor " + RequestorIP + " attempted to release blade " + reqBlade.bladeIP + " (success, blade is now idle)");
+            }
+        }
+
+        private static void releaseVM(vmSpec toDel)
+        {
+            bladeSpec parentBladeSpec = getConfigurationOfBladeByID((int)toDel.parentBladeID);
+            bool vmServerIsEmpty = getVMByVMServerIP(parentBladeSpec.bladeIP).Length == 1;
+
+            // VMs always get destroyed on release.
+            toDel.deleteInDB(conn);
+
+            hypSpec_vmware spec = new hypSpec_vmware(toDel.displayName, parentBladeSpec.bladeIP, Properties.Settings.Default.esxiUsername, Properties.Settings.Default.esxiPassword,
+               Properties.Settings.Default.vmUsername, Properties.Settings.Default.vmPassword,
+                0, "", toDel.VMIP);
+
+            using (hypervisor hyp = new hypervisor_vmware(spec, clientExecutionMethod.smb))
+            {
+                hyp.powerOff();
+            }
+
+            // If the VM server is now empty, we can release it.
+            if (vmServerIsEmpty)
+                releaseBladeOrVM(parentBladeSpec.bladeIP, "vmserver");
         }
 
         public static resultCode forceBladeAllocation(string nodeIp, string newOwner)
@@ -442,6 +587,9 @@ namespace bladeDirector
             lock (connLock)
             {
                 bladeOwnership toAlloc = getBladeByIP(nodeIp);
+                if (toAlloc == null)
+                    toAlloc = getVMByIP(nodeIp);
+
                 toAlloc.state = bladeStatus.inUse;
                 toAlloc.currentOwner = newOwner;
                 toAlloc.nextOwner = null;
@@ -455,8 +603,8 @@ namespace bladeDirector
         {
             lock (connLock)
             {
-                string sqlCommand = "select * from bladeOwnership " +
-                                    "join bladeConfiguration on bladeOwnership.bladeConfigID = bladeConfiguration.id " +
+                string sqlCommand = "select *, bladeOwnership.id as bladeOwnershipID, bladeConfiguration.id as bladeConfigurationID from bladeOwnership " +
+                                    "join bladeConfiguration on bladeOwnership.id = bladeConfiguration.ownershipID " +
                                     "where bladeConfiguration.bladeIP = $bladeIP";
                 using (SQLiteCommand cmd = new SQLiteCommand(sqlCommand, conn))
                 {
@@ -469,38 +617,309 @@ namespace bladeDirector
                         return null;
                     }
 
-                    return new bladeOwnership(reader);
+                    return new bladeSpec(reader);
                 }
             }
         }
 
-        public static string getCurrentSnapshotForBlade(string nodeIp)
+        public static bladeSpec getConfigurationOfBladeByID(int nodeID)
         {
             lock (connLock)
             {
-                bladeOwnership reqBlade = getBladeByIP(nodeIp);
-                if (reqBlade == null)
-                    return null;
+                string sqlCommand = "select *, bladeOwnership.id as bladeOwnershipID, bladeConfiguration.id as bladeConfigurationID from bladeOwnership " +
+                                    "join bladeConfiguration on bladeOwnership.id = bladeConfiguration.ownershipID " +
+                                    "where bladeConfiguration.id = $bladeID";
+                using (SQLiteCommand cmd = new SQLiteCommand(sqlCommand, conn))
+                {
+                    cmd.Parameters.AddWithValue("$bladeID", nodeID);
+                    SQLiteDataReader reader = cmd.ExecuteReader();
 
-                return String.Format("{0}-{1}-{2}", reqBlade.bladeIP, reqBlade.currentOwner, reqBlade.currentSnapshot);
+                    if (!reader.Read())
+                    {
+                        addLogEvent("getConfigurationOfBlade failed ID " + nodeID + " (blade not found)");
+                        return null;
+                    }
+
+                    return new bladeSpec(reader);
+                }
             }
         }
 
+        public static string getCurrentSnapshotForBladeOrVM(string nodeIp)
+        {
+            lock (connLock)
+            {
+                bladeSpec reqBlade = getBladeByIP(nodeIp);
+                if (reqBlade != null)
+                    return String.Format("{0}-{1}", reqBlade.bladeIP, reqBlade.currentSnapshot);
+
+                vmSpec reqVM = getVMByIP(nodeIp);
+                if (reqVM != null)
+                    return String.Format("{0}-{1}", reqVM.VMIP, reqVM.currentSnapshot);
+            }
+
+            return null;
+        }
+
+        public static resultCodeAndBladeName RequestAnySingleVM(string requestorIP, VMHardwareSpec hwSpec, VMSoftwareSpec swReq )
+        {
+            if (hwSpec.memoryMB%4 != 0)
+            {
+                // Fun fact: ESXi VM memory size must be a multiple of 4mb.
+                logEvents.Add("Failed VM alloc: memory size " + hwSpec.memoryMB + " is not a multiple of 4MB");
+                return new resultCodeAndBladeName() {code = resultCode.genericFail};
+            }
+
+            lock (connLock)
+            {
+                lock (VMDeployState)
+                {
+                    getAllBladeInfo().ForEach(x => checkKeepAlives(x.bladeIP));
+
+                    // First, we need to find a blade to use as a VM server. Do we have a free VM server? If so, just use that.
+                    List<bladeSpec> allBladeInfo = getAllBladeInfo();
+                    bladeSpec freeVMServer = allBladeInfo.SingleOrDefault((x) => x.currentlyBeingAVMServer && x.canAccommodate(conn, hwSpec));
+                    if (freeVMServer == null)
+                    {
+                        // Nope, no free VM server. Maybe we can make a new one.
+                        resultCodeAndBladeName resp = RequestAnySingleNode("vmserver");
+                        if (resp.code != resultCode.success)
+                            return resp;
+
+                        freeVMServer = getConfigurationOfBlade(resp.bladeName);
+
+                        using (hypervisor_iLo_HTTP hyp = new hypervisor_iLo_HTTP(freeVMServer.iLOIP, Properties.Settings.Default.iloUsername, Properties.Settings.Default.iloPassword))
+                        {
+                            hyp.connect();
+                            hyp.powerOff();
+                        }
+
+                        freeVMServer.becomeAVMServer(conn);
+                        freeVMServer.updateInDB(conn);
+                    }
+
+                    // Create rows for the child VM in the DB. Delete anything that was there previously.
+                    vmSpec childVM = freeVMServer.createChildVMInDB(conn, hwSpec, requestorIP);
+                    childVM.currentOwner = requestorIP;
+                    childVM.state = bladeStatus.inUseByDirector;
+                    childVM.updateInDB(conn);
+
+                    string waitToken = childVM.VMIP.ToString();
+
+                    // Is a deploy of this VM already in progress?
+                    if (VMDeployState.ContainsKey(waitToken))
+                    {
+                        if (VMDeployState[waitToken].currentProgress.code != resultCode.pending)
+                        {
+                            // Yes, a deploy was in progress - but now it is finished.
+                            VMDeployState.Remove(waitToken);
+                        }
+                    }
+
+                    // Now start a new thread, which will ensure the VM server is powered up and then add the child VMs.
+                    Thread worker = new Thread(VMServerBootThread);
+                    worker.Name = "VMAllocationThread for VM " + childVM.VMIP + " on server " + freeVMServer.bladeIP;
+                    VMThreadState deployState = new VMThreadState();
+                    deployState.VMServer = freeVMServer;
+                    deployState.childVM = childVM;
+                    deployState.swSpec = swReq;
+                    deployState.deployDeadline = DateTime.Now + TimeSpan.FromMinutes(25);
+                    deployState.currentProgress = new resultCodeAndBladeName() { code = resultCode.pending };
+                    VMDeployState.Add(waitToken, deployState);
+
+                    worker.Start(waitToken);
+                    return new resultCodeAndBladeName() { code = resultCode.pending, waitToken = waitToken };
+                }
+            }
+        }
+
+        private static void VMServerBootThread(object param)
+        {
+            string operationHandle = (string)param;
+            VMThreadState threadState;
+            lock (VMDeployState)
+            {
+                threadState = VMDeployState[operationHandle];
+            }
+
+            try
+            {
+                _VMServerBootThread(threadState);
+            }
+            catch (Exception e)
+            {
+                threadState.currentProgress.code = resultCode.genericFail;
+                logEvents.Add("VMServer boot thread fatal exception: " + e.Message + " at "  + e.StackTrace);
+            }
+        }
+
+        private static object VMServerBootThreadLock = new object();
+        private static Dictionary<long, object> physicalBladeLocks = new Dictionary<long, object>();
+        private static void _VMServerBootThread(VMThreadState threadState)
+        {
+            Debug.WriteLine(DateTime.Now + threadState.childVM.VMIP  + ": enter thread");
+            // First, bring up the physical machine. It'll get the ESXi ISCSI config and boot up.
+            hypSpec_iLo iloSpec = new hypSpec_iLo(threadState.VMServer.bladeIP, Properties.Settings.Default.esxiUsername, Properties.Settings.Default.esxiPassword, 
+                threadState.VMServer.iLOIP, Properties.Settings.Default.iloUsername, Properties.Settings.Default.iloPassword, Properties.Settings.Default.iloUsername, 
+                null, null, null, 0, null);
+            using (hypervisor_iLo hyp = new hypervisor_iLo(iloSpec, clientExecutionMethod.SSHToBASH))
+            {
+                Debug.WriteLine(DateTime.Now + threadState.childVM.VMIP + ": connecting ilo");
+                if (threadState.deployDeadline < DateTime.Now)
+                    throw new TimeoutException();
+
+                // Ensure only one thread tries to power on each VM server at once. Do this by having a collection of objects we lock
+                // on, one for each physical server. Protect them with a global lock.
+                hyp.connect();
+                Debug.WriteLine(DateTime.Now + threadState.childVM.VMIP + ": connected ilo");
+                Debug.WriteLine(DateTime.Now + threadState.childVM.VMIP + ": checking lock");
+                lock (VMServerBootThreadLock)
+                {
+                    if (!physicalBladeLocks.ContainsKey(threadState.VMServer.bladeID))
+                    {
+                        Debug.WriteLine(DateTime.Now + threadState.childVM.VMIP + ": added lock");
+                        physicalBladeLocks.Add(threadState.VMServer.bladeID, new object());
+                    }
+                }
+                Debug.WriteLine(DateTime.Now + threadState.childVM.VMIP + ": checking power");
+                lock (physicalBladeLocks[threadState.VMServer.bladeID])
+                {
+                    if (hyp.getPowerStatus() == false)
+                    {
+                        Debug.WriteLine(DateTime.Now + threadState.childVM.VMIP + ": powering on");
+                        hyp.powerOn(threadState.deployDeadline);
+                    }
+                }
+                Debug.WriteLine(DateTime.Now + threadState.childVM.VMIP + ": powered on");
+
+                // now SSH to the blade and actually create the VM.
+
+                string destDir = "/vmfs/volumes/esxivms/" + threadState.VMServer.bladeID + "_" + threadState.childVM.vmSpecID;
+                string destDirDatastoreType = "[esxivms] " + threadState.VMServer.bladeID + "_" + threadState.childVM.vmSpecID;
+                string vmxPath = destDir + "/PXETemplate.vmx";
+
+                // Ensure the datastore is mounted okay. Sometimes I'm seeing ESXi hosts boot with an inaccessible NFS datastore, so
+                // remount if neccessary. Retry this since it doesn't seem to always work first time.
+                string[] nfsMounts = hypervisor_iLo.doWithRetryOnSomeExceptions(() => hyp.startExecutable("esxcfg-nas", "-l")).stdout.Split( new [] {"\n", "\r"}, StringSplitOptions.RemoveEmptyEntries);
+                string foundMount = nfsMounts.SingleOrDefault(x => x.Contains("esxivms is /mnt/SSDs/esxivms from store.xd.lan mounted available"));
+                while (foundMount == null)
+                {
+                    hypervisor_iLo.doWithRetryOnSomeExceptions(() => hyp.startExecutable("esxcfg-nas", "-d esxivms"));
+                    string res = hypervisor_iLo.doWithRetryOnSomeExceptions(() => hyp.startExecutable(" esxcfg-nas", "-a --host store.xd.lan --share /mnt/SSDs/esxivms esxivms")).stdout;
+
+                    nfsMounts = hypervisor_iLo.doWithRetryOnSomeExceptions(() => hyp.startExecutable("esxcfg-nas", "-l")).stdout.Split(new[] { "\n", "\r" }, StringSplitOptions.RemoveEmptyEntries);
+                    foundMount = nfsMounts.SingleOrDefault(x => x.Contains("esxivms is /mnt/SSDs/esxivms from store.xd.lan mounted available"));
+                }
+
+                if (threadState.deployDeadline < DateTime.Now)
+                    throw new TimeoutException();
+
+                // Remove the VM if it's already there.
+                hypervisor_iLo.doWithRetryOnSomeExceptions(() => hyp.startExecutable("vim-cmd", "vmsvc/power.off `vim-cmd vmsvc/getallvms | grep \"" + destDirDatastoreType.Replace("[", "\\[").Replace("]", "\\]") + "\"`"));
+                hypervisor_iLo.doWithRetryOnSomeExceptions(() => hyp.startExecutable("vim-cmd", "vmsvc/unregister `vim-cmd vmsvc/getallvms | grep \"" + destDirDatastoreType + "\"`"));
+
+                // copy the template VM into a new directory
+                hypervisor_iLo.doWithRetryOnSomeExceptions(() => hyp.startExecutable("rm", " -rf " + destDir));
+                hypervisor_iLo.doWithRetryOnSomeExceptions(() => hyp.startExecutable("cp", " -R /vmfs/volumes/esxivms/PXETemplate " + destDir));
+                // and then customise it.
+                hypervisor_iLo.doWithRetryOnSomeExceptions(() => hyp.startExecutable("sed", " -e 's/ethernet0.address[= ].*/ethernet0.address = \"" + threadState.childVM.eth0MAC + "\"/g' -i " + vmxPath));
+                hypervisor_iLo.doWithRetryOnSomeExceptions(() => hyp.startExecutable("sed", " -e 's/ethernet1.address[= ].*/ethernet1.address = \"" + threadState.childVM.eth1MAC + "\"/g' -i " + vmxPath));
+                hypervisor_iLo.doWithRetryOnSomeExceptions(() => hyp.startExecutable("sed", " -e 's/displayName[= ].*/displayName = \"" + threadState.childVM.displayName + "\"/g' -i " + vmxPath));
+                hypervisor_iLo.doWithRetryOnSomeExceptions(() => hyp.startExecutable("sed", " -e 's/memSize[= ].*/memSize = \"" + threadState.childVM.hwSpec.memoryMB + "\"/g' -i " + vmxPath));
+                hypervisor_iLo.doWithRetryOnSomeExceptions(() => hyp.startExecutable("sed", " -e 's/sched.mem.min[= ].*/sched.mem.min = \"" + threadState.childVM.hwSpec.memoryMB + "\"/g' -i " + vmxPath));
+                hypervisor_iLo.doWithRetryOnSomeExceptions(() => hyp.startExecutable("sed", " -e 's/sched.mem.minSize[= ].*/sched.mem.minSize = \"" + threadState.childVM.hwSpec.memoryMB + "\"/g' -i " + vmxPath));
+                hypervisor_iLo.doWithRetryOnSomeExceptions(() => hyp.startExecutable("sed", " -e 's/numvcpus[= ].*/numvcpus = \"" + threadState.childVM.hwSpec.cpuCount + "\"/g' -i " + vmxPath));
+                hypervisor_iLo.doWithRetryOnSomeExceptions(() => hyp.startExecutable("sed", " -e 's/uuid.bios[= ].*//g' -i " + vmxPath));
+                hypervisor_iLo.doWithRetryOnSomeExceptions(() => hyp.startExecutable("sed", " -e 's/uuid.location[= ].*//g' -i " + vmxPath));
+
+                // Now add that VM to ESXi, and the VM is ready to use.
+                
+                hypervisor_iLo.doWithRetryOnSomeExceptions(() => hyp.startExecutable("vim-cmd", " solo/registervm " + vmxPath));
+
+                Debug.WriteLine(DateTime.Now + threadState.childVM.VMIP + ": created");
+
+                if (threadState.deployDeadline < DateTime.Now)
+                    throw new TimeoutException();
+            }
+
+            // If the VM already has disks set up, delete them.
+            string tagName = (threadState.swSpec.debuggerHost ?? "nodebug") + "-vm";
+
+            itemToAdd itm = new itemToAdd();
+            itm.bladeIP = threadState.childVM.VMIP;
+            itm.cloneName = threadState.childVM.VMIP + "-" + tagName;
+            itm.computerName = threadState.childVM.displayName;
+            itm.snapshotName = threadState.childVM.VMIP + tagName;
+            itm.kernelDebugPort = threadState.swSpec.debuggerPort;
+            itm.serverIP = threadState.swSpec.debuggerHost;
+            itm.kernelDebugKey = threadState.swSpec.debuggerKey;
+
+            Debug.WriteLine(DateTime.Now + threadState.childVM.VMIP + ": selecting");
+            selectSnapshotForBladeOrVM(threadState.childVM.VMIP, tagName);
+
+            if (threadState.deployDeadline < DateTime.Now)
+                throw new TimeoutException();
+
+            //if (threadState.swSpec.forceRecreate)
+            Debug.WriteLine(DateTime.Now + threadState.childVM.VMIP + ": deleting");
+            Program.deleteBlades(new[] { itm });
+
+            if (threadState.deployDeadline < DateTime.Now)
+                throw new TimeoutException();
+
+            //if (!Program.doesConfigExist(itm, tagName))
+            {
+                Debug.WriteLine(DateTime.Now + threadState.childVM.VMIP + ": adding");
+                // Now create the disks, and customise the VM  by naming it appropriately.
+                Program.addBlades(new[] {itm}, tagName, "localhost/bladeDirector", "bladebasestable-esxi", null, null, false, 
+                    (a,b) => new hypervisor_vmware(new hypSpec_vmware(a.computerName,
+                    threadState.VMServer.bladeIP, Properties.Settings.Default.esxiUsername, Properties.Settings.Default.esxiPassword,
+                    Properties.Settings.Default.vmUsername, Properties.Settings.Default.vmPassword,
+                    threadState.swSpec.debuggerPort, threadState.swSpec.debuggerKey, threadState.childVM.VMIP), clientExecutionMethod.smb), threadState.deployDeadline );
+            }
+            Debug.WriteLine(DateTime.Now + threadState.childVM.VMIP + ": add complete");
+
+            // TODO: Ability to deploy transportDriver
+
+            if (threadState.deployDeadline < DateTime.Now)
+                throw new TimeoutException();
+
+            // All done. Re-read the VM state before we set state in case it's been changed while we ran (eg by selectSnapshotForBladeOrVM)
+            lock (connLock)
+            {
+                bladeOwnership childVM = getBladeOrVMOwnershipByIP(threadState.childVM.VMIP);
+                childVM.state = bladeStatus.inUse;
+                childVM.updateInDB(conn);
+            }
+            threadState.currentProgress.bladeName = threadState.childVM.VMIP;
+            threadState.currentProgress.code = resultCode.success;
+        }
+
+        public static resultCodeAndBladeName RequestAnySingleVM_getProgress(string waitToken)
+        {
+            lock (VMDeployState)
+            {
+                if (!VMDeployState.ContainsKey(waitToken))
+                    return new resultCodeAndBladeName() { code = resultCode.unknown };
+                return VMDeployState[waitToken].currentProgress;
+            }
+        }
+        
         public static resultCodeAndBladeName RequestAnySingleNode(string requestorIP)
         {
             lock (connLock)
             {
-                List<bladeOwnership> bladeStates = new List<bladeOwnership>();
+                List<bladeSpec> bladeStates = new List<bladeSpec>();
 
-                string sqlCommand = "select * from bladeOwnership " +
-                                    "join bladeConfiguration on bladeOwnership.bladeConfigID = bladeConfiguration.id ";
+                string sqlCommand = "select *, bladeOwnership.id as bladeOwnershipID, bladeConfiguration.id as bladeConfigurationID from bladeOwnership " +
+                                    "join bladeConfiguration on bladeOwnership.id = bladeConfiguration.ownershipID ";
                 using (SQLiteCommand cmd = new SQLiteCommand(sqlCommand, conn))
                 {
                     using (SQLiteDataReader reader = cmd.ExecuteReader())
                     {
                         while (reader.Read())
                         {
-                            bladeOwnership newBlade = new bladeOwnership(reader);
+                            bladeSpec newBlade = new bladeSpec(reader);
                             newBlade = checkKeepAlives(newBlade);
                             bladeStates.Add(newBlade);
                         }
@@ -508,29 +927,36 @@ namespace bladeDirector
                 }
 
                 // Put blades in an order of preference. First come unused blades, then used blades with an empty queue.
-                IEnumerable<bladeOwnership> unusedBlades = bladeStates.Where(x => x.currentOwner == null);
-                IEnumerable<bladeOwnership> emptyQueueBlades = bladeStates.Where(x => x.currentOwner != null && x.nextOwner == null);
-                IEnumerable<bladeOwnership> orderedBlades = unusedBlades.Concat(emptyQueueBlades);
+                IEnumerable<bladeSpec> unusedBlades = bladeStates.Where(x => x.currentOwner == null);
+                IEnumerable<bladeSpec> emptyQueueBlades = bladeStates.Where(x => x.currentOwner != null && x.nextOwner == null);
+                IEnumerable<bladeSpec> orderedBlades = unusedBlades.Concat(emptyQueueBlades);
 
-                foreach (bladeOwnership reqBlade in orderedBlades)
+                foreach (bladeSpec reqBlade in orderedBlades)
                 {
                     resultCode res = tryRequestNode(reqBlade.bladeIP, requestorIP);
                     if (res == resultCode.success || res == resultCode.pending)
-                        return new resultCodeAndBladeName() { bladeName = reqBlade.bladeIP, code = res };
+                        return new resultCodeAndBladeName() {bladeName = reqBlade.bladeIP, code = res};
                 }
             }
             // Otherwise, all blades have full queues.
             return new resultCodeAndBladeName() { bladeName = null, code = resultCode.bladeQueueFull };
         }
 
-        private static void notifyBootDirectorOfNode(bladeOwnership blade)
+        private static void notifyBootDirectorOfNode(bladeSpec blade)
         {
             Uri wcfURI = new Uri("http://localhost/bootMenuController");
             BasicHttpBinding myBind = new BasicHttpBinding();
             
             using (BootMenuWCFClient client = new BootMenuWCFClient(myBind, new EndpointAddress(wcfURI)))
             {
-                client.addMachine(blade.iLOIP);
+                try
+                {
+                    client.addMachine(blade.iLOIP);
+                }
+                catch (EndpointNotFoundException)
+                {
+                    logEvents.Add("Cannot find bootMenuController endpoint at " + wcfURI.ToString());
+                }
             }
         }
 
@@ -556,7 +982,7 @@ namespace bladeDirector
                 checkKeepAlives(requestorIp);
 
                 string sqlCommand = "select count(*) from bladeOwnership " +
-                                    "join bladeConfiguration on bladeOwnership.bladeConfigID = bladeConfiguration.id " +
+                                    "join bladeConfiguration on bladeOwnership.id = bladeConfiguration.ownershipID " +
                                     "where bladeOwnership.currentOwner = $requestorIp " + 
                                     "and   bladeConfiguration.bladeIP = $bladeIP ";
                 using (SQLiteCommand cmd = new SQLiteCommand(sqlCommand, conn))
@@ -577,14 +1003,15 @@ namespace bladeDirector
             }
         }
 
-        public static resultCode selectSnapshotForBlade(string nodeIp, string newShot)
+        public static resultCode selectSnapshotForBladeOrVM(string nodeIp, string newShot)
         {
             lock (connLock)
             {
-                bladeOwnership reqBlade = getBladeByIP(nodeIp);
+                bladeOwnership reqBlade = getBladeOrVMOwnershipByIP(nodeIp);
                 if (reqBlade == null)
                     return resultCode.bladeNotFound;
                 reqBlade.currentSnapshot = newShot;
+
                 return reqBlade.updateInDB(conn);
             }
         }
@@ -593,7 +1020,7 @@ namespace bladeDirector
         {
             lock (connLock)
             {
-                bladeOwnership reqBlade = getBladeByIP(nodeIp);
+                bladeSpec reqBlade = getBladeByIP(nodeIp);
                 if (reqBlade == null)
                     return null;
 
@@ -605,7 +1032,7 @@ namespace bladeDirector
         {
             lock (connLock)
             {
-                bladeOwnership reqBlade = getBladeByIP(nodeIp);
+                bladeSpec reqBlade = getBladeByIP(nodeIp);
 
                 if (reqBlade.currentOwner != requestorIP)
                     return resultCode.bladeInUse;
@@ -656,7 +1083,7 @@ namespace bladeDirector
         {
             lock (connLock)
             {
-                bladeOwnership reqBlade = getBladeByIP(nodeIp);
+                bladeSpec reqBlade = getBladeByIP(nodeIp);
 
                 if (reqBlade.currentOwner != requestorIP)
                     return resultCode.bladeInUse;
@@ -740,11 +1167,13 @@ namespace bladeDirector
         private static void _ltspBootThreadStart(biosThreadState param)
         {
             // Power cycle it
-            hypervisor_iLo_HTTP hyp = new hypervisor_iLo_HTTP(param.iLoIP, Properties.Settings.Default.iloUsername, Properties.Settings.Default.iloPassword);
-            hyp.connect();
-            hyp.powerOff();
-            hyp.powerOn();
-            hyp.logout();
+            using (hypervisor_iLo_HTTP hyp = new hypervisor_iLo_HTTP(param.iLoIP, Properties.Settings.Default.iloUsername, Properties.Settings.Default.iloPassword))
+            {
+                hyp.connect();
+                hyp.powerOff();
+                hyp.powerOn();
+                hyp.logout();
+            }
 
             // Wait for it to boot.  Note that we don't ping the client repeatedly here - since the Ping class can cause 
             // a BSoD.. ;_; Instead, we wait for port 22 (SSH) to be open.
@@ -813,9 +1242,9 @@ namespace bladeDirector
                 if (returnCode != 0)
                 {
                     addLogEvent(string.Format("Reading BIOS on {0} resulted in error code {1}", state.nodeIp, returnCode));
-                    Debug.WriteLine("Faied bios deploy, error code " + returnCode);
-                    Debug.WriteLine("stdout " + stdout);
-                    Debug.WriteLine("stderr " + stderr);
+                    Debug.WriteLine(DateTime.Now + "Faied bios deploy, error code " + returnCode);
+                    Debug.WriteLine(DateTime.Now + "stdout " + stdout);
+                    Debug.WriteLine(DateTime.Now + "stderr " + stderr);
                     state.result = resultCode.genericFail;
                 }
                 else
@@ -840,13 +1269,16 @@ namespace bladeDirector
                 }
 
                 // All done, now we can power off and return.
-                hypervisor_iLo_HTTP hyp = new hypervisor_iLo_HTTP(state.iLoIP, Properties.Settings.Default.iloUsername, Properties.Settings.Default.iloPassword);
-                hyp.connect();
-                hyp.powerOff();
-                hyp.logout();
+                using (hypervisor_iLo_HTTP hyp = new hypervisor_iLo_HTTP(state.iLoIP, Properties.Settings.Default.iloUsername, Properties.Settings.Default.iloPassword))
+                {
+                    hyp.connect();
+                    hyp.powerOff();
+                    hyp.logout();
+                }
+
                 lock (connLock)
                 {
-                    bladeOwnership reqBlade = getBladeByIP(state.nodeIp);
+                    bladeSpec reqBlade = getBladeByIP(state.nodeIp);
                     reqBlade.currentlyHavingBIOSDeployed = false;
                     reqBlade.lastDeployedBIOS = state.biosxml;
                     reqBlade.updateInDB(conn);
@@ -884,9 +1316,9 @@ namespace bladeDirector
                 if (returnCode != 0)
                 {
                     addLogEvent(string.Format("Deploying BIOS on {0} resulted in error code {1}", state.nodeIp, returnCode));
-                    Debug.WriteLine("Faied bios deploy, error code " + returnCode);
-                    Debug.WriteLine("stdout " + stdout);
-                    Debug.WriteLine("stderr " + stderr);
+                    Debug.WriteLine(DateTime.Now + "Faied bios deploy, error code " + returnCode);
+                    Debug.WriteLine(DateTime.Now + "stdout " + stdout);
+                    Debug.WriteLine(DateTime.Now + "stderr " + stderr);
                     state.result = resultCode.genericFail;
                 }
                 else
@@ -896,13 +1328,16 @@ namespace bladeDirector
                 }
 
                 // All done, now we can power off and return.
-                hypervisor_iLo_HTTP hyp = new hypervisor_iLo_HTTP(state.iLoIP, Properties.Settings.Default.iloUsername, Properties.Settings.Default.iloPassword);
-                hyp.connect();
-                hyp.powerOff();
-                hyp.logout();
+                using (hypervisor_iLo_HTTP hyp = new hypervisor_iLo_HTTP(state.iLoIP, Properties.Settings.Default.iloUsername, Properties.Settings.Default.iloPassword))
+                {
+                    hyp.connect();
+                    hyp.powerOff();
+                    hyp.logout();
+                }
+
                 lock (connLock)
                 {
-                    bladeOwnership reqBlade = getBladeByIP(state.nodeIp);
+                    bladeSpec reqBlade = getBladeByIP(state.nodeIp);
                     reqBlade.currentlyHavingBIOSDeployed = false;
                     reqBlade.lastDeployedBIOS = state.biosxml;
                     reqBlade.updateInDB(conn);
@@ -959,7 +1394,7 @@ namespace bladeDirector
                     state.isFinished = true;
                     lock (connLock)
                     {
-                        bladeOwnership reqBlade = getBladeByIP(state.nodeIp);
+                        bladeSpec reqBlade = getBladeByIP(state.nodeIp);
                         reqBlade.currentlyHavingBIOSDeployed = false;
                         reqBlade.updateInDB(conn);
 
@@ -989,6 +1424,15 @@ namespace bladeDirector
             }
             return filename;
         }
+    }
+
+    public class VMThreadState
+    {
+        public bladeSpec VMServer;
+        public DateTime deployDeadline;
+        public resultCodeAndBladeName currentProgress;
+        public vmSpec childVM;
+        public VMSoftwareSpec swSpec;
     }
 
     public class biosThreadState
@@ -1025,6 +1469,7 @@ namespace bladeDirector
     {
         unused,
         releaseRequested,
+        inUseByDirector,
         inUse
     }
 
@@ -1032,6 +1477,7 @@ namespace bladeDirector
     {
         public resultCode code;
         public string bladeName;
+        public string waitToken;
     }
 
     public class resultCodeAndBIOSConfig
@@ -1067,6 +1513,7 @@ namespace bladeDirector
         pending,
         alreadyInProgress,
         genericFail,
-        noNeedLah
+        noNeedLah,
+        unknown
     }
 }

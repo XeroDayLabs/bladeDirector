@@ -37,26 +37,49 @@ namespace bladeDirector
             if (!String.IsNullOrEmpty(Request.QueryString["hostIP"]))
                 srcIP = Request.QueryString["hostIP"];
 
-            bladeOwnership state = hostStateDB.getBladeByIP(srcIP);
-            if (state == null)
-            {
-                Response.Write("#!ipxe\r\n");
-                Response.Write("prompt No blade configured at this IP address (" + srcIP + ")\r\n");
-                Response.Write("reboot\r\n");
-                hostStateDB.addLogEvent("IPXE script for blade " + srcIP + " requested, but blade is not configured");
-                return;
-            }
-
             // Select the appropriate template
             string script;
-            if (state.currentlyHavingBIOSDeployed)
-                script = Properties.Resources.ipxeTemplateForBIOS;
-            else
-                script = Properties.Resources.ipxeTemplate;
-            
-            lock (state)
+            bladeOwnership owner = null;
+            bladeSpec bladeState = hostStateDB.getBladeByIP(srcIP);
+            if (bladeState != null)
             {
-                if (state.state == bladeStatus.unused)
+
+                if (bladeState.currentlyHavingBIOSDeployed)
+                    script = Properties.Resources.ipxeTemplateForBIOS;
+                else if (bladeState.currentlyBeingAVMServer)
+                    script = Properties.Resources.ipxeTemplateForESXi;
+                else
+                    script = Properties.Resources.ipxeTemplate;
+
+                script = script.Replace("{BLADE_IP_ISCSI}", bladeState.iscsiIP);
+                script = script.Replace("{BLADE_IP_MAIN}", bladeState.bladeIP);
+
+                owner = bladeState;
+            }
+            else
+            {
+                vmSpec vmState = hostStateDB.getVMByIP(srcIP);
+
+                if (vmState == null)
+                {
+                    Response.Write("#!ipxe\r\n");
+                    Response.Write("prompt No blade configured at this IP address (" + srcIP + ")\r\n");
+                    Response.Write("reboot\r\n");
+                    hostStateDB.addLogEvent("IPXE script for blade " + srcIP + " requested, but blade is not configured");
+                    return;
+                }
+
+                script = Properties.Resources.ipxeTemplate;
+
+                script = script.Replace("{BLADE_IP_ISCSI}", vmState.iscsiIP);
+                script = script.Replace("{BLADE_IP_MAIN}", vmState.VMIP);
+                
+                owner = vmState;
+            }
+
+            lock (owner)    // wait what
+            {
+                if (owner.state == bladeStatus.unused)
                 {
                     Response.Write("#!ipxe\r\n");
                     Response.Write("prompt Blade does not have any owner");
@@ -64,16 +87,11 @@ namespace bladeDirector
                     return;
                 }
 
-                script = script.Replace("{BLADE_IP_ISCSI}", state.iscsiIP);
-                script = script.Replace("{BLADE_IP_MAIN}", state.bladeIP);
-                script = script.Replace("{BLADE_NETMASK_ISCSI}", "255.255.255.0");
-                script = script.Replace("{BLADE_SNAPSHOT}", hostStateDB.getCurrentSnapshotForBlade(srcIP));
+                script = script.Replace("{BLADE_NETMASK_ISCSI}", "255.255.192.0");
+                script = script.Replace("{BLADE_SNAPSHOT}", hostStateDB.getCurrentSnapshotForBladeOrVM(srcIP));
             }
             Response.Write(script);
-            if (state.currentlyHavingBIOSDeployed)
-                hostStateDB.addLogEvent("IPXE script for blade " + srcIP + " generated (BIOS setting mode)");
-            else
-                hostStateDB.addLogEvent("IPXE script for blade " + srcIP + " generated (owner " + state.currentOwner + ")");
+            hostStateDB.addLogEvent("IPXE script for blade " + srcIP + " generated (owner " + owner.currentOwner + ")");
         }
     }
 }
