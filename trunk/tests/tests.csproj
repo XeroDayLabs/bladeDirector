@@ -97,7 +97,7 @@
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\..\thirdparty\hypervisors\trunk\hypervisors\hypervisors.csproj">
+    <ProjectReference Include="$(Solutiondir)\..\thirdparty\hypervisors\trunk\hypervisors\hypervisors.csproj">
       <Project>{47995dd9-9f78-4313-809d-55c515eaf89e}</Project>
       <Name>hypervisors</Name>
     </ProjectReference>

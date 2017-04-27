@@ -23,15 +23,15 @@
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="DiffieHellman">
-      <HintPath>..\..\thirdparty\sharpssh\DiffieHellman.dll</HintPath>
+      <HintPath>$(Solutiondir)\..\thirdparty\sharpssh\DiffieHellman.dll</HintPath>
     </Reference>
     <Reference Include="Microsoft.CSharp" />
     <Reference Include="Org.Mentalis.Security">
-      <HintPath>..\..\thirdparty\sharpssh\Org.Mentalis.Security.dll</HintPath>
+      <HintPath>$(Solutiondir)\..\thirdparty\sharpssh\Org.Mentalis.Security.dll</HintPath>
     </Reference>
     <Reference Include="System.Data.DataSetExtensions" />
     <Reference Include="System.Data.SQLite">
-      <HintPath>..\..\thirdparty\sqlite\System.Data.SQLite.dll</HintPath>
+      <HintPath>$(Solutiondir)\..\thirdparty\sqlite\System.Data.SQLite.dll</HintPath>
     </Reference>
     <Reference Include="System.Runtime.Serialization" />
     <Reference Include="System.ServiceModel" />
@@ -51,11 +51,11 @@
     <Reference Include="System.EnterpriseServices" />
     <Reference Include="System.Xml.Linq" />
     <Reference Include="Tamir.SharpSSH">
-      <HintPath>..\..\thirdparty\sharpssh\Tamir.SharpSSH.dll</HintPath>
+      <HintPath>$(Solutiondir)\..\thirdparty\sharpssh\Tamir.SharpSSH.dll</HintPath>
     </Reference>
   </ItemGroup>
   <ItemGroup>
-    <Content Include="..\..\thirdparty\sqlite\SQLite.Interop.dll">
+    <Content Include="$(Solutiondir)\..\thirdparty\sqlite\SQLite.Interop.dll">
       <Link>SQLite.Interop.dll</Link>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>

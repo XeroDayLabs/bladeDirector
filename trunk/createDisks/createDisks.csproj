@@ -55,7 +55,7 @@
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="CommandLine">
-      <HintPath>..\..\thirdparty\commandline\CommandLine.dll</HintPath>
+      <HintPath>$(Solutiondir)\..\thirdparty\commandline\CommandLine.dll</HintPath>
     </Reference>
     <Reference Include="Newtonsoft.Json, Version=4.5.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
@@ -72,7 +72,7 @@
     <Reference Include="System.Xml" />
     <Reference Include="VMware.Vim, Version=6.0.0.0, Culture=neutral, PublicKeyToken=10980b081e887e9f, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\thirdparty\hypervisors\ThirdParty\vmware\VMware.Vim.dll</HintPath>
+      <HintPath>$(Solutiondir)\..\thirdparty\hypervisors\ThirdParty\vmware\VMware.Vim.dll</HintPath>
     </Reference>
   </ItemGroup>
   <ItemGroup>
@@ -138,7 +138,7 @@
     <None Include="Service References\bladeDirector\services.disco" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\..\thirdparty\hypervisors\trunk\hypervisors\hypervisors.csproj">
+    <ProjectReference Include="$(Solutiondir)\..\thirdparty\hypervisors\trunk\hypervisors\hypervisors.csproj">
       <Project>{47995DD9-9F78-4313-809D-55C515EAF89E}</Project>
       <Name>hypervisors</Name>
     </ProjectReference>
