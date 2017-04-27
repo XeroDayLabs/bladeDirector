@@ -794,6 +794,27 @@ namespace bladeDirector
                     if (hyp.getPowerStatus() == false)
                     {
                         Debug.WriteLine(DateTime.Now + threadState.childVM.VMIP + ": powering on");
+                        if (getLastDeployedBIOSForBlade(threadState.VMServer.bladeIP) != Properties.Resources.VMServerBIOS)
+                        {
+                            Debug.WriteLine(DateTime.Now + threadState.childVM.VMIP + ": deploying BIOS to server " + threadState.VMServer.bladeIP);
+                            rebootAndStartDeployingBIOSToBlade(threadState.VMServer.bladeIP, "vmserver", Properties.Resources.VMServerBIOS);
+                            while (true)
+                            {
+                                resultCode progress = resultCode.pending;
+                                while (progress == resultCode.pending)
+                                {
+                                    progress = checkBIOSWriteProgress(threadState.VMServer.bladeIP);
+                                    if (progress != resultCode.pending &&
+                                        progress != resultCode.unknown &&
+                                        progress != resultCode.success   )
+                                    {
+                                        Debug.WriteLine(DateTime.Now + threadState.VMServer.bladeIP + ": BIOS deploy failed");
+                                        throw new Exception("BIOS deploy failed, returning " + progress);
+                                    }
+                                }
+                                
+                            }
+                        }
                         hyp.powerOn(threadState.deployDeadline);
                     }
                 }
