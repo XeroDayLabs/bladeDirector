@@ -266,24 +266,26 @@ namespace createDisks
                 foreach (string serverIP in serverIPs)
                 {
                     itemToAdd[] toPrep = itemsToAdd.Where(x => x.serverIP == serverIP).ToArray();
-                    Task[] toWaitOn = new Task[toPrep.Length];
+                    Thread[] toWaitOn = new Thread[toPrep.Length];
                     for (int index = 0; index < toPrep.Length; index++)
                     {
                         itemToAdd itemToAdd = toPrep[index];
 
-                        toWaitOn[index] = new Task(() =>
+                        toWaitOn[index] = new Thread(() =>
                         {
                             using (hypervisorWithSpec<T> hyp = createHyp(itemToAdd, nas))
                             {
                                 prepareCloneImage(itemToAdd, toCloneVolume, tagName, directorURL, additionalScript, additionalDeploymentItem, hyp, nas);
                             }
-                        }, tkn.Token);
+                        }, 4 * 1024 * 1024);
+                        toWaitOn[index].Name = "Create disks for machine " + itemToAdd.bladeIP;
                         toWaitOn[index].Start();
                     }
 
                     try
                     {
-                        Task.WaitAll(toWaitOn, -1, tkn.Token);
+                        foreach (Thread thread in toWaitOn)
+                            thread.Join();
                     }
                     catch (AggregateException)
                     {
