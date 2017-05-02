@@ -2,15 +2,16 @@
 using System.Collections.Concurrent;
 using System.Text;
 using System.Threading.Tasks;
+using bladeDirectorClient.bladeDirector;
 using hypervisors;
 
 namespace bladeDirectorClient
 {
-    public class hypervisorCollection : ConcurrentDictionary<string, bladeDirectedHypervisor_iLo>, IDisposable
+    public class hypervisorCollection<T> : ConcurrentDictionary<string, hypervisorWithSpec<T>>, IDisposable
     {
         public void Dispose()
         {
-            foreach (bladeDirectedHypervisor_iLo hyp in this.Values)
+            foreach (hypervisorWithSpec<T> hyp in this.Values)
                 hyp.Dispose();
         }
     }

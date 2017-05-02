@@ -1,22 +1,89 @@
 using System;
+using System.Collections.Generic;
 using System.ComponentModel;
 using System.Diagnostics;
 using System.Linq;
 using System.Net;
 using System.Net.NetworkInformation;
 using System.Runtime.InteropServices;
+using System.ServiceModel;
+using System.ServiceModel.Channels;
 using System.Threading;
 using bladeDirectorClient.bladeDirector;
 using hypervisors;
 
 namespace bladeDirectorClient
 {
+    public class VMSpec
+    {
+        public VMHardwareSpec hw;
+        public VMSoftwareSpec sw;
+    }
+
     public class iLoHypervisorPool
     {
         private readonly object keepaliveThreadLock = new object();
         private Thread keepaliveThread = null;
 
-        public hypervisorCollection requestAsManyHypervisorsAsPossible(string snapshotName)
+        public hypervisorCollection<hypSpec_vmware> requestVMs(VMSpec[] specs)
+        {
+            startKeepaliveThreadIfNotRunning();
+
+            if (specs.Select(x => x.sw.debuggerKey).Distinct().Count() > 1)
+                throw new Exception("use a single debug key, its easier");
+
+            Binding thisBind = new BasicHttpBinding("servicesSoap");
+            thisBind.OpenTimeout = TimeSpan.FromMinutes(5);
+            thisBind.ReceiveTimeout = TimeSpan.FromMinutes(5);
+            thisBind.SendTimeout = TimeSpan.FromMinutes(5);
+            thisBind.CloseTimeout = TimeSpan.FromMinutes(5);
+            EndpointAddress ep = new EndpointAddress(machinePools.bladeDirectorURL);
+            using (servicesSoapClient director = new servicesSoapClient(thisBind, ep))
+            {
+                resultCodeAndBladeName[] results = new resultCodeAndBladeName[specs.Length];
+                for (int n = 0; n < specs.Length; n++)
+                    results[n] = director.RequestAnySingleVM(specs[n].hw, specs[n].sw);
+
+                hypervisorCollection<hypSpec_vmware> toRet = new hypervisorCollection<hypSpec_vmware>();
+                try
+                {
+                    foreach (resultCodeAndBladeName res in results)
+                    {
+                        while (true)
+                        {
+                            resultCodeAndBladeName progress = director.getProgressOfVMRequest(res.waitToken);
+
+                            if (progress.code == resultCode.success)
+                                break;
+                            if (progress.code != resultCode.pending && progress.code != resultCode.unknown)
+                                throw new Exception("Can't provision VM, got status " + progress.code);
+                        }
+
+                        vmSpec vmSpec = director.getConfigurationOfVM(res.bladeName);
+                        bladeSpec vmServerSpec = director.getConfigurationOfBladeByID((int) vmSpec.parentBladeID);
+                        hypSpec_vmware newSpec = new hypSpec_vmware(
+                            vmSpec.displayName, vmServerSpec.bladeIP, vmServerSpec.ESXiUsername, vmServerSpec.ESXiPassword,
+                            vmSpec.username, vmSpec.password, vmServerSpec.iLOPort, specs[0].sw.debuggerKey, vmSpec.VMIP);
+                        hypervisor_vmware newVM = new hypervisor_vmware(newSpec);
+                        newVM.setDisposalCallback(onDestruction);
+                        if (!toRet.TryAdd(vmSpec.VMIP, newVM))
+                            throw new Exception();
+                    }
+                }
+                catch (Exception)
+                {
+                    foreach (KeyValuePair<string, hypervisorWithSpec<hypSpec_vmware>> allocedBlades in toRet)
+                    {
+                        director.releaseBladeOrVM(allocedBlades.Key);
+                    }
+                    throw;
+                }
+                return toRet;
+            }
+        }
+
+
+        public hypervisorCollection<hypSpec_iLo> requestAsManyHypervisorsAsPossible(string snapshotName)
         {
             return requestAsManyHypervisorsAsPossible(
                 Properties.Settings.Default.iloHostUsername,
@@ -30,7 +97,7 @@ namespace bladeDirectorClient
                 snapshotName);
         }
 
-        public hypervisorCollection requestAsManyHypervisorsAsPossible(string iloHostUsername, string iloHostPassword,
+        public hypervisorCollection<hypSpec_iLo> requestAsManyHypervisorsAsPossible(string iloHostUsername, string iloHostPassword,
             string iloUsername, string iloPassword,
             string iloISCSIIP, string iloISCSIUsername, string iloISCSIPassword,
             string iloKernelKey, string snapshotName)
@@ -40,7 +107,7 @@ namespace bladeDirectorClient
             {
                 string[] nodes = director.ListNodes().Split(',');
 
-                hypervisorCollection toRet = new hypervisorCollection();
+                hypervisorCollection<hypSpec_iLo> toRet = new hypervisorCollection<hypSpec_iLo>();
                 try
                 {
                     foreach (string nodeName in nodes)
@@ -50,6 +117,8 @@ namespace bladeDirectorClient
                         bladeSpec bladeConfig = director.getConfigurationOfBlade(nodeName);
                         if (director.selectSnapshotForBlade(nodeName, snapshotName) != resultCode.success)
                             throw new Exception("Can't find snapshot " + snapshotName);
+                        // FIXME: oh no, we can't call .getCurrentSnapshotForBlade until our blade is successfully allocated to
+                        // us, otherwise we might get a snapshot for some other host!
                         string snapshot = director.getCurrentSnapshotForBlade(nodeName);
 
                         hypSpec_iLo spec = new hypSpec_iLo(
@@ -267,6 +336,14 @@ namespace bladeDirectorClient
                 releasedBlade.powerOff();
             }
             // And notify the director that this blade is no longer in use.
+            using (servicesSoapClient director = new servicesSoapClient("servicesSoap", machinePools.bladeDirectorURL))
+            {
+                director.releaseBladeOrVM(obj.kernelDebugIPOrHostname);
+            }
+        }
+
+        private void onDestruction(hypSpec_vmware obj)
+        {
             using (servicesSoapClient director = new servicesSoapClient("servicesSoap", machinePools.bladeDirectorURL))
             {
                 director.releaseBladeOrVM(obj.kernelDebugIPOrHostname);
