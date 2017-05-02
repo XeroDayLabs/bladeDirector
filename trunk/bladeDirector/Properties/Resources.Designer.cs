@@ -61,12 +61,25 @@ namespace bladeDirector.Properties {
         }
         
         /// <summary>
-        ///   Looks up a localized resource of type System.Byte[].
+        ///   Looks up a localized string similar to #!/bin/sh
+        ///
+        ///cd ~/
+        ///biosFilename=newbios.xml
+        ///
+        ///echo Applying BIOS from $biosFilename
+        ///
+        ///chmod 755 conrep
+        ///echo executing ./conrep -l -f $biosFilename
+        ///./conrep -l -f $biosFilename
+        ///errCode=$?
+        ///echo conrep returned $errCode
+        ///
+        ///exit $errCode
+        ///.
         /// </summary>
-        internal static byte[] applyBIOS {
+        internal static string applyBIOS {
             get {
-                object obj = ResourceManager.GetObject("applyBIOS", resourceCulture);
-                return ((byte[])(obj));
+                return ResourceManager.GetString("applyBIOS", resourceCulture);
             }
         }
         
@@ -81,12 +94,27 @@ namespace bladeDirector.Properties {
         }
         
         /// <summary>
-        ///   Looks up a localized resource of type System.Byte[].
+        ///   Looks up a localized string similar to &lt;Conrep&gt;
+        ///	&lt;global&gt;
+        ///		&lt;helptext&gt;&lt;![CDATA[
+        ///
+        ///		This is the input file for CONREP describing the 
+        ///		configurable settings for the ProLiant servers listed below.
+        ///		Other models require platform specific configuration files that are available
+        ///		on hp.com.
+        ///
+        ///		]]&gt;&lt;/helptext&gt;
+        ///	&lt;fileversion&gt;4.35&lt;/fileversion&gt;
+        ///	&lt;minimumconrepversion&gt;3.40&lt;/minimumconrepversion&gt;
+        ///	&lt;platforms&gt;
+        ///		&lt;platform&gt;ProLiant DL120 G7&lt;/platform&gt;
+        ///		&lt;platform&gt;ProLiant ML110 G7&lt;/platform&gt;
+        ///		&lt;platform&gt;ProLiant DL3&lt;/platform&gt;
+        ///		&lt;platform&gt;ProLiant ML3&lt;/pla [rest of string was truncated]&quot;;.
         /// </summary>
-        internal static byte[] conrep_xml {
+        internal static string conrep_xml {
             get {
-                object obj = ResourceManager.GetObject("conrep_xml", resourceCulture);
-                return ((byte[])(obj));
+                return ResourceManager.GetString("conrep_xml", resourceCulture);
             }
         }
         
@@ -124,12 +152,21 @@ namespace bladeDirector.Properties {
         }
         
         /// <summary>
-        ///   Looks up a localized resource of type System.Byte[].
+        ///   Looks up a localized string similar to #!/bin/sh
+        ///
+        ///cd ~/
+        ///biosFilename=currentbios.xml
+        ///
+        ///chmod 755 conrep
+        ///./conrep -s -f $biosFilename
+        ///errCode=$?
+        ///
+        ///exit $errCode
+        ///.
         /// </summary>
-        internal static byte[] getBIOS {
+        internal static string getBIOS {
             get {
-                object obj = ResourceManager.GetObject("getBIOS", resourceCulture);
-                return ((byte[])(obj));
+                return ResourceManager.GetString("getBIOS", resourceCulture);
             }
         }
         

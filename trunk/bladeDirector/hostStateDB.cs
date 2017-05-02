@@ -1210,12 +1210,12 @@ namespace bladeDirector
             using (var scp = new SftpClient(nodeIP, Properties.Settings.Default.ltspUsername, Properties.Settings.Default.ltspPassword))
             {
                 scp.Connect();
-                scp.WriteAllBytes("applyBIOS.sh", Properties.Resources.applyBIOS);
-                scp.WriteAllBytes("getBIOS.sh", Properties.Resources.getBIOS);
+                scp.WriteAllText("applyBIOS.sh", Properties.Resources.applyBIOS.Replace("\r\n", "\n"));
+                scp.WriteAllText("getBIOS.sh", Properties.Resources.getBIOS.Replace("\r\n", "\n"));
                 scp.WriteAllBytes("conrep", Properties.Resources.conrep);
-                scp.WriteAllBytes("conrep.xml", Properties.Resources.conrep_xml);
+                scp.WriteAllText("conrep.xml", Properties.Resources.conrep_xml.Replace("\r\n", "\n"));
                 if (biosConfigFile != null)
-                    scp.WriteAllText("newbios.xml", biosConfigFile);
+                    scp.WriteAllText("newbios.xml", biosConfigFile.Replace("\r\n", "\n"));
             }
         }
 
