@@ -29,6 +29,9 @@
     <Reference Include="Org.Mentalis.Security">
       <HintPath>$(Solutiondir)\..\thirdparty\sharpssh\Org.Mentalis.Security.dll</HintPath>
     </Reference>
+    <Reference Include="Renci.SshNet">
+      <HintPath>..\..\thirdparty\sshnet\Renci.SshNet.dll</HintPath>
+    </Reference>
     <Reference Include="System.Data.DataSetExtensions" />
     <Reference Include="System.Data.SQLite">
       <HintPath>$(Solutiondir)\..\thirdparty\sqlite\System.Data.SQLite.dll</HintPath>
@@ -50,9 +53,6 @@
     <Reference Include="System.Web.Services" />
     <Reference Include="System.EnterpriseServices" />
     <Reference Include="System.Xml.Linq" />
-    <Reference Include="Tamir.SharpSSH">
-      <HintPath>$(Solutiondir)\..\thirdparty\sharpssh\Tamir.SharpSSH.dll</HintPath>
-    </Reference>
   </ItemGroup>
   <ItemGroup>
     <Content Include="$(Solutiondir)\..\thirdparty\sqlite\SQLite.Interop.dll">

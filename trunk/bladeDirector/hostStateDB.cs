@@ -17,8 +17,7 @@ using System.Web.UI.WebControls;
 using bladeDirector.bootMenuWCF;
 using createDisks;
 using hypervisors;
-using Tamir.SharpSsh;
-using Tamir.SharpSsh.jsch;
+using Renci.SshNet;
 
 namespace bladeDirector
 {
@@ -1197,7 +1196,6 @@ namespace bladeDirector
                 hyp.connect();
                 hyp.powerOff();
                 hyp.powerOn();
-                hyp.logout();
             }
 
             // Wait for it to boot.  Note that we don't ping the client repeatedly here - since the Ping class can cause 
@@ -1207,44 +1205,18 @@ namespace bladeDirector
             param.biosUpdateSocket.BeginConnect(new IPEndPoint(IPAddress.Parse(param.nodeIp), 22), param.onBootFinish, param);
         }
 
-        private static List<string> copyDeploymentFilesToBlade(string nodeIP, string biosConfigFile)
+        private static void copyDeploymentFilesToBlade(string nodeIP, string biosConfigFile)
         {
-            List<string> toRet = new List<string>(5);
-
-            string applyBIOSFile = null;
-            string getBIOSFile = null;
-            string conrepFile = null;
-            string conrepXmlFile = null;
-            string newBiosFile = null;
-
-            try
+            using (var scp = new SftpClient(nodeIP, Properties.Settings.Default.ltspUsername, Properties.Settings.Default.ltspPassword))
             {
-                Scp scp = new Tamir.SharpSsh.Scp(nodeIP, Properties.Settings.Default.ltspUsername, Properties.Settings.Default.ltspPassword);
                 scp.Connect();
-                applyBIOSFile = writeTempFile(Properties.Resources.applyBIOS, true);
-                scp.Put(applyBIOSFile, "applyBIOS.sh");
-                getBIOSFile = writeTempFile(Properties.Resources.getBIOS, true);
-                scp.Put(getBIOSFile, "getBIOS.sh");
-                conrepFile = writeTempFile(Properties.Resources.conrep);
-                scp.Put(conrepFile, "conrep");
-                conrepXmlFile = writeTempFile(Properties.Resources.conrep_xml, true);
-                scp.Put(conrepXmlFile, "conrep.xml");
+                scp.WriteAllBytes("applyBIOS.sh", Properties.Resources.applyBIOS);
+                scp.WriteAllBytes("getBIOS.sh", Properties.Resources.getBIOS);
+                scp.WriteAllBytes("conrep", Properties.Resources.conrep);
+                scp.WriteAllBytes("conrep.xml", Properties.Resources.conrep_xml);
                 if (biosConfigFile != null)
-                {
-                    newBiosFile = writeTempFile(Encoding.ASCII.GetBytes(biosConfigFile));
-                    scp.Put(newBiosFile, "newbios.xml");
-                }
+                    scp.WriteAllText("newbios.xml", biosConfigFile);
             }
-            finally
-            {
-                foreach (string filename in new[] {applyBIOSFile, getBIOSFile, conrepFile, conrepXmlFile, newBiosFile})
-                {
-                    if (filename != null)
-                        toRet.Add(filename);
-                }
-
-            }
-            return toRet;
         }
 
         private static void GetBIOS(IAsyncResult ar)
@@ -1253,23 +1225,20 @@ namespace bladeDirector
             if (retryIfFailedConnect(ar, state))
                 return;
 
-            List<string> tempFilesToCleanUp = null;
-            try
+            copyDeploymentFilesToBlade(state.nodeIp, null);
+
+            using (SshClient exec = new SshClient(state.nodeIp, Properties.Settings.Default.ltspUsername, Properties.Settings.Default.ltspPassword))
             {
-                tempFilesToCleanUp = copyDeploymentFilesToBlade(state.nodeIp, null);
-
-                SshExec exec = new SshExec(state.nodeIp, Properties.Settings.Default.ltspUsername, Properties.Settings.Default.ltspPassword);
                 exec.Connect();
-                string stderr = String.Empty;
-                string stdout = String.Empty;
-                int returnCode = exec.RunCommand("bash ~/getBIOS.sh", ref stdout, ref stderr);
+                var commandResult = exec.RunCommand("bash ~/getBIOS.sh");
 
-                if (returnCode != 0)
+
+                if (commandResult.ExitStatus != 0)
                 {
-                    addLogEvent(string.Format("Reading BIOS on {0} resulted in error code {1}", state.nodeIp, returnCode));
-                    Debug.WriteLine(DateTime.Now + "Faied bios deploy, error code " + returnCode);
-                    Debug.WriteLine(DateTime.Now + "stdout " + stdout);
-                    Debug.WriteLine(DateTime.Now + "stderr " + stderr);
+                    addLogEvent(string.Format("Reading BIOS on {0} resulted in error code {1}", state.nodeIp, commandResult.ExitStatus));
+                    Debug.WriteLine(DateTime.Now + "Faied bios deploy, error code " + commandResult.ExitStatus);
+                    Debug.WriteLine(DateTime.Now + "stdout " + commandResult.Result);
+                    Debug.WriteLine(DateTime.Now + "stderr " + commandResult.Error);
                     state.result = resultCode.genericFail;
                 }
                 else
@@ -1279,43 +1248,42 @@ namespace bladeDirector
                 }
 
                 // Retrieve the output
-                Scp scp = new Tamir.SharpSsh.Scp(state.nodeIp, Properties.Settings.Default.ltspUsername, Properties.Settings.Default.ltspPassword);
-                scp.Connect();
-                string existingConfig = Path.GetTempFileName();
-                state.biosxml = null;
-                try
+                using (ScpClient scp = new ScpClient(state.nodeIp, Properties.Settings.Default.ltspUsername, Properties.Settings.Default.ltspPassword))
                 {
-                    scp.Get("currentbios.xml", existingConfig);
-                    state.biosxml = File.ReadAllText(existingConfig);
-                }
-                finally 
-                {
-                    deleteWithRetry(existingConfig);
-                }
+                    scp.Connect();
+                    commandResult = exec.RunCommand("bash ~/getBIOS.sh");
+                    state.biosxml = null;
 
-                // All done, now we can power off and return.
-                using (hypervisor_iLo_HTTP hyp = new hypervisor_iLo_HTTP(state.iLoIP, Properties.Settings.Default.iloUsername, Properties.Settings.Default.iloPassword))
-                {
-                    hyp.connect();
-                    hyp.powerOff();
-                    hyp.logout();
+                    using (MemoryStream stream = new MemoryStream())
+                    using (StreamWriter sw = new StreamWriter(stream))
+                    {
+                        scp.Download("currentbios.xml", stream);
+                        sw.Flush();
+                        stream.Position = 0;
+                        using (StreamReader sr = new StreamReader(stream))
+                        {
+                            state.biosxml = sr.ReadToEnd();
+                        }
+                    }
                 }
-
-                lock (connLock)
-                {
-                    bladeSpec reqBlade = getBladeByIP(state.nodeIp);
-                    reqBlade.currentlyHavingBIOSDeployed = false;
-                    reqBlade.lastDeployedBIOS = state.biosxml;
-                    reqBlade.updateInDB(conn);
-                }
-                state.isFinished = true;
-
             }
-            finally
+
+            // All done, now we can power off and return.
+            using (hypervisor_iLo_HTTP hyp = new hypervisor_iLo_HTTP(state.iLoIP, Properties.Settings.Default.iloUsername, Properties.Settings.Default.iloPassword))
             {
-                foreach (string filename in tempFilesToCleanUp)
-                    deleteWithRetry(filename);
+                hyp.connect();
+                hyp.powerOff();
+                hyp.logout();
             }
+
+            lock (connLock)
+            {
+                bladeSpec reqBlade = getBladeByIP(state.nodeIp);
+                reqBlade.currentlyHavingBIOSDeployed = false;
+                reqBlade.lastDeployedBIOS = state.biosxml;
+                reqBlade.updateInDB(conn);
+            }
+            state.isFinished = true;
         }
 
         private static void SetBIOS(IAsyncResult ar)
@@ -1324,33 +1292,34 @@ namespace bladeDirector
             if (retryIfFailedConnect(ar, state))
                 return;
 
-            List<string> tempFilesToCleanUp = null;
             try
             {
                 // Okay, now the box is up :)
                 // SCP some needed files to it.
-                tempFilesToCleanUp = copyDeploymentFilesToBlade(state.nodeIp, state.biosxml);
+                copyDeploymentFilesToBlade(state.nodeIp, state.biosxml);
 
                 // And execute the command to deploy the BIOS via SSH.
-                SshExec exec = new SshExec(state.nodeIp, Properties.Settings.Default.ltspUsername, Properties.Settings.Default.ltspPassword);
-                exec.Connect();
-                string stderr = String.Empty;
-                string stdout = String.Empty;
-                int returnCode = exec.RunCommand("bash ~/applyBIOS.sh", ref stdout, ref stderr);
+                SshCommand commandResult;
+                using (SshClient exec = new SshClient(state.nodeIp, Properties.Settings.Default.ltspUsername, Properties.Settings.Default.ltspPassword))
+                {
+                    exec.Connect();
+                    SshCommand status = exec.RunCommand("bash ~/applyBIOS.sh");
 
-                if (returnCode != 0)
-                {
-                    addLogEvent(string.Format("Deploying BIOS on {0} resulted in error code {1}", state.nodeIp, returnCode));
-                    Debug.WriteLine(DateTime.Now + "Faied bios deploy, error code " + returnCode);
-                    Debug.WriteLine(DateTime.Now + "stdout " + stdout);
-                    Debug.WriteLine(DateTime.Now + "stderr " + stderr);
-                    state.result = resultCode.genericFail;
+                    if (status.ExitStatus != 0)
+                    {
+                        addLogEvent(string.Format("Deploying BIOS on {0} resulted in error code {1}", state.nodeIp, status.ExitStatus));
+                        Debug.WriteLine(DateTime.Now + "Faied bios deploy, error code " + status.ExitStatus);
+                        Debug.WriteLine(DateTime.Now + "stdout " + status.Result);
+                        Debug.WriteLine(DateTime.Now + "stderr " + status.Error);
+                        state.result = resultCode.genericFail;
+                    }
+                    else
+                    {
+                        addLogEvent(string.Format("Deployed BIOS successfully to {0}", state.nodeIp));
+                        state.result = resultCode.success;
+                    }
                 }
-                else
-                {
-                    addLogEvent(string.Format("Deployed BIOS successfully to {0}", state.nodeIp));
-                    state.result = resultCode.success;
-                }
+
 
                 // All done, now we can power off and return.
                 using (hypervisor_iLo_HTTP hyp = new hypervisor_iLo_HTTP(state.iLoIP, Properties.Settings.Default.iloUsername, Properties.Settings.Default.iloPassword))
@@ -1374,33 +1343,6 @@ namespace bladeDirector
                 addLogEvent(string.Format("Deploying BIOS on {0} resulted in exception {1}", state.nodeIp, e.ToString()));
                 state.result = resultCode.genericFail;
                 state.isFinished = true;
-            }
-            finally
-            {
-                // Clean up our temp files (with a retry in case they are in use right now)
-                if (tempFilesToCleanUp != null)
-                {
-                    foreach (string filename in tempFilesToCleanUp)
-                        deleteWithRetry(filename);
-                }
-            }
-        }
-
-        private static void deleteWithRetry(string filename)
-        {
-            while (File.Exists(filename))
-            {
-                DateTime deadline = DateTime.Now + TimeSpan.FromMinutes(1);
-                try
-                {
-                    File.Delete(filename);
-                }
-                catch (InvalidOperationException)
-                {
-                    if (DateTime.Now > deadline)
-                        throw;
-                    Thread.Sleep(100);
-                }
             }
         }
 
@@ -1432,22 +1374,6 @@ namespace bladeDirector
                 return true;
             }
             return false;
-        }
-
-        private static string writeTempFile(byte[] fileContents, bool convertNewlines = false)
-        {
-            string filename = Path.GetTempFileName();
-            using (FileStream f = File.OpenWrite(filename))
-            {
-                byte[] biosAsBytes = fileContents;
-                if (convertNewlines)
-                {
-                    string fileASCIIStr = Encoding.ASCII.GetString(fileContents);
-                    biosAsBytes = Encoding.ASCII.GetBytes(fileASCIIStr.Replace("\r\n", "\n"));
-                }
-                f.Write(biosAsBytes, 0, biosAsBytes.Length);
-            }
-            return filename;
         }
     }
 

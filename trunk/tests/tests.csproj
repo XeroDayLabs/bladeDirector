@@ -164,7 +164,9 @@
     <None Include="Service References\networkService\tests.networkService.vmSpec.datasource">
       <DependentUpon>Reference.svcmap</DependentUpon>
     </None>
-    <None Include="testBIOS.xml" />
+    <None Include="testBIOS.xml">
+      <SubType>Designer</SubType>
+    </None>
   </ItemGroup>
   <Choose>
     <When Condition="'$(VisualStudioVersion)' == '10.0' And '$(IsCodedUITest)' == 'True'">
