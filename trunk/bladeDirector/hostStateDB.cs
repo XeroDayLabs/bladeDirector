@@ -354,7 +354,11 @@ namespace bladeDirector
         {
             lock (connLock)
             {
-                if (reqBlade.state != bladeStatus.inUseByDirector)
+                if (reqBlade.state == bladeStatus.unused)
+                {
+                    return reqBlade;
+                }
+                else if (reqBlade.state == bladeStatus.inUseByDirector)
                 {
                     if (reqBlade.currentlyHavingBIOSDeployed)
                     {
@@ -382,8 +386,7 @@ namespace bladeDirector
                         return getBladeByIP(reqBlade.bladeIP);
                     }
                 }
-
-                if (reqBlade.state != bladeStatus.unused)
+                else
                 {
                     if (reqBlade.lastKeepAlive + keepAliveTimeout < DateTime.Now)
                     {
