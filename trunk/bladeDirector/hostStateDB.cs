@@ -902,21 +902,21 @@ namespace bladeDirector
 
                 // copy the template VM into a new directory
                 doCmdAndCheckSuccess(hyp, "rm", " -rf " + destDir);
-                doCmdAndCheckSuccess(hyp, "cp", " -R /vmfs/volumes/esxivms/PXETemplate " + destDir));
+                doCmdAndCheckSuccess(hyp, "cp", " -R /vmfs/volumes/esxivms/PXETemplate " + destDir);
                 // and then customise it.
-                doCmdAndCheckSuccess(hyp, "sed", " -e 's/ethernet0.address[= ].*/ethernet0.address = \"" + threadState.childVM.eth0MAC + "\"/g' -i " + vmxPath));
-                doCmdAndCheckSuccess(hyp, "sed", " -e 's/ethernet1.address[= ].*/ethernet1.address = \"" + threadState.childVM.eth1MAC + "\"/g' -i " + vmxPath));
-                doCmdAndCheckSuccess(hyp, "sed", " -e 's/displayName[= ].*/displayName = \"" + threadState.childVM.displayName + "\"/g' -i " + vmxPath));
-                doCmdAndCheckSuccess(hyp, "sed", " -e 's/memSize[= ].*/memSize = \"" + threadState.childVM.hwSpec.memoryMB + "\"/g' -i " + vmxPath));
-                doCmdAndCheckSuccess(hyp, "sed", " -e 's/sched.mem.min[= ].*/sched.mem.min = \"" + threadState.childVM.hwSpec.memoryMB + "\"/g' -i " + vmxPath));
-                doCmdAndCheckSuccess(hyp, "sed", " -e 's/sched.mem.minSize[= ].*/sched.mem.minSize = \"" + threadState.childVM.hwSpec.memoryMB + "\"/g' -i " + vmxPath));
-                doCmdAndCheckSuccess(hyp, "sed", " -e 's/numvcpus[= ].*/numvcpus = \"" + threadState.childVM.hwSpec.cpuCount + "\"/g' -i " + vmxPath));
-                doCmdAndCheckSuccess(hyp, "sed", " -e 's/uuid.bios[= ].*//g' -i " + vmxPath));
-                doCmdAndCheckSuccess(hyp, "sed", " -e 's/uuid.location[= ].*//g' -i " + vmxPath));
+                doCmdAndCheckSuccess(hyp, "sed", " -e 's/ethernet0.address[= ].*/ethernet0.address = \"" + threadState.childVM.eth0MAC + "\"/g' -i " + vmxPath);
+                doCmdAndCheckSuccess(hyp, "sed", " -e 's/ethernet1.address[= ].*/ethernet1.address = \"" + threadState.childVM.eth1MAC + "\"/g' -i " + vmxPath);
+                doCmdAndCheckSuccess(hyp, "sed", " -e 's/displayName[= ].*/displayName = \"" + threadState.childVM.displayName + "\"/g' -i " + vmxPath);
+                doCmdAndCheckSuccess(hyp, "sed", " -e 's/memSize[= ].*/memSize = \"" + threadState.childVM.hwSpec.memoryMB + "\"/g' -i " + vmxPath);
+                doCmdAndCheckSuccess(hyp, "sed", " -e 's/sched.mem.min[= ].*/sched.mem.min = \"" + threadState.childVM.hwSpec.memoryMB + "\"/g' -i " + vmxPath);
+                doCmdAndCheckSuccess(hyp, "sed", " -e 's/sched.mem.minSize[= ].*/sched.mem.minSize = \"" + threadState.childVM.hwSpec.memoryMB + "\"/g' -i " + vmxPath);
+                doCmdAndCheckSuccess(hyp, "sed", " -e 's/numvcpus[= ].*/numvcpus = \"" + threadState.childVM.hwSpec.cpuCount + "\"/g' -i " + vmxPath);
+                doCmdAndCheckSuccess(hyp, "sed", " -e 's/uuid.bios[= ].*//g' -i " + vmxPath);
+                doCmdAndCheckSuccess(hyp, "sed", " -e 's/uuid.location[= ].*//g' -i " + vmxPath);
                 // doCmdAndCheckSuccess(hyp, "sed", " -e 's/serial0.fileName[= ].*/" + "serial0.fileName = \"telnet://:" + (1000 + threadState.childVM.vmSpecID) + "\"/g' -i " + vmxPath));
 
                 // Now add that VM to ESXi, and the VM is ready to use.
-                doCmdAndCheckSuccess(hyp, "vim-cmd", " solo/registervm " + vmxPath));
+                doCmdAndCheckSuccess(hyp, "vim-cmd", " solo/registervm " + vmxPath);
 
                 Debug.WriteLine(DateTime.Now + threadState.childVM.VMIP + ": created");
 
