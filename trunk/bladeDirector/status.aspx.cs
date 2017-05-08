@@ -201,12 +201,7 @@ namespace bladeDirector
 
             hostStateDB.releaseBladeOrVM(clicked.CommandArgument, "console", true);
         }
-
-        protected void cmdReset_Click(object sender, EventArgs e)
-        {
-            hostStateDB.resetAll();
-        }
-
+        
         protected void cmdAddNode_Click(object sender, EventArgs e)
         {
             bladeSpec newBlade = new bladeSpec(txtNewNodeIP.Text, txtNewISCSI.Text, txtNewIloIP.Text, ushort.Parse(txtNewPort.Text), false, null);

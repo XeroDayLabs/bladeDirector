@@ -18,7 +18,11 @@ namespace bladeDirector
             }
             finally 
             {
-                Response.End();
+                // Don't Response.End, since that'll throw/catch an exception, which is a perf hit.
+                // Instead, do this.
+                HttpContext.Current.Response.Flush();
+                HttpContext.Current.Response.SuppressContent = true;
+                HttpContext.Current.ApplicationInstance.CompleteRequest(); 
             }
         }
 

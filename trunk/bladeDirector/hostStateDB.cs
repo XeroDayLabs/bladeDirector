@@ -336,16 +336,58 @@ namespace bladeDirector
             }
         }
 
+        private static void checkKeepAlives(vmSpec reqVM)
+        {
+            lock (connLock)
+            {
+                // VMs are slightly different to blades, since they are always implicitly owned and destroyed on release.
+                if (reqVM.lastKeepAlive + keepAliveTimeout < DateTime.Now)
+                {
+                    // Oh no, the blade owner failed to send a keepalive in time! Release it.
+                    addLogEvent("Requestor " + reqVM.currentOwner + " failed to keepalive for VM " + reqVM.displayName + " (" + reqVM.VMIP + ") releasing VM");
+                    releaseBladeOrVM(reqVM.VMIP, reqVM.currentOwner);
+                }
+            }
+        }
+
         private static bladeSpec checkKeepAlives(bladeSpec reqBlade)
         {
             lock (connLock)
             {
+                if (reqBlade.state != bladeStatus.inUseByDirector)
+                {
+                    if (reqBlade.currentlyHavingBIOSDeployed)
+                    {
+                        // This situation can never timeout. Maybe it's a good idea if it does, but it can't for now.
+                        return reqBlade;
+                    }
+                    else if (reqBlade.currentlyBeingAVMServer)
+                    {
+                        // If all VMs attached to this VM server are unused then we can destroy it.
+                        vmSpec[] childVMs = getVMByVMServerIP(reqBlade.bladeIP);
+                        foreach (vmSpec childVM in childVMs)
+                            checkKeepAlives(childVM);
+                        if (getVMByVMServerIP(reqBlade.bladeIP).Length == 0)
+                        {
+                            addLogEvent("VM server blade " + reqBlade.bladeIP + " has no running VMs, releasing");
+                            releaseBladeOrVM(reqBlade.bladeIP, reqBlade.currentOwner);
+
+                            return getBladeByIP(reqBlade.bladeIP);
+                        }
+                    }
+                    else
+                    {
+                        // Eh, what is this doing then? :/
+                        addLogEvent("Blade " + reqBlade.bladeIP + " is the inUseByDirector state, but isn't actually doing anything");
+                        return getBladeByIP(reqBlade.bladeIP);
+                    }
+                }
+
                 if (reqBlade.state != bladeStatus.unused)
                 {
-                    if (reqBlade.lastKeepAlive + keepAliveTimeout < DateTime.Now &&
-                        reqBlade.state != bladeStatus.inUseByDirector)
+                    if (reqBlade.lastKeepAlive + keepAliveTimeout < DateTime.Now)
                     {
-                        // Oh no, the blade owner failed to send a keepalive in time!
+                        // Oh no, the blade owner failed to send a keepalive in time! Release it.
                         addLogEvent("Requestor " + reqBlade.currentOwner + " failed to keepalive for " + reqBlade.bladeIP + ", releasing blade");
                         releaseBladeOrVM(reqBlade.bladeIP, reqBlade.currentOwner);
 
@@ -502,7 +544,7 @@ namespace bladeDirector
                     return;
                 }
             }
-
+            /*
             // Turn off the blade. We do this even if the blade will be used by someone else after this release.
             hypSpec_iLo hypSpec = new hypSpec_iLo(reqBlade.bladeIP, Properties.Settings.Default.esxiUsername, Properties.Settings.Default.ltspPassword,
                 reqBlade.iLOIP, Properties.Settings.Default.iloUsername, Properties.Settings.Default.iloPassword, null, null, null, reqBlade.currentSnapshot, 0, null);
@@ -516,7 +558,7 @@ namespace bladeDirector
                 {
                     // Nevermind.
                 }
-            }
+            }*/
 
             // Reset any VM-server the blade may be
             reqBlade.currentlyBeingAVMServer = reqBlade.currentlyHavingBIOSDeployed = false;
@@ -693,19 +735,12 @@ namespace bladeDirector
                             return resp;
 
                         freeVMServer = getConfigurationOfBlade(resp.bladeName);
-
-                        using (hypervisor_iLo_HTTP hyp = new hypervisor_iLo_HTTP(freeVMServer.iLOIP, Properties.Settings.Default.iloUsername, Properties.Settings.Default.iloPassword))
-                        {
-                            hyp.connect();
-                            hyp.powerOff();
-                        }
-
                         freeVMServer.becomeAVMServer(conn);
                         freeVMServer.updateInDB(conn);
                     }
 
                     // Create rows for the child VM in the DB. Delete anything that was there previously.
-                    vmSpec childVM = freeVMServer.createChildVMInDB(conn, hwSpec, requestorIP);
+                    vmSpec childVM = freeVMServer.createChildVMInDB(conn, hwSpec, swReq, requestorIP);
                     childVM.currentOwner = requestorIP;
                     childVM.state = bladeStatus.inUseByDirector;
                     childVM.updateInDB(conn);
@@ -760,7 +795,7 @@ namespace bladeDirector
         }
 
         private static object VMServerBootThreadLock = new object();
-        private static Dictionary<long, object> physicalBladeLocks = new Dictionary<long, object>();
+        private static Dictionary<long, bladeState> physicalBladeLocks = new Dictionary<long, bladeState>();
         private static void _VMServerBootThread(VMThreadState threadState)
         {
             Debug.WriteLine(DateTime.Now + threadState.childVM.VMIP  + ": enter thread");
@@ -774,46 +809,75 @@ namespace bladeDirector
                 if (threadState.deployDeadline < DateTime.Now)
                     throw new TimeoutException();
 
+
                 // Ensure only one thread tries to power on each VM server at once. Do this by having a collection of objects we lock
                 // on, one for each physical server. Protect them with a global lock.
-                hyp.connect();
-                Debug.WriteLine(DateTime.Now + threadState.childVM.VMIP + ": connected ilo");
                 Debug.WriteLine(DateTime.Now + threadState.childVM.VMIP + ": checking lock");
+
                 lock (VMServerBootThreadLock)
                 {
                     if (!physicalBladeLocks.ContainsKey(threadState.VMServer.bladeID))
                     {
                         Debug.WriteLine(DateTime.Now + threadState.childVM.VMIP + ": added lock");
-                        physicalBladeLocks.Add(threadState.VMServer.bladeID, new object());
+                        physicalBladeLocks.Add(threadState.VMServer.bladeID, new bladeState() { isPoweredUp = false });
                     }
                 }
                 Debug.WriteLine(DateTime.Now + threadState.childVM.VMIP + ": checking power");
-                lock (physicalBladeLocks[threadState.VMServer.bladeID])
+                if (!physicalBladeLocks[threadState.VMServer.bladeID].isPoweredUp)
                 {
-                    if (hyp.getPowerStatus() == false)
+                    lock (physicalBladeLocks[threadState.VMServer.bladeID])
                     {
-                        Debug.WriteLine(DateTime.Now + threadState.childVM.VMIP + ": powering on");
-                        if (getLastDeployedBIOSForBlade(threadState.VMServer.bladeIP) != Properties.Resources.VMServerBIOS)
+                        if (!physicalBladeLocks[threadState.VMServer.bladeID].isPoweredUp)
                         {
-                            Debug.WriteLine(DateTime.Now + threadState.childVM.VMIP + ": deploying BIOS to server " + threadState.VMServer.bladeIP);
-                            rebootAndStartDeployingBIOSToBlade(threadState.VMServer.bladeIP, "vmserver", Properties.Resources.VMServerBIOS);
+                            hyp.connect();
+                            Debug.WriteLine(DateTime.Now + threadState.childVM.VMIP + ": connected ilo");
+                            hyp.powerOff(threadState.deployDeadline);
 
-                            resultCode progress = resultCode.pending;
-                            while (progress == resultCode.pending)
+                            Debug.WriteLine(DateTime.Now + threadState.childVM.VMIP + ": powering on");
+                            if (getLastDeployedBIOSForBlade(threadState.VMServer.bladeIP) != Properties.Resources.VMServerBIOS)
                             {
-                                progress = checkBIOSWriteProgress(threadState.VMServer.bladeIP);
-                                if (progress != resultCode.pending &&
-                                    progress != resultCode.unknown &&
-                                    progress != resultCode.success   )
+                                Debug.WriteLine(DateTime.Now + threadState.childVM.VMIP + ": deploying BIOS to server " + threadState.VMServer.bladeIP);
+                                rebootAndStartDeployingBIOSToBlade(threadState.VMServer.bladeIP, "vmserver", Properties.Resources.VMServerBIOS);
+
+                                resultCode progress = resultCode.pending;
+                                while (progress == resultCode.pending)
                                 {
-                                    Debug.WriteLine(DateTime.Now + threadState.VMServer.bladeIP + ": BIOS deploy failed");
-                                    throw new Exception("BIOS deploy failed, returning " + progress);
+                                    progress = checkBIOSWriteProgress(threadState.VMServer.bladeIP);
+                                    if (progress != resultCode.pending &&
+                                        progress != resultCode.unknown &&
+                                        progress != resultCode.success)
+                                    {
+                                        Debug.WriteLine(DateTime.Now + threadState.VMServer.bladeIP + ": BIOS deploy failed");
+                                        throw new Exception("BIOS deploy failed, returning " + progress);
+                                    }
                                 }
                             }
+                            hyp.powerOn(threadState.deployDeadline);
+
+                            // Once it's powered up, we ensure the datastore is mounted okay. Sometimes I'm seeing ESXi hosts boot
+                            // with an inaccessible NFS datastore, so remount if neccessary. Retry this since it doesn't seem to 
+                            // always work first time.
+                            string[] nfsMounts = hypervisor_iLo.doWithRetryOnSomeExceptions(() => hyp.startExecutable("esxcfg-nas", "-l")).stdout.Split(new[] { "\n", "\r" }, StringSplitOptions.RemoveEmptyEntries);
+                            string foundMount = nfsMounts.SingleOrDefault(x => x.Contains("esxivms is /mnt/SSDs/esxivms from store.xd.lan mounted available"));
+                            while (foundMount == null)
+                            {
+                                hypervisor_iLo.doWithRetryOnSomeExceptions(() => hyp.startExecutable("esxcfg-nas", "-d esxivms"));
+                                string res = hypervisor_iLo.doWithRetryOnSomeExceptions(() => hyp.startExecutable(" esxcfg-nas", "-a --host store.xd.lan --share /mnt/SSDs/esxivms esxivms")).stdout;
+
+                                nfsMounts = hypervisor_iLo.doWithRetryOnSomeExceptions(() => hyp.startExecutable("esxcfg-nas", "-l")).stdout.Split(new[] { "\n", "\r" }, StringSplitOptions.RemoveEmptyEntries);
+                                foundMount = nfsMounts.SingleOrDefault(x => x.Contains("esxivms is /mnt/SSDs/esxivms from store.xd.lan mounted available"));
+                            }
+
+                            physicalBladeLocks[threadState.VMServer.bladeID].isPoweredUp = true;
                         }
-                        hyp.powerOn(threadState.deployDeadline);
                     }
                 }
+                while (!physicalBladeLocks[threadState.VMServer.bladeID].isPoweredUp)
+                {
+                    Debug.WriteLine(DateTime.Now + threadState.childVM.VMIP + ": Waiting for other thread to power on");
+                    Thread.Sleep(TimeSpan.FromSeconds(5));
+                }
+
                 Debug.WriteLine(DateTime.Now + threadState.childVM.VMIP + ": powered on");
 
                 // now SSH to the blade and actually create the VM.
@@ -822,18 +886,8 @@ namespace bladeDirector
                 string destDirDatastoreType = "[esxivms] " + threadState.VMServer.bladeID + "_" + threadState.childVM.vmSpecID;
                 string vmxPath = destDir + "/PXETemplate.vmx";
 
-                // Ensure the datastore is mounted okay. Sometimes I'm seeing ESXi hosts boot with an inaccessible NFS datastore, so
-                // remount if neccessary. Retry this since it doesn't seem to always work first time.
-                string[] nfsMounts = hypervisor_iLo.doWithRetryOnSomeExceptions(() => hyp.startExecutable("esxcfg-nas", "-l")).stdout.Split( new [] {"\n", "\r"}, StringSplitOptions.RemoveEmptyEntries);
-                string foundMount = nfsMounts.SingleOrDefault(x => x.Contains("esxivms is /mnt/SSDs/esxivms from store.xd.lan mounted available"));
-                while (foundMount == null)
-                {
-                    hypervisor_iLo.doWithRetryOnSomeExceptions(() => hyp.startExecutable("esxcfg-nas", "-d esxivms"));
-                    string res = hypervisor_iLo.doWithRetryOnSomeExceptions(() => hyp.startExecutable(" esxcfg-nas", "-a --host store.xd.lan --share /mnt/SSDs/esxivms esxivms")).stdout;
-
-                    nfsMounts = hypervisor_iLo.doWithRetryOnSomeExceptions(() => hyp.startExecutable("esxcfg-nas", "-l")).stdout.Split(new[] { "\n", "\r" }, StringSplitOptions.RemoveEmptyEntries);
-                    foundMount = nfsMounts.SingleOrDefault(x => x.Contains("esxivms is /mnt/SSDs/esxivms from store.xd.lan mounted available"));
-                }
+                // !!!!!
+                //hypervisor_iLo.doWithRetryOnSomeExceptions(() => hyp.startExecutable("esxicli", "network firewall set --enabled false"));
 
                 if (threadState.deployDeadline < DateTime.Now)
                     throw new TimeoutException();
@@ -855,6 +909,7 @@ namespace bladeDirector
                 hypervisor_iLo.doWithRetryOnSomeExceptions(() => hyp.startExecutable("sed", " -e 's/numvcpus[= ].*/numvcpus = \"" + threadState.childVM.hwSpec.cpuCount + "\"/g' -i " + vmxPath));
                 hypervisor_iLo.doWithRetryOnSomeExceptions(() => hyp.startExecutable("sed", " -e 's/uuid.bios[= ].*//g' -i " + vmxPath));
                 hypervisor_iLo.doWithRetryOnSomeExceptions(() => hyp.startExecutable("sed", " -e 's/uuid.location[= ].*//g' -i " + vmxPath));
+                hypervisor_iLo.doWithRetryOnSomeExceptions(() => hyp.startExecutable("sed", " -e 's/serial0.fileName[= ].*/" + "serial0.fileName = \"telnet://:" + (1000 + threadState.childVM.vmSpecID) + "\"/g' -i " + vmxPath));
 
                 // Now add that VM to ESXi, and the VM is ready to use.
                 
@@ -873,7 +928,7 @@ namespace bladeDirector
             itm.bladeIP = threadState.childVM.VMIP;
             itm.cloneName = threadState.childVM.VMIP + "-" + tagName;
             itm.computerName = threadState.childVM.displayName;
-            itm.snapshotName = threadState.childVM.VMIP + tagName;
+            itm.snapshotName = threadState.childVM.VMIP + "-" + tagName;
             itm.kernelDebugPort = threadState.swSpec.debuggerPort;
             itm.serverIP = threadState.swSpec.debuggerHost;
             itm.kernelDebugKey = threadState.swSpec.debuggerKey;
@@ -921,11 +976,29 @@ namespace bladeDirector
 
         public static resultCodeAndBladeName RequestAnySingleVM_getProgress(string waitToken)
         {
-            lock (VMDeployState)
+            if (waitToken == null)
+                return new resultCodeAndBladeName() { code = resultCode.bladeNotFound };
+
+            if (!Monitor.TryEnter(VMDeployState, TimeSpan.FromSeconds(15)))
             {
-                if (!VMDeployState.ContainsKey(waitToken))
-                    return new resultCodeAndBladeName() { code = resultCode.unknown };
-                return VMDeployState[waitToken].currentProgress;
+                return new resultCodeAndBladeName() { code = resultCode.unknown };
+            }
+            else
+            {
+                try
+                {
+                    lock (VMDeployState)
+                    {
+                        if (!VMDeployState.ContainsKey(waitToken))
+                            return new resultCodeAndBladeName() { code = resultCode.unknown };
+
+                        return VMDeployState[waitToken].currentProgress;
+                    }
+                }
+                finally 
+                {
+                    Monitor.Exit(VMDeployState);
+                }
             }
         }
         
@@ -935,6 +1008,7 @@ namespace bladeDirector
             {
                 List<bladeSpec> bladeStates = new List<bladeSpec>();
 
+                // Make a list of blades
                 string sqlCommand = "select *, bladeOwnership.id as bladeOwnershipID, bladeConfiguration.id as bladeConfigurationID from bladeOwnership " +
                                     "join bladeConfiguration on bladeOwnership.id = bladeConfiguration.ownershipID ";
                 using (SQLiteCommand cmd = new SQLiteCommand(sqlCommand, conn))
@@ -1375,6 +1449,11 @@ namespace bladeDirector
             }
             return false;
         }
+    }
+
+    public class bladeState
+    {
+        public bool isPoweredUp;
     }
 
     public class VMThreadState

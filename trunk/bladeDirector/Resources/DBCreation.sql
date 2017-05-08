@@ -23,6 +23,7 @@ create table bladeConfiguration(
 
 create table VMConfiguration(
 	id integer primary key autoincrement,
+	indexOnServer,
 	ownershipID unique,
 	parentBladeID,
 	memoryMB,
@@ -34,6 +35,8 @@ create table VMConfiguration(
 	eth0MAC,
 	eth1MAC,
 	displayname,
+    kernelDebugPort,
+    kernelDebugKey,
 	
 	foreign key (parentBladeID ) references bladeConfiguration(id),
 	foreign key (ownershipID) references bladeOwnership(id)

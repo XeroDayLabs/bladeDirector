@@ -79,7 +79,9 @@
       <LastGenOutput>Reference.cs</LastGenOutput>
     </None>
     <Content Include="Resources\ipxeTemplateForESXi.txt" />
-    <None Include="Resources\VMServerBIOS.xml" />
+    <None Include="Resources\VMServerBIOS.xml">
+      <SubType>Designer</SubType>
+    </None>
     <Content Include="services.asmx" />
     <None Include="Resources\ipxeTemplate.txt" />
     <Content Include="status.aspx" />

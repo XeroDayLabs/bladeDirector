@@ -110,21 +110,17 @@
             </tr>
             <tr>
                 <td style="left: 25%">Kenerl debug port</td>
-                <td style="width: 25%" ><asp:TextBox ID="txtNewPort" style="width: 100%" runat="server">5100x</asp:TextBox></td>
+                <td style="width: 25%" ><asp:TextBox ID="txtNewPort" style="width: 100%" runat="server">599xx</asp:TextBox></td>
             </tr>
             <tr>
                 <td style="width: 25%">iSCSI IP</td>
-                <td style="width: 25%" ><asp:TextBox ID="txtNewISCSI" style="width: 100%" runat="server">192.168.66.</asp:TextBox></td>
+                <td style="width: 25%" ><asp:TextBox ID="txtNewISCSI" style="width: 100%" runat="server">192.168.129.</asp:TextBox></td>
             </tr>
             <th colspan="4">
                 <asp:Button ID="cmdAddNode" runat="server" Text="Add node" OnClick="cmdAddNode_Click" />
             </th>
         </table>
         
-    </div>
-
-    <div>
-        <asp:Button ID="cmdReset" runat="server" Text="Delete all nodes" OnClick="cmdReset_Click" />
     </div>
     </form>
 </body>
