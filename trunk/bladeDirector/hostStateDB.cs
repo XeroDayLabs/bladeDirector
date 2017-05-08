@@ -895,28 +895,28 @@ namespace bladeDirector
                 if (threadState.deployDeadline < DateTime.Now)
                     throw new TimeoutException();
 
-                // Remove the VM if it's already there.
+                // Remove the VM if it's already there. We don't mind if these commands fail - which they will, if the VM doesn't
+                // exist.
                 hypervisor_iLo.doWithRetryOnSomeExceptions(() => hyp.startExecutable("vim-cmd", "vmsvc/power.off `vim-cmd vmsvc/getallvms | grep \"" + destDirDatastoreType.Replace("[", "\\[").Replace("]", "\\]") + "\"`"));
                 hypervisor_iLo.doWithRetryOnSomeExceptions(() => hyp.startExecutable("vim-cmd", "vmsvc/unregister `vim-cmd vmsvc/getallvms | grep \"" + destDirDatastoreType + "\"`"));
 
                 // copy the template VM into a new directory
-                hypervisor_iLo.doWithRetryOnSomeExceptions(() => hyp.startExecutable("rm", " -rf " + destDir));
-                hypervisor_iLo.doWithRetryOnSomeExceptions(() => hyp.startExecutable("cp", " -R /vmfs/volumes/esxivms/PXETemplate " + destDir));
+                doCmdAndCheckSuccess(hyp, "rm", " -rf " + destDir);
+                doCmdAndCheckSuccess(hyp, "cp", " -R /vmfs/volumes/esxivms/PXETemplate " + destDir));
                 // and then customise it.
-                hypervisor_iLo.doWithRetryOnSomeExceptions(() => hyp.startExecutable("sed", " -e 's/ethernet0.address[= ].*/ethernet0.address = \"" + threadState.childVM.eth0MAC + "\"/g' -i " + vmxPath));
-                hypervisor_iLo.doWithRetryOnSomeExceptions(() => hyp.startExecutable("sed", " -e 's/ethernet1.address[= ].*/ethernet1.address = \"" + threadState.childVM.eth1MAC + "\"/g' -i " + vmxPath));
-                hypervisor_iLo.doWithRetryOnSomeExceptions(() => hyp.startExecutable("sed", " -e 's/displayName[= ].*/displayName = \"" + threadState.childVM.displayName + "\"/g' -i " + vmxPath));
-                hypervisor_iLo.doWithRetryOnSomeExceptions(() => hyp.startExecutable("sed", " -e 's/memSize[= ].*/memSize = \"" + threadState.childVM.hwSpec.memoryMB + "\"/g' -i " + vmxPath));
-                hypervisor_iLo.doWithRetryOnSomeExceptions(() => hyp.startExecutable("sed", " -e 's/sched.mem.min[= ].*/sched.mem.min = \"" + threadState.childVM.hwSpec.memoryMB + "\"/g' -i " + vmxPath));
-                hypervisor_iLo.doWithRetryOnSomeExceptions(() => hyp.startExecutable("sed", " -e 's/sched.mem.minSize[= ].*/sched.mem.minSize = \"" + threadState.childVM.hwSpec.memoryMB + "\"/g' -i " + vmxPath));
-                hypervisor_iLo.doWithRetryOnSomeExceptions(() => hyp.startExecutable("sed", " -e 's/numvcpus[= ].*/numvcpus = \"" + threadState.childVM.hwSpec.cpuCount + "\"/g' -i " + vmxPath));
-                hypervisor_iLo.doWithRetryOnSomeExceptions(() => hyp.startExecutable("sed", " -e 's/uuid.bios[= ].*//g' -i " + vmxPath));
-                hypervisor_iLo.doWithRetryOnSomeExceptions(() => hyp.startExecutable("sed", " -e 's/uuid.location[= ].*//g' -i " + vmxPath));
-                hypervisor_iLo.doWithRetryOnSomeExceptions(() => hyp.startExecutable("sed", " -e 's/serial0.fileName[= ].*/" + "serial0.fileName = \"telnet://:" + (1000 + threadState.childVM.vmSpecID) + "\"/g' -i " + vmxPath));
+                doCmdAndCheckSuccess(hyp, "sed", " -e 's/ethernet0.address[= ].*/ethernet0.address = \"" + threadState.childVM.eth0MAC + "\"/g' -i " + vmxPath));
+                doCmdAndCheckSuccess(hyp, "sed", " -e 's/ethernet1.address[= ].*/ethernet1.address = \"" + threadState.childVM.eth1MAC + "\"/g' -i " + vmxPath));
+                doCmdAndCheckSuccess(hyp, "sed", " -e 's/displayName[= ].*/displayName = \"" + threadState.childVM.displayName + "\"/g' -i " + vmxPath));
+                doCmdAndCheckSuccess(hyp, "sed", " -e 's/memSize[= ].*/memSize = \"" + threadState.childVM.hwSpec.memoryMB + "\"/g' -i " + vmxPath));
+                doCmdAndCheckSuccess(hyp, "sed", " -e 's/sched.mem.min[= ].*/sched.mem.min = \"" + threadState.childVM.hwSpec.memoryMB + "\"/g' -i " + vmxPath));
+                doCmdAndCheckSuccess(hyp, "sed", " -e 's/sched.mem.minSize[= ].*/sched.mem.minSize = \"" + threadState.childVM.hwSpec.memoryMB + "\"/g' -i " + vmxPath));
+                doCmdAndCheckSuccess(hyp, "sed", " -e 's/numvcpus[= ].*/numvcpus = \"" + threadState.childVM.hwSpec.cpuCount + "\"/g' -i " + vmxPath));
+                doCmdAndCheckSuccess(hyp, "sed", " -e 's/uuid.bios[= ].*//g' -i " + vmxPath));
+                doCmdAndCheckSuccess(hyp, "sed", " -e 's/uuid.location[= ].*//g' -i " + vmxPath));
+                // doCmdAndCheckSuccess(hyp, "sed", " -e 's/serial0.fileName[= ].*/" + "serial0.fileName = \"telnet://:" + (1000 + threadState.childVM.vmSpecID) + "\"/g' -i " + vmxPath));
 
                 // Now add that VM to ESXi, and the VM is ready to use.
-                
-                hypervisor_iLo.doWithRetryOnSomeExceptions(() => hyp.startExecutable("vim-cmd", " solo/registervm " + vmxPath));
+                doCmdAndCheckSuccess(hyp, "vim-cmd", " solo/registervm " + vmxPath));
 
                 Debug.WriteLine(DateTime.Now + threadState.childVM.VMIP + ": created");
 
@@ -975,6 +975,16 @@ namespace bladeDirector
             }
             threadState.currentProgress.bladeName = threadState.childVM.VMIP;
             threadState.currentProgress.code = resultCode.success;
+        }
+
+        private static void doCmdAndCheckSuccess(hypervisor_iLo hyp, string cmd, string args)
+        {
+            executionResult res = hypervisor_iLo.doWithRetryOnSomeExceptions<executionResult>(() => hyp.startExecutable(cmd, args));
+            if (res.resultCode != 0)
+            {
+                logEvents.Add(string.Format("Command '{0}' with args '{1}' returned failure code {2}; stdout is '{3} and stderr is '{4}'", cmd, args, res.resultCode, res.stdout, res.stderr));
+                throw new Exception("failed to execute ssh command");
+            }
         }
 
         public static resultCodeAndBladeName RequestAnySingleVM_getProgress(string waitToken)
