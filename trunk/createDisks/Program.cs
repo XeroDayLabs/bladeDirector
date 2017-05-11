@@ -92,7 +92,7 @@ namespace createDisks
                         cloneName = cloneName,
                         nodeiLoIP = nodeiLoIP,
                         computerName = computerName,
-                        kernelDebugPort = (51000 + uint.Parse(bladeIP)),
+                        kernelDebugPort = (59900 + uint.Parse(bladeIP)),
                         kernelDebugKey = Properties.Settings.Default.kernelDebugKey,
                         snapshotName = snapshotName
                     };
@@ -338,7 +338,7 @@ namespace createDisks
                 string res = bladeDirectorClient.forceBladeAllocation(itemToAdd.bladeIP, itemToAdd.serverIP);
                 if (res != "success")
                     throw new Exception("Can't claim blade " + itemToAdd.bladeIP);
-                resultCode shotResCode = bladeDirectorClient.selectSnapshotForBlade(itemToAdd.bladeIP, tagName);
+                resultCode shotResCode = bladeDirectorClient.selectSnapshotForBlade(itemToAdd.bladeIP, itemToAdd.serverIP + "-" + tagName);
                 if (shotResCode != resultCode.success)
                     throw new Exception("Can't select snapshot on blade " + itemToAdd.bladeIP);
             }
@@ -375,7 +375,7 @@ namespace createDisks
             Debug.WriteLine(itemToAdd.bladeIP + " deployed, shutting down");
 
             // That's all we need, so shut down the system.
-            hypervisor_iLo.doWithRetryOnSomeExceptions(() => hyp.startExecutable("C:\\windows\\system32\\cmd", "/c shutdown -s -f -t 01"));
+            hypervisor_iLo.doWithRetryOnSomeExceptions(() => hyp.startExecutableAsync("C:\\windows\\system32\\cmd", "/c shutdown -s -f -t 01"));
 
             // Once it has shut down totally, we can take the snapshot of it.
             hyp.WaitForStatus(false, TimeSpan.FromMinutes(1));

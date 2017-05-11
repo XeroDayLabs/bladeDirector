@@ -70,13 +70,12 @@ namespace bladeDirector
 
                 // Then populate the invisible-until-expanded details row.
                 tblBladeStatus.Rows.Add(makeDetailRow(bladeInfo));
-                
-                
-                // Finally, populate any log events.
-                List<string> logEvents = hostStateDB.getLogEvents();
-                foreach (string logEvent in logEvents)
-                    lstLog.Items.Add(logEvent);
             }
+
+            // Finally, populate any log events.
+            List<string> logEvents = hostStateDB.getLogEvents();
+            foreach (string logEvent in logEvents)
+                lstLog.Items.Add(logEvent);
         }
 
         private string formatDateTimeForWeb(TimeSpan toshow)
