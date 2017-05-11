@@ -594,6 +594,12 @@ namespace bladeDirectorClient.bladeDirector {
         
         private string displayNameField;
         
+        private int indexOnServerField;
+        
+        private ushort kernelDebugPortField;
+        
+        private string kernelDebugKeyField;
+        
         private string usernameField;
         
         private string passwordField;
@@ -686,6 +692,42 @@ namespace bladeDirectorClient.bladeDirector {
         
         /// <remarks/>
         [System.Xml.Serialization.XmlElementAttribute(Order=7)]
+        public int indexOnServer {
+            get {
+                return this.indexOnServerField;
+            }
+            set {
+                this.indexOnServerField = value;
+                this.RaisePropertyChanged("indexOnServer");
+            }
+        }
+        
+        /// <remarks/>
+        [System.Xml.Serialization.XmlElementAttribute(Order=8)]
+        public ushort kernelDebugPort {
+            get {
+                return this.kernelDebugPortField;
+            }
+            set {
+                this.kernelDebugPortField = value;
+                this.RaisePropertyChanged("kernelDebugPort");
+            }
+        }
+        
+        /// <remarks/>
+        [System.Xml.Serialization.XmlElementAttribute(Order=9)]
+        public string kernelDebugKey {
+            get {
+                return this.kernelDebugKeyField;
+            }
+            set {
+                this.kernelDebugKeyField = value;
+                this.RaisePropertyChanged("kernelDebugKey");
+            }
+        }
+        
+        /// <remarks/>
+        [System.Xml.Serialization.XmlElementAttribute(Order=10)]
         public string username {
             get {
                 return this.usernameField;
@@ -697,7 +739,7 @@ namespace bladeDirectorClient.bladeDirector {
         }
         
         /// <remarks/>
-        [System.Xml.Serialization.XmlElementAttribute(Order=8)]
+        [System.Xml.Serialization.XmlElementAttribute(Order=11)]
         public string password {
             get {
                 return this.passwordField;
@@ -709,7 +751,7 @@ namespace bladeDirectorClient.bladeDirector {
         }
         
         /// <remarks/>
-        [System.Xml.Serialization.XmlElementAttribute(Order=9)]
+        [System.Xml.Serialization.XmlElementAttribute(Order=12)]
         public VMHardwareSpec hwSpec {
             get {
                 return this.hwSpecField;

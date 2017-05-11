@@ -29,9 +29,6 @@ namespace bladeDirectorClient
         {
             startKeepaliveThreadIfNotRunning();
 
-            if (specs.Select(x => x.sw.debuggerKey).Distinct().Count() > 1)
-                throw new Exception("use a single debug key, its easier");
-
             Binding thisBind = new BasicHttpBinding("servicesSoap");
             thisBind.OpenTimeout = TimeSpan.FromMinutes(5);
             thisBind.ReceiveTimeout = TimeSpan.FromMinutes(5);
@@ -42,29 +39,49 @@ namespace bladeDirectorClient
             {
                 resultCodeAndBladeName[] results = new resultCodeAndBladeName[specs.Length];
                 for (int n = 0; n < specs.Length; n++)
+                {
                     results[n] = director.RequestAnySingleVM(specs[n].hw, specs[n].sw);
+                    if (results[n].code == resultCode.success ||
+                        results[n].code == resultCode.pending)
+                    {
+                        continue;
+                    }
+                    else 
+                    {
+                        throw new bladeAllocationException(results[n].code);
+                    }
+                }
 
                 hypervisorCollection<hypSpec_vmware> toRet = new hypervisorCollection<hypSpec_vmware>();
                 try
                 {
                     foreach (resultCodeAndBladeName res in results)
                     {
+                        resultCodeAndBladeName progress;
                         while (true)
                         {
-                            resultCodeAndBladeName progress = director.getProgressOfVMRequest(res.waitToken);
+                            progress = director.getProgressOfVMRequest(res.waitToken);
 
                             if (progress.code == resultCode.success)
                                 break;
                             if (progress.code != resultCode.pending && progress.code != resultCode.unknown)
-                                throw new Exception("Can't provision VM, got status " + progress.code);
+                                throw new bladeAllocationException(progress.code);
                         }
 
-                        vmSpec vmSpec = director.getConfigurationOfVM(res.bladeName);
+                        vmSpec vmSpec = director.getConfigurationOfVM(progress.bladeName);
                         bladeSpec vmServerSpec = director.getConfigurationOfBladeByID((int) vmSpec.parentBladeID);
                         hypSpec_vmware newSpec = new hypSpec_vmware(
                             vmSpec.displayName, vmServerSpec.bladeIP, vmServerSpec.ESXiUsername, vmServerSpec.ESXiPassword,
-                            vmSpec.username, vmSpec.password, vmServerSpec.iLOPort, specs[0].sw.debuggerKey, vmSpec.VMIP);
+                            vmSpec.username, vmSpec.password, vmSpec.kernelDebugPort, vmSpec.kernelDebugKey, vmSpec.VMIP);
+                        newSpec.snapshotName = director.getCurrentSnapshotForBlade(vmSpec.VMIP);
                         hypervisor_vmware newVM = new hypervisor_vmware(newSpec);
+
+                        ensurePortIsFree(vmSpec.kernelDebugPort);
+
+                        // FIXME: these credentials should be passed down from the bladeDirector, I think.
+                        newVM.configureForFreeNASSnapshots(
+                            Properties.Settings.Default.iloISCSIIP, Properties.Settings.Default.iloISCSIUsername, Properties.Settings.Default.iloISCSIPassword );
+
                         newVM.setDisposalCallback(onDestruction);
                         if (!toRet.TryAdd(vmSpec.VMIP, newVM))
                             throw new Exception();
@@ -74,7 +91,8 @@ namespace bladeDirectorClient
                 {
                     foreach (KeyValuePair<string, hypervisorWithSpec<hypSpec_vmware>> allocedBlades in toRet)
                     {
-                        director.releaseBladeOrVM(allocedBlades.Key);
+                        if (allocedBlades.Key != null)
+                            director.releaseBladeOrVM(allocedBlades.Key);
                     }
                     throw;
                 }
@@ -128,7 +146,7 @@ namespace bladeDirectorClient
                             snapshot, bladeConfig.iLOPort, iloKernelKey
                             );
 
-                        ensurePortIsFree(bladeConfig);
+                        ensurePortIsFree(bladeConfig.iLOPort);
 
                         bladeDirectedHypervisor_iLo newHyp = new bladeDirectedHypervisor_iLo(spec);
                         newHyp.setDisposalCallback(onDestruction);
@@ -152,10 +170,10 @@ namespace bladeDirectorClient
 
         private const int UDP_TABLE_OWNER_PID = 1;
 
-        public static void ensurePortIsFree(bladeSpec bladeConfig)
+        public static void ensurePortIsFree(UInt16 port)
         {
             MIB_UDPTABLE_OWNER_PID[] tableContents = getCurrentUDPListeners();
-            MIB_UDPTABLE_OWNER_PID portUse = tableContents.SingleOrDefault(x => x.localPort ==  bladeConfig.iLOPort);
+            MIB_UDPTABLE_OWNER_PID portUse = tableContents.SingleOrDefault(x => x.localPort == port );
             if (portUse == null)
                 return;
 
@@ -184,7 +202,6 @@ namespace bladeDirectorClient
                 UDP_TABLE_CLASS table = (UDP_TABLE_CLASS) Marshal.PtrToStructure(tableBuffer, typeof (UDP_TABLE_CLASS));
                 tableContents = new MIB_UDPTABLE_OWNER_PID[(buflen - Marshal.SizeOf(typeof (UDP_TABLE_CLASS)))/Marshal.SizeOf(typeof (MIB_UDPTABLE_OWNER_PID))];
 
-                Debug.WriteLine("tableBuffer " + tableBuffer);
                 for (int rowIndex = 0; rowIndex < tableContents.Length; rowIndex++)
                 {
                     IntPtr pos = tableBuffer + 
@@ -194,7 +211,6 @@ namespace bladeDirectorClient
 
                     row.localPort = byteswap((UInt16)row.localPort);
 
-                    Debug.WriteLine("Pos " + pos + " " + row.localPort + " by " + row.ownerPID);
                     tableContents[rowIndex] = row;
                 }
             }
@@ -281,7 +297,7 @@ namespace bladeDirectorClient
                         snapshot, bladeConfig.iLOPort, iloKernelKey
                         );
                     
-                    ensurePortIsFree(bladeConfig);
+                    ensurePortIsFree(bladeConfig.iLOPort);
 
                     bladeDirectedHypervisor_iLo toRet = new bladeDirectedHypervisor_iLo(spec);
                     toRet.checkSnapshotSanity();
@@ -348,6 +364,21 @@ namespace bladeDirectorClient
             {
                 director.releaseBladeOrVM(obj.kernelDebugIPOrHostname);
             }
+        }
+    }
+
+    public class bladeAllocationException : Exception
+    {
+        private readonly resultCode _code;
+
+        public bladeAllocationException(resultCode code)
+        {
+            _code = code;
+        }
+
+        public override string ToString()
+        {
+            return "Blade allocation service returned code " + _code;
         }
     }
 
