@@ -70,13 +70,12 @@ namespace bladeDirector
 
                 // Then populate the invisible-until-expanded details row.
                 tblBladeStatus.Rows.Add(makeDetailRow(bladeInfo));
-                
-                
-                // Finally, populate any log events.
-                List<string> logEvents = hostStateDB.getLogEvents();
-                foreach (string logEvent in logEvents)
-                    lstLog.Items.Add(logEvent);
             }
+
+            // Finally, populate any log events.
+            List<string> logEvents = hostStateDB.getLogEvents();
+            foreach (string logEvent in logEvents)
+                lstLog.Items.Add(logEvent);
         }
 
         private string formatDateTimeForWeb(TimeSpan toshow)
@@ -201,12 +200,7 @@ namespace bladeDirector
 
             hostStateDB.releaseBladeOrVM(clicked.CommandArgument, "console", true);
         }
-
-        protected void cmdReset_Click(object sender, EventArgs e)
-        {
-            hostStateDB.resetAll();
-        }
-
+        
         protected void cmdAddNode_Click(object sender, EventArgs e)
         {
             bladeSpec newBlade = new bladeSpec(txtNewNodeIP.Text, txtNewISCSI.Text, txtNewIloIP.Text, ushort.Parse(txtNewPort.Text), false, null);

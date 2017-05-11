@@ -1,3 +1,4 @@
+using System;
 using System.Data.SQLite;
 using System.Xml.Serialization;
 
@@ -13,6 +14,10 @@ namespace bladeDirector
         public string eth0MAC;
         public string eth1MAC;
         public string displayName;
+        public int indexOnServer;
+
+        public ushort kernelDebugPort;
+        public string kernelDebugKey;
 
         public string username;
         public string password;
@@ -38,7 +43,13 @@ namespace bladeDirector
                 eth1MAC = (string)reader["eth1MAC"];
             if (!(reader["displayName"] is System.DBNull))
                 displayName = (string)reader["displayName"];
-
+            if (!(reader["kernelDebugPort"] is System.DBNull))
+                kernelDebugPort = Convert.ToUInt16(reader["kernelDebugPort"]);
+            if (!(reader["kernelDebugKey"] is System.DBNull))
+                kernelDebugKey = (string)reader["kernelDebugKey"];
+            if (!(reader["indexOnServer"] is System.DBNull))
+                indexOnServer = Convert.ToInt32(reader["indexOnServer"]);
+            
             username = Properties.Settings.Default.vmUsername;
             password = Properties.Settings.Default.vmPassword;
 
@@ -50,9 +61,9 @@ namespace bladeDirector
             base.createInDB(conn);
 
             string cmd_bladeConfig = "insert into VMConfiguration" +
-                                     "(ownershipID, parentBladeID, memoryMB, cpuCount, VMIP, iscsiip, eth0mac, eth1mac, displayname )" +
+                                     "(ownershipID, parentBladeID, memoryMB, cpuCount, VMIP, iscsiip, eth0mac, eth1mac, displayname, kernelDebugPort, kernelDebugKey, indexOnServer )" +
                                      " VALUES " +
-                                     "($ownershipID, $parentBladeID, $memoryMB, $cpuCount, $VMIP, $iscsiip, $eth0mac, $eth1mac, $displayname )";
+                                     "($ownershipID, $parentBladeID, $memoryMB, $cpuCount, $VMIP, $iscsiip, $eth0mac, $eth1mac, $displayname, $kernelDebugPort, $kernelDebugKey, $indexOnServer )";
             using (SQLiteCommand cmd = new SQLiteCommand(cmd_bladeConfig, conn))
             {
                 cmd.Parameters.AddWithValue("$ownershipID", base.ownershipRowID);
@@ -65,6 +76,9 @@ namespace bladeDirector
                 cmd.Parameters.AddWithValue("$eth0MAC", eth0MAC);
                 cmd.Parameters.AddWithValue("$eth1MAC", eth1MAC);
                 cmd.Parameters.AddWithValue("$displayName", displayName);
+                cmd.Parameters.AddWithValue("$kernelDebugPort", kernelDebugPort);
+                cmd.Parameters.AddWithValue("$kernelDebugKey", kernelDebugKey);
+                cmd.Parameters.AddWithValue("$indexOnServer", indexOnServer);
 
                 cmd.ExecuteNonQuery();
                 vmSpecID = (int)conn.LastInsertRowId;
@@ -96,7 +110,10 @@ namespace bladeDirector
                                      " iscsiIP=$iscsiIP, " +
                                      " eth0MAC=$eth0MAC, " +
                                      " eth1MAC=$eth1MAC, " +
-                                     " displayName=$displayName " +
+                                     " displayName=$displayName, " +
+                                     " kernelDebugPort=$kernelDebugPort, " +
+                                     " kernelDebugKey=$kernelDebugKey, " +
+                                     " indexOnServer=$indexOnServer  " +
                                      " where id = $vmSpecID";
             using (SQLiteCommand cmd = new SQLiteCommand(cmd_bladeConfig, conn))
             {
@@ -110,7 +127,10 @@ namespace bladeDirector
                 cmd.Parameters.AddWithValue("$eth0MAC", eth0MAC);
                 cmd.Parameters.AddWithValue("$eth1MAC", eth1MAC);
                 cmd.Parameters.AddWithValue("$displayName", displayName);
-
+                cmd.Parameters.AddWithValue("$kernelDebugPort", kernelDebugPort);
+                cmd.Parameters.AddWithValue("$kernelDebugKey", kernelDebugKey);
+                cmd.Parameters.AddWithValue("$indexOnServer", indexOnServer);
+                
                 cmd.ExecuteNonQuery();
                 vmSpecID = (int)conn.LastInsertRowId;
             }

@@ -27,9 +27,9 @@ namespace bladeDirector
         public string ESXiUsername;
         public string ESXiPassword;
 
-        private int maxVMs = 8;
+        private int maxVMs = 20;
         private int maxVMMemoryMB = 1024 * 30;
-        private int maxCPUCount = 8;
+        private int maxCPUCount = 12;
 
         public bladeSpec()
         {
@@ -217,24 +217,30 @@ namespace bladeDirector
             state = bladeStatus.inUseByDirector;
         }
 
-        public vmSpec createChildVMInDB(SQLiteConnection conn, VMHardwareSpec req, string newOwner)
+        public vmSpec createChildVMInDB(SQLiteConnection conn, VMHardwareSpec reqhw, VMSoftwareSpec reqsw, string newOwner)
         {
-            int vmIndexOnServer = getChildVMs(conn).Count;
 
             vmSpec newVM = new vmSpec();
             newVM.currentOwner = newOwner;
             newVM.parentBladeID = this.bladeID;
-            newVM.hwSpec = req;
+            newVM.hwSpec = reqhw;
+            newVM.indexOnServer = getChildVMs(conn).Count + 1;
 
             newVM.createInDB(conn);
 
             byte[] VMServerIPBytes = IPAddress.Parse(this.bladeIP).GetAddressBytes();
+
             // VM IPs are in 172.17.(128+bladeIndex).vmIndex
-            newVM.VMIP = "172.17." + (28 + VMServerIPBytes[3]) + "." + (vmIndexOnServer + 1);
-            newVM.iscsiIP = "192.168." + (28 + VMServerIPBytes[3]) + "." + (vmIndexOnServer + 1);
-            newVM.eth0MAC = "00:50:56:00:" + (VMServerIPBytes[3] - 100).ToString("D2") + ":" + (vmIndexOnServer + 1).ToString("D2");
-            newVM.eth1MAC = "00:50:56:01:" + (VMServerIPBytes[3] - 100).ToString("D2") + ":" + (vmIndexOnServer + 1).ToString("D2");
-            newVM.displayName = "VM_" + (VMServerIPBytes[3] - 100).ToString("D2") + "_" + (vmIndexOnServer + 1).ToString("D2");
+            newVM.VMIP = "172.17." + (28 + VMServerIPBytes[3]) + "." + newVM.indexOnServer;
+            newVM.iscsiIP = "192.168." + (28 + VMServerIPBytes[3]) + "." + newVM.indexOnServer;
+            newVM.eth0MAC = "00:50:56:00:" + (VMServerIPBytes[3] - 100).ToString("D2") + ":" + newVM.indexOnServer.ToString("D2");
+            newVM.eth1MAC = "00:50:56:01:" + (VMServerIPBytes[3] - 100).ToString("D2") + ":" + newVM.indexOnServer.ToString("D2");
+            newVM.displayName = "VM_" + (VMServerIPBytes[3] - 100).ToString("D2") + "_" + newVM.indexOnServer.ToString("D2");
+
+            if (reqsw.debuggerPort == 0)
+                reqsw.debuggerPort = (ushort) (50000 + ((VMServerIPBytes[3] - 100) * 100) + newVM.indexOnServer);
+            newVM.kernelDebugPort = reqsw.debuggerPort;
+            newVM.kernelDebugKey = reqsw.debuggerKey;
 
             newVM.updateInDB(conn);
 

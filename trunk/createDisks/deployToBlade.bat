@@ -11,10 +11,6 @@ if DEFINED KDHOST (
 	bcdedit /debug on
 )
 
-REM This should be done elsewhere I think, prob in the transport driver installation script.
-REM drop down to a single CPU
-REM bcdedit /set NUMPROC 1
-
 REM Instruct WSUS to regen its SID so that it operates correctly
 net stop wuauserv
 reg delete "HKLM\Software\Microsoft\Windows\CurrentVersion\WindowsUpdate" /v SusClientId /f
