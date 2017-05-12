@@ -14,7 +14,7 @@ namespace bladeDirectorClient
         private readonly Object hypervisorSpecLock = new Object();
         private ConcurrentDictionary<hypSpec_vmware, bool> hypervisorSpecs = null;
 
-        public hypervisor_vmware createHypervisorForCurrentTest()
+        public hypervisor_vmware createHypervisorForCurrentTest(clientExecutionMethod execType = clientExecutionMethod.smb)
         {
             while (true)
             {
@@ -86,7 +86,7 @@ namespace bladeDirectorClient
 
                     try
                     {
-                        hypervisor_vmware toRet = new hypervisor_vmware(hypKVP.Key, clientExecutionMethod.smb);
+                        hypervisor_vmware toRet = new hypervisor_vmware(hypKVP.Key, execType);
                         toRet.setDisposalCallback(onDestruction);
                         return toRet;
                     }
