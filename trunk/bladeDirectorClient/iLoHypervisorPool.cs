@@ -165,8 +165,7 @@ namespace bladeDirectorClient
         }
 
         [DllImport("iphlpapi.dll", SetLastError = true)]
-        public static extern int GetExtendedUdpTable(IntPtr pUdpTable, out int dwOutBufLen, bool sort, int ipVersion, int tblClass, int reserved);
-
+        private static extern int GetExtendedUdpTable(IntPtr pUdpTable, out int dwOutBufLen, bool sort, int ipVersion, int tblClass, int reserved);
 
         private const int UDP_TABLE_OWNER_PID = 1;
 
