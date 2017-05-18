@@ -54,12 +54,7 @@ namespace bladeDirectorClient
                                 hypervisorSpecs[hyps[i - 1]] = false;
 
                                 // Check the relevant port isn't already in use
-                                IPGlobalProperties ip = IPGlobalProperties.GetIPGlobalProperties();
-                                foreach (IPEndPoint conn in ip.GetActiveUdpListeners())
-                                {
-                                    if (conn.Port == vmPort)
-                                        throw new Exception("port is already in use");
-                                }
+                                iLoHypervisorPool.ensurePortIsFree(vmPort);
                             }
                         }
                         catch (Exception)
