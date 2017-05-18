@@ -446,10 +446,10 @@ namespace createDisks
                     hyp.copyToGuest(deployFileName, "C:\\deployed.bat");
                 });
                 string args = String.Format("/c c:\\deployed.bat {0}", scriptArgs);
-                hypervisor_iLo.doWithRetryOnSomeExceptions(() =>
-                {
-                    hyp.startExecutable("cmd.exe", args);
-                });
+                hyp.mkdir("c:\\deployment");
+                executionResult res = hyp.startExecutable ("cmd.exe", args, "c:\\deployment");
+                //Debug.WriteLine(res.stdout);
+                //Debug.WriteLine(res.stderr);
             }
             finally
             {
