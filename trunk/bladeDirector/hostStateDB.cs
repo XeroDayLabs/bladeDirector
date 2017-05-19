@@ -953,7 +953,7 @@ namespace bladeDirector
             {
                 Debug.WriteLine(DateTime.Now + threadState.childVM.VMIP + ": adding");
                 // Now create the disks, and customise the VM  by naming it appropriately.
-                Program.addBlades(new[] {itm}, tagName, "localhost/bladeDirector", "bladebasestable-esxi", null, null, false, 
+                Program.addBlades(new[] {itm}, tagName, "localhost/bladeDirector", "bladebasestable-esxi", null, null, 
                     (a,b) => new hypervisor_vmware(new hypSpec_vmware(a.computerName,
                     threadState.VMServer.bladeIP, Properties.Settings.Default.esxiUsername, Properties.Settings.Default.esxiPassword,
                     Properties.Settings.Default.vmUsername, Properties.Settings.Default.vmPassword,
@@ -1122,6 +1122,11 @@ namespace bladeDirector
                 if (reqBlade == null)
                     return resultCode.bladeNotFound;
                 reqBlade.currentSnapshot = newShot;
+
+                // re-create iscsi target/extent/etc if neccessary
+
+                itemToAdd itm = reqBlade.toItemToAdd();
+                createDisks.Program.repairBladeDeviceNodes(new itemToAdd[] { itm });
 
                 return reqBlade.updateInDB(conn);
             }
