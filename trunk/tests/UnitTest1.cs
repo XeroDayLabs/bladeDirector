@@ -153,20 +153,6 @@ namespace tests
             }
             Assert.AreEqual(GetBladeStatusResult.yours, uut.GetBladeStatus("1.1.1.1", "192.168.1.1"));
         }
-
-        [TestMethod]
-        public void canSetBladeSnapshot()
-        {
-            bladeDirector.services.initWithBlades(new[] {"1.2.3.4"});
-
-            services uut = new bladeDirector.services();
-
-            // Default snapshot name should be 'clean'.
-            Assert.AreEqual(resultCode.success, uut.RequestNode("1.2.3.4", "1.1.1.1"));
-            Assert.AreEqual("1.2.3.4-clean", uut.getCurrentSnapshotForBlade("1.2.3.4"));
-            Assert.AreEqual(resultCode.success, uut.selectSnapshotForBlade("1.2.3.4", "bb"));
-            Assert.AreEqual("1.2.3.4-bb", uut.getCurrentSnapshotForBlade("1.2.3.4"));
-        }
-
+    
     }
 }
