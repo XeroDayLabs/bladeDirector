@@ -6,6 +6,7 @@ using System.Linq;
 using System.Net;
 using System.Runtime.InteropServices;
 using System.Xml.Serialization;
+using createDisks;
 
 namespace bladeDirector
 {
@@ -245,6 +246,19 @@ namespace bladeDirector
             newVM.updateInDB(conn);
 
             return newVM;
+        }
+
+        public override itemToAdd toItemToAdd()
+        {
+            itemToAdd toRet = new itemToAdd();
+
+            toRet.cloneName = this.currentOwner + "-" + this.currentSnapshot;
+            toRet.serverIP = this.currentOwner;
+            toRet.snapshotName = this.currentSnapshot;
+            toRet.bladeIP = this.bladeIP;
+            toRet.computerName = this.bladeIP;
+
+            return toRet;
         }
     }
 }

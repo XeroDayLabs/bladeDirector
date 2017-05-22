@@ -102,9 +102,17 @@ namespace createDisks
             }
 
             if (args.deleteClones)
+            {
                 deleteBlades(itemsToAdd.ToArray());
+            }
+            else if (args.repair)
+            {
+                repairBladeDeviceNodes(itemsToAdd.ToArray());
+            }
             else
-                addBlades<hypSpec_iLo>(itemsToAdd.ToArray(), args.tagName, args.bladeDirectorURL, args.baseSnapshot, args.additionalScript, args.additionalDeploymentItems, args.repair, makeILOHyp);
+            {
+                addBlades<hypSpec_iLo>(itemsToAdd.ToArray(), args.tagName, args.bladeDirectorURL, args.baseSnapshot, args.additionalScript, args.additionalDeploymentItems, makeILOHyp);
+            }
         }
 
         private static hypervisorWithSpec<hypSpec_iLo> makeILOHyp(itemToAdd hyp, FreeNAS hostingnas)
@@ -216,7 +224,25 @@ namespace createDisks
             }
         }
 
-        public static void addBlades<T>(itemToAdd[] itemsToAdd, string tagName, string directorURL, string baseSnapshot, string additionalScript, string[] additionalDeploymentItem, bool repairMode, hypCreateDelegate<T> createHyp, DateTime deadline = default(DateTime))
+        public static void repairBladeDeviceNodes(itemToAdd[] itemsToAdd, DateTime deadline = default(DateTime))
+        {
+            if (deadline == default(DateTime))
+                deadline = DateTime.MaxValue;
+
+            FreeNAS nas = new FreeNAS(
+                Properties.Settings.Default.iscsiServerIP, 
+                Properties.Settings.Default.iscsiServerUsername, 
+                Properties.Settings.Default.iscsiServerPassword);
+
+            if (DateTime.Now > deadline) throw new TimeoutException();
+
+            exportClonesViaiSCSI(nas, itemsToAdd);
+
+            if (DateTime.Now > deadline) throw new TimeoutException();
+        }
+
+        public static void addBlades<T>(itemToAdd[] itemsToAdd, string tagName, string directorURL, string baseSnapshot,
+            string additionalScript, string[] additionalDeploymentItem, hypCreateDelegate<T> createHyp, DateTime deadline = default(DateTime))
         {
             if (deadline == default(DateTime))
                 deadline = DateTime.MaxValue;
@@ -230,17 +256,15 @@ namespace createDisks
 
             if (DateTime.Now > deadline) throw new TimeoutException();
 
+            
             // Get the snapshot we'll be cloning
             List<snapshot> snapshots = nas.getSnapshots();
             snapshot toClone = snapshots.SingleOrDefault(x => x.name.Equals(baseSnapshot, StringComparison.CurrentCultureIgnoreCase));
             if (toClone == null)
                 throw new Exception("Snapshot not found");
             string toCloneVolume = toClone.fullname.Split('/')[0];
-
-            if (DateTime.Now > deadline) throw new TimeoutException();
-
-            if (!repairMode)
-                createClones(nas, toClone, toCloneVolume, itemsToAdd);
+            // and clone it
+            createClones(nas, toClone, toCloneVolume, itemsToAdd);
 
             if (DateTime.Now > deadline) throw new TimeoutException();
 
@@ -248,53 +272,51 @@ namespace createDisks
 
             if (DateTime.Now > deadline) throw new TimeoutException();
 
-            if (!repairMode)
+            string[] serverIPs = itemsToAdd.Select(x => x.serverIP).Distinct().ToArray();
+
+            // Ensure there are sufficient threads in the worker pool so that we can prepare everything at the same time.
+            int wkrThreadCount;
+            int completionPortThreads;
+            ThreadPool.GetAvailableThreads(out wkrThreadCount, out completionPortThreads);
+
+            if (wkrThreadCount < serverIPs.Length)
+                ThreadPool.SetMaxThreads(wkrThreadCount + serverIPs.Length, completionPortThreads);
+
+            // Next, we must prepare each clone. Do this in parallel, per-server.
+            CancellationTokenSource tkn = new CancellationTokenSource();
+
+            foreach (string serverIP in serverIPs)
             {
-                string[] serverIPs = itemsToAdd.Select(x => x.serverIP).Distinct().ToArray();
-
-                // Ensure there are sufficient threads in the worker pool so that we can prepare everything at the same time.
-                int wkrThreadCount;
-                int completionPortThreads;
-                ThreadPool.GetAvailableThreads(out wkrThreadCount, out completionPortThreads);
-
-                if (wkrThreadCount < serverIPs.Length)
-                    ThreadPool.SetMaxThreads(wkrThreadCount + serverIPs.Length, completionPortThreads);
-
-                // Next, we must prepare each clone. Do this in parallel, per-server.
-                CancellationTokenSource tkn = new CancellationTokenSource();
-
-                foreach (string serverIP in serverIPs)
+                itemToAdd[] toPrep = itemsToAdd.Where(x => x.serverIP == serverIP).ToArray();
+                Thread[] toWaitOn = new Thread[toPrep.Length];
+                for (int index = 0; index < toPrep.Length; index++)
                 {
-                    itemToAdd[] toPrep = itemsToAdd.Where(x => x.serverIP == serverIP).ToArray();
-                    Thread[] toWaitOn = new Thread[toPrep.Length];
-                    for (int index = 0; index < toPrep.Length; index++)
-                    {
-                        itemToAdd itemToAdd = toPrep[index];
+                    itemToAdd itemToAdd = toPrep[index];
 
-                        toWaitOn[index] = new Thread(() =>
+                    toWaitOn[index] = new Thread(() =>
+                    {
+                        using (hypervisorWithSpec<T> hyp = createHyp(itemToAdd, nas))
                         {
-                            using (hypervisorWithSpec<T> hyp = createHyp(itemToAdd, nas))
-                            {
-                                prepareCloneImage(itemToAdd, toCloneVolume, tagName, directorURL, additionalScript, additionalDeploymentItem, hyp, nas);
-                            }
-                        }, 4 * 1024 * 1024);
-                        toWaitOn[index].Name = "Create disks for machine " + itemToAdd.bladeIP;
-                        toWaitOn[index].Start();
-                    }
+                            prepareCloneImage(itemToAdd, toCloneVolume, tagName, directorURL, additionalScript, additionalDeploymentItem, hyp, nas);
+                        }
+                    }, 4*1024*1024);
+                    toWaitOn[index].Name = "Create disks for machine " + itemToAdd.bladeIP;
+                    toWaitOn[index].Start();
+                }
 
-                    try
-                    {
-                        foreach (Thread thread in toWaitOn)
-                            thread.Join();
-                    }
-                    catch (AggregateException)
-                    {
-                        tkn.Cancel(false);
+                try
+                {
+                    foreach (Thread thread in toWaitOn)
+                        thread.Join();
+                }
+                catch (AggregateException)
+                {
+                    tkn.Cancel(false);
 
-                        throw;
-                    }
+                    throw;
                 }
             }
+
         }
 
         private static void prepareCloneImage(itemToAdd itemToAdd, string toCloneVolume, string tagName, string directorURL, string additionalScript, string[] additionalDeploymentItem)
@@ -446,10 +468,10 @@ namespace createDisks
                     hyp.copyToGuest(deployFileName, "C:\\deployed.bat");
                 });
                 string args = String.Format("/c c:\\deployed.bat {0}", scriptArgs);
-                hypervisor_iLo.doWithRetryOnSomeExceptions(() =>
-                {
-                    hyp.startExecutable("cmd.exe", args);
-                });
+                hyp.mkdir("c:\\deployment");
+                executionResult res = hyp.startExecutable ("cmd.exe", args, "c:\\deployment");
+                //Debug.WriteLine(res.stdout);
+                //Debug.WriteLine(res.stderr);
             }
             finally
             {

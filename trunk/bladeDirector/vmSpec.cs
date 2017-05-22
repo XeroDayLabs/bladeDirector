@@ -1,6 +1,7 @@
 using System;
 using System.Data.SQLite;
 using System.Xml.Serialization;
+using createDisks;
 
 namespace bladeDirector
 {
@@ -138,5 +139,18 @@ namespace bladeDirector
             return resultCode.success;
         }
  
+        public override itemToAdd toItemToAdd()
+        {
+            itemToAdd toRet = new itemToAdd();
+
+            toRet.cloneName = this.currentOwner + "" + this.currentSnapshot;
+            toRet.serverIP = this.currentOwner;
+            toRet.snapshotName = this.currentSnapshot;
+            toRet.bladeIP = this.VMIP;
+            toRet.computerName = this.displayName;
+
+            return toRet;
+        }
+
     }
 }

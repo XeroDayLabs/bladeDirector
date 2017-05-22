@@ -2,6 +2,7 @@
 using System.Data.SQLite;
 using System.Diagnostics;
 using System.Xml.Serialization;
+using createDisks;
 
 namespace bladeDirector
 {
@@ -95,6 +96,11 @@ namespace bladeDirector
                 cmd.Parameters.AddWithValue("$id", ownershipRowID);
                 cmd.ExecuteNonQuery();
             }
+        }
+
+        public virtual itemToAdd toItemToAdd()
+        {
+            throw new NotImplementedException();
         }
     }
 }
