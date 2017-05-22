@@ -345,12 +345,7 @@ namespace bladeDirectorClient
 
         private void onDestruction(hypSpec_iLo obj)
         {
-            // Power the node down before we do anything with it.
-            using (hypervisor_iLo releasedBlade = new hypervisor_iLo(obj))
-            {
-                releasedBlade.powerOff();
-            }
-            // And notify the director that this blade is no longer in use.
+            // Notify the director that this blade is no longer in use.
             using (servicesSoapClient director = new servicesSoapClient("servicesSoap", machinePools.bladeDirectorURL))
             {
                 director.releaseBladeOrVM(obj.kernelDebugIPOrHostname);
