@@ -1116,20 +1116,24 @@ namespace bladeDirector
 
         public static resultCode selectSnapshotForBladeOrVM(string nodeIp, string newShot)
         {
+            itemToAdd itm;
             lock (connLock)
             {
                 bladeOwnership reqBlade = getBladeOrVMOwnershipByIP(nodeIp);
                 if (reqBlade == null)
                     return resultCode.bladeNotFound;
                 reqBlade.currentSnapshot = newShot;
+                resultCode res = reqBlade.updateInDB(conn);
+                if (res != resultCode.success)
+                    return res;
 
-                // re-create iscsi target/extent/etc if neccessary
-
-                itemToAdd itm = reqBlade.toItemToAdd();
-                createDisks.Program.repairBladeDeviceNodes(new itemToAdd[] { itm });
-
-                return reqBlade.updateInDB(conn);
+                itm = reqBlade.toItemToAdd();
             }
+
+            // re-create iscsi target/extent/etc if neccessary
+            createDisks.Program.repairBladeDeviceNodes(new itemToAdd[] { itm });
+
+            return resultCode.success;
         }
 
         public static string getLastDeployedBIOSForBlade(string nodeIp)
