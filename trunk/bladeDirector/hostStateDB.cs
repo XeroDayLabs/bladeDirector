@@ -1290,8 +1290,20 @@ namespace bladeDirector
             using (hypervisor_iLo_HTTP hyp = new hypervisor_iLo_HTTP(param.iLoIP, Properties.Settings.Default.iloUsername, Properties.Settings.Default.iloPassword))
             {
                 hyp.connect();
-                hyp.powerOff();
-                hyp.powerOn();
+                while (true)
+                {
+                    hyp.powerOff();
+                    if (hyp.getPowerStatus() == false)
+                        break;
+                    Thread.Sleep(TimeSpan.FromSeconds(3));
+                }
+                while (true)
+                {
+                    hyp.powerOn();
+                    if (hyp.getPowerStatus() == true)
+                        break;
+                    Thread.Sleep(TimeSpan.FromSeconds(3));
+                }
             }
 
             // Wait for it to boot.  Note that we don't ping the client repeatedly here - since the Ping class can cause 
@@ -1368,8 +1380,13 @@ namespace bladeDirector
             using (hypervisor_iLo_HTTP hyp = new hypervisor_iLo_HTTP(state.iLoIP, Properties.Settings.Default.iloUsername, Properties.Settings.Default.iloPassword))
             {
                 hyp.connect();
-                hyp.powerOff();
-                hyp.logout();
+                while (true)
+                {
+                    hyp.powerOff();
+                    if (hyp.getPowerStatus() == false)
+                        break;
+                    Thread.Sleep(TimeSpan.FromSeconds(3));
+                }
             }
 
             lock (connLock)
@@ -1421,8 +1438,13 @@ namespace bladeDirector
                 using (hypervisor_iLo_HTTP hyp = new hypervisor_iLo_HTTP(state.iLoIP, Properties.Settings.Default.iloUsername, Properties.Settings.Default.iloPassword))
                 {
                     hyp.connect();
-                    hyp.powerOff();
-                    hyp.logout();
+                    while (true)
+                    {
+                        hyp.powerOff();
+                        if (hyp.getPowerStatus() == false)
+                            break;
+                        Thread.Sleep(TimeSpan.FromSeconds(3));
+                    }
                 }
 
                 lock (connLock)
