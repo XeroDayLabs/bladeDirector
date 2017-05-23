@@ -1447,29 +1447,33 @@ namespace bladeDirector
             try
             {
                 state.biosUpdateSocket.EndConnect(ar);
+                if (state.biosUpdateSocket.Connected)
+                    return false;
             }
             catch (SocketException)
             {
-                // We failed to connect. Either report failure (if our timeout has expired), or start another connection attempt.
-                if (DateTime.Now > state.connectDeadline)
+            }
+
+            // We failed to connect, either because .EndConnect threw, or because the socket was not connected. Report failure 
+            // (if our timeout has expired), or start another connection attempt if it has not.
+            if (DateTime.Now > state.connectDeadline)
+            {
+                state.result = resultCode.genericFail;
+                state.isFinished = true;
+                lock (connLock)
                 {
+                    bladeSpec reqBlade = getBladeByIP(state.nodeIp);
+                    reqBlade.currentlyHavingBIOSDeployed = false;
+                    reqBlade.updateInDB(conn);
+
                     state.result = resultCode.genericFail;
                     state.isFinished = true;
-                    lock (connLock)
-                    {
-                        bladeSpec reqBlade = getBladeByIP(state.nodeIp);
-                        reqBlade.currentlyHavingBIOSDeployed = false;
-                        reqBlade.updateInDB(conn);
-
-                        state.result = resultCode.genericFail;
-                        state.isFinished = true;
-                    }
                 }
-                // Otherwise, just keep retrying.
-                state.biosUpdateSocket.BeginConnect(new IPEndPoint(IPAddress.Parse(state.nodeIp), 22), state.onBootFinish, state);
-                return true;
             }
-            return false;
+
+            // Otherwise, queue up another connect attempt to just keep retrying.
+            state.biosUpdateSocket.BeginConnect(new IPEndPoint(IPAddress.Parse(state.nodeIp), 22), state.onBootFinish, state);
+            return true;
         }
     }
 
