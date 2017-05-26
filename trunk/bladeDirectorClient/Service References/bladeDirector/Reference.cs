@@ -116,13 +116,21 @@ namespace bladeDirectorClient.bladeDirector {
         [System.ServiceModel.OperationContractAttribute(Action="http://tempuri.org/getCurrentSnapshotForBlade", ReplyAction="*")]
         System.Threading.Tasks.Task<string> getCurrentSnapshotForBladeAsync(string NodeIP);
         
-        [System.ServiceModel.OperationContractAttribute(Action="http://tempuri.org/selectSnapshotForBlade", ReplyAction="*")]
+        [System.ServiceModel.OperationContractAttribute(Action="http://tempuri.org/selectSnapshotForBladeOrVM", ReplyAction="*")]
         [System.ServiceModel.XmlSerializerFormatAttribute(SupportFaults=true)]
         [System.ServiceModel.ServiceKnownTypeAttribute(typeof(bladeOwnership))]
-        bladeDirectorClient.bladeDirector.resultCode selectSnapshotForBlade(string NodeIP, string snapshotName);
+        bladeDirectorClient.bladeDirector.resultCode selectSnapshotForBladeOrVM(string NodeIP, string snapshotName);
         
-        [System.ServiceModel.OperationContractAttribute(Action="http://tempuri.org/selectSnapshotForBlade", ReplyAction="*")]
-        System.Threading.Tasks.Task<bladeDirectorClient.bladeDirector.resultCode> selectSnapshotForBladeAsync(string NodeIP, string snapshotName);
+        [System.ServiceModel.OperationContractAttribute(Action="http://tempuri.org/selectSnapshotForBladeOrVM", ReplyAction="*")]
+        System.Threading.Tasks.Task<bladeDirectorClient.bladeDirector.resultCode> selectSnapshotForBladeOrVMAsync(string NodeIP, string snapshotName);
+        
+        [System.ServiceModel.OperationContractAttribute(Action="http://tempuri.org/selectSnapshotForBladeOrVM_getProgress", ReplyAction="*")]
+        [System.ServiceModel.XmlSerializerFormatAttribute(SupportFaults=true)]
+        [System.ServiceModel.ServiceKnownTypeAttribute(typeof(bladeOwnership))]
+        bladeDirectorClient.bladeDirector.resultCode selectSnapshotForBladeOrVM_getProgress(string NodeIP);
+        
+        [System.ServiceModel.OperationContractAttribute(Action="http://tempuri.org/selectSnapshotForBladeOrVM_getProgress", ReplyAction="*")]
+        System.Threading.Tasks.Task<bladeDirectorClient.bladeDirector.resultCode> selectSnapshotForBladeOrVM_getProgressAsync(string NodeIP);
         
         [System.ServiceModel.OperationContractAttribute(Action="http://tempuri.org/getLastDeployedBIOSForBlade", ReplyAction="*")]
         [System.ServiceModel.XmlSerializerFormatAttribute(SupportFaults=true)]
@@ -1093,12 +1101,20 @@ namespace bladeDirectorClient.bladeDirector {
             return base.Channel.getCurrentSnapshotForBladeAsync(NodeIP);
         }
         
-        public bladeDirectorClient.bladeDirector.resultCode selectSnapshotForBlade(string NodeIP, string snapshotName) {
-            return base.Channel.selectSnapshotForBlade(NodeIP, snapshotName);
+        public bladeDirectorClient.bladeDirector.resultCode selectSnapshotForBladeOrVM(string NodeIP, string snapshotName) {
+            return base.Channel.selectSnapshotForBladeOrVM(NodeIP, snapshotName);
         }
         
-        public System.Threading.Tasks.Task<bladeDirectorClient.bladeDirector.resultCode> selectSnapshotForBladeAsync(string NodeIP, string snapshotName) {
-            return base.Channel.selectSnapshotForBladeAsync(NodeIP, snapshotName);
+        public System.Threading.Tasks.Task<bladeDirectorClient.bladeDirector.resultCode> selectSnapshotForBladeOrVMAsync(string NodeIP, string snapshotName) {
+            return base.Channel.selectSnapshotForBladeOrVMAsync(NodeIP, snapshotName);
+        }
+        
+        public bladeDirectorClient.bladeDirector.resultCode selectSnapshotForBladeOrVM_getProgress(string NodeIP) {
+            return base.Channel.selectSnapshotForBladeOrVM_getProgress(NodeIP);
+        }
+        
+        public System.Threading.Tasks.Task<bladeDirectorClient.bladeDirector.resultCode> selectSnapshotForBladeOrVM_getProgressAsync(string NodeIP) {
+            return base.Channel.selectSnapshotForBladeOrVM_getProgressAsync(NodeIP);
         }
         
         public string getLastDeployedBIOSForBlade(string NodeIP) {

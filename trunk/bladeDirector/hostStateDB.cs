@@ -11,6 +11,7 @@ using System.Net.Sockets;
 using System.ServiceModel;
 using System.Text;
 using System.Threading;
+using System.Threading.Tasks;
 using System.Web;
 using System.Web.Services.Description;
 using System.Web.UI.WebControls;
@@ -32,6 +33,8 @@ namespace bladeDirector
 
         private static ConcurrentDictionary<string, biosThreadState> biosUpdateState = new ConcurrentDictionary<string, biosThreadState>();
         private static Dictionary<string, VMThreadState> VMDeployState = new Dictionary<string, VMThreadState>();
+
+        private static Dictionary<string, resultCode> currentSnapshotSelections = new Dictionary<string, resultCode>();
 
         public static void init(string basePath)
         {
@@ -889,9 +892,6 @@ namespace bladeDirector
                 string destDirDatastoreType = "[esxivms] " + threadState.VMServer.bladeID + "_" + threadState.childVM.vmSpecID;
                 string vmxPath = destDir + "/PXETemplate.vmx";
 
-                // !!!!!
-                //hypervisor_iLo.doWithRetryOnSomeExceptions(() => hyp.startExecutable("esxicli", "network firewall set --enabled false"));
-
                 if (threadState.deployDeadline < DateTime.Now)
                     throw new TimeoutException();
 
@@ -937,7 +937,17 @@ namespace bladeDirector
             itm.kernelDebugKey = threadState.swSpec.debuggerKey;
 
             Debug.WriteLine(DateTime.Now + threadState.childVM.VMIP + ": selecting");
-            selectSnapshotForBladeOrVM(threadState.childVM.VMIP, tagName);
+            resultCode snapshotRes = selectSnapshotForBladeOrVM(threadState.childVM.VMIP, tagName);
+            while (snapshotRes == resultCode.pending)
+            {
+                snapshotRes = selectSnapshotForBladeOrVM_getProgress(threadState.childVM.VMIP);
+            }
+
+            if (snapshotRes != resultCode.success)
+            {
+                Debug.WriteLine(DateTime.Now + threadState.childVM.VMIP + ": Failed to select snapshot,  " + snapshotRes);
+                logEvents.Add(DateTime.Now + threadState.childVM.VMIP + ": Failed to select snapshot,  " + snapshotRes);
+            }
 
             if (threadState.deployDeadline < DateTime.Now)
                 throw new TimeoutException();
@@ -949,16 +959,14 @@ namespace bladeDirector
             if (threadState.deployDeadline < DateTime.Now)
                 throw new TimeoutException();
 
-            //if (!Program.doesConfigExist(itm, tagName))
-            {
-                Debug.WriteLine(DateTime.Now + threadState.childVM.VMIP + ": adding");
-                // Now create the disks, and customise the VM  by naming it appropriately.
-                Program.addBlades(new[] {itm}, tagName, "localhost/bladeDirector", "bladebasestable-esxi", null, null, 
-                    (a,b) => new hypervisor_vmware(new hypSpec_vmware(a.computerName,
-                    threadState.VMServer.bladeIP, Properties.Settings.Default.esxiUsername, Properties.Settings.Default.esxiPassword,
-                    Properties.Settings.Default.vmUsername, Properties.Settings.Default.vmPassword,
-                    threadState.swSpec.debuggerPort, threadState.swSpec.debuggerKey, threadState.childVM.VMIP), clientExecutionMethod.smb), threadState.deployDeadline );
-            }
+            Debug.WriteLine(DateTime.Now + threadState.childVM.VMIP + ": adding");
+            // Now create the disks, and customise the VM  by naming it appropriately.
+            Program.addBlades(new[] {itm}, tagName, "localhost/bladeDirector", "bladebasestable-esxi", null, null, 
+                (a,b) => new hypervisor_vmware(new hypSpec_vmware(a.computerName,
+                threadState.VMServer.bladeIP, Properties.Settings.Default.esxiUsername, Properties.Settings.Default.esxiPassword,
+                Properties.Settings.Default.vmUsername, Properties.Settings.Default.vmPassword,
+                threadState.swSpec.debuggerPort, threadState.swSpec.debuggerKey, threadState.childVM.VMIP), clientExecutionMethod.smb), threadState.deployDeadline );
+
             Debug.WriteLine(DateTime.Now + threadState.childVM.VMIP + ": add complete");
 
             // TODO: Ability to deploy transportDriver
@@ -1130,10 +1138,28 @@ namespace bladeDirector
                 itm = reqBlade.toItemToAdd();
             }
 
-            // re-create iscsi target/extent/etc if neccessary
-            createDisks.Program.repairBladeDeviceNodes(new itemToAdd[] { itm });
+            // re-create iscsi target/extent/etc if neccessary, but make sure we do this async, since it may take a few minutes to
+            // get sense from FreeNAS.
+            lock (currentSnapshotSelections)
+            {
+                if (currentSnapshotSelections.ContainsKey(nodeIp))
+                    currentSnapshotSelections.Remove(nodeIp);
+                currentSnapshotSelections.Add(nodeIp, resultCode.pending);
+            }
 
-            return resultCode.success;
+            Task t = new Task(() => Program.repairBladeDeviceNodes(new itemToAdd[] { itm }) );
+            t.Start();
+            return resultCode.pending;
+        }
+
+        public static resultCode selectSnapshotForBladeOrVM_getProgress(string nodeIp)
+        {
+            lock (currentSnapshotSelections)
+            {
+                if (!currentSnapshotSelections.ContainsKey(nodeIp))
+                    return resultCode.bladeNotFound;
+                return currentSnapshotSelections[nodeIp];
+            }
         }
 
         public static string getLastDeployedBIOSForBlade(string nodeIp)

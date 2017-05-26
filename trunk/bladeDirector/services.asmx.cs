@@ -136,11 +136,17 @@ namespace bladeDirector
         }
 
         [WebMethod]
-        public resultCode selectSnapshotForBlade(string NodeIP, string snapshotName)
+        public resultCode selectSnapshotForBladeOrVM(string NodeIP, string snapshotName)
         {
             return hostStateDB.selectSnapshotForBladeOrVM(NodeIP, snapshotName);
         }
 
+        [WebMethod]
+        public resultCode selectSnapshotForBladeOrVM_getProgress(string NodeIP)
+        {
+            return hostStateDB.selectSnapshotForBladeOrVM_getProgress(NodeIP);
+        }
+        
         [WebMethod]
         public string getLastDeployedBIOSForBlade(string NodeIP)
         {

@@ -133,7 +133,13 @@ namespace bladeDirectorClient
                         resultCode res = director.RequestNode(nodeName);
 
                         bladeSpec bladeConfig = director.getConfigurationOfBlade(nodeName);
-                        if (director.selectSnapshotForBlade(nodeName, snapshotName) != resultCode.success)
+                        res = director.selectSnapshotForBladeOrVM(nodeName, snapshotName);
+                        while (res == resultCode.pending)
+                        {
+                            res = director.selectSnapshotForBladeOrVM_getProgress(nodeName);
+                            Thread.Sleep(TimeSpan.FromSeconds(5));
+                        }
+                        if (res != resultCode.success)
                             throw new Exception("Can't find snapshot " + snapshotName);
                         // FIXME: oh no, we can't call .getCurrentSnapshotForBlade until our blade is successfully allocated to
                         // us, otherwise we might get a snapshot for some other host!
@@ -285,7 +291,13 @@ namespace bladeDirectorClient
 
                     // Great, now we have ownership of the blade, so we can use it safely.
                     bladeSpec bladeConfig = director.getConfigurationOfBlade(allocatedBladeResult.bladeName);
-                    if (director.selectSnapshotForBlade(allocatedBladeResult.bladeName, snapshotName) != resultCode.success)
+                    var res = director.selectSnapshotForBladeOrVM(allocatedBladeResult.bladeName, snapshotName);
+                    while (res == resultCode.pending)
+                    {
+                        res = director.selectSnapshotForBladeOrVM_getProgress(allocatedBladeResult.bladeName);
+                        Thread.Sleep(TimeSpan.FromSeconds(5));
+                    }
+                    if (res != resultCode.success)
                         throw new Exception("Can't find snapshot " + snapshotName);
                     string snapshot = director.getCurrentSnapshotForBlade(allocatedBladeResult.bladeName);
 
