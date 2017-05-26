@@ -1147,7 +1147,15 @@ namespace bladeDirector
                 currentSnapshotSelections.Add(nodeIp, resultCode.pending);
             }
 
-            Task t = new Task(() => Program.repairBladeDeviceNodes(new itemToAdd[] { itm }) );
+            Task t = new Task(() =>
+                    {
+                        Program.repairBladeDeviceNodes(new itemToAdd[] {itm});
+                        lock (currentSnapshotSelections)
+                        {
+                            currentSnapshotSelections[nodeIp] = resultCode.success;
+                        }
+                    }
+                );
             t.Start();
             return resultCode.pending;
         }
