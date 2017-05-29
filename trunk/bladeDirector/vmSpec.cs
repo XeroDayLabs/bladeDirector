@@ -143,7 +143,7 @@ namespace bladeDirector
         {
             itemToAdd toRet = new itemToAdd();
 
-            toRet.cloneName = this.currentOwner + "" + this.currentSnapshot;
+            toRet.cloneName = this.currentOwner + "-" + this.currentSnapshot;
             toRet.serverIP = this.currentOwner;
             toRet.snapshotName = this.currentSnapshot;
             toRet.bladeIP = this.VMIP;
