@@ -197,7 +197,7 @@ namespace createDisks
                 }*/
 
                 // Now delete the snapshot.
-                snapshot toDelete = snapshots.SingleOrDefault(x => x.name.Equals(item.snapshotName, StringComparison.CurrentCultureIgnoreCase));
+                snapshot toDelete = snapshots.SingleOrDefault(x => x.name.Equals(item.cloneName, StringComparison.CurrentCultureIgnoreCase));
                 if (toDelete != null)
                     nas.deleteSnapshot(toDelete);
 
@@ -360,7 +360,7 @@ namespace createDisks
                 resultCode res = bladeDirectorClient.forceBladeAllocation(itemToAdd.bladeIP, itemToAdd.serverIP);
                 if (res != resultCode.success)
                     throw new Exception("Can't claim blade " + itemToAdd.bladeIP);
-                resultCode shotResCode = bladeDirectorClient.selectSnapshotForBladeOrVM(itemToAdd.bladeIP, itemToAdd.serverIP + "-" + tagName);
+                resultCode shotResCode = bladeDirectorClient.selectSnapshotForBladeOrVM(itemToAdd.bladeIP, tagName);
                 while (shotResCode == resultCode.pending)
                 {
                     Thread.Sleep(TimeSpan.FromSeconds(4));

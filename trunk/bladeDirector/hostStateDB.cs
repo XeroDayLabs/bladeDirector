@@ -756,7 +756,8 @@ namespace bladeDirector
 
                     // Create rows for the child VM in the DB. Delete anything that was there previously.
                     vmSpec childVM = freeVMServer.createChildVMInDB(conn, hwSpec, swReq, requestorIP);
-                    childVM.currentOwner = requestorIP;
+                    childVM.currentOwner = "vmserver";
+                    childVM.nextOwner = requestorIP;
                     childVM.state = bladeStatus.inUseByDirector;
                     childVM.updateInDB(conn);
 
@@ -940,7 +941,7 @@ namespace bladeDirector
             itm.bladeIP = threadState.childVM.VMIP;
             itm.cloneName = threadState.childVM.VMIP + "-" + tagName;
             itm.computerName = threadState.childVM.displayName;
-            itm.snapshotName = threadState.childVM.VMIP + "-" + tagName;
+            itm.snapshotName = tagName;
             itm.kernelDebugPort = threadState.swSpec.debuggerPort;
             itm.serverIP = threadState.swSpec.debuggerHost;
             itm.kernelDebugKey = threadState.swSpec.debuggerKey;
@@ -989,6 +990,8 @@ namespace bladeDirector
             {
                 bladeOwnership childVM = getBladeOrVMOwnershipByIP(threadState.childVM.VMIP);
                 childVM.state = bladeStatus.inUse;
+                childVM.currentOwner = threadState.childVM.nextOwner;
+                childVM.lastKeepAlive = DateTime.Now;
                 childVM.updateInDB(conn);
             }
             threadState.currentProgress.bladeName = threadState.childVM.VMIP;
