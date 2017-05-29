@@ -346,9 +346,12 @@ namespace bladeDirector
                 // VMs are slightly different to blades, since they are always implicitly owned and destroyed on release.
                 if (reqVM.lastKeepAlive + keepAliveTimeout < DateTime.Now)
                 {
-                    // Oh no, the blade owner failed to send a keepalive in time! Release it.
-                    addLogEvent("Requestor " + reqVM.currentOwner + " failed to keepalive for VM " + reqVM.displayName + " (" + reqVM.VMIP + ") releasing VM");
-                    releaseBladeOrVM(reqVM.VMIP, reqVM.currentOwner);
+                    if (reqVM.state != bladeStatus.inUseByDirector) // This will be true during deployment.
+                    {
+                        // Oh no, the blade owner failed to send a keepalive in time! Release it.
+                        addLogEvent("Requestor " + reqVM.currentOwner + " failed to keepalive for VM " + reqVM.displayName + " (" + reqVM.VMIP + ") releasing VM");
+                        releaseBladeOrVM(reqVM.VMIP, reqVM.currentOwner);
+                    }
                 }
             }
         }
@@ -572,7 +575,8 @@ namespace bladeDirector
             {
                 lock (VMDeployState)
                 {
-                    if (VMDeployState.ContainsKey(child.VMIP.ToString()) &&
+                    if (child.VMIP != null &&
+                        VMDeployState.ContainsKey(child.VMIP.ToString()) &&
                         VMDeployState[child.VMIP].currentProgress.code != resultCode.pending  )
                     {
                         // Ahh, this VM is currently being deployed. We can't release it until the thread doing the deployment
@@ -626,10 +630,15 @@ namespace bladeDirector
                Properties.Settings.Default.vmUsername, Properties.Settings.Default.vmPassword,
                 0, "", toDel.VMIP);
 
-            using (hypervisor hyp = new hypervisor_vmware(spec, clientExecutionMethod.smb))
+            try
             {
-                hyp.powerOff();
+                using (hypervisor hyp = new hypervisor_vmware(spec, clientExecutionMethod.smb))
+                {
+                    hyp.powerOff();
+                }
             }
+            catch (SocketException) { }
+            catch (WebException) { }
 
             // If the VM server is now empty, we can release it.
             if (vmServerIsEmpty)
