@@ -119,7 +119,7 @@
       <Generator>SettingsSingleFileGenerator</Generator>
       <LastGenOutput>Settings.Designer.cs</LastGenOutput>
     </None>
-    <None Include="Service References\networkService\services.wsdl" />
+    <None Include="Service References\networkService\services1.wsdl" />
     <None Include="Service References\networkService\tests.networkService.bladeSpec.datasource">
       <DependentUpon>Reference.svcmap</DependentUpon>
     </None>
@@ -138,9 +138,6 @@
   </ItemGroup>
   <ItemGroup>
     <WCFMetadataStorage Include="Service References\networkService\" />
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="Service References\networkService\services.disco" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Service References\networkService\configuration91.svcinfo" />
@@ -167,6 +164,9 @@
     <None Include="testBIOS.xml">
       <SubType>Designer</SubType>
     </None>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Service References\networkService\services1.disco" />
   </ItemGroup>
   <Choose>
     <When Condition="'$(VisualStudioVersion)' == '10.0' And '$(IsCodedUITest)' == 'True'">

@@ -104,6 +104,9 @@
     <None Include="Service References\bladeDirector\createDisks.bladeDirector.bladeSpec.datasource">
       <DependentUpon>Reference.svcmap</DependentUpon>
     </None>
+    <None Include="Service References\bladeDirector\createDisks.bladeDirector.GetBladeStatusResult.datasource">
+      <DependentUpon>Reference.svcmap</DependentUpon>
+    </None>
     <None Include="Service References\bladeDirector\createDisks.bladeDirector.resultCode.datasource">
       <DependentUpon>Reference.svcmap</DependentUpon>
     </None>
@@ -111,6 +114,9 @@
       <DependentUpon>Reference.svcmap</DependentUpon>
     </None>
     <None Include="Service References\bladeDirector\createDisks.bladeDirector.resultCodeAndBladeName.datasource">
+      <DependentUpon>Reference.svcmap</DependentUpon>
+    </None>
+    <None Include="Service References\bladeDirector\createDisks.bladeDirector.vmSpec.datasource">
       <DependentUpon>Reference.svcmap</DependentUpon>
     </None>
     <None Include="Service References\bladeDirector\services.wsdl" />

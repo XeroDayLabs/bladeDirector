@@ -357,10 +357,15 @@ namespace createDisks
             using (bladeDirector.servicesSoapClient bladeDirectorClient = new bladeDirector.servicesSoapClient(binding, ep))
             {
                 bladeDirectorClient.Open();
-                string res = bladeDirectorClient.forceBladeAllocation(itemToAdd.bladeIP, itemToAdd.serverIP);
-                if (res != "success")
+                resultCode res = bladeDirectorClient.forceBladeAllocation(itemToAdd.bladeIP, itemToAdd.serverIP);
+                if (res != resultCode.success)
                     throw new Exception("Can't claim blade " + itemToAdd.bladeIP);
-                resultCode shotResCode = bladeDirectorClient.selectSnapshotForBlade(itemToAdd.bladeIP, itemToAdd.serverIP + "-" + tagName);
+                resultCode shotResCode = bladeDirectorClient.selectSnapshotForBladeOrVM(itemToAdd.bladeIP, itemToAdd.serverIP + "-" + tagName);
+                while (shotResCode == resultCode.pending)
+                {
+                    Thread.Sleep(TimeSpan.FromSeconds(4));
+                    shotResCode = bladeDirectorClient.selectSnapshotForBladeOrVM_getProgress(itemToAdd.bladeIP);
+                }
                 if (shotResCode != resultCode.success)
                     throw new Exception("Can't select snapshot on blade " + itemToAdd.bladeIP);
             }

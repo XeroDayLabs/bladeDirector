@@ -116,13 +116,21 @@ namespace tests.networkService {
         [System.ServiceModel.OperationContractAttribute(Action="http://tempuri.org/getCurrentSnapshotForBlade", ReplyAction="*")]
         System.Threading.Tasks.Task<string> getCurrentSnapshotForBladeAsync(string NodeIP);
         
-        [System.ServiceModel.OperationContractAttribute(Action="http://tempuri.org/selectSnapshotForBlade", ReplyAction="*")]
+        [System.ServiceModel.OperationContractAttribute(Action="http://tempuri.org/selectSnapshotForBladeOrVM", ReplyAction="*")]
         [System.ServiceModel.XmlSerializerFormatAttribute(SupportFaults=true)]
         [System.ServiceModel.ServiceKnownTypeAttribute(typeof(bladeOwnership))]
-        tests.networkService.resultCode selectSnapshotForBlade(string NodeIP, string snapshotName);
+        tests.networkService.resultCode selectSnapshotForBladeOrVM(string NodeIP, string snapshotName);
         
-        [System.ServiceModel.OperationContractAttribute(Action="http://tempuri.org/selectSnapshotForBlade", ReplyAction="*")]
-        System.Threading.Tasks.Task<tests.networkService.resultCode> selectSnapshotForBladeAsync(string NodeIP, string snapshotName);
+        [System.ServiceModel.OperationContractAttribute(Action="http://tempuri.org/selectSnapshotForBladeOrVM", ReplyAction="*")]
+        System.Threading.Tasks.Task<tests.networkService.resultCode> selectSnapshotForBladeOrVMAsync(string NodeIP, string snapshotName);
+        
+        [System.ServiceModel.OperationContractAttribute(Action="http://tempuri.org/selectSnapshotForBladeOrVM_getProgress", ReplyAction="*")]
+        [System.ServiceModel.XmlSerializerFormatAttribute(SupportFaults=true)]
+        [System.ServiceModel.ServiceKnownTypeAttribute(typeof(bladeOwnership))]
+        tests.networkService.resultCode selectSnapshotForBladeOrVM_getProgress(string NodeIP);
+        
+        [System.ServiceModel.OperationContractAttribute(Action="http://tempuri.org/selectSnapshotForBladeOrVM_getProgress", ReplyAction="*")]
+        System.Threading.Tasks.Task<tests.networkService.resultCode> selectSnapshotForBladeOrVM_getProgressAsync(string NodeIP);
         
         [System.ServiceModel.OperationContractAttribute(Action="http://tempuri.org/getLastDeployedBIOSForBlade", ReplyAction="*")]
         [System.ServiceModel.XmlSerializerFormatAttribute(SupportFaults=true)]
@@ -594,6 +602,12 @@ namespace tests.networkService {
         
         private string displayNameField;
         
+        private int indexOnServerField;
+        
+        private ushort kernelDebugPortField;
+        
+        private string kernelDebugKeyField;
+        
         private string usernameField;
         
         private string passwordField;
@@ -686,6 +700,42 @@ namespace tests.networkService {
         
         /// <remarks/>
         [System.Xml.Serialization.XmlElementAttribute(Order=7)]
+        public int indexOnServer {
+            get {
+                return this.indexOnServerField;
+            }
+            set {
+                this.indexOnServerField = value;
+                this.RaisePropertyChanged("indexOnServer");
+            }
+        }
+        
+        /// <remarks/>
+        [System.Xml.Serialization.XmlElementAttribute(Order=8)]
+        public ushort kernelDebugPort {
+            get {
+                return this.kernelDebugPortField;
+            }
+            set {
+                this.kernelDebugPortField = value;
+                this.RaisePropertyChanged("kernelDebugPort");
+            }
+        }
+        
+        /// <remarks/>
+        [System.Xml.Serialization.XmlElementAttribute(Order=9)]
+        public string kernelDebugKey {
+            get {
+                return this.kernelDebugKeyField;
+            }
+            set {
+                this.kernelDebugKeyField = value;
+                this.RaisePropertyChanged("kernelDebugKey");
+            }
+        }
+        
+        /// <remarks/>
+        [System.Xml.Serialization.XmlElementAttribute(Order=10)]
         public string username {
             get {
                 return this.usernameField;
@@ -697,7 +747,7 @@ namespace tests.networkService {
         }
         
         /// <remarks/>
-        [System.Xml.Serialization.XmlElementAttribute(Order=8)]
+        [System.Xml.Serialization.XmlElementAttribute(Order=11)]
         public string password {
             get {
                 return this.passwordField;
@@ -709,7 +759,7 @@ namespace tests.networkService {
         }
         
         /// <remarks/>
-        [System.Xml.Serialization.XmlElementAttribute(Order=9)]
+        [System.Xml.Serialization.XmlElementAttribute(Order=12)]
         public VMHardwareSpec hwSpec {
             get {
                 return this.hwSpecField;
@@ -1051,12 +1101,20 @@ namespace tests.networkService {
             return base.Channel.getCurrentSnapshotForBladeAsync(NodeIP);
         }
         
-        public tests.networkService.resultCode selectSnapshotForBlade(string NodeIP, string snapshotName) {
-            return base.Channel.selectSnapshotForBlade(NodeIP, snapshotName);
+        public tests.networkService.resultCode selectSnapshotForBladeOrVM(string NodeIP, string snapshotName) {
+            return base.Channel.selectSnapshotForBladeOrVM(NodeIP, snapshotName);
         }
         
-        public System.Threading.Tasks.Task<tests.networkService.resultCode> selectSnapshotForBladeAsync(string NodeIP, string snapshotName) {
-            return base.Channel.selectSnapshotForBladeAsync(NodeIP, snapshotName);
+        public System.Threading.Tasks.Task<tests.networkService.resultCode> selectSnapshotForBladeOrVMAsync(string NodeIP, string snapshotName) {
+            return base.Channel.selectSnapshotForBladeOrVMAsync(NodeIP, snapshotName);
+        }
+        
+        public tests.networkService.resultCode selectSnapshotForBladeOrVM_getProgress(string NodeIP) {
+            return base.Channel.selectSnapshotForBladeOrVM_getProgress(NodeIP);
+        }
+        
+        public System.Threading.Tasks.Task<tests.networkService.resultCode> selectSnapshotForBladeOrVM_getProgressAsync(string NodeIP) {
+            return base.Channel.selectSnapshotForBladeOrVM_getProgressAsync(NodeIP);
         }
         
         public string getLastDeployedBIOSForBlade(string NodeIP) {

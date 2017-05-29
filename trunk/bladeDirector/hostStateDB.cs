@@ -945,23 +945,9 @@ namespace bladeDirector
             itm.serverIP = threadState.swSpec.debuggerHost;
             itm.kernelDebugKey = threadState.swSpec.debuggerKey;
 
-            Debug.WriteLine(DateTime.Now + threadState.childVM.VMIP + ": selecting");
-            resultCode snapshotRes = selectSnapshotForBladeOrVM(threadState.childVM.VMIP, tagName);
-            while (snapshotRes == resultCode.pending)
-            {
-                snapshotRes = selectSnapshotForBladeOrVM_getProgress(threadState.childVM.VMIP);
-            }
-
-            if (snapshotRes != resultCode.success)
-            {
-                Debug.WriteLine(DateTime.Now + threadState.childVM.VMIP + ": Failed to select snapshot,  " + snapshotRes);
-                logEvents.Add(DateTime.Now + threadState.childVM.VMIP + ": Failed to select snapshot,  " + snapshotRes);
-            }
-
             if (threadState.deployDeadline < DateTime.Now)
                 throw new TimeoutException();
 
-            //if (threadState.swSpec.forceRecreate)
             Debug.WriteLine(DateTime.Now + threadState.childVM.VMIP + ": deleting");
             Program.deleteBlades(new[] { itm });
 
@@ -982,6 +968,21 @@ namespace bladeDirector
 
             if (threadState.deployDeadline < DateTime.Now)
                 throw new TimeoutException();
+
+            // Now we can select the new snapshot
+            Debug.WriteLine(DateTime.Now + threadState.childVM.VMIP + ": selecting");
+            resultCode snapshotRes = selectSnapshotForBladeOrVM(threadState.childVM.VMIP, tagName);
+            while (snapshotRes == resultCode.pending)
+            {
+                snapshotRes = selectSnapshotForBladeOrVM_getProgress(threadState.childVM.VMIP);
+                Thread.Sleep(TimeSpan.FromSeconds(4));
+            }
+
+            if (snapshotRes != resultCode.success)
+            {
+                Debug.WriteLine(DateTime.Now + threadState.childVM.VMIP + ": Failed to select snapshot,  " + snapshotRes);
+                logEvents.Add(DateTime.Now + threadState.childVM.VMIP + ": Failed to select snapshot,  " + snapshotRes);
+            }
 
             // All done. Re-read the VM state before we set state in case it's been changed while we ran (eg by selectSnapshotForBladeOrVM)
             lock (connLock)

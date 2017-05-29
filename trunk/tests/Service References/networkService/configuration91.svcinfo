@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<SavedWcfConfigurationInformation xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema" Version="9.1" CheckSum="qDBO7amPsnqV1h0fJlY8stiJXNQ=">
+<SavedWcfConfigurationInformation xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema" Version="9.1" CheckSum="g0dzSUlSqV1v2h9O62kM437EmoU=">
   <bindingConfigurations>
     <bindingConfiguration bindingType="basicHttpBinding" name="servicesSoap">
       <properties>
@@ -263,10 +263,10 @@
     </bindingConfiguration>
   </bindingConfigurations>
   <endpoints>
-    <endpoint name="servicesSoap" contract="networkService.servicesSoap" bindingType="basicHttpBinding" address="http://localhost/bladedirector/services.asmx" bindingConfiguration="servicesSoap">
+    <endpoint name="servicesSoap" contract="networkService.servicesSoap" bindingType="basicHttpBinding" address="http://alizbuild.xd.lan/bladedirector/services.asmx" bindingConfiguration="servicesSoap">
       <properties>
         <property path="/address" isComplexType="false" isExplicitlyDefined="true" clrType="System.Uri, System, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089">
-          <serializedValue>http://localhost/bladedirector/services.asmx</serializedValue>
+          <serializedValue>http://alizbuild.xd.lan/bladedirector/services.asmx</serializedValue>
         </property>
         <property path="/behaviorConfiguration" isComplexType="false" isExplicitlyDefined="false" clrType="System.String, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089">
           <serializedValue />
@@ -348,10 +348,10 @@
         </property>
       </properties>
     </endpoint>
-    <endpoint name="servicesSoap12" contract="networkService.servicesSoap" bindingType="customBinding" address="http://localhost/bladedirector/services.asmx" bindingConfiguration="servicesSoap12">
+    <endpoint name="servicesSoap12" contract="networkService.servicesSoap" bindingType="customBinding" address="http://alizbuild.xd.lan/bladedirector/services.asmx" bindingConfiguration="servicesSoap12">
       <properties>
         <property path="/address" isComplexType="false" isExplicitlyDefined="true" clrType="System.Uri, System, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089">
-          <serializedValue>http://localhost/bladedirector/services.asmx</serializedValue>
+          <serializedValue>http://alizbuild.xd.lan/bladedirector/services.asmx</serializedValue>
         </property>
         <property path="/behaviorConfiguration" isComplexType="false" isExplicitlyDefined="false" clrType="System.String, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089">
           <serializedValue />
