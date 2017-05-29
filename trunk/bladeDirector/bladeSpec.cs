@@ -29,7 +29,7 @@ namespace bladeDirector
         public string ESXiPassword;
 
         private int maxVMs = 20;
-        private int maxVMMemoryMB = 1024 * 30;
+        private int maxVMMemoryMB = 1024 * 20;
         private int maxCPUCount = 12;
 
         public bladeSpec()
