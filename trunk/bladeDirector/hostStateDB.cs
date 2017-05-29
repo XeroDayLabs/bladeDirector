@@ -877,7 +877,8 @@ namespace bladeDirector
                             while (foundMount == null)
                             {
                                 hypervisor_iLo.doWithRetryOnSomeExceptions(() => hyp.startExecutable("esxcfg-nas", "-d esxivms"));
-                                string res = hypervisor_iLo.doWithRetryOnSomeExceptions(() => hyp.startExecutable(" esxcfg-nas", "-a --host store.xd.lan --share /mnt/SSDs/esxivms esxivms")).stdout;
+                                hypervisor_iLo.doWithRetryOnSomeExceptions(() => hyp.startExecutable("esxcfg-nas", "-a --host store.xd.lan --share /mnt/SSDs/esxivms esxivms"));
+                                hypervisor_iLo.doWithRetryOnSomeExceptions(() => hyp.startExecutable("esxcfg-rescan", "--all"));
 
                                 nfsMounts = hypervisor_iLo.doWithRetryOnSomeExceptions(() => hyp.startExecutable("esxcfg-nas", "-l")).stdout.Split(new[] { "\n", "\r" }, StringSplitOptions.RemoveEmptyEntries);
                                 foundMount = nfsMounts.SingleOrDefault(x => x.Contains("esxivms is /mnt/SSDs/esxivms from store.xd.lan mounted available"));
@@ -896,7 +897,6 @@ namespace bladeDirector
                 Debug.WriteLine(DateTime.Now + threadState.childVM.VMIP + ": powered on");
 
                 // now SSH to the blade and actually create the VM.
-
                 string destDir = "/vmfs/volumes/esxivms/" + threadState.VMServer.bladeID + "_" + threadState.childVM.vmSpecID;
                 string destDirDatastoreType = "[esxivms] " + threadState.VMServer.bladeID + "_" + threadState.childVM.vmSpecID;
                 string vmxPath = destDir + "/PXETemplate.vmx";
