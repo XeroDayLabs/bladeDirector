@@ -926,7 +926,10 @@ namespace bladeDirector
                 // doCmdAndCheckSuccess(hyp, "sed", " -e 's/serial0.fileName[= ].*/" + "serial0.fileName = \"telnet://:" + (1000 + threadState.childVM.vmSpecID) + "\"/g' -i " + vmxPath));
 
                 // Now add that VM to ESXi, and the VM is ready to use.
-                doCmdAndCheckSuccess(hyp, "vim-cmd", " solo/registervm " + vmxPath);
+                // We do this with a retry, because I'm seeing it fail occasionally >_<
+                hypervisor_iLo.doWithRetryOnSomeExceptions(() =>
+                    doCmdAndCheckSuccess(hyp, "vim-cmd", " solo/registervm " + vmxPath)
+                ) ;
 
                 Debug.WriteLine(DateTime.Now + threadState.childVM.VMIP + ": created");
 
@@ -1004,7 +1007,7 @@ namespace bladeDirector
             if (res.resultCode != 0)
             {
                 logEvents.Add(string.Format("Command '{0}' with args '{1}' returned failure code {2}; stdout is '{3} and stderr is '{4}'", cmd, args, res.resultCode, res.stdout, res.stderr));
-                throw new Exception("failed to execute ssh command");
+                throw new hypervisorExecutionException("failed to execute ssh command");
             }
         }
 
