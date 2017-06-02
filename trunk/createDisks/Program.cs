@@ -402,7 +402,7 @@ namespace createDisks
             Debug.WriteLine(itemToAdd.bladeIP + " deployed, shutting down");
 
             // That's all we need, so shut down the system.
-            hypervisor_iLo.doWithRetryOnSomeExceptions(() => hyp.startExecutableAsync("C:\\windows\\system32\\cmd", "/c shutdown -s -f -t 01"));
+            hypervisor_iLo.doWithRetryOnSomeExceptions(() => hyp.startExecutableAsyncWithRetry("C:\\windows\\system32\\cmd", "/c shutdown -s -f -t 01"));
 
             // Once it has shut down totally, we can take the snapshot of it.
             hyp.WaitForStatus(false, TimeSpan.FromMinutes(1));
