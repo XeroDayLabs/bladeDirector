@@ -906,9 +906,12 @@ namespace bladeDirector
                     throw new TimeoutException();
 
                 // Remove the VM if it's already there. We don't mind if these commands fail - which they will, if the VM doesn't
-                // exist.
-                hypervisor_iLo.doWithRetryOnSomeExceptions(() => hyp.startExecutable("vim-cmd", "vmsvc/power.off `vim-cmd vmsvc/getallvms | grep \"" + destDirDatastoreType.Replace("[", "\\[").Replace("]", "\\]") + "\"`"));
-                hypervisor_iLo.doWithRetryOnSomeExceptions(() => hyp.startExecutable("vim-cmd", "vmsvc/unregister `vim-cmd vmsvc/getallvms | grep \"" + destDirDatastoreType + "\"`"));
+                // exist. We power off by directory and also by name, just in case a previous provision has left the VM hanging around.
+                string dstDatastoreDirEscaped = destDirDatastoreType.Replace("[", "\\[").Replace("]", "\\]");
+                hypervisor_iLo.doWithRetryOnSomeExceptions(() => hyp.startExecutable("vim-cmd", "vmsvc/power.off `vim-cmd vmsvc/getallvms | grep \"" + dstDatastoreDirEscaped + "\"`"));
+                hypervisor_iLo.doWithRetryOnSomeExceptions(() => hyp.startExecutable("vim-cmd", "vmsvc/power.off `vim-cmd vmsvc/getallvms | grep \"" + threadState.childVM.displayName + "\"`"));
+                hypervisor_iLo.doWithRetryOnSomeExceptions(() => hyp.startExecutable("vim-cmd", "vmsvc/unregister `vim-cmd vmsvc/getallvms | grep \"" + dstDatastoreDirEscaped + "\"`"));
+                hypervisor_iLo.doWithRetryOnSomeExceptions(() => hyp.startExecutable("vim-cmd", "vmsvc/unregister `vim-cmd vmsvc/getallvms | grep \"" + threadState.childVM.displayName  + "\"`"));
 
                 // copy the template VM into a new directory
                 doCmdAndCheckSuccess(hyp, "rm", " -rf " + destDir);
