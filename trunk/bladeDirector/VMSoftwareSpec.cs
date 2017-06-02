@@ -1,3 +1,5 @@
+using createDisks;
+
 namespace bladeDirector
 {
     public class VMSoftwareSpec
@@ -21,5 +23,11 @@ namespace bladeDirector
         /// Set this to delete any existing iscsi images and re-create them before a system boots
         /// </summary>
         public bool forceRecreate = false;
+
+        /// <summary>
+        /// Set this if you want to add windows user accounts to the system
+        /// </summary>
+        public userAddRequest[] usersToAdd = null;
     }
+
 }

@@ -951,6 +951,7 @@ namespace bladeDirector
             itm.kernelDebugPort = threadState.swSpec.debuggerPort;
             itm.serverIP = threadState.swSpec.debuggerHost;
             itm.kernelDebugKey = threadState.swSpec.debuggerKey;
+            itm.usersToAdd = threadState.swSpec.usersToAdd;
 
             if (threadState.deployDeadline < DateTime.Now)
                 throw new TimeoutException();

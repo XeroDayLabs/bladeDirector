@@ -31,6 +31,14 @@ namespace createDisks
         public uint kernelDebugPort;
         public string snapshotName;
         public string kernelDebugKey;
+        public userAddRequest[] usersToAdd;
+    }
+
+    public class userAddRequest
+    {
+        public string username;
+        public string password;
+        public bool isAdministrator;
     }
 
     public class createDisksArgs
@@ -399,6 +407,19 @@ namespace createDisks
                     hypervisor_iLo.doWithRetryOnSomeExceptions(() => hyp.startExecutable("cmd.exe", string.Format("/c {0}", additionalScript), "C:\\"));
             }
 
+            // Finally, add any users as requested.
+            if (itemToAdd.usersToAdd != null)
+            {
+                foreach (userAddRequest newUser in itemToAdd.usersToAdd)
+                {
+                    hypervisor_iLo.doWithRetryOnSomeExceptions(() => hyp.mkdir("C:\\users\\" + newUser.username));
+                    executionResult adduserres = hyp.startExecutable("cmd.exe", string.Format("/c net user {0} {1} /ADD", newUser.username, newUser.password));
+                    if (newUser.isAdministrator)
+                    {
+                        executionResult addgroupres = hyp.startExecutable("cmd.exe", string.Format("/c net localgroup Administrators {0} /ADD", newUser.username));
+                    }
+                }
+            }
             Debug.WriteLine(itemToAdd.bladeIP + " deployed, shutting down");
 
             // That's all we need, so shut down the system.
