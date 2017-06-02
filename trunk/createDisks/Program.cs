@@ -197,7 +197,7 @@ namespace createDisks
                 }*/
 
                 // Now delete the snapshot.
-                snapshot toDelete = snapshots.SingleOrDefault(x => x.name.Equals(item.cloneName, StringComparison.CurrentCultureIgnoreCase));
+                snapshot toDelete = snapshots.SingleOrDefault(x => x.filesystem.ToLower().EndsWith("/" + item.cloneName));
                 if (toDelete != null)
                     nas.deleteSnapshot(toDelete);
 
