@@ -218,16 +218,13 @@ namespace bladeDirector
             state = bladeStatus.inUseByDirector;
         }
 
-        public vmSpec createChildVMInDB(SQLiteConnection conn, VMHardwareSpec reqhw, VMSoftwareSpec reqsw, string newOwner)
+        public vmSpec createChildVM(SQLiteConnection conn, VMHardwareSpec reqhw, VMSoftwareSpec reqsw, string newOwner)
         {
-
             vmSpec newVM = new vmSpec();
             newVM.currentOwner = newOwner;
             newVM.parentBladeID = this.bladeID;
             newVM.hwSpec = reqhw;
             newVM.indexOnServer = getChildVMs(conn).Count + 1;
-
-            newVM.createInDB(conn);
 
             byte[] VMServerIPBytes = IPAddress.Parse(this.bladeIP).GetAddressBytes();
 
@@ -242,8 +239,6 @@ namespace bladeDirector
                 reqsw.debuggerPort = (ushort) (50000 + ((VMServerIPBytes[3] - 100) * 100) + newVM.indexOnServer);
             newVM.kernelDebugPort = reqsw.debuggerPort;
             newVM.kernelDebugKey = reqsw.debuggerKey;
-
-            newVM.updateInDB(conn);
 
             return newVM;
         }

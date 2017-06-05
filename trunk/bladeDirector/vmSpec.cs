@@ -152,5 +152,17 @@ namespace bladeDirector
             return toRet;
         }
 
+        public bool conflictsWith(vmSpec toTestWith)
+        {
+            if (toTestWith.VMIP == this.VMIP ||
+                toTestWith.displayName == this.displayName ||       // Actually legal, but we don't permit it just because it makes this harder to read
+                toTestWith.eth0MAC == this.eth0MAC ||
+                toTestWith.eth1MAC == this.eth1MAC ||
+                toTestWith.indexOnServer == this.indexOnServer ||
+                toTestWith.iscsiIP == this.iscsiIP)
+                return true;
+
+            return false;
+        }
     }
 }

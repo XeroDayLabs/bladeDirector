@@ -754,12 +754,28 @@ namespace bladeDirector
                         freeVMServer.updateInDB(conn);
                     }
 
-                    // Create rows for the child VM in the DB. Delete anything that was there previously.
-                    vmSpec childVM = freeVMServer.createChildVMInDB(conn, hwSpec, swReq, requestorIP);
+                    // Create rows for the child VM in the DB. Before we write it to the database, check we aren't about to add a 
+                    // VM which conflicts with anything. If it does conflict, check the conflict is with an unused VM, and then 
+                    // delete it before we add.
+                    vmSpec childVM = freeVMServer.createChildVM(conn, hwSpec, swReq, requestorIP);
                     childVM.currentOwner = "vmserver";
                     childVM.nextOwner = requestorIP;
                     childVM.state = bladeStatus.inUseByDirector;
-                    childVM.updateInDB(conn);
+                    // Check for conflicts
+                    foreach (vmSpec currentlyExistingVM in getVMByVMServerIP(freeVMServer.bladeIP))
+                    {
+                        if (childVM.conflictsWith(currentlyExistingVM))
+                        {
+                            if (childVM.state != bladeStatus.unused)
+                            {
+                                // Uh-oh, what's going on here? A conflict with an existing, still-allocated VM? That sounds bad..
+                                return new resultCodeAndBladeName() { code = resultCode.bladeInUse };
+                            }
+
+                            releaseVM(childVM);
+                        }
+                    }
+                    childVM.createInDB(conn);
 
                     string waitToken = childVM.VMIP.ToString();
 
