@@ -28,6 +28,9 @@
     </system.serviceModel>
     <userSettings>
         <bladeDirectorClient.Properties.Settings>
+            <setting name="bladeDirectorURL" serializeAs="String">
+                <value>http://alizbuild.xd.lan/bladeDirector/</value>
+            </setting>
             <setting name="kernelVMCount" serializeAs="String">
                 <value>0</value>
             </setting>

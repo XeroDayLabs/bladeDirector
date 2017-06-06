@@ -2,6 +2,9 @@
 <SettingsFile xmlns="http://schemas.microsoft.com/VisualStudio/2004/01/settings" CurrentProfile="(Default)" GeneratedClassNamespace="bladeDirectorClient.Properties" GeneratedClassName="Settings">
   <Profiles />
   <Settings>
+    <Setting Name="bladeDirectorURL" Type="System.String" Scope="User">
+      <Value Profile="(Default)">http://alizbuild.xd.lan/bladeDirector/</Value>
+    </Setting>
     <Setting Name="kernelVMCount" Type="System.Int32" Scope="User">
       <Value Profile="(Default)">0</Value>
     </Setting>
