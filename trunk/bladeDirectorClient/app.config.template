@@ -82,6 +82,9 @@
             <setting name="iloKernelKey" serializeAs="String">
                 <value />
             </setting>
+            <setting name="bladeDirectorURL" serializeAs="String">
+                <value>http://build.xd.lan/bladedirector/services.asmx</value>
+            </setting>
         </bladeDirectorClient.Properties.Settings>
     </userSettings>
 </configuration>
