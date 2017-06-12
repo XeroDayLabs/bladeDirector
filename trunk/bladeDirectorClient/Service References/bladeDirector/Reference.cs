@@ -375,6 +375,8 @@ namespace bladeDirectorClient.bladeDirector {
         
         private bool forceRecreateField;
         
+        private string snapshotFriendlyNameField;
+        
         private userAddRequest[] usersToAddField;
         
         /// <remarks/>
@@ -426,7 +428,19 @@ namespace bladeDirectorClient.bladeDirector {
         }
         
         /// <remarks/>
-        [System.Xml.Serialization.XmlArrayAttribute(Order=4)]
+        [System.Xml.Serialization.XmlElementAttribute(Order=4)]
+        public string snapshotFriendlyName {
+            get {
+                return this.snapshotFriendlyNameField;
+            }
+            set {
+                this.snapshotFriendlyNameField = value;
+                this.RaisePropertyChanged("snapshotFriendlyName");
+            }
+        }
+        
+        /// <remarks/>
+        [System.Xml.Serialization.XmlArrayAttribute(Order=5)]
         public userAddRequest[] usersToAdd {
             get {
                 return this.usersToAddField;
