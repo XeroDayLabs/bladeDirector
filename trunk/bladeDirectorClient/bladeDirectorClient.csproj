@@ -65,6 +65,10 @@
       <Project>{47995DD9-9F78-4313-809D-55C515EAF89E}</Project>
       <Name>hypervisors</Name>
     </ProjectReference>
+    <ProjectReference Include="..\..\..\..\Trunk\tests-shared\tests-shared.2013.csproj">
+      <Project>{EB26FD8D-9049-48CB-B431-A3DFF3E5D631}</Project>
+      <Name>tests-shared.2013</Name>
+    </ProjectReference>
   </ItemGroup>
   <ItemGroup>
     <WCFMetadata Include="Service References\" />

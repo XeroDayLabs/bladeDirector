@@ -6,6 +6,7 @@ using System.Net;
 using System.Net.NetworkInformation;
 using System.Threading;
 using hypervisors;
+using tests_shared;
 
 namespace bladeDirectorClient
 {
@@ -36,6 +37,7 @@ namespace bladeDirectorClient
                             string kernelVMUsername = Properties.Settings.Default.VMWareVMUsername;
                             string kernelVMPassword = Properties.Settings.Default.VMWareVMPassword;
                             string kernelVMDebugKey = Properties.Settings.Default.VMWareVMDebugKey;
+                            string kernelVMSnapshot = someSettings.kernelVMSnapshot;
 
                             hypSpec_vmware[] hyps = new hypSpec_vmware[kernelVMCount];
 
@@ -48,6 +50,7 @@ namespace bladeDirectorClient
                                     vmname, kernelVMServer,
                                     kernelVMServerUsername, kernelVMServerPassword,
                                     kernelVMUsername, kernelVMPassword,
+
                                     "clean", vmPort, kernelVMDebugKey, vmname);
 
                                 hypervisorSpecs[hyps[i - 1]] = false;

@@ -145,14 +145,13 @@ namespace bladeDirectorClient
                         }
                         if (res != resultCode.success)
                             throw new Exception("Can't find snapshot " + snapshotName);
-                        // FIXME: oh no, we can't call .getCurrentSnapshotForBlade until our blade is successfully allocated to
-                        // us, otherwise we might get a snapshot for some other host!
-                        string snapshotUnfriendlyName = director.getFreeNASSnapshotPath(nodeName);
+                        string snapshotPath = director.getCurrentSnapshotForBlade(nodeName);
 
                         hypSpec_iLo spec = new hypSpec_iLo(
                             bladeConfig.bladeIP, iloHostUsername, iloHostPassword,
                             bladeConfig.iLOIP, iloUsername, iloPassword,
                             iloISCSIIP, iloISCSIUsername, iloISCSIPassword,
+
                             snapshotName, snapshotUnfriendlyName, bladeConfig.iLOPort, iloKernelKey
                             );
 
