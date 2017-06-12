@@ -72,8 +72,8 @@ namespace bladeDirectorClient
                         bladeSpec vmServerSpec = director.getConfigurationOfBladeByID((int) vmSpec.parentBladeID);
                         hypSpec_vmware newSpec = new hypSpec_vmware(
                             vmSpec.displayName, vmServerSpec.bladeIP, vmServerSpec.ESXiUsername, vmServerSpec.ESXiPassword,
-                            vmSpec.username, vmSpec.password, vmSpec.kernelDebugPort, vmSpec.kernelDebugKey, vmSpec.VMIP);
-                        newSpec.snapshotName = director.getCurrentSnapshotForBlade(vmSpec.VMIP);
+                            vmSpec.username, vmSpec.password, vmSpec.currentSnapshot, vmSpec.kernelDebugPort, vmSpec.kernelDebugKey, vmSpec.VMIP);
+                        newSpec.snapshotFriendlyName = director.getCurrentSnapshotForBlade(vmSpec.VMIP);
                         hypervisor_vmware newVM = new hypervisor_vmware(newSpec);
 
                         ensurePortIsFree(vmSpec.kernelDebugPort);
@@ -141,15 +141,14 @@ namespace bladeDirectorClient
                         }
                         if (res != resultCode.success)
                             throw new Exception("Can't find snapshot " + snapshotName);
-                        // FIXME: oh no, we can't call .getCurrentSnapshotForBlade until our blade is successfully allocated to
-                        // us, otherwise we might get a snapshot for some other host!
-                        string snapshot = director.getCurrentSnapshotForBlade(nodeName);
+
+                        string snapshotPath = director.getCurrentSnapshotForBlade(nodeName);
 
                         hypSpec_iLo spec = new hypSpec_iLo(
                             bladeConfig.bladeIP, iloHostUsername, iloHostPassword,
                             bladeConfig.iLOIP, iloUsername, iloPassword,
                             iloISCSIIP, iloISCSIUsername, iloISCSIPassword,
-                            snapshot, bladeConfig.iLOPort, iloKernelKey
+                            snapshotName, snapshotPath, bladeConfig.iLOPort, iloKernelKey
                             );
 
                         ensurePortIsFree(bladeConfig.iLOPort);
@@ -299,13 +298,14 @@ namespace bladeDirectorClient
                     }
                     if (res != resultCode.success)
                         throw new Exception("Can't find snapshot " + snapshotName);
-                    string snapshot = director.getCurrentSnapshotForBlade(allocatedBladeResult.bladeName);
+
+                    string fullSnapshotPath = director.getFreeNASSnapshotPath(allocatedBladeResult.bladeName);
 
                     hypSpec_iLo spec = new hypSpec_iLo(
                         bladeConfig.bladeIP, iloHostUsername, iloHostPassword,
                         bladeConfig.iLOIP, iloUsername, iloPassword,
                         iloISCSIIP, iloISCSIUsername, iloISCSIPassword,
-                        snapshot, bladeConfig.iLOPort, iloKernelKey
+                        snapshotName, fullSnapshotPath, bladeConfig.iLOPort, iloKernelKey
                         );
                     
                     ensurePortIsFree(bladeConfig.iLOPort);
