@@ -550,7 +550,7 @@ namespace createDisks
                     newExtent = nas.addISCSIExtent(new iscsiExtent()
                     {
                         iscsi_target_extent_name = toAdd.targetName,
-                        iscsi_target_extent_path = String.Format("zvol/SSDs/{0}", toAdd.targetName)
+                        iscsi_target_extent_path = String.Format("/dev/zvol/SSDs/{0}", toAdd.targetName)
                     });
                 }
 
