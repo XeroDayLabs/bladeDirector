@@ -25,6 +25,11 @@ namespace bladeDirector
         public bool forceRecreate = false;
 
         /// <summary>
+        /// Which snapshot should we associate with this VM?
+        /// </summary>
+        public string snapshotFriendlyName;
+
+        /// <summary>
         /// Set this if you want to add windows user accounts to the system
         /// </summary>
         public userAddRequest[] usersToAdd = null;
