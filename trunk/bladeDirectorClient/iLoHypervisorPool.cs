@@ -145,13 +145,12 @@ namespace bladeDirectorClient
                         }
                         if (res != resultCode.success)
                             throw new Exception("Can't find snapshot " + snapshotName);
-                        string snapshotPath = director.getCurrentSnapshotForBlade(nodeName);
+                        string snapshotUnfriendlyName = director.getCurrentSnapshotForBlade(nodeName);
 
                         hypSpec_iLo spec = new hypSpec_iLo(
                             bladeConfig.bladeIP, iloHostUsername, iloHostPassword,
                             bladeConfig.iLOIP, iloUsername, iloPassword,
                             iloISCSIIP, iloISCSIUsername, iloISCSIPassword,
-
                             snapshotName, snapshotUnfriendlyName, bladeConfig.iLOPort, iloKernelKey
                             );
 

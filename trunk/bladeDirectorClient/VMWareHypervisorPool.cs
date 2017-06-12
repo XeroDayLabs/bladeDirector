@@ -6,7 +6,6 @@ using System.Net;
 using System.Net.NetworkInformation;
 using System.Threading;
 using hypervisors;
-using tests_shared;
 
 namespace bladeDirectorClient
 {
@@ -15,7 +14,7 @@ namespace bladeDirectorClient
         private readonly Object hypervisorSpecLock = new Object();
         private ConcurrentDictionary<hypSpec_vmware, bool> hypervisorSpecs = null;
 
-        public hypervisor_vmware createHypervisorForCurrentTest(clientExecutionMethod execType = clientExecutionMethod.smb)
+        public hypervisor_vmware createHypervisorForCurrentTest(string snapshotName, clientExecutionMethod execType = clientExecutionMethod.smb)
         {
             while (true)
             {
@@ -37,7 +36,6 @@ namespace bladeDirectorClient
                             string kernelVMUsername = Properties.Settings.Default.VMWareVMUsername;
                             string kernelVMPassword = Properties.Settings.Default.VMWareVMPassword;
                             string kernelVMDebugKey = Properties.Settings.Default.VMWareVMDebugKey;
-                            string kernelVMSnapshot = someSettings.kernelVMSnapshot;
 
                             hypSpec_vmware[] hyps = new hypSpec_vmware[kernelVMCount];
 
@@ -50,8 +48,7 @@ namespace bladeDirectorClient
                                     vmname, kernelVMServer,
                                     kernelVMServerUsername, kernelVMServerPassword,
                                     kernelVMUsername, kernelVMPassword,
-
-                                    "clean", vmPort, kernelVMDebugKey, vmname);
+                                    snapshotName, vmPort, kernelVMDebugKey, vmname);
 
                                 hypervisorSpecs[hyps[i - 1]] = false;
 
