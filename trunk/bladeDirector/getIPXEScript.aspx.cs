@@ -91,9 +91,10 @@ namespace bladeDirector
                     return;
                 }
 
+                bladeOwnership bladeOwnership = hostStateDB.getBladeOrVMOwnershipByIP(srcIP);
                 script = script.Replace("{BLADE_NETMASK_ISCSI}", "255.255.192.0");
-                script = script.Replace("{BLADE_OWNER}", hostStateDB.getBladeOrVMOwnershipByIP(srcIP).currentOwner);
-                script = script.Replace("{BLADE_SNAPSHOT}", hostStateDB.getCurrentSnapshotForBladeOrVM(srcIP));
+                script = script.Replace("{BLADE_OWNER}", bladeOwnership.currentOwner);
+                script = script.Replace("{BLADE_SNAPSHOT}", bladeOwnership.currentSnapshot);
             }
             Response.Write(script);
             hostStateDB.addLogEvent("IPXE script for blade " + srcIP + " generated (owner " + owner.currentOwner + ")");
