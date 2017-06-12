@@ -74,7 +74,7 @@ namespace bladeDirectorClient
 
                         hypSpec_vmware newSpec = new hypSpec_vmware(
                             vmSpec.displayName, vmServerSpec.bladeIP, vmServerSpec.ESXiUsername, vmServerSpec.ESXiPassword,
-                            vmSpec.username, vmSpec.password, specs[idx].sw.snapshotFriendlyName, vmSpec.kernelDebugPort, vmSpec.kernelDebugKey, vmSpec.VMIP);
+                            vmSpec.username, vmSpec.password, specs[idx].sw.snapshotFriendlyName, null, vmSpec.kernelDebugPort, vmSpec.kernelDebugKey, vmSpec.VMIP);
 
                         hypervisor_vmware newVM = new hypervisor_vmware(newSpec);
 

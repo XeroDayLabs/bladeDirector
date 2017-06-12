@@ -48,7 +48,7 @@ namespace bladeDirectorClient
                                     vmname, kernelVMServer,
                                     kernelVMServerUsername, kernelVMServerPassword,
                                     kernelVMUsername, kernelVMPassword,
-                                    snapshotName, vmPort, kernelVMDebugKey, vmname);
+                                    snapshotName, null, vmPort, kernelVMDebugKey, vmname);
 
                                 hypervisorSpecs[hyps[i - 1]] = false;
 
