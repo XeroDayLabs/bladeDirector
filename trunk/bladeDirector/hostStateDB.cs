@@ -627,7 +627,7 @@ namespace bladeDirector
             toDel.deleteInDB(conn);
 
             hypSpec_vmware spec = new hypSpec_vmware(toDel.displayName, parentBladeSpec.bladeIP, Properties.Settings.Default.esxiUsername, Properties.Settings.Default.esxiPassword,
-               Properties.Settings.Default.vmUsername, Properties.Settings.Default.vmPassword,
+               Properties.Settings.Default.vmUsername, Properties.Settings.Default.vmPassword, null,
                 0, "", toDel.VMIP);
 
             try
@@ -834,7 +834,7 @@ namespace bladeDirector
             // First, bring up the physical machine. It'll get the ESXi ISCSI config and boot up.
             hypSpec_iLo iloSpec = new hypSpec_iLo(threadState.VMServer.bladeIP, Properties.Settings.Default.esxiUsername, Properties.Settings.Default.esxiPassword, 
                 threadState.VMServer.iLOIP, Properties.Settings.Default.iloUsername, Properties.Settings.Default.iloPassword, Properties.Settings.Default.iloUsername, 
-                null, null, null, 0, null);
+                null, null, null, null, 0, null);
             using (hypervisor_iLo hyp = new hypervisor_iLo(iloSpec, clientExecutionMethod.SSHToBASH))
             {
                 Debug.WriteLine(DateTime.Now + threadState.childVM.VMIP + ": connecting ilo");
@@ -983,7 +983,7 @@ namespace bladeDirector
             Program.addBlades(new[] {itm}, tagName, "localhost/bladeDirector", "bladebasestable-esxi", null, null, 
                 (a,b) => new hypervisor_vmware(new hypSpec_vmware(a.computerName,
                 threadState.VMServer.bladeIP, Properties.Settings.Default.esxiUsername, Properties.Settings.Default.esxiPassword,
-                Properties.Settings.Default.vmUsername, Properties.Settings.Default.vmPassword,
+                Properties.Settings.Default.vmUsername, Properties.Settings.Default.vmPassword, null, 
                 threadState.swSpec.debuggerPort, threadState.swSpec.debuggerKey, threadState.childVM.VMIP), clientExecutionMethod.smb), threadState.deployDeadline );
 
             Debug.WriteLine(DateTime.Now + threadState.childVM.VMIP + ": add complete");
@@ -1572,7 +1572,7 @@ namespace bladeDirector
         {
             bladeOwnership ownership = getBladeOrVMOwnershipByIP(nodeIp);
             if (ownership == null)
-                return resultCode.bladeNotFound;
+                return String.Empty;
             return String.Format("{0}-{1}-{2}", nodeIp, requestorIp, ownership.currentSnapshot);
         }
     }

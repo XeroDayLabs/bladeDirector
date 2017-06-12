@@ -48,8 +48,7 @@ namespace bladeDirectorClient
                                     vmname, kernelVMServer,
                                     kernelVMServerUsername, kernelVMServerPassword,
                                     kernelVMUsername, kernelVMPassword,
-                                    vmPort, kernelVMDebugKey, vmname);
-                                hyps[i - 1].snapshotName = "clean";
+                                    "clean", vmPort, kernelVMDebugKey, vmname);
 
                                 hypervisorSpecs[hyps[i - 1]] = false;
 

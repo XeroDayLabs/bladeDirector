@@ -18,14 +18,34 @@ namespace bladeDirector
         public string bladeIP;
         public string iLOIP;
         public ushort iLOPort;
+        
+        /// <summary>
+        /// Exposed via WCF to the service
+        /// </summary>
+        // ReSharper disable once MemberCanBePrivate.Global
         public string iLoUsername;
+        
+        /// <summary>
+        /// Exposed via WCF to the service
+        /// </summary>
+        // ReSharper disable once MemberCanBePrivate.Global
         public string iLoPassword;
+
         public bool currentlyHavingBIOSDeployed = false;
         public bool currentlyBeingAVMServer = false;
         public string lastDeployedBIOS = null;
         public long bladeID;
 
+        /// <summary>
+        /// Exposed via WCF to the service
+        /// </summary>
+        // ReSharper disable once MemberCanBePrivate.Global
         public string ESXiUsername;
+
+        /// <summary>
+        /// Exposed via WCF to the service
+        /// </summary>
+        // ReSharper disable once MemberCanBePrivate.Global
         public string ESXiPassword;
 
         private int maxVMs = 20;

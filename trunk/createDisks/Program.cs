@@ -130,7 +130,7 @@ namespace createDisks
                 Properties.Settings.Default.iloHostUsername, Properties.Settings.Default.iloHostPassword,
                 hyp.nodeiLoIP, Properties.Settings.Default.iloUsername, Properties.Settings.Default.iloPassword,
                 Properties.Settings.Default.iscsiServerIP, Properties.Settings.Default.iscsiServerUsername, Properties.Settings.Default.iscsiServerPassword,
-                "", (ushort)hyp.kernelDebugPort, hyp.kernelDebugKey));
+                "", "", (ushort)hyp.kernelDebugPort, hyp.kernelDebugKey));
         }
 
         public static bool doesConfigExist(itemToAdd blade, string tagName)
@@ -340,7 +340,7 @@ namespace createDisks
                 Properties.Settings.Default.iloHostUsername, Properties.Settings.Default.iloHostPassword,
                 itemToAdd.nodeiLoIP, Properties.Settings.Default.iloUsername, Properties.Settings.Default.iloPassword,
                 nasIP, nasUsername, nasPassword,
-                "", (ushort) itemToAdd.kernelDebugPort, itemToAdd.kernelDebugKey);
+                null, null, (ushort) itemToAdd.kernelDebugPort, itemToAdd.kernelDebugKey);
 
             using (hypervisor_iLo ilo = new hypervisor_iLo(spec))
             {
@@ -550,7 +550,8 @@ namespace createDisks
                     newExtent = nas.addISCSIExtent(new iscsiExtent()
                     {
                         iscsi_target_extent_name = toAdd.targetName,
-                        iscsi_target_extent_path = String.Format("/dev/zvol/SSDs/{0}", toAdd.targetName)
+                        iscsi_target_extent_type = "Disk",
+                        iscsi_target_extent_disk = String.Format("zvol/SSDs/{0}", toAdd.targetName)
                     });
                 }
 

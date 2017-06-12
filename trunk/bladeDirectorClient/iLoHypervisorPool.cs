@@ -25,7 +25,7 @@ namespace bladeDirectorClient
         private readonly object keepaliveThreadLock = new object();
         private Thread keepaliveThread = null;
 
-        public hypervisorCollection<hypSpec_vmware> requestVMs(VMSpec[] specs)
+        public hypervisorCollection<hypSpec_vmware> requestVMs(VMSpec[] specs, string snapshotname)
         {
             startKeepaliveThreadIfNotRunning();
 
@@ -55,6 +55,7 @@ namespace bladeDirectorClient
                 hypervisorCollection<hypSpec_vmware> toRet = new hypervisorCollection<hypSpec_vmware>();
                 try
                 {
+                    int idx = 0;
                     foreach (resultCodeAndBladeName res in results)
                     {
                         resultCodeAndBladeName progress;
@@ -70,10 +71,11 @@ namespace bladeDirectorClient
 
                         vmSpec vmSpec = director.getConfigurationOfVM(progress.bladeName);
                         bladeSpec vmServerSpec = director.getConfigurationOfBladeByID((int) vmSpec.parentBladeID);
+
                         hypSpec_vmware newSpec = new hypSpec_vmware(
                             vmSpec.displayName, vmServerSpec.bladeIP, vmServerSpec.ESXiUsername, vmServerSpec.ESXiPassword,
-                            vmSpec.username, vmSpec.password, vmSpec.kernelDebugPort, vmSpec.kernelDebugKey, vmSpec.VMIP);
-                        newSpec.snapshotName = director.getCurrentSnapshotForBlade(vmSpec.VMIP);
+                            vmSpec.username, vmSpec.password, snapshotname, vmSpec.kernelDebugPort, vmSpec.kernelDebugKey, vmSpec.VMIP);
+
                         hypervisor_vmware newVM = new hypervisor_vmware(newSpec);
 
                         ensurePortIsFree(vmSpec.kernelDebugPort);
@@ -85,6 +87,8 @@ namespace bladeDirectorClient
                         newVM.setDisposalCallback(onDestruction);
                         if (!toRet.TryAdd(vmSpec.VMIP, newVM))
                             throw new Exception();
+
+                        idx++;
                     }
                 }
                 catch (Exception)
@@ -143,13 +147,13 @@ namespace bladeDirectorClient
                             throw new Exception("Can't find snapshot " + snapshotName);
                         // FIXME: oh no, we can't call .getCurrentSnapshotForBlade until our blade is successfully allocated to
                         // us, otherwise we might get a snapshot for some other host!
-                        string snapshot = director.getCurrentSnapshotForBlade(nodeName);
+                        string snapshotUnfriendlyName = director.getFreeNASSnapshotPath(nodeName);
 
                         hypSpec_iLo spec = new hypSpec_iLo(
                             bladeConfig.bladeIP, iloHostUsername, iloHostPassword,
                             bladeConfig.iLOIP, iloUsername, iloPassword,
                             iloISCSIIP, iloISCSIUsername, iloISCSIPassword,
-                            snapshot, bladeConfig.iLOPort, iloKernelKey
+                            snapshotName, snapshotUnfriendlyName, bladeConfig.iLOPort, iloKernelKey
                             );
 
                         ensurePortIsFree(bladeConfig.iLOPort);
@@ -299,13 +303,13 @@ namespace bladeDirectorClient
                     }
                     if (res != resultCode.success)
                         throw new Exception("Can't find snapshot " + snapshotName);
-                    string snapshot = director.getCurrentSnapshotForBlade(allocatedBladeResult.bladeName);
+                    string unfriendlySnapshotName = director.getFreeNASSnapshotPath(allocatedBladeResult.bladeName);
 
                     hypSpec_iLo spec = new hypSpec_iLo(
                         bladeConfig.bladeIP, iloHostUsername, iloHostPassword,
                         bladeConfig.iLOIP, iloUsername, iloPassword,
                         iloISCSIIP, iloISCSIUsername, iloISCSIPassword,
-                        snapshot, bladeConfig.iLOPort, iloKernelKey
+                        snapshotName, unfriendlySnapshotName, bladeConfig.iLOPort, iloKernelKey
                         );
                     
                     ensurePortIsFree(bladeConfig.iLOPort);
