@@ -352,7 +352,7 @@ namespace tests
         {
             return  new hypSpec_vmware(vmCfg.displayName, vmServer.bladeIP, 
                 vmServer.ESXiUsername, vmServer.ESXiPassword,
-                vmCfg.username, vmCfg.password, VMSnapshotName, 
+                vmCfg.username, vmCfg.password, VMSnapshotName, null,
                 swSpec.debuggerPort, swSpec.debuggerKey, vmCfg.VMIP );
         }
     }

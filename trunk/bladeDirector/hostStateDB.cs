@@ -627,7 +627,7 @@ namespace bladeDirector
             toDel.deleteInDB(conn);
 
             hypSpec_vmware spec = new hypSpec_vmware(toDel.displayName, parentBladeSpec.bladeIP, Properties.Settings.Default.esxiUsername, Properties.Settings.Default.esxiPassword,
-               Properties.Settings.Default.vmUsername, Properties.Settings.Default.vmPassword, null,
+               Properties.Settings.Default.vmUsername, Properties.Settings.Default.vmPassword, null, null,
                 0, "", toDel.VMIP);
 
             try
@@ -983,7 +983,7 @@ namespace bladeDirector
             Program.addBlades(new[] {itm}, tagName, "localhost/bladeDirector", "bladebasestable-esxi", null, null, 
                 (a,b) => new hypervisor_vmware(new hypSpec_vmware(a.computerName,
                 threadState.VMServer.bladeIP, Properties.Settings.Default.esxiUsername, Properties.Settings.Default.esxiPassword,
-                Properties.Settings.Default.vmUsername, Properties.Settings.Default.vmPassword, null, 
+                Properties.Settings.Default.vmUsername, Properties.Settings.Default.vmPassword, null, null,
                 threadState.swSpec.debuggerPort, threadState.swSpec.debuggerKey, threadState.childVM.VMIP), clientExecutionMethod.smb), threadState.deployDeadline );
 
             Debug.WriteLine(DateTime.Now + threadState.childVM.VMIP + ": add complete");
