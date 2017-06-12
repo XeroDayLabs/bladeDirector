@@ -148,6 +148,13 @@ namespace bladeDirector
         }
         
         [WebMethod]
+        public string getFreeNASSnapshotPath(string NodeIP)
+        {
+            string requestorIP = HttpContext.Current.Request.UserHostAddress;
+            return hostStateDB.getFreeNASSnapshotPath(requestorIP, NodeIP);
+        }
+        
+        [WebMethod]
         public string getLastDeployedBIOSForBlade(string NodeIP)
         {
             return hostStateDB.getLastDeployedBIOSForBlade(NodeIP);

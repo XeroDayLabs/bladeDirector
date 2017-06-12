@@ -1567,6 +1567,14 @@ namespace bladeDirector
             state.biosUpdateSocket.BeginConnect(new IPEndPoint(IPAddress.Parse(state.nodeIp), 22), state.onBootFinish, state);
             return true;
         }
+
+        public static string getFreeNASSnapshotPath(string requestorIp, string nodeIp)
+        {
+            bladeOwnership ownership = getBladeOrVMOwnershipByIP(nodeIp);
+            if (ownership == null)
+                return resultCode.bladeNotFound;
+            return String.Format("{0}-{1}-{2}", nodeIp, requestorIp, ownership.currentSnapshot);
+        }
     }
 
     public class bladeState

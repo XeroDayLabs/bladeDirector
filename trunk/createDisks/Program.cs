@@ -119,7 +119,7 @@ namespace createDisks
             }
             else
             {
-                addBlades<hypSpec_iLo>(itemsToAdd.ToArray(), args.tagName, args.bladeDirectorURL, args.baseSnapshot, args.additionalScript, args.additionalDeploymentItems, makeILOHyp);
+                addBlades(itemsToAdd.ToArray(), args.tagName, args.bladeDirectorURL, args.baseSnapshot, args.additionalScript, args.additionalDeploymentItems, makeILOHyp);
             }
         }
 
@@ -550,7 +550,7 @@ namespace createDisks
                     newExtent = nas.addISCSIExtent(new iscsiExtent()
                     {
                         iscsi_target_extent_name = toAdd.targetName,
-                        iscsi_target_extent_path = String.Format("zvol/SSDs/{0}", toAdd.targetName)
+                        iscsi_target_extent_path = String.Format("/dev/zvol/SSDs/{0}", toAdd.targetName)
                     });
                 }
 
