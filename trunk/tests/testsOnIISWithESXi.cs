@@ -73,6 +73,85 @@ namespace tests
 
         [TestMethod]
         [TestCategory("skipOnCI")]
+        public void canAllocateVMAndAddUser()
+        {
+            using (servicesSoapClient uut = new networkService.servicesSoapClient("servicesSoap"))
+            {
+                VMHardwareSpec hwSpec = new VMHardwareSpec() { memoryMB = 2344, cpuCount = 2 };
+                VMSoftwareSpec swSpec = new VMSoftwareSpec()
+                {
+                    forceRecreate = true, 
+                    usersToAdd = new userAddRequest[]
+                    {
+                        new userAddRequest() { username = "testuser", password = "testpassword", isAdministrator = false},
+                        new userAddRequest() { username = "testAdmin", password = "testpassword", isAdministrator = true}
+                    }
+                };
+                resultCodeAndBladeName allocRes = uut.RequestAnySingleVM(hwSpec, swSpec);
+                Assert.AreEqual(tests.networkService.resultCode.pending, allocRes.code);
+                string waitToken = allocRes.waitToken;
+
+                // Wait until the operation is complete
+                DateTime deadline = DateTime.Now + TimeSpan.FromMinutes(15);
+                while (true)
+                {
+                    allocRes = uut.getProgressOfVMRequest(waitToken);
+                    if (allocRes.code == resultCode.pending)
+                    {
+                        // .. keep waiting ..
+                        Thread.Sleep(TimeSpan.FromSeconds(10));
+                    }
+                    else if (allocRes.code == resultCode.success)
+                    {
+                        break;
+                    }
+                    else
+                    {
+                        Assert.Fail("unexpected state during VM provisioning: " + allocRes.code);
+                    }
+
+                    if (DateTime.Now > deadline)
+                        throw new TimeoutException();
+                }
+
+                try
+                {
+                    vmSpec vmCfg = uut.getConfigurationOfVM(allocRes.bladeName);
+                    bladeSpec vmServer = uut.getConfigurationOfBladeByID((int)vmCfg.parentBladeID);
+                    hypSpec_vmware spec = makeHypFromSpec(vmCfg, swSpec, "clean", vmServer);
+
+                    using (hypervisor_vmware hyp = new hypervisor_vmware(spec, clientExecutionMethod.smb))
+                    {
+                        hyp.powerOn();
+
+                        // Check both users are created.
+                        SMBExecutor exec_user = new SMBExecutor(allocRes.bladeName, "testuser", "testpassword");
+                        SMBExecutor exec_admin = new SMBExecutor(allocRes.bladeName, "testAdmin", "testpassword");
+                        executionResult res = null;
+
+                        hypervisor_iLo.doWithRetryOnSomeExceptions(() => res = exec_user.startExecutable("cmd.exe", "/c echo %USERNAME%"));
+                        Assert.AreEqual("testuser", res.stdout.Trim('\r', '\n', ' '));
+
+                        hypervisor_iLo.doWithRetryOnSomeExceptions(() => res = exec_admin.startExecutable("cmd.exe", "/c echo %USERNAME%"));
+                        Assert.AreEqual("testAdmin", res.stdout.Trim('\r', '\n', ' '));
+
+                        // And now check group assignment.
+                        hypervisor_iLo.doWithRetryOnSomeExceptions(() => res = exec_admin.startExecutable("cmd.exe", "/c whoami /groups"));
+                        Assert.IsTrue(res.stdout.Contains("Administrators"));
+
+                        hypervisor_iLo.doWithRetryOnSomeExceptions(() => res = exec_user.startExecutable("cmd.exe", "/c whoami /groups"));
+                        Assert.IsFalse(res.stdout.Contains("Administrators"));
+                    }
+                }
+                finally
+                {
+                    uut.releaseBladeOrVM(allocRes.bladeName);
+                }
+            }
+        }
+
+        [TestMethod]
+        [TestCategory("skipOnCI")]
         public void canAllocateVMAndProvisionWithCorrectVMNameAndKernelDebugInfo()
         {
             using (servicesSoapClient uut = new networkService.servicesSoapClient("servicesSoap"))
@@ -102,7 +181,7 @@ namespace tests
                     // and checking it is correct.
                     vmSpec vmCfg = uut.getConfigurationOfVM(allocRes.bladeName);
                     networkService.bladeSpec vmServer = uut.getConfigurationOfBladeByID((int) vmCfg.parentBladeID);
-                    hypSpec_vmware spec = makeHypFromSpec(vmCfg, swSpec, vmServer);
+                    hypSpec_vmware spec = makeHypFromSpec(vmCfg, swSpec, "clean", vmServer);
 
                     using (hypervisor_vmware hyp = new hypervisor_vmware(spec, clientExecutionMethod.smb))
                     {
@@ -269,11 +348,11 @@ namespace tests
             return allocRes;
         }
 
-        public static hypSpec_vmware makeHypFromSpec(vmSpec vmCfg, VMSoftwareSpec swSpec, networkService.bladeSpec vmServer)
+        public static hypSpec_vmware makeHypFromSpec(vmSpec vmCfg, VMSoftwareSpec swSpec, string VMSnapshotName, bladeSpec vmServer)
         {
             return  new hypSpec_vmware(vmCfg.displayName, vmServer.bladeIP, 
-                vmServer.ESXiUsername, vmServer.ESXiPassword, 
-                vmCfg.username, vmCfg.password, 
+                vmServer.ESXiUsername, vmServer.ESXiPassword,
+                vmCfg.username, vmCfg.password, VMSnapshotName, 
                 swSpec.debuggerPort, swSpec.debuggerKey, vmCfg.VMIP );
         }
     }
