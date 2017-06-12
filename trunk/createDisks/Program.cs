@@ -119,7 +119,7 @@ namespace createDisks
             }
             else
             {
-                addBlades<hypSpec_iLo>(itemsToAdd.ToArray(), args.tagName, args.bladeDirectorURL, args.baseSnapshot, args.additionalScript, args.additionalDeploymentItems, makeILOHyp);
+                addBlades(itemsToAdd.ToArray(), args.tagName, args.bladeDirectorURL, args.baseSnapshot, args.additionalScript, args.additionalDeploymentItems, makeILOHyp);
             }
         }
 

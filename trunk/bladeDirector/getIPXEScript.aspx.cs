@@ -92,6 +92,7 @@ namespace bladeDirector
                 }
 
                 script = script.Replace("{BLADE_NETMASK_ISCSI}", "255.255.192.0");
+                script = script.Replace("{BLADE_OWNER}", hostStateDB.getBladeOrVMOwnershipByIP(srcIP).currentOwner);
                 script = script.Replace("{BLADE_SNAPSHOT}", hostStateDB.getCurrentSnapshotForBladeOrVM(srcIP));
             }
             Response.Write(script);
