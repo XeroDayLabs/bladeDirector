@@ -71,10 +71,13 @@ namespace bladeDirectorClient
 
                         vmSpec vmSpec = director.getConfigurationOfVM(progress.bladeName);
                         bladeSpec vmServerSpec = director.getConfigurationOfBladeByID((int) vmSpec.parentBladeID);
+                        string snapshotFriendlyName = director.getCurrentSnapshotForBlade(progress.bladeName);
+                        string snapshotUnfriendlyName = director.getFreeNASSnapshotPath(progress.bladeName);
 
                         hypSpec_vmware newSpec = new hypSpec_vmware(
                             vmSpec.displayName, vmServerSpec.bladeIP, vmServerSpec.ESXiUsername, vmServerSpec.ESXiPassword,
-                            vmSpec.username, vmSpec.password, specs[idx].sw.snapshotFriendlyName, null, vmSpec.kernelDebugPort, vmSpec.kernelDebugKey, vmSpec.VMIP);
+                            vmSpec.username, vmSpec.password, snapshotFriendlyName, snapshotUnfriendlyName, 
+                            vmSpec.kernelDebugPort, vmSpec.kernelDebugKey, vmSpec.VMIP);
 
                         hypervisor_vmware newVM = new hypervisor_vmware(newSpec);
 
