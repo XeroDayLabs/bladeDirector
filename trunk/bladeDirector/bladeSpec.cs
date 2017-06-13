@@ -241,7 +241,9 @@ namespace bladeDirector
         public vmSpec createChildVM(SQLiteConnection conn, VMHardwareSpec reqhw, VMSoftwareSpec reqsw, string newOwner)
         {
             vmSpec newVM = new vmSpec();
-            newVM.currentOwner = newOwner;
+            newVM.currentOwner = "vmserver";    // We own the blade until we are done setting it up
+            newVM.state = bladeStatus.inUseByDirector;
+            newVM.nextOwner = newOwner;
             newVM.parentBladeID = this.bladeID;
             newVM.hwSpec = reqhw;
             newVM.indexOnServer = getChildVMs(conn).Count + 1;
@@ -259,6 +261,8 @@ namespace bladeDirector
                 reqsw.debuggerPort = (ushort) (50000 + ((VMServerIPBytes[3] - 100) * 100) + newVM.indexOnServer);
             newVM.kernelDebugPort = reqsw.debuggerPort;
             newVM.kernelDebugKey = reqsw.debuggerKey;
+            // VMs always have this implicit snapshot.
+            newVM.currentSnapshot = "vm";
 
             return newVM;
         }

@@ -758,9 +758,6 @@ namespace bladeDirector
                     // VM which conflicts with anything. If it does conflict, check the conflict is with an unused VM, and then 
                     // delete it before we add.
                     vmSpec childVM = freeVMServer.createChildVM(conn, hwSpec, swReq, requestorIP);
-                    childVM.currentOwner = "vmserver";
-                    childVM.nextOwner = requestorIP;
-                    childVM.state = bladeStatus.inUseByDirector;
                     // Check for conflicts
                     foreach (vmSpec currentlyExistingVM in getVMByVMServerIP(freeVMServer.bladeIP))
                     {
@@ -957,13 +954,12 @@ namespace bladeDirector
             }
 
             // If the VM already has disks set up, delete them.
-            string tagName = "vm";
 
             itemToAdd itm = new itemToAdd();
             itm.bladeIP = threadState.childVM.VMIP;
-            itm.cloneName = threadState.childVM.VMIP + "-" + tagName;
+            itm.cloneName = threadState.childVM.VMIP + "-" + threadState.childVM.currentSnapshot;
             itm.computerName = threadState.childVM.displayName;
-            itm.snapshotName = tagName;
+            itm.snapshotName = threadState.childVM.currentSnapshot;
             itm.kernelDebugPort = threadState.swSpec.debuggerPort;
             itm.serverIP = threadState.swSpec.debuggerHost;
             itm.kernelDebugKey = threadState.swSpec.debuggerKey;
@@ -980,7 +976,7 @@ namespace bladeDirector
 
             Debug.WriteLine(DateTime.Now + threadState.childVM.VMIP + ": adding");
             // Now create the disks, and customise the VM  by naming it appropriately.
-            Program.addBlades(new[] {itm}, tagName, "localhost/bladeDirector", "bladebasestable-esxi", null, null, 
+            Program.addBlades(new[] {itm}, itm.snapshotName, "localhost/bladeDirector", "bladebasestable-esxi", null, null, 
                 (a,b) => new hypervisor_vmware(new hypSpec_vmware(a.computerName,
                 threadState.VMServer.bladeIP, Properties.Settings.Default.esxiUsername, Properties.Settings.Default.esxiPassword,
                 Properties.Settings.Default.vmUsername, Properties.Settings.Default.vmPassword, null, null,
@@ -995,7 +991,7 @@ namespace bladeDirector
 
             // Now we can select the new snapshot
             Debug.WriteLine(DateTime.Now + threadState.childVM.VMIP + ": selecting");
-            resultCode snapshotRes = selectSnapshotForBladeOrVM(threadState.childVM.VMIP, tagName);
+            resultCode snapshotRes = selectSnapshotForBladeOrVM(threadState.childVM.VMIP, itm.snapshotName);
             while (snapshotRes == resultCode.pending)
             {
                 snapshotRes = selectSnapshotForBladeOrVM_getProgress(threadState.childVM.VMIP);

@@ -93,7 +93,10 @@ namespace bladeDirector
 
                 bladeOwnership bladeOwnership = hostStateDB.getBladeOrVMOwnershipByIP(srcIP);
                 script = script.Replace("{BLADE_NETMASK_ISCSI}", "255.255.192.0");
-                script = script.Replace("{BLADE_OWNER}", bladeOwnership.currentOwner);
+                string ownershipToPresent = bladeOwnership.currentOwner;
+                if (ownershipToPresent == "vmserver")
+                    ownershipToPresent = bladeOwnership.nextOwner;
+                script = script.Replace("{BLADE_OWNER}", ownershipToPresent);
                 script = script.Replace("{BLADE_SNAPSHOT}", bladeOwnership.currentSnapshot);
             }
             Response.Write(script);
