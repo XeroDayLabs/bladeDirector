@@ -726,7 +726,7 @@ namespace bladeDirector
 
         public static resultCodeAndBladeName RequestAnySingleVM(string requestorIP, VMHardwareSpec hwSpec, VMSoftwareSpec swReq )
         {
-            if (hwSpec.memoryMB%4 != 0)
+            if (hwSpec.memoryMB % 4 != 0)
             {
                 // Fun fact: ESXi VM memory size must be a multiple of 4mb.
                 logEvents.Add("Failed VM alloc: memory size " + hwSpec.memoryMB + " is not a multiple of 4MB");
@@ -957,7 +957,7 @@ namespace bladeDirector
             }
 
             // If the VM already has disks set up, delete them.
-            string tagName = (threadState.swSpec.debuggerHost ?? "nodebug") + "-vm";
+            string tagName = "vm";
 
             itemToAdd itm = new itemToAdd();
             itm.bladeIP = threadState.childVM.VMIP;
