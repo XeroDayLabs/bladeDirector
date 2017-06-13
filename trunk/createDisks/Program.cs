@@ -32,6 +32,7 @@ namespace createDisks
         public string snapshotName;
         public string kernelDebugKey;
         public userAddRequest[] usersToAdd;
+        public bool isVirtualMachine;
     }
 
     public class userAddRequest
@@ -358,24 +359,27 @@ namespace createDisks
             hyp.powerOff();
             Debug.WriteLine(itemToAdd.bladeIP + " powered down, allocating via bladeDirector");
 
-            // We must ensure the blade is allocated to the required blade before we power it on. This will cause it to
-            // use the required iSCSI root path.
-            EndpointAddress ep = new EndpointAddress(String.Format("http://{0}/services.asmx", directorURL));
-            BasicHttpBinding binding = new BasicHttpBinding();
-            using (bladeDirector.servicesSoapClient bladeDirectorClient = new bladeDirector.servicesSoapClient(binding, ep))
+            if (!itemToAdd.isVirtualMachine)
             {
-                bladeDirectorClient.Open();
-                resultCode res = bladeDirectorClient.forceBladeAllocation(itemToAdd.bladeIP, itemToAdd.serverIP);
-                if (res != resultCode.success)
-                    throw new Exception("Can't claim blade " + itemToAdd.bladeIP);
-                resultCode shotResCode = bladeDirectorClient.selectSnapshotForBladeOrVM(itemToAdd.bladeIP, tagName);
-                while (shotResCode == resultCode.pending)
+                // We must ensure the blade is allocated to the required blade before we power it on. This will cause it to
+                // use the required iSCSI root path.
+                EndpointAddress ep = new EndpointAddress(String.Format("http://{0}/services.asmx", directorURL));
+                BasicHttpBinding binding = new BasicHttpBinding();
+                using (bladeDirector.servicesSoapClient bladeDirectorClient = new bladeDirector.servicesSoapClient(binding, ep))
                 {
-                    Thread.Sleep(TimeSpan.FromSeconds(4));
-                    shotResCode = bladeDirectorClient.selectSnapshotForBladeOrVM_getProgress(itemToAdd.bladeIP);
+                    bladeDirectorClient.Open();
+                    resultCode res = bladeDirectorClient.forceBladeAllocation(itemToAdd.bladeIP, itemToAdd.serverIP);
+                    if (res != resultCode.success)
+                        throw new Exception("Can't claim blade " + itemToAdd.bladeIP);
+                    resultCode shotResCode = bladeDirectorClient.selectSnapshotForBladeOrVM(itemToAdd.bladeIP, tagName);
+                    while (shotResCode == resultCode.pending)
+                    {
+                        Thread.Sleep(TimeSpan.FromSeconds(4));
+                        shotResCode = bladeDirectorClient.selectSnapshotForBladeOrVM_getProgress(itemToAdd.bladeIP);
+                    }
+                    if (shotResCode != resultCode.success)
+                        throw new Exception("Can't select snapshot on blade " + itemToAdd.bladeIP);
                 }
-                if (shotResCode != resultCode.success)
-                    throw new Exception("Can't select snapshot on blade " + itemToAdd.bladeIP);
             }
             Debug.WriteLine(itemToAdd.bladeIP + " allocated, powering up");
             hyp.powerOn();

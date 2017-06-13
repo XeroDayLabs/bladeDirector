@@ -772,7 +772,6 @@ namespace bladeDirector
                             releaseVM(childVM);
                         }
                     }
-                    childVM.createInDB(conn);
 
                     string waitToken = childVM.VMIP.ToString();
 
@@ -784,7 +783,13 @@ namespace bladeDirector
                             // Yes, a deploy was in progress - but now it is finished.
                             VMDeployState.Remove(waitToken);
                         }
+                        else
+                        {
+                            return new resultCodeAndBladeName() { code = resultCode.bladeInUse };
+                        }
                     }
+
+                    childVM.createInDB(conn);
 
                     // Now start a new thread, which will ensure the VM server is powered up and then add the child VMs.
                     Thread worker = new Thread(VMServerBootThread);
@@ -954,16 +959,8 @@ namespace bladeDirector
             }
 
             // If the VM already has disks set up, delete them.
-
-            itemToAdd itm = new itemToAdd();
-            itm.bladeIP = threadState.childVM.VMIP;
-            itm.cloneName = threadState.childVM.VMIP + "-" + threadState.childVM.currentSnapshot;
-            itm.computerName = threadState.childVM.displayName;
-            itm.snapshotName = threadState.childVM.currentSnapshot;
-            itm.kernelDebugPort = threadState.swSpec.debuggerPort;
-            itm.serverIP = threadState.swSpec.debuggerHost;
-            itm.kernelDebugKey = threadState.swSpec.debuggerKey;
-            itm.usersToAdd = threadState.swSpec.usersToAdd;
+            // Note that we own the VM now, but want to make the VM as if the real requestor owned it.
+            itemToAdd itm = threadState.childVM.toItemToAdd(true);
 
             if (threadState.deployDeadline < DateTime.Now)
                 throw new TimeoutException();

@@ -139,15 +139,19 @@ namespace bladeDirector
             return resultCode.success;
         }
  
-        public override itemToAdd toItemToAdd()
+        public override itemToAdd toItemToAdd(bool useNextOwner = false)
         {
             itemToAdd toRet = new itemToAdd();
 
-            toRet.cloneName = this.VMIP + "-" + this.currentSnapshot;
+            if (useNextOwner)
+                toRet.cloneName = this.VMIP + "-" + this.nextOwner + "-" + this.currentSnapshot;
+            else
+                toRet.cloneName = this.VMIP + "-" + this.currentOwner + "-" + this.currentSnapshot;
             toRet.serverIP = this.currentOwner;
             toRet.snapshotName = this.currentSnapshot;
             toRet.bladeIP = this.VMIP;
             toRet.computerName = this.displayName;
+            toRet.isVirtualMachine = true;
 
             return toRet;
         }

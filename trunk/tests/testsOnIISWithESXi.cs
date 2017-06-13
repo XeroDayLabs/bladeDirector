@@ -67,7 +67,7 @@ namespace tests
                 Assert.AreEqual("00:50:56:01:31:01", VMConfig.eth1MAC);
                 Assert.AreEqual(2344, VMConfig.hwSpec.memoryMB);
                 Assert.AreEqual(2, VMConfig.hwSpec.cpuCount);
-                //Assert.AreEqual("::1", VMConfig.currentOwner);
+                Assert.AreEqual("::1", VMConfig.currentOwner);
             }
         }
 

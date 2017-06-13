@@ -267,15 +267,19 @@ namespace bladeDirector
             return newVM;
         }
 
-        public override itemToAdd toItemToAdd()
+        public override itemToAdd toItemToAdd(bool useNextOwner)
         {
             itemToAdd toRet = new itemToAdd();
 
-            toRet.cloneName = this.bladeIP + "-" + this.currentOwner + "-" + this.currentSnapshot;
+            if (useNextOwner)
+                toRet.cloneName = this.bladeIP + "-" + this.nextOwner + "-" + this.currentSnapshot;
+            else
+                toRet.cloneName = this.bladeIP + "-" + this.currentOwner + "-" + this.currentSnapshot;
             toRet.serverIP = this.currentOwner;
             toRet.snapshotName = this.currentSnapshot;
             toRet.bladeIP = this.bladeIP;
             toRet.computerName = this.bladeIP;
+            toRet.isVirtualMachine = false;
 
             return toRet;
         }

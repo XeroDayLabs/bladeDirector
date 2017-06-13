@@ -32,7 +32,7 @@ namespace bladeDirector
         [WebMethod]
         public void keepAlive()
         {
-            string srcIp = HttpContext.Current.Request.UserHostAddress;
+            string srcIp = sanitizeAddress(HttpContext.Current.Request.UserHostAddress);
             _keepAlive(srcIp);
         }
 
@@ -58,14 +58,14 @@ namespace bladeDirector
         [WebMethod]
         public resultCodeAndBladeName RequestAnySingleNode()
         {
-            string srcIp = HttpContext.Current.Request.UserHostAddress;
+            string srcIp = sanitizeAddress(HttpContext.Current.Request.UserHostAddress);
             return hostStateDB.RequestAnySingleNode(srcIp);
         }
 
         [WebMethod]
         public resultCode RequestNode(string NodeIP)
         {
-            string srcIp = HttpContext.Current.Request.UserHostAddress;
+            string srcIp = sanitizeAddress(HttpContext.Current.Request.UserHostAddress);
             return RequestNode(NodeIP, srcIp);
         }
 
@@ -77,7 +77,7 @@ namespace bladeDirector
         [WebMethod]
         public GetBladeStatusResult GetBladeStatus(string NodeIP)
         {
-            string srcIp = HttpContext.Current.Request.UserHostAddress;
+            string srcIp = sanitizeAddress(HttpContext.Current.Request.UserHostAddress);
             return GetBladeStatus(NodeIP, srcIp);
         }
 
@@ -89,7 +89,7 @@ namespace bladeDirector
         [WebMethod]
         public bool isBladeMine(string NodeIP)
         {
-            string srcIp = HttpContext.Current.Request.UserHostAddress;
+            string srcIp = sanitizeAddress(HttpContext.Current.Request.UserHostAddress);
             return isBladeMine(NodeIP, srcIp);
         }
 
@@ -101,7 +101,7 @@ namespace bladeDirector
         [WebMethod]
         public resultCode releaseBladeOrVM(string NodeIP)
         {
-            string srcIp = HttpContext.Current.Request.UserHostAddress;
+            string srcIp = sanitizeAddress(HttpContext.Current.Request.UserHostAddress);
             return hostStateDB.releaseBladeOrVM(NodeIP, srcIp, false);
         }
 
@@ -150,10 +150,10 @@ namespace bladeDirector
         [WebMethod]
         public string getFreeNASSnapshotPath(string NodeIP)
         {
-            string requestorIP = HttpContext.Current.Request.UserHostAddress;
+            string requestorIP = sanitizeAddress(HttpContext.Current.Request.UserHostAddress);
             return hostStateDB.getFreeNASSnapshotPath(requestorIP, NodeIP);
         }
-        
+
         [WebMethod]
         public string getLastDeployedBIOSForBlade(string NodeIP)
         {
@@ -163,14 +163,14 @@ namespace bladeDirector
         [WebMethod]
         public resultCode rebootAndStartDeployingBIOSToBlade(string NodeIP, string BIOSXML)
         {
-            string requestorIP = HttpContext.Current.Request.UserHostAddress;
+            string requestorIP = sanitizeAddress(HttpContext.Current.Request.UserHostAddress);
             return hostStateDB.rebootAndStartDeployingBIOSToBlade(NodeIP, requestorIP, BIOSXML);
         }
 
         [WebMethod]
         public resultCode rebootAndStartReadingBIOSConfiguration(string NodeIP)
         {
-            string requestorIP = HttpContext.Current.Request.UserHostAddress;
+            string requestorIP = sanitizeAddress(HttpContext.Current.Request.UserHostAddress);
             return hostStateDB.rebootAndStartReadingBIOSConfiguration(NodeIP, requestorIP);
         }
 
@@ -189,7 +189,7 @@ namespace bladeDirector
         [WebMethod]
         public resultCodeAndBladeName RequestAnySingleVM(VMHardwareSpec hwSpec, VMSoftwareSpec swSpec)
         {
-            string requestorIP = HttpContext.Current.Request.UserHostAddress;
+            string requestorIP = sanitizeAddress(HttpContext.Current.Request.UserHostAddress);
             return hostStateDB.RequestAnySingleVM(requestorIP, hwSpec, swSpec);
         }
 
@@ -210,5 +210,11 @@ namespace bladeDirector
             return hostStateDB.getVMByIP(bladeName);
         }
 
+        private string sanitizeAddress(string toSanitize)
+        {
+            // The ipv6 loopback, ::1, gets used sometimes during VM provisioning. Because of that, we escape the colons into
+            // something that can be present in clone/target/extent names.
+            return toSanitize.Replace(":", "-");
+        }
     }
 }

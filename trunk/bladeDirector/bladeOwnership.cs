@@ -43,13 +43,14 @@ namespace bladeDirector
         public virtual void createInDB(SQLiteConnection conn)
         {
             string cmd_bladeOwnership = "insert into bladeOwnership " +
-                                        "(state, currentOwner, lastKeepAlive, currentSnapshot)" +
+                                        "(state, currentOwner, nextOwner, lastKeepAlive, currentSnapshot)" +
                                         " VALUES " +
-                                        "($state, $currentOwner, $lastKeepAlive, $currentSnapshot)";
+                                        "($state, $currentOwner, $nextOwner, $lastKeepAlive, $currentSnapshot)";
             using (SQLiteCommand cmd = new SQLiteCommand(cmd_bladeOwnership, conn))
             {
                 cmd.Parameters.AddWithValue("$state", state);
                 cmd.Parameters.AddWithValue("$currentOwner", currentOwner);
+                cmd.Parameters.AddWithValue("$nextOwner", nextOwner);
                 cmd.Parameters.AddWithValue("$lastKeepAlive", lastKeepAlive);
                 cmd.Parameters.AddWithValue("$currentSnapshot", currentSnapshot);
                 cmd.ExecuteNonQuery();
@@ -98,7 +99,7 @@ namespace bladeDirector
             }
         }
 
-        public virtual itemToAdd toItemToAdd()
+        public virtual itemToAdd toItemToAdd(bool useNextOwner = false)
         {
             throw new NotImplementedException();
         }
