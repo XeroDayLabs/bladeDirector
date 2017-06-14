@@ -1168,25 +1168,30 @@ namespace bladeDirector
             }
 
             // re-create iscsi target/extent/etc if neccessary, but make sure we do this async, since it may take a few minutes to
-            // get sense from FreeNAS.
-            lock (currentSnapshotSelections)
+            // get sense from FreeNAS. It's not work doing this for virtual machines, since they are re-created on allocation
+            if (!itm.isVirtualMachine)
             {
-                if (currentSnapshotSelections.ContainsKey(nodeIp))
-                    currentSnapshotSelections.Remove(nodeIp);
-                currentSnapshotSelections.Add(nodeIp, resultCode.pending);
+                lock (currentSnapshotSelections)
+                {
+                    if (currentSnapshotSelections.ContainsKey(nodeIp))
+                        currentSnapshotSelections.Remove(nodeIp);
+                    currentSnapshotSelections.Add(nodeIp, resultCode.pending);
+                }
+
+                Task t = new Task(() =>
+                {
+                    Program.repairBladeDeviceNodes(new itemToAdd[] {itm});
+                    lock (currentSnapshotSelections)
+                    {
+                        currentSnapshotSelections[nodeIp] = resultCode.success;
+                    }
+                }
+                    );
+                t.Start();
+                return resultCode.pending;
             }
 
-            Task t = new Task(() =>
-                    {
-                        Program.repairBladeDeviceNodes(new itemToAdd[] {itm});
-                        lock (currentSnapshotSelections)
-                        {
-                            currentSnapshotSelections[nodeIp] = resultCode.success;
-                        }
-                    }
-                );
-            t.Start();
-            return resultCode.pending;
+            return resultCode.success;
         }
 
         public static resultCode selectSnapshotForBladeOrVM_getProgress(string nodeIp)
