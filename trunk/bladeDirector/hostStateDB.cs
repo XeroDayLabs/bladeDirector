@@ -186,7 +186,8 @@ namespace bladeDirector
                 inProgressConnect.biosUpdateSocket = null;
                 if (inProgressConnect.biosUpdateTimeoutCallback != null)
                 {
-                    inProgressConnect.biosUpdateTimeoutCallback.Invoke(inProgressConnect.biosCurrentThreadState);
+                    if (inProgressConnect.biosUpdateTimeoutCallback != null)
+                        inProgressConnect.biosUpdateTimeoutCallback.Invoke(inProgressConnect.biosCurrentThreadState);
                 }
             }
 
