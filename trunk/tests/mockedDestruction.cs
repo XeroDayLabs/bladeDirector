@@ -51,16 +51,6 @@ namespace tests
         [TestMethod]
         public void willDeallocateOldBladesOnLogon()
         {
-            AppDomain.CurrentDomain.AssemblyResolve += (object sender, ResolveEventArgs args) =>
-            {
-                Debug.WriteLine("Client end loading module " + args.Name);
-                if (args.Name.Contains("Hyper"))
-                {
-                    Debugger.Break();
-                }
-                return null; 
-            };
-
             string hostIP = "1.1.1.1";
 
             // Allocate all the blades, then login again. The allocated blades should no longer be allocated.

@@ -192,14 +192,14 @@ namespace bladeDirector
             events.Add(new mockedCall("connect", null));
         }
 
-        public override void powerOn(DateTime deadline = new DateTime())
+        public override void powerOn(DateTime deadline = default(DateTime))
         {
             events.Add(new mockedCall("powerOn", "deadline: " + deadline.ToString("T")));
 
             powerState = true;
         }
 
-        public override void powerOff(DateTime deadline = new DateTime())
+        public override void powerOff(DateTime deadline = default(DateTime))
         {
             events.Add(new mockedCall("powerOff", "deadline: " + deadline.ToString("T")));
 

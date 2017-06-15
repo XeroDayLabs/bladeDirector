@@ -61,7 +61,22 @@ namespace createDisks.Properties {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to .
+        ///   Looks up a localized string similar to @echo on
+        ///REM usage : deployToBlade.bat &lt;computername&gt; [&lt;kernel debug server IP&gt; &lt;kernel debug server port&gt; &lt;kernel debug server key&gt;]
+        ///
+        ///REM Name the computer according to our parameters
+        ///wmic computersystem where caption=&apos;%COMPUTERNAME%&apos; call rename %1
+        ///
+        ///REM enable the kernel debugger
+        ///Set KDHOST=%2
+        ///if DEFINED KDHOST ( 
+        ///	bcdedit /dbgsettings net hostip:%2 port:%3 key:%4
+        ///	bcdedit /debug on
+        ///)
+        ///
+        ///REM Instruct WSUS to regen its SID so that it operates correctly
+        ///net stop wuauserv
+        ///reg delete &quot;HKLM\Softwa [rest of string was truncated]&quot;;.
         /// </summary>
         internal static string deployToBlade {
             get {

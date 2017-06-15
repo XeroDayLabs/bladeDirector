@@ -390,16 +390,6 @@ namespace bladeDirector
 
         public void logIn(string hostIP)
         {
-            // TEMP LOL
-            AppDomain.CurrentDomain.AssemblyResolve += (object sender, ResolveEventArgs args) =>
-            {
-                Debug.WriteLine("Server end loading module " + args.Name);
-                if (args.Name.Contains("Hyper"))
-                {
-                    Debugger.Break();
-                }
-                return null;
-            };
             // Clean up anything that we are currently preparing for this owner
             IEnumerable<vmSpec> bootingVMs = getAllVMInfo().Where(x => x.currentOwner == "vmserver" && x.nextOwner == hostIP);
             foreach (vmSpec allocated in bootingVMs)
@@ -953,7 +943,7 @@ namespace bladeDirector
         private Dictionary<long, bladeState> physicalBladeLocks = new Dictionary<long, bladeState>();
         private void _VMServerBootThread(VMThreadState threadState)
         {
-            Debug.WriteLine(DateTime.Now + threadState.childVM.VMIP  + ": enter thread");
+            Debug.WriteLine(DateTime.Now + threadState.childVM.VMIP + ": enter thread");
             // First, bring up the physical machine. It'll get the ESXi ISCSI config and boot up.
             using (hypervisor hyp = makeHypervisorForBlade_ESXi(threadState.VMServer))
             {
