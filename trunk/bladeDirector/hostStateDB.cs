@@ -42,9 +42,9 @@ namespace bladeDirector
         protected override hypervisor makeHypervisorForVM(vmSpec VM, bladeSpec parentBladeSpec)
         {
             hypSpec_vmware spec = new hypSpec_vmware(VM.displayName, parentBladeSpec.bladeIP,
-                Settings.Default.esxiUsername, Properties.Settings.Default.esxiPassword, Settings.Default.vmUsername,
-                Settings.Default.vmPassword, null, null,
-                0, "", VM.VMIP);
+                Settings.Default.esxiUsername, Properties.Settings.Default.esxiPassword, 
+                Settings.Default.vmUsername, Settings.Default.vmPassword, null, null,
+                VM.kernelDebugPort, VM.kernelDebugKey, VM.VMIP);
 
             return new hypervisor_vmware(spec, clientExecutionMethod.smb);
         }
@@ -86,7 +86,7 @@ namespace bladeDirector
 
         protected override void startBladePowerOff(bladeSpec nodeSpec, string iLoIp)
         {
-            DateTime deadline = DateTime.Now + TimeSpan.FromMinutes(1);
+            DateTime deadline = DateTime.Now + TimeSpan.FromMinutes(3);
 
             using (hypervisor_iLo_HTTP hyp = new hypervisor_iLo_HTTP(iLoIp, Settings.Default.iloUsername, Settings.Default.iloPassword))
             {
@@ -105,7 +105,7 @@ namespace bladeDirector
 
         protected override void startBladePowerOn(bladeSpec nodeSpec, string iLoIp)
         {
-            DateTime deadline = DateTime.Now + TimeSpan.FromMinutes(1);
+            DateTime deadline = DateTime.Now + TimeSpan.FromMinutes(3); // This should be high enough to allow for an in-progress reset
 
             using (hypervisor_iLo_HTTP hyp = new hypervisor_iLo_HTTP(iLoIp, Settings.Default.iloUsername, Settings.Default.iloPassword))
             {

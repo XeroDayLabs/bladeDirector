@@ -1073,14 +1073,8 @@ namespace bladeDirector
             // Now create the disks, and customise the VM  by naming it appropriately.
             Program.addBlades(nas, new[] {itm}, itm.snapshotName, "localhost/bladeDirector", "bladebasestable-esxi", null, null,
                 (a, b) => {
-                              return (hypervisorWithSpec<hypSpec_vmware>) makeHypervisorForVM(threadState.childVM, threadState.VMServer);
+                    return (hypervisorWithSpec<hypSpec_vmware>) makeHypervisorForVM(threadState.childVM, threadState.VMServer);
                 }, threadState.deployDeadline);
-
-            /*
-             new hypervisor_vmware(new hypSpec_vmware(a.computerName,
-                threadState.VMServer.bladeIP, Properties.Settings.Default.esxiUsername, Properties.Settings.Default.esxiPassword,
-                Properties.Settings.Default.vmUsername, Properties.Settings.Default.vmPassword, null, null,
-                threadState.swSpec.debuggerPort, threadState.swSpec.debuggerKey, threadState.childVM.VMIP)*/
 
             Debug.WriteLine(DateTime.Now + threadState.childVM.VMIP + ": add complete");
 
