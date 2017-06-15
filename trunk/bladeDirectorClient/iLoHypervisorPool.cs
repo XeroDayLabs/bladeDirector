@@ -25,9 +25,13 @@ namespace bladeDirectorClient
         private readonly object keepaliveThreadLock = new object();
         private Thread keepaliveThread = null;
 
+        private bool isConnected = false;
+
+        private object _connectionLock = new object();
+
         public hypervisorCollection<hypSpec_vmware> requestVMs(VMSpec[] specs)
         {
-            startKeepaliveThreadIfNotRunning();
+            initialiseIfNeeded();
 
             Binding thisBind = new BasicHttpBinding("servicesSoap");
             thisBind.OpenTimeout = TimeSpan.FromMinutes(5);
@@ -79,13 +83,13 @@ namespace bladeDirectorClient
                             vmSpec.username, vmSpec.password, snapshotFriendlyName, snapshotUnfriendlyName, 
                             vmSpec.kernelDebugPort, vmSpec.kernelDebugKey, vmSpec.VMIP);
 
-                        hypervisor_vmware newVM = new hypervisor_vmware(newSpec);
-
                         ensurePortIsFree(vmSpec.kernelDebugPort);
 
                         // FIXME: these credentials should be passed down from the bladeDirector, I think.
-                        newVM.configureForFreeNASSnapshots(
-                            Properties.Settings.Default.iloISCSIIP, Properties.Settings.Default.iloISCSIUsername, Properties.Settings.Default.iloISCSIPassword );
+                        hypervisor_vmware_FreeNAS newVM = new hypervisor_vmware_FreeNAS(newSpec,
+                            Properties.Settings.Default.iloISCSIIP, 
+                            Properties.Settings.Default.iloISCSIUsername, 
+                            Properties.Settings.Default.iloISCSIPassword );
 
                         newVM.setDisposalCallback(onDestruction);
                         if (!toRet.TryAdd(vmSpec.VMIP, newVM))
@@ -127,7 +131,7 @@ namespace bladeDirectorClient
             string iloISCSIIP, string iloISCSIUsername, string iloISCSIPassword,
             string iloKernelKey, string snapshotName)
         {
-            startKeepaliveThreadIfNotRunning();
+            initialiseIfNeeded();
             using (servicesSoapClient director = new servicesSoapClient("servicesSoap", machinePools.bladeDirectorURL))
             {
                 string[] nodes = director.ListNodes().Split(',');
@@ -161,7 +165,10 @@ namespace bladeDirectorClient
 
                         bladeDirectedHypervisor_iLo newHyp = new bladeDirectedHypervisor_iLo(spec);
                         newHyp.setDisposalCallback(onDestruction);
-                        newHyp.checkSnapshotSanity();
+
+                        NASAccess nas = new FreeNAS(spec);
+                        freeNASSnapshot.getSnapshotObjectsFromNAS(nas, spec.snapshotFullName);
+
                         if (!toRet.TryAdd(bladeConfig.bladeIP, newHyp))
                             throw new Exception();
                     }
@@ -262,7 +269,7 @@ namespace bladeDirectorClient
             string iloKernelKey, 
             string snapshotName)
         {
-            startKeepaliveThreadIfNotRunning();
+            initialiseIfNeeded();
 
             // We request a blade from the blade director, and use them for all our tests, blocking if none are available.
             using (servicesSoapClient director = new servicesSoapClient("servicesSoap", machinePools.bladeDirectorURL))
@@ -315,8 +322,10 @@ namespace bladeDirectorClient
                     
                     ensurePortIsFree(bladeConfig.iLOPort);
 
+                    NASAccess nas = new FreeNAS(spec);
+                    freeNASSnapshot.getSnapshotObjectsFromNAS(nas, spec.snapshotFullName);
+
                     bladeDirectedHypervisor_iLo toRet = new bladeDirectedHypervisor_iLo(spec);
-                    toRet.checkSnapshotSanity();
                     toRet.setDisposalCallback(onDestruction);
                     return toRet;
                 }
@@ -328,7 +337,7 @@ namespace bladeDirectorClient
             }
         }
 
-        private void startKeepaliveThreadIfNotRunning()
+        private void initialiseIfNeeded()
         {
             if (keepaliveThread == null)
             {
@@ -339,6 +348,18 @@ namespace bladeDirectorClient
                         keepaliveThread = new Thread(keepaliveThreadMain);
                         keepaliveThread.Name = "Blade director keepalive thread";
                         keepaliveThread.Start();
+                    }
+                }
+            }
+
+            if (!isConnected)
+            {
+                using (servicesSoapClient director = new servicesSoapClient("servicesSoap", machinePools.bladeDirectorURL))
+                {
+                    lock (_connectionLock)
+                    {
+                        director.logIn();
+                        isConnected = true;
                     }
                 }
             }

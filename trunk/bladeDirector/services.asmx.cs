@@ -4,6 +4,7 @@ using System.Linq;
 using System.ServiceModel.Web;
 using System.Web;
 using System.Web.Services;
+using System.Web.WebSockets;
 
 namespace bladeDirector
 {
@@ -17,15 +18,17 @@ namespace bladeDirector
     // [System.Web.Script.Services.ScriptService]
     public class services : System.Web.Services.WebService
     {
+        public static hostStateDB hostStateDB;
+
         public static void initWithBlades(string[] bladeIPs)
         {
-            hostStateDB.dbFilename = ":memory:";
+            hostStateDB = new hostStateDB();
             hostStateDB.initWithBlades(bladeIPs);
         }
 
         public static void initWithBlades(bladeSpec[] spec)
         {
-            hostStateDB.dbFilename = ":memory:";
+            hostStateDB = new hostStateDB();
             hostStateDB.initWithBlades(spec);
         }
 
@@ -34,6 +37,13 @@ namespace bladeDirector
         {
             string srcIp = sanitizeAddress(HttpContext.Current.Request.UserHostAddress);
             _keepAlive(srcIp);
+        }
+
+        [WebMethod]
+        public void logIn()
+        {
+            string srcIp = sanitizeAddress(HttpContext.Current.Request.UserHostAddress);
+            hostStateDB.logIn(srcIp);
         }
 
         public void _keepAlive(string srcIP)
@@ -201,7 +211,7 @@ namespace bladeDirector
         [WebMethod]
         public resultCodeAndBladeName getProgressOfVMRequest(string waitToken)
         {
-            return hostStateDB.RequestAnySingleVM_getProgress(waitToken);
+            return hostStateDB.getProgressOfVMRequest(waitToken);
         }
 
         [WebMethod]

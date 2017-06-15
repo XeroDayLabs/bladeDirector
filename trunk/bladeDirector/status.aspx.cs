@@ -24,7 +24,7 @@ namespace bladeDirector
 
             tblBladeStatus.Rows.Add(headerRow);
 
-            List<bladeSpec> allBladeInfo = hostStateDB.getAllBladeInfo();
+            List<bladeSpec> allBladeInfo = services.hostStateDB.getAllBladeInfo();
 
             foreach (bladeSpec bladeInfo in allBladeInfo)
             {
@@ -45,7 +45,7 @@ namespace bladeDirector
                 else
                 {
                     string cssClass = "";
-                    if (DateTime.Now - bladeInfo.lastKeepAlive > hostStateDB.keepAliveTimeout)
+                    if (DateTime.Now - bladeInfo.lastKeepAlive > services.hostStateDB.keepAliveTimeout)
                         cssClass = "timedout";
                     TableCell cell = new TableCell
                     {
@@ -73,7 +73,7 @@ namespace bladeDirector
             }
 
             // Finally, populate any log events.
-            List<string> logEvents = hostStateDB.getLogEvents();
+            List<string> logEvents = services.hostStateDB.getLogEvents();
             foreach (string logEvent in logEvents)
                 lstLog.Items.Add(logEvent);
         }
@@ -121,16 +121,17 @@ namespace bladeDirector
             detailTable.Rows.Add(biosConfigRow);
 
             // And add rows for any VMs.
-            vmSpec[] VMs = hostStateDB.getVMByVMServerIP(bladeInfo.bladeIP);
+            vmSpec[] VMs = services.hostStateDB.getVMByVMServerIP(bladeInfo.bladeIP);
             if (VMs.Length > 0)
             {
                 TableRow VMHeaderRow = new TableRow();
                 VMHeaderRow.Cells.Add(new TableHeaderCell() { Text = "" });
+                VMHeaderRow.Cells.Add(new TableHeaderCell() { Text = "Child VM name" });
                 VMHeaderRow.Cells.Add(new TableHeaderCell() { Text = "Child VM IP" });
                 VMHeaderRow.Cells.Add(new TableHeaderCell() { Text = "iSCSI IP" });
                 VMHeaderRow.Cells.Add(new TableHeaderCell() { Text = "Current owner" });
-                VMHeaderRow.Cells.Add(new TableHeaderCell() { Text = "Next owner" });
-                VMHeaderRow.Cells.Add(new TableHeaderCell() { Text = "Current snapshot" });
+                VMHeaderRow.Cells.Add(new TableHeaderCell() { Text = "Kernel debug info" });
+                //VMHeaderRow.Cells.Add(new TableHeaderCell() { Text = "Current snapshot" });
                 detailTable.Rows.Add(VMHeaderRow);
             }
             foreach (vmSpec vmInfo in VMs)
@@ -143,11 +144,13 @@ namespace bladeDirector
                     makeInvisibleDiv()
                     ));
 
+                thisVMRow.Cells.Add(new TableCell() { Text = vmInfo.displayName });
                 thisVMRow.Cells.Add(new TableCell() { Text = vmInfo.VMIP });
                 thisVMRow.Cells.Add(new TableCell() { Text = vmInfo.iscsiIP });
                 thisVMRow.Cells.Add(new TableCell() { Text = vmInfo.currentOwner });
-                thisVMRow.Cells.Add(new TableCell() { Text = vmInfo.nextOwner });
-                thisVMRow.Cells.Add(new TableCell() { Text = vmInfo.currentSnapshot });
+                string dbgStr = String.Format("Port {0} key \"{1}\"", vmInfo.kernelDebugPort, vmInfo.kernelDebugKey) ;
+                thisVMRow.Cells.Add(new TableCell() { Text = dbgStr });
+                //thisVMRow.Cells.Add(new TableCell() { Text = vmInfo.currentSnapshot });
                 detailTable.Rows.Add(thisVMRow);
             }
 
@@ -198,13 +201,13 @@ namespace bladeDirector
         {
             Button clicked = (Button) sender;
 
-            hostStateDB.releaseBladeOrVM(clicked.CommandArgument, "console", true);
+            services.hostStateDB.releaseBladeOrVM(clicked.CommandArgument, "console", true);
         }
         
         protected void cmdAddNode_Click(object sender, EventArgs e)
         {
             bladeSpec newBlade = new bladeSpec(txtNewNodeIP.Text, txtNewISCSI.Text, txtNewIloIP.Text, ushort.Parse(txtNewPort.Text), false, null);
-            hostStateDB.addNode(newBlade);
+            services.hostStateDB.addNode(newBlade);
         }
     }
 }

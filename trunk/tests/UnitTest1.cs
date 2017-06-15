@@ -86,7 +86,7 @@ namespace tests
         {
             bladeDirector.services.initWithBlades(new[] {"1.1.1.1", "2.2.2.2", "3.3.3.3"});
             services uut = new bladeDirector.services();
-            hostStateDB.setKeepAliveTimeout(TimeSpan.FromSeconds(10));
+            services.hostStateDB.setKeepAliveTimeout(TimeSpan.FromSeconds(10));
 
             Assert.AreEqual(resultCode.success, uut.RequestNode("1.1.1.1", "192.168.1.1"));
             Assert.AreEqual(resultCode.pending, uut.RequestNode("1.1.1.1", "192.168.2.2"));
@@ -128,7 +128,7 @@ namespace tests
         {
             bladeDirector.services.initWithBlades(new[] {"1.1.1.1"});
             services uut = new bladeDirector.services();
-            hostStateDB.setKeepAliveTimeout(TimeSpan.FromSeconds(10));
+            services.hostStateDB.setKeepAliveTimeout(TimeSpan.FromSeconds(10));
 
             Assert.AreEqual(resultCode.success, uut.RequestNode("1.1.1.1", "192.168.1.1"));
             Assert.AreEqual(GetBladeStatusResult.yours, uut.GetBladeStatus("1.1.1.1", "192.168.1.1"));
@@ -141,7 +141,7 @@ namespace tests
         {
             bladeDirector.services.initWithBlades(new[] {"1.1.1.1"});
             services uut = new bladeDirector.services();
-            hostStateDB.setKeepAliveTimeout(TimeSpan.FromSeconds(10));
+            services.hostStateDB.setKeepAliveTimeout(TimeSpan.FromSeconds(10));
 
             Assert.AreEqual(resultCode.success, uut.RequestNode("1.1.1.1", "192.168.1.1"));
             Assert.AreEqual(GetBladeStatusResult.yours, uut.GetBladeStatus("1.1.1.1", "192.168.1.1"));

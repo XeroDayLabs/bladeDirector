@@ -18,12 +18,7 @@ namespace bladeDirector
         /// Set to the key you want the kernel debugger configured to use, or NULL for none
         /// </summary>
         public string debuggerKey;
-
-        /// <summary>
-        /// Set this to delete any existing iscsi images and re-create them before a system boots
-        /// </summary>
-        public bool forceRecreate = false;
-
+        
         /// <summary>
         /// Set this if you want to add windows user accounts to the system
         /// </summary>

@@ -68,7 +68,7 @@ namespace createDisks
 
     public class Program
     {
-        public delegate hypervisorWithSpec<T> hypCreateDelegate<T>(itemToAdd hyp, FreeNAS hostingNAS);
+        public delegate hypervisorWithSpec<T> hypCreateDelegate<T>(itemToAdd hyp, NASAccess hostingNAS);
 
         static void Main(string[] args)
         {
@@ -124,76 +124,45 @@ namespace createDisks
             }
         }
 
-        private static hypervisorWithSpec<hypSpec_iLo> makeILOHyp(itemToAdd hyp, FreeNAS hostingnas)
+        private static hypervisorWithSpec<hypSpec_iLo> makeILOHyp(itemToAdd hyp, NASAccess hostingnas)
         {
             return new hypervisor_iLo(new hypSpec_iLo(
                 hyp.bladeIP,
                 Properties.Settings.Default.iloHostUsername, Properties.Settings.Default.iloHostPassword,
                 hyp.nodeiLoIP, Properties.Settings.Default.iloUsername, Properties.Settings.Default.iloPassword,
                 Properties.Settings.Default.iscsiServerIP, Properties.Settings.Default.iscsiServerUsername, Properties.Settings.Default.iscsiServerPassword,
-                "", "", (ushort)hyp.kernelDebugPort, hyp.kernelDebugKey));
-        }
-
-        public static bool doesConfigExist(itemToAdd blade, string tagName)
-        {
-            string nasIP = Properties.Settings.Default.iscsiServerIP;
-            string nasUsername = Properties.Settings.Default.iscsiServerUsername;
-            string nasPassword = Properties.Settings.Default.iscsiServerPassword;
-
-            FreeNAS nas = new FreeNAS(nasIP, nasUsername, nasPassword);
-
-            // Get some data from the NAS, so we don't have to keep querying it..
-            List<snapshot> snapshots = nas.getSnapshots();
-            List<iscsiTarget> iscsiTargets = nas.getISCSITargets();
-            List<iscsiTargetToExtentMapping> tgtToExts = nas.getTargetToExtents();
-            List<volume> volumes = nas.getVolumes();
-
-            blade.cloneName = String.Format("{0}-{1}", blade.bladeIP, tagName);
-
-            iscsiTarget tgt = iscsiTargets.SingleOrDefault(x => x.targetName == blade.cloneName);
-            if (tgt == null)
-                return false;
-            iscsiTargetToExtentMapping tgtToExt = tgtToExts.SingleOrDefault(x => x.iscsi_target == tgt.id);
-            if (tgtToExt == null)
-                return false;
-
-            snapshot theSnapshot = snapshots.SingleOrDefault(x => x.name.Equals(blade.cloneName, StringComparison.CurrentCultureIgnoreCase));
-            if (theSnapshot == null)
-                return false;
-
-            volume vol = nas.findVolumeByName(volumes, blade.cloneName);
-            if (vol == null)
-                return false;
-
-            return true;
+                "", "", (ushort) hyp.kernelDebugPort, hyp.kernelDebugKey));
         }
 
         public static void deleteBlades(itemToAdd[] blades)
         {
-            string nasIP = Properties.Settings.Default.iscsiServerIP;
-            string nasUsername = Properties.Settings.Default.iscsiServerUsername;
-            string nasPassword = Properties.Settings.Default.iscsiServerPassword;
-            Debug.WriteLine("Connecting to NAS at " + nasIP);
-            FreeNAS nas = new FreeNAS(nasIP, nasUsername, nasPassword);
+            Debug.WriteLine("Connecting to NAS..");
+            NASAccess nas = new FreeNAS(Properties.Settings.Default.iscsiServerIP,
+                Properties.Settings.Default.iscsiServerUsername, Properties.Settings.Default.iscsiServerPassword);
+            Debug.WriteLine("Connected to NAS okay");
 
+            foreach (itemToAdd item in blades)
+                deleteBlade(item.cloneName, nas);
+        }
+
+        public static void deleteBlade(string cloneName, NASAccess nas)
+        {
             // Get some data from the NAS, so we don't have to keep querying it..
             List<snapshot> snapshots = nas.getSnapshots();
             List<iscsiTarget> iscsiTargets = nas.getISCSITargets();
             List<iscsiExtent> iscsiExtents = nas.getExtents();
-            List<iscsiTargetToExtentMapping> tgtToExts = nas.getTargetToExtents();
+            // List<iscsiTargetToExtentMapping> tgtToExts = nas.getTargetToExtents();
             List<volume> volumes = nas.getVolumes();
 
-            foreach (itemToAdd item in blades)
-            {
-                // Delete target-to-extent, target, and extent
-                iscsiTarget tgt = iscsiTargets.SingleOrDefault(x => x.targetName == item.cloneName);
-                if (tgt != null)
-                    nas.deleteISCSITarget(tgt);
+            // Delete target-to-extent, target, and extent
+            iscsiTarget tgt = iscsiTargets.SingleOrDefault(x => x.targetName == cloneName);
+            if (tgt != null)
+                nas.deleteISCSITarget(tgt);
 
-                iscsiExtent ext = iscsiExtents.SingleOrDefault(x => x.iscsi_target_extent_name == item.cloneName);
-                if (ext != null)
-                    nas.deleteISCSIExtent(ext);
-                /*
+            iscsiExtent ext = iscsiExtents.SingleOrDefault(x => x.iscsi_target_extent_name == cloneName);
+            if (ext != null)
+                nas.deleteISCSIExtent(ext);
+            /*
                 if (tgt != null || ext != null)
                 {
                     iscsiTargetToExtentMapping tgtToExt = tgtToExts.SingleOrDefault(x => 
@@ -205,40 +174,39 @@ namespace createDisks
                     }
                 }*/
 
-                // Now delete the snapshot.
-                snapshot toDelete = snapshots.SingleOrDefault(x => x.filesystem.ToLower().EndsWith("/" + item.cloneName));
-                if (toDelete != null)
-                    nas.deleteSnapshot(toDelete);
+            // Now delete the snapshot.
+            snapshot toDelete = snapshots.SingleOrDefault(x => x.filesystem.ToLower().EndsWith("/" + cloneName));
+            if (toDelete != null)
+                nas.deleteSnapshot(toDelete);
 
-                // And the volume. Use a retry here since freenas will return before the iscsi deletion is complete,
-                    volume vol = nas.findVolumeByName(volumes, item.cloneName);
-                if (vol != null)
+            // And the volume. Use a retry here since freenas will return before the iscsi deletion is complete,
+            volume vol = nas.findVolumeByName(volumes, cloneName);
+            if (vol != null)
+            {
+                DateTime deadline = DateTime.Now + TimeSpan.FromMinutes(4);
+                while (true)
                 {
-                    DateTime deadline = DateTime.Now + TimeSpan.FromMinutes(4);
-                    while (true)
+                    try
                     {
-                        try
-                        {
-                            nas.deleteZVol(vol);
-                            break;
-                        }
-                        catch (Exception)
-                        {
-                            if (DateTime.Now > deadline)
-                                throw;
-                            Thread.Sleep(TimeSpan.FromSeconds(15));
-                        }
+                        nas.deleteZVol(vol);
+                        break;
+                    }
+                    catch (Exception)
+                    {
+                        if (DateTime.Now > deadline)
+                            throw;
+                        Thread.Sleep(TimeSpan.FromSeconds(15));
                     }
                 }
             }
         }
-
+    
         public static void repairBladeDeviceNodes(itemToAdd[] itemsToAdd, DateTime deadline = default(DateTime))
         {
             if (deadline == default(DateTime))
                 deadline = DateTime.MaxValue;
 
-            FreeNAS nas = new FreeNAS(
+            NASAccess nas = new FreeNAS(
                 Properties.Settings.Default.iscsiServerIP, 
                 Properties.Settings.Default.iscsiServerUsername, 
                 Properties.Settings.Default.iscsiServerPassword);
@@ -253,18 +221,22 @@ namespace createDisks
         public static void addBlades<T>(itemToAdd[] itemsToAdd, string tagName, string directorURL, string baseSnapshot,
             string additionalScript, string[] additionalDeploymentItem, hypCreateDelegate<T> createHyp, DateTime deadline = default(DateTime))
         {
+            NASAccess nas = new FreeNAS(
+                Properties.Settings.Default.iscsiServerIP,
+                Properties.Settings.Default.iscsiServerUsername,
+                Properties.Settings.Default.iscsiServerPassword);
+
+            addBlades(nas, itemsToAdd, tagName, directorURL, baseSnapshot, additionalScript, additionalDeploymentItem, createHyp, deadline);
+        }
+
+        public static void addBlades<T>(NASAccess nas, itemToAdd[] itemsToAdd, string tagName, string directorURL, string baseSnapshot,
+            string additionalScript, string[] additionalDeploymentItem, hypCreateDelegate<T> createHyp, DateTime deadline = default(DateTime))
+        {
             if (deadline == default(DateTime))
                 deadline = DateTime.MaxValue;
 
-            string nasIP = Properties.Settings.Default.iscsiServerIP;
-            string nasUsername = Properties.Settings.Default.iscsiServerUsername;
-            string nasPassword = Properties.Settings.Default.iscsiServerPassword;
-            Debug.WriteLine("Connecting to NAS at " + nasIP);
-
-            FreeNAS nas = new FreeNAS(nasIP, nasUsername, nasPassword);
 
             if (DateTime.Now > deadline) throw new TimeoutException();
-
             
             // Get the snapshot we'll be cloning
             List<snapshot> snapshots = nas.getSnapshots();
@@ -328,30 +300,9 @@ namespace createDisks
 
         }
 
-        private static void prepareCloneImage(itemToAdd itemToAdd, string toCloneVolume, string tagName, string directorURL, string additionalScript, string[] additionalDeploymentItem)
-        {
-            string nasIP = Properties.Settings.Default.iscsiServerIP;
-            string nasUsername = Properties.Settings.Default.iscsiServerUsername;
-            string nasPassword = Properties.Settings.Default.iscsiServerPassword;
-
-            FreeNAS nas = new FreeNAS(nasIP, nasUsername, nasPassword);
-
-            hypSpec_iLo spec = new hypSpec_iLo(
-                itemToAdd.bladeIP,
-                Properties.Settings.Default.iloHostUsername, Properties.Settings.Default.iloHostPassword,
-                itemToAdd.nodeiLoIP, Properties.Settings.Default.iloUsername, Properties.Settings.Default.iloPassword,
-                nasIP, nasUsername, nasPassword,
-                null, null, (ushort) itemToAdd.kernelDebugPort, itemToAdd.kernelDebugKey);
-
-            using (hypervisor_iLo ilo = new hypervisor_iLo(spec))
-            {
-                prepareCloneImage(itemToAdd, toCloneVolume, tagName, directorURL, additionalScript, additionalDeploymentItem, ilo, nas);
-            }
-        }
-
         public static void prepareCloneImage<T>(
             itemToAdd itemToAdd, string toCloneVolume, string tagName, string directorURL, 
-            string additionalScript, string[] additionalDeploymentItem, hypervisorWithSpec<T> hyp, FreeNAS nas)
+            string additionalScript, string[] additionalDeploymentItem, hypervisorWithSpec<T> hyp, NASAccess nas)
         {
             Debug.WriteLine("Preparing " + itemToAdd.bladeIP + " for server " + itemToAdd.serverIP);
 
@@ -398,17 +349,17 @@ namespace createDisks
             // execute, then do that now
             if (additionalDeploymentItem != null)
             {
-                hypervisor_iLo.doWithRetryOnSomeExceptions(() => hyp.mkdir("C:\\deployment") );
+                hypervisor.doWithRetryOnSomeExceptions(() => hyp.mkdir("C:\\deployment") );
                 foreach (string toCopy in additionalDeploymentItem)
                     copyRecursive(hyp, toCopy, "C:\\deployment");
 
                 if (additionalScript != null)
-                    hypervisor_iLo.doWithRetryOnSomeExceptions(() =>hyp.startExecutable("cmd.exe", string.Format("/c {0}", additionalScript), "C:\\deployment"));
+                    hypervisor.doWithRetryOnSomeExceptions(() =>hyp.startExecutable("cmd.exe", string.Format("/c {0}", additionalScript), "C:\\deployment"));
             }
             else
             {
                 if (additionalScript != null)
-                    hypervisor_iLo.doWithRetryOnSomeExceptions(() => hyp.startExecutable("cmd.exe", string.Format("/c {0}", additionalScript), "C:\\"));
+                    hypervisor.doWithRetryOnSomeExceptions(() => hyp.startExecutable("cmd.exe", string.Format("/c {0}", additionalScript), "C:\\"));
             }
 
             // Finally, add any users as requested.
@@ -416,7 +367,7 @@ namespace createDisks
             {
                 foreach (userAddRequest newUser in itemToAdd.usersToAdd)
                 {
-                    hypervisor_iLo.doWithRetryOnSomeExceptions(() => hyp.mkdir("C:\\users\\" + newUser.username));
+                    hypervisor.doWithRetryOnSomeExceptions(() => hyp.mkdir("C:\\users\\" + newUser.username));
                     executionResult adduserres = hyp.startExecutable("cmd.exe", string.Format("/c net user {0} {1} /ADD", newUser.username, newUser.password));
                     if (newUser.isAdministrator)
                     {
@@ -427,7 +378,7 @@ namespace createDisks
             Debug.WriteLine(itemToAdd.bladeIP + " deployed, shutting down");
 
             // That's all we need, so shut down the system.
-            hypervisor_iLo.doWithRetryOnSomeExceptions(() => hyp.startExecutableAsyncWithRetry("C:\\windows\\system32\\cmd", "/c shutdown -s -f -t 01"));
+            hypervisor.doWithRetryOnSomeExceptions(() => hyp.startExecutableAsyncWithRetry("C:\\windows\\system32\\cmd", "/c shutdown -s -f -t 01"));
 
             // Once it has shut down totally, we can take the snapshot of it.
             hyp.WaitForStatus(false, TimeSpan.FromMinutes(1));
@@ -499,7 +450,7 @@ namespace createDisks
                 });
                 string args = String.Format("/c c:\\deployed.bat {0}", scriptArgs);
                 hyp.mkdir("c:\\deployment");
-                executionResult res = hyp.startExecutable ("cmd.exe", args, "c:\\deployment");
+                executionResult res = hyp.startExecutable("cmd.exe", args, "c:\\deployment", deadline: DateTime.Now + TimeSpan.FromMinutes(7) );
                 //Debug.WriteLine(res.stdout);
                 //Debug.WriteLine(res.stderr);
             }
@@ -521,7 +472,7 @@ namespace createDisks
             }
         }
 
-        private static void createClones(FreeNAS nas, snapshot toClone, string toCloneVolume, itemToAdd[] itemsToAdd)
+        private static void createClones(NASAccess nas, snapshot toClone, string toCloneVolume, itemToAdd[] itemsToAdd)
         {
             // Now we can create snapshots
             foreach (itemToAdd itemToAdd in itemsToAdd)
@@ -532,7 +483,7 @@ namespace createDisks
             }
         }
 
-        private static void exportClonesViaiSCSI(FreeNAS nas, itemToAdd[] itemsToAdd)
+        private static void exportClonesViaiSCSI(NASAccess nas, itemToAdd[] itemsToAdd)
         {
             // Now expose each via iSCSI.
             targetGroup tgtGrp = nas.getTargetGroups()[0];

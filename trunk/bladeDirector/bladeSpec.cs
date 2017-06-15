@@ -48,16 +48,17 @@ namespace bladeDirector
         // ReSharper disable once MemberCanBePrivate.Global
         public string ESXiPassword;
 
-        private int maxVMs = 20;
-        private int maxVMMemoryMB = 1024 * 20;
-        private int maxCPUCount = 12;
+        private VMCapacity _VMCapacity = new VMCapacity();
 
         public bladeSpec()
         {
             // For XML serialisation
         }
 
-        public bladeSpec(string newBladeIP, string newISCSIIP, string newILOIP, ushort newILOPort, bool newCurrentlyHavingBIOSDeployed, string newCurrentBIOS)
+        public bladeSpec(
+            string newBladeIP, string newISCSIIP, 
+            string newILOIP, ushort newILOPort, 
+            bool newCurrentlyHavingBIOSDeployed, string newCurrentBIOS)
         {
             iscsiIP = newISCSIIP;
             bladeIP = newBladeIP;
@@ -176,11 +177,11 @@ namespace bladeDirector
         {
             List<vmSpec> vms = getChildVMs(conn);
 
-            if (vms.Count + 1>= this.maxVMs)
+            if (vms.Count + 1 >_VMCapacity.maxVMs)
                 return false;
-            if (vms.Sum(x => x.hwSpec.memoryMB) + req.memoryMB >= this.maxVMMemoryMB)
+            if (vms.Sum(x => x.hwSpec.memoryMB) + req.memoryMB > _VMCapacity.maxVMMemoryMB)
                 return false;
-            if (vms.Sum(x => x.hwSpec.cpuCount) + req.cpuCount >= this.maxCPUCount)
+            if (vms.Sum(x => x.hwSpec.cpuCount) + req.cpuCount > _VMCapacity.maxCPUCount)
                 return false;
 
             return true;
@@ -283,5 +284,12 @@ namespace bladeDirector
 
             return toRet;
         }
+    }
+
+    public class VMCapacity
+    {
+        public int maxVMs = 20;
+        public int maxVMMemoryMB = 1024 * 20;
+        public int maxCPUCount = 12;
     }
 }

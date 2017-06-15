@@ -44,7 +44,7 @@ namespace bladeDirector
             // Select the appropriate template
             string script;
             bladeOwnership owner = null;
-            bladeSpec bladeState = hostStateDB.getBladeByIP(srcIP);
+            bladeSpec bladeState = services.hostStateDB.getBladeByIP(srcIP);
             if (bladeState != null)
             {
 
@@ -62,14 +62,14 @@ namespace bladeDirector
             }
             else
             {
-                vmSpec vmState = hostStateDB.getVMByIP(srcIP);
+                vmSpec vmState = services.hostStateDB.getVMByIP(srcIP);
 
                 if (vmState == null)
                 {
                     Response.Write("#!ipxe\r\n");
                     Response.Write("prompt No blade configured at this IP address (" + srcIP + ")\r\n");
                     Response.Write("reboot\r\n");
-                    hostStateDB.addLogEvent("IPXE script for blade " + srcIP + " requested, but blade is not configured");
+                    services.hostStateDB.addLogEvent("IPXE script for blade " + srcIP + " requested, but blade is not configured");
                     return;
                 }
 
@@ -87,11 +87,11 @@ namespace bladeDirector
                 {
                     Response.Write("#!ipxe\r\n");
                     Response.Write("prompt Blade does not have any owner");
-                    hostStateDB.addLogEvent("IPXE script for blade " + srcIP + " requested, but blade is not currently owned");
+                    services.hostStateDB.addLogEvent("IPXE script for blade " + srcIP + " requested, but blade is not currently owned");
                     return;
                 }
 
-                bladeOwnership bladeOwnership = hostStateDB.getBladeOrVMOwnershipByIP(srcIP);
+                bladeOwnership bladeOwnership = services.hostStateDB.getBladeOrVMOwnershipByIP(srcIP);
                 script = script.Replace("{BLADE_NETMASK_ISCSI}", "255.255.192.0");
                 string ownershipToPresent = bladeOwnership.currentOwner;
                 if (ownershipToPresent == "vmserver")
@@ -100,7 +100,7 @@ namespace bladeDirector
                 script = script.Replace("{BLADE_SNAPSHOT}", bladeOwnership.currentSnapshot);
             }
             Response.Write(script);
-            hostStateDB.addLogEvent("IPXE script for blade " + srcIP + " generated (owner " + owner.currentOwner + ")");
+            services.hostStateDB.addLogEvent("IPXE script for blade " + srcIP + " generated (owner " + owner.currentOwner + ")");
         }
     }
 }

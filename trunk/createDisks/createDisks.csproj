@@ -143,16 +143,16 @@
     <None Include="Service References\bladeDirector\services.disco" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="$(Solutiondir)\..\thirdparty\hypervisors\trunk\hypervisors\hypervisors.csproj">
-      <Project>{47995DD9-9F78-4313-809D-55C515EAF89E}</Project>
-      <Name>hypervisors</Name>
-    </ProjectReference>
-  </ItemGroup>
-  <ItemGroup>
     <EmbeddedResource Include="Properties\Resources.resx">
       <Generator>ResXFileCodeGenerator</Generator>
       <LastGenOutput>Resources.Designer.cs</LastGenOutput>
     </EmbeddedResource>
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\thirdparty\hypervisors\trunk\hypervisors\hypervisors.csproj">
+      <Project>{47995dd9-9f78-4313-809d-55c515eaf89e}</Project>
+      <Name>hypervisors</Name>
+    </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

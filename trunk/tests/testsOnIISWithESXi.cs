@@ -3,12 +3,21 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Threading;
+using bladeDirector;
 using hypervisors;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using tests.networkService;
+using bladeSpec = tests.networkService.bladeSpec;
+using GetBladeStatusResult = tests.networkService.GetBladeStatusResult;
+using resultCode = tests.networkService.resultCode;
+using resultCodeAndBladeName = tests.networkService.resultCodeAndBladeName;
+using vmSpec = tests.networkService.vmSpec;
+using VMHardwareSpec = tests.networkService.VMHardwareSpec;
+using VMSoftwareSpec = tests.networkService.VMSoftwareSpec;
 
 namespace tests
 {
+
     /// <summary>
     /// These tests will allocate real HW/VM from the cluster. Use them with care.
     /// </summary>
@@ -25,7 +34,7 @@ namespace tests
                 uut.releaseBladeDbg("172.17.129.131", "", true);
 
                 VMHardwareSpec hwSpec = new VMHardwareSpec() { memoryMB = 2344, cpuCount = 2 };
-                VMSoftwareSpec swSpec = new VMSoftwareSpec() { forceRecreate =  true};
+                VMSoftwareSpec swSpec = new VMSoftwareSpec();
                 resultCodeAndBladeName allocRes = uut.RequestAnySingleVM(hwSpec, swSpec);
                 Assert.AreEqual(tests.networkService.resultCode.pending, allocRes.code);
                 string waitToken = allocRes.waitToken;
@@ -80,7 +89,6 @@ namespace tests
                 VMHardwareSpec hwSpec = new VMHardwareSpec() { memoryMB = 2344, cpuCount = 2 };
                 VMSoftwareSpec swSpec = new VMSoftwareSpec()
                 {
-                    forceRecreate = true, 
                     usersToAdd = new userAddRequest[]
                     {
                         new userAddRequest() { username = "testuser", password = "testpassword", isAdministrator = false},
@@ -118,7 +126,7 @@ namespace tests
                 {
                     vmSpec vmCfg = uut.getConfigurationOfVM(allocRes.bladeName);
                     bladeSpec vmServer = uut.getConfigurationOfBladeByID((int)vmCfg.parentBladeID);
-                    hypSpec_vmware spec = makeHypFromSpec(vmCfg, swSpec, "clean", vmServer);
+                    hypSpec_vmware spec = makeHypFromSpec(vmCfg, swSpec, vmServer, uut);
 
                     using (hypervisor_vmware hyp = new hypervisor_vmware(spec, clientExecutionMethod.smb))
                     {
@@ -165,7 +173,6 @@ namespace tests
                     debuggerHost = "172.16.10.91", 
                     debuggerPort = 50475, 
                     debuggerKey = "1.2.3.4",
-                    forceRecreate =  true
                 };
                 resultCodeAndBladeName allocRes = uut.RequestAnySingleVM(hwSpec, swSpec);
                 Assert.AreEqual(resultCode.pending, allocRes.code);
@@ -181,7 +188,7 @@ namespace tests
                     // and checking it is correct.
                     vmSpec vmCfg = uut.getConfigurationOfVM(allocRes.bladeName);
                     networkService.bladeSpec vmServer = uut.getConfigurationOfBladeByID((int) vmCfg.parentBladeID);
-                    hypSpec_vmware spec = makeHypFromSpec(vmCfg, swSpec, "clean", vmServer);
+                    hypSpec_vmware spec = makeHypFromSpec(vmCfg, swSpec, vmServer, uut);
 
                     using (hypervisor_vmware hyp = new hypervisor_vmware(spec, clientExecutionMethod.smb))
                     {
@@ -225,7 +232,7 @@ namespace tests
                     VMHardwareSpec hwSpec1 = new VMHardwareSpec() {memoryMB = 2048, cpuCount = 1};
                     VMSoftwareSpec swSpec1 = new VMSoftwareSpec()
                     {
-                        debuggerHost = "172.16.10.91", debuggerPort = 50475, debuggerKey = "1.2.3.4", forceRecreate = true
+                        debuggerHost = "172.16.10.91", debuggerPort = 50475, debuggerKey = "1.2.3.4"
                     };
                     resultCodeAndBladeName allocRes1 = uut.RequestAnySingleVM(hwSpec1, swSpec1);
                     Assert.AreEqual(resultCode.pending, allocRes1.code);
@@ -235,7 +242,7 @@ namespace tests
                     VMHardwareSpec hwSpec2 = new VMHardwareSpec() {memoryMB = 3000, cpuCount = 2};
                     VMSoftwareSpec swSpec2 = new VMSoftwareSpec()
                     {
-                        debuggerHost = "6.7.8.9", debuggerPort = 50555, debuggerKey = "11.22.33.44", forceRecreate = true
+                        debuggerHost = "6.7.8.9", debuggerPort = 50555, debuggerKey = "11.22.33.44"
                     };
 
                     resultCodeAndBladeName allocRes2 = uut.RequestAnySingleVM(hwSpec2, swSpec2);
@@ -286,7 +293,6 @@ namespace tests
                                 debuggerHost = "172.16.10.91",
                                 debuggerPort = (ushort) (53000 + n),
                                 debuggerKey = "1.2.3.4",
-                                forceRecreate = true
                             });
                     };
 
@@ -348,12 +354,75 @@ namespace tests
             return allocRes;
         }
 
-        public static hypSpec_vmware makeHypFromSpec(vmSpec vmCfg, VMSoftwareSpec swSpec, string VMSnapshotName, bladeSpec vmServer)
+        public static hypSpec_vmware makeHypFromSpec(vmSpec allocatedConfig, VMSoftwareSpec swSpec, bladeSpec vmServer, servicesSoapClient directorClient)
         {
-            return  new hypSpec_vmware(vmCfg.displayName, vmServer.bladeIP, 
+            string snapshotPath = directorClient.getFreeNASSnapshotPath(allocatedConfig.VMIP);
+
+            return  new hypSpec_vmware(allocatedConfig.displayName, vmServer.bladeIP, 
                 vmServer.ESXiUsername, vmServer.ESXiPassword,
-                vmCfg.username, vmCfg.password, VMSnapshotName, null,
-                swSpec.debuggerPort, swSpec.debuggerKey, vmCfg.VMIP );
+                allocatedConfig.username, allocatedConfig.password, allocatedConfig.currentSnapshot, snapshotPath,
+                swSpec.debuggerPort, swSpec.debuggerKey, allocatedConfig.VMIP );
         }
+
+        [TestMethod]
+        [TestCategory("skipOnCI")]
+        public void canAllocateVMAndRestoreSnapshot()
+        {
+            using (servicesSoapClient uut = new networkService.servicesSoapClient("servicesSoap"))
+            {
+                VMHardwareSpec hwSpec = new VMHardwareSpec() { memoryMB = 2344, cpuCount = 2 };
+                VMSoftwareSpec swSpec = new VMSoftwareSpec();
+                resultCodeAndBladeName allocRes = uut.RequestAnySingleVM(hwSpec, swSpec);
+                Assert.AreEqual(resultCode.pending, allocRes.code);
+                string waitToken = allocRes.waitToken;
+
+                // Wait until the operation is complete
+                DateTime deadline = DateTime.Now + TimeSpan.FromMinutes(15);
+                while (true)
+                {
+                    allocRes = uut.getProgressOfVMRequest(waitToken);
+                    if (allocRes.code == resultCode.pending)
+                    {
+                        // .. keep waiting ..
+                        Thread.Sleep(TimeSpan.FromSeconds(10));
+                    }
+                    else if (allocRes.code == resultCode.success)
+                    {
+                        break;
+                    }
+                    else
+                    {
+                        Assert.Fail("unexpected state during VM provisioning: " + allocRes.code);
+                    }
+
+                    if (DateTime.Now > deadline)
+                        throw new TimeoutException();
+                }
+
+                // Touch a file and check it is removed on snapshot restore.
+                vmSpec vmCfg = uut.getConfigurationOfVM(allocRes.bladeName);
+                bladeSpec vmServer = uut.getConfigurationOfBladeByID((int)vmCfg.parentBladeID);
+                hypSpec_vmware spec = makeHypFromSpec(vmCfg, swSpec, vmServer, uut);
+
+                using (hypervisor_vmware hyp = new hypervisor_vmware(spec, clientExecutionMethod.smb))
+                {
+                    hyp.powerOn();
+
+                    // Make our marker file
+                    string tempFileName = string.Format("c:\\Users\\{0}\\marker.txt", vmCfg.username);
+                    hyp.startExecutable("cmd.exe /c", "echo hello > " + tempFileName);
+
+                    string retrieved = hyp.getFileFromGuest(tempFileName, TimeSpan.FromSeconds(30));
+                    Assert.AreEqual(retrieved, "hello \r\n");
+
+                    // Now restore our snapshot..
+                    hyp.restoreSnapshot();
+
+                    // And the file should not exist any more, so this should throw.
+                    hyp.getFileFromGuest(tempFileName, TimeSpan.FromSeconds(30));
+                }
+            }
+        }
+
     }
 }

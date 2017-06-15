@@ -13,7 +13,7 @@ namespace bladeDirector
         protected void Application_Start(object sender, EventArgs e)
         {
             string appRoot = Server.MapPath("~");
-            hostStateDB.init(appRoot);
+            services.hostStateDB = new hostStateDB(appRoot);
         }
 
         protected void Session_Start(object sender, EventArgs e)
