@@ -184,7 +184,10 @@ namespace bladeDirector
             if (DateTime.Now > inProgressConnect.biosUpdateDeadline)
             {
                 inProgressConnect.biosUpdateSocket = null;
-                inProgressConnect.biosUpdateTimeoutCallback.Invoke(inProgressConnect.biosCurrentThreadState);
+                if (inProgressConnect.biosUpdateTimeoutCallback != null)
+                {
+                    inProgressConnect.biosUpdateTimeoutCallback.Invoke(inProgressConnect.biosCurrentThreadState);
+                }
             }
 
             // Otherwise, queue up another connect attempt to just keep retrying.
