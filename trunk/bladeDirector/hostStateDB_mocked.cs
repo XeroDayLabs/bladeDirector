@@ -200,7 +200,7 @@ namespace bladeDirector
             events.Add(new mockedCall("copyToGuest", "source: '" +  srcpath + "' dest: '" + dstpath + "'"));
             lock (files)
             {
-                files.Add(dstpath, File.ReadAllText(dstpath));
+                files.Add(dstpath, File.ReadAllText(srcpath));
             }
         }
 
