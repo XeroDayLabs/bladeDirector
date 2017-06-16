@@ -151,6 +151,8 @@ namespace bladeDirector
             toRet.snapshotName = this.currentSnapshot;
             toRet.bladeIP = this.VMIP;
             toRet.computerName = this.displayName;
+            toRet.kernelDebugPort = this.kernelDebugPort;
+            toRet.kernelDebugKey = this.kernelDebugKey;
             toRet.isVirtualMachine = true;
 
             return toRet;
