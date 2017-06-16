@@ -102,6 +102,11 @@ namespace bladeDirector
             return new hypervisor_mocked_ilo(newBladeSpec, onMockedExecution);
         }
 
+        protected override void waitForESXiBootToComplete(hypervisor hyp)
+        {
+
+        }
+
         protected override void startBladePowerOff(bladeSpec nodeSpec, string iLoIp)
         {
             new hypervisor_mocked_ilo(nodeSpec, onMockedExecution).powerOff();

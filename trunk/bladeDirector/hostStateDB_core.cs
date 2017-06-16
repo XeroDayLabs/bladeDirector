@@ -38,6 +38,7 @@ namespace bladeDirector
         protected abstract hypervisor makeHypervisorForBlade_windows(bladeSpec bladeSpec);
         protected abstract hypervisor makeHypervisorForBlade_LTSP(bladeSpec bladeSpec);
         protected abstract hypervisor makeHypervisorForBlade_ESXi(bladeSpec bladeSpec);
+        protected abstract void waitForESXiBootToComplete(hypervisor hyp);
 
         protected abstract void startBladePowerOff(bladeSpec nodeSpec, string iLoIp);
         protected abstract void startBladePowerOn(bladeSpec nodeSpec, string iLoIp);
@@ -995,6 +996,8 @@ namespace bladeDirector
                                 }
                             }
                             hyp.powerOn(threadState.deployDeadline);
+
+                            waitForESXiBootToComplete(hyp);
 
                             // Once it's powered up, we ensure the datastore is mounted okay. Sometimes I'm seeing ESXi hosts boot
                             // with an inaccessible NFS datastore, so remount if neccessary. Retry this since it doesn't seem to 

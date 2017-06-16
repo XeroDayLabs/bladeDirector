@@ -182,6 +182,23 @@ namespace bladeDirector
             // Otherwise, queue up another connect attempt to just keep retrying.
             inProgressConnect.biosUpdateSocket.BeginConnect(inProgressConnect.biosUpdateEndpoint, TCPCallback, inProgressConnect);
         }
+
+        protected override void waitForESXiBootToComplete(hypervisor hyp)
+        {
+            while (true)
+            {
+                executionResult res = hypervisor.doWithRetryOnSomeExceptions(() => hyp.startExecutable("/etc/init.d/vpxa", "status"), TimeSpan.FromSeconds(1), TimeSpan.FromSeconds(10));
+
+                if (res.resultCode != 0)
+                {
+                    Thread.Sleep(TimeSpan.FromSeconds(4));
+                    continue;
+                }
+
+                if (res.stdout.Contains("vpxa is running"))
+                    return;
+            }
+        }
     }
 
     public class bladeState
