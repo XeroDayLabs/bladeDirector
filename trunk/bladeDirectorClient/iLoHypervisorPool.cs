@@ -89,7 +89,7 @@ namespace bladeDirectorClient
                         hypervisor_vmware_FreeNAS newVM = new hypervisor_vmware_FreeNAS(newSpec,
                             Properties.Settings.Default.iloISCSIIP, 
                             Properties.Settings.Default.iloISCSIUsername, 
-                            Properties.Settings.Default.iloISCSIPassword );
+                            Properties.Settings.Default.iloISCSIPassword, clientExecutionMethod.smb );
 
                         newVM.setDisposalCallback(onDestruction);
                         if (!toRet.TryAdd(vmSpec.VMIP, newVM))
@@ -345,6 +345,10 @@ namespace bladeDirectorClient
                 {
                     if (keepaliveThread == null)
                     {
+                        using (servicesSoapClient director = new servicesSoapClient("servicesSoap", machinePools.bladeDirectorURL))
+                        {
+                            director.logIn();
+                        }
                         keepaliveThread = new Thread(keepaliveThreadMain);
                         keepaliveThread.Name = "Blade director keepalive thread";
                         keepaliveThread.Start();
