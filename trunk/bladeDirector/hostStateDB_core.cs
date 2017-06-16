@@ -8,6 +8,7 @@ using System.Linq;
 using System.Net;
 using System.Net.Sockets;
 using System.ServiceModel;
+using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using bladeDirector.bootMenuWCF;
@@ -1466,18 +1467,26 @@ namespace bladeDirector
             param.connectDeadline = DateTime.Now + TimeSpan.FromMinutes(5);
             setCallbackOnTCPPortOpen(22, param.onBootFinish, param.onBootFailure, param.connectDeadline, param);
         }
-        
+
         private void copyDeploymentFilesToBlade(bladeSpec nodeSpec, string biosConfigFile)
         {
             using (hypervisor hyp = makeHypervisorForBlade_LTSP(nodeSpec))
             {
-                hyp.copyToGuestFromBuffer("applyBIOS.sh", Properties.Resources.applyBIOS.Replace("\r\n", "\n"));
-                hyp.copyToGuestFromBuffer("getBIOS.sh", Properties.Resources.getBIOS.Replace("\r\n", "\n"));
-                hyp.copyToGuestFromBuffer("conrep.xml", Properties.Resources.conrep_xml.Replace("\r\n", "\n"));
-                hyp.copyToGuestFromBuffer("conrep", Properties.Resources.conrep);
-
+                Dictionary<string, string> toCopy = new Dictionary<string, string>()
+                {
+                    {"applyBIOS.sh", Properties.Resources.applyBIOS.Replace("\r\n", "\n")},
+                    {"getBIOS.sh", Properties.Resources.getBIOS.Replace("\r\n", "\n")},
+                    {"conrep.xml", Properties.Resources.conrep_xml.Replace("\r\n", "\n")},
+                    {"conrep", Encoding.ASCII.GetString(Properties.Resources.conrep)}
+                };
                 if (biosConfigFile != null)
                     hyp.copyToGuestFromBuffer("newbios.xml", biosConfigFile.Replace("\r\n", "\n"));
+
+                foreach (KeyValuePair<string, string> kvp in toCopy)
+                {
+                    hypervisor.doWithRetryOnSomeExceptions(() => { hyp.copyToGuestFromBuffer(kvp.Key, kvp.Value); },
+                        TimeSpan.FromSeconds(10), TimeSpan.FromMinutes(3));
+                }
             }
         }
 
