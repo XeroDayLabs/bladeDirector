@@ -98,7 +98,7 @@ namespace bladeDirector
                         break;
                     if (DateTime.Now > deadline)
                         throw new TimeoutException();
-                    Thread.Sleep(TimeSpan.FromSeconds(3));
+                    Thread.Sleep(TimeSpan.FromSeconds(5));
                 }
             }
         }
@@ -117,7 +117,7 @@ namespace bladeDirector
                         break;
                     if (DateTime.Now > deadline)
                         throw new TimeoutException();
-                    Thread.Sleep(TimeSpan.FromSeconds(3));
+                    Thread.Sleep(TimeSpan.FromSeconds(5));
                 }
             }
         }
@@ -143,18 +143,6 @@ namespace bladeDirector
         protected override NASAccess getNasForDevice(bladeSpec vmServer)
         {
             return new FreeNAS(Settings.Default.iscsiServerIP, Settings.Default.iscsiServerUsername, Settings.Default.iscsiServerPassword);
-        }
-
-        protected override void copyFilesToBlade(string nodeIp, Dictionary<string, string> toWriteText, Dictionary<string, byte[]> toWriteBinary)
-        {
-            using (SftpClient scp = new SftpClient(nodeIp, Settings.Default.ltspUsername, Settings.Default.ltspPassword))
-            {
-                scp.Connect();
-                foreach (KeyValuePair<string, string> kvp in toWriteText)
-                    scp.WriteAllText(kvp.Key, kvp.Value);
-                foreach (KeyValuePair<string, byte[]> kvp in toWriteBinary)
-                    scp.WriteAllBytes(kvp.Key, kvp.Value);
-            }
         }
 
         private void TCPCallback(IAsyncResult ar)

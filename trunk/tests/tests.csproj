@@ -93,8 +93,10 @@
       <DesignTime>True</DesignTime>
       <DependentUpon>Reference.svcmap</DependentUpon>
     </Compile>
+    <Compile Include="testSMBExecutor.cs" />
     <Compile Include="testsOnIIS.cs" />
     <Compile Include="testsOnIISWithESXi.cs" />
+    <Compile Include="testVMWareExecutor.cs" />
     <Compile Include="UnitTest1.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>

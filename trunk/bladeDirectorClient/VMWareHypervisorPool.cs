@@ -37,6 +37,12 @@ namespace bladeDirectorClient
                             string kernelVMPassword = Properties.Settings.Default.VMWareVMPassword;
                             string kernelVMDebugKey = Properties.Settings.Default.VMWareVMDebugKey;
 
+                            if (kernelVMCount == 0 || vmNameBase == "" || kernelVMPortBase == 0 || kernelVMServer == "" ||
+                                kernelVMServerUsername == "" || kernelVMServerPassword == "" || kernelVMDebugKey == "")
+                            {
+                                throw new Exception("BladeDirectorClient not configured properly");
+                            }
+
                             hypSpec_vmware[] hyps = new hypSpec_vmware[kernelVMCount];
 
                             for (int i = 1; i < kernelVMCount + 1; i++)

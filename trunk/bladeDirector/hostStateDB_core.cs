@@ -1467,23 +1467,19 @@ namespace bladeDirector
             setCallbackOnTCPPortOpen(22, param.onBootFinish, param.onBootFailure, param.connectDeadline, param);
         }
         
-        private void copyDeploymentFilesToBlade(string nodeIP, string biosConfigFile)
+        private void copyDeploymentFilesToBlade(bladeSpec nodeSpec, string biosConfigFile)
         {
-            Dictionary<string, string> toWriteText = new Dictionary<string, string>();
+            using (hypervisor hyp = makeHypervisorForBlade_LTSP(nodeSpec))
+            {
+                hyp.copyToGuestFromBuffer("applyBIOS.sh", Properties.Resources.applyBIOS.Replace("\r\n", "\n"));
+                hyp.copyToGuestFromBuffer("getBIOS.sh", Properties.Resources.getBIOS.Replace("\r\n", "\n"));
+                hyp.copyToGuestFromBuffer("conrep.xml", Properties.Resources.conrep_xml.Replace("\r\n", "\n"));
+                hyp.copyToGuestFromBuffer("conrep", Properties.Resources.conrep);
 
-            toWriteText.Add("applyBIOS.sh", Properties.Resources.applyBIOS.Replace("\r\n", "\n"));
-            toWriteText.Add("getBIOS.sh", Properties.Resources.getBIOS.Replace("\r\n", "\n"));
-            toWriteText.Add("conrep.xml", Properties.Resources.conrep_xml.Replace("\r\n", "\n"));
-            if (biosConfigFile != null)
-                toWriteText.Add("newbios.xml", biosConfigFile.Replace("\r\n", "\n"));
-
-            Dictionary<string, Byte[]> toWriteBinary = new Dictionary<string, byte[]>();
-            toWriteBinary.Add("conrep", Properties.Resources.conrep);
-
-            copyFilesToBlade(nodeIP, toWriteText, toWriteBinary);
+                if (biosConfigFile != null)
+                    hyp.copyToGuestFromBuffer("newbios.xml", biosConfigFile.Replace("\r\n", "\n"));
+            }
         }
-
-        protected abstract void copyFilesToBlade(string nodeIp, Dictionary<string, string> toWriteText, Dictionary<string, byte[]> toWriteBinary);
 
         private void handleReadBIOSError(biosThreadState state)
         {
@@ -1502,7 +1498,7 @@ namespace bladeDirector
 
         private void GetBIOS(biosThreadState state)
         {
-            copyDeploymentFilesToBlade(state.nodeSpec.bladeIP, null);
+            copyDeploymentFilesToBlade(state.nodeSpec, null);
 
             using (hypervisor hyp = makeHypervisorForBlade_LTSP(state.nodeSpec))
             {
@@ -1544,7 +1540,7 @@ namespace bladeDirector
             {
                 // Okay, now the box is up :)
                 // SCP some needed files to it.
-                copyDeploymentFilesToBlade(state.nodeSpec.bladeIP, state.biosxml);
+                copyDeploymentFilesToBlade(state.nodeSpec, state.biosxml);
 
                 // And execute the command to deploy the BIOS via SSH.
                 using (hypervisor hyp = makeHypervisorForBlade_LTSP(state.nodeSpec))

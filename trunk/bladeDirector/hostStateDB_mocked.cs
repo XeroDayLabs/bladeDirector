@@ -124,17 +124,6 @@ namespace bladeDirector
         {
             return nas;
         }
-
-        protected override void copyFilesToBlade(string nodeIp, Dictionary<string, string> toWriteText, Dictionary<string, byte[]> toWriteBinary)
-        {
-            using (hypervisor_mocked_base<hypSpec_vmware> hyp = new hypervisor_mocked_base<hypSpec_vmware>(null, onMockedExecution))
-            {
-                foreach (KeyValuePair<string, string> kvp in toWriteText)
-                    hyp.copyDataToGuest(kvp.Key, kvp.Value);
-                foreach (KeyValuePair<string, byte[]> kvp in toWriteBinary)
-                    hyp.copyDataToGuest(kvp.Key, kvp.Value);
-            }
-        }
     }
 
     public class hypervisor_mocked_vmware : hypervisor_mocked_base<hypSpec_vmware>
