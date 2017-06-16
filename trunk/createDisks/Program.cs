@@ -413,7 +413,7 @@ namespace createDisks
                     {
                         hypervisor_iLo.doWithRetryOnSomeExceptions(() =>
                         {
-                            hyp.copyToGuest(srcFile, Path.Combine(destPath, Path.GetFileName(srcFile)));
+                            hyp.copyToGuest(Path.Combine(destPath, Path.GetFileName(srcFile)), srcFile);
                         });
                     }
                     catch (IOException)
@@ -428,7 +428,7 @@ namespace createDisks
                 {
                     hypervisor_iLo.doWithRetryOnSomeExceptions(() =>
                     {
-                        hyp.copyToGuest(srcFileOrDir, Path.Combine(destPath, Path.GetFileName(srcFileOrDir)));
+                        hyp.copyToGuest(Path.Combine(destPath, Path.GetFileName(srcFileOrDir)), srcFileOrDir);
                     });
                 }
                 catch (IOException)
@@ -446,7 +446,7 @@ namespace createDisks
                 File.WriteAllText(deployFileName, Properties.Resources.deployToBlade);
                 hypervisor_iLo.doWithRetryOnSomeExceptions(() =>
                 {
-                    hyp.copyToGuest(deployFileName, "C:\\deployed.bat");
+                    hyp.copyToGuest("C:\\deployed.bat", deployFileName);
                 });
                 string args = String.Format("/c c:\\deployed.bat {0}", scriptArgs);
                 hyp.mkdir("c:\\deployment");
