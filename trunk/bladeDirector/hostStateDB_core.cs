@@ -1477,16 +1477,20 @@ namespace bladeDirector
                     {"applyBIOS.sh", Properties.Resources.applyBIOS.Replace("\r\n", "\n")},
                     {"getBIOS.sh", Properties.Resources.getBIOS.Replace("\r\n", "\n")},
                     {"conrep.xml", Properties.Resources.conrep_xml.Replace("\r\n", "\n")},
-                    {"conrep", Encoding.ASCII.GetString(Properties.Resources.conrep)}
                 };
                 if (biosConfigFile != null)
-                    hyp.copyToGuestFromBuffer("newbios.xml", biosConfigFile.Replace("\r\n", "\n"));
+                    toCopy.Add("newbios.xml", biosConfigFile.Replace("\r\n", "\n"));
 
                 foreach (KeyValuePair<string, string> kvp in toCopy)
                 {
                     hypervisor.doWithRetryOnSomeExceptions(() => { hyp.copyToGuestFromBuffer(kvp.Key, kvp.Value); },
                         TimeSpan.FromSeconds(10), TimeSpan.FromMinutes(3));
                 }
+                // And copy this file specifically as binary.
+                hypervisor.doWithRetryOnSomeExceptions(() =>
+                {
+                    hyp.copyToGuestFromBuffer("conrep", Properties.Resources.conrep);
+                }, TimeSpan.FromSeconds(10), TimeSpan.FromMinutes(3));
             }
         }
 
