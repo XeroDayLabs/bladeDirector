@@ -48,7 +48,7 @@ namespace bladeDirectorClient
                             for (int i = 1; i < kernelVMCount + 1; i++)
                             {
                                 string vmname = String.Format("{0}-{1}", vmNameBase, i);
-                                ushort vmPort = (ushort)(kernelVMPortBase + i);
+                                ushort vmPort = (ushort)(kernelVMPortBase + i - 1);
 
                                 hyps[i - 1] = new hypSpec_vmware(
                                     vmname, kernelVMServer,
