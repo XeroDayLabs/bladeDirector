@@ -22,7 +22,8 @@ REM wait for the service to stop
 :stoploop
 sc query wuauserv | find "STOPPED"
 if errorlevel 1 (
-	timeout 1
+	timeout 5
+	net stop wuauserv
 	goto stoploop
 )
 
