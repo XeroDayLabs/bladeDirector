@@ -15,6 +15,17 @@ if DEFINED KDHOST (
 )
 
 REM Instruct WSUS to regen its SID so that it operates correctly
+
+reg delete "HKLM\Software\Microsoft\Windows\CurrentVersion\WindowsUpdate" /v SusClientId /f
+if %ERRORLEVEL% neq 0 exit /b %errorlevel%
+reg delete "HKLM\Software\Microsoft\Windows\CurrentVersion\WindowsUpdate" /v SusClientIdValidation /f
+if %ERRORLEVEL% neq 0 exit /b %errorlevel%
+reg add "HKLM\Software\Policies\Microsoft\Windows\CurrentVersion\WindowsUpdate" /v TargetGroup /t REG_SZ /d "blades" /f
+if %ERRORLEVEL% neq 0 exit /b %errorlevel%
+reg add "HKLM\Software\Policies\Microsoft\Windows\CurrentVersion\WindowsUpdate" /v TargetGroupEnabled /t REG_DWORD /d 1 /f
+if %ERRORLEVEL% neq 0 exit /b %errorlevel%
+
+REM now restart the service.
 net stop wuauserv
 if %ERRORLEVEL% neq 0 exit /b %errorlevel%
 
@@ -27,20 +38,18 @@ if errorlevel 1 (
 	goto stoploop
 )
 
-reg delete "HKLM\Software\Microsoft\Windows\CurrentVersion\WindowsUpdate" /v SusClientId /f
-if %ERRORLEVEL% neq 0 exit /b %errorlevel%
-reg delete "HKLM\Software\Microsoft\Windows\CurrentVersion\WindowsUpdate" /v SusClientIdValidation /f
-if %ERRORLEVEL% neq 0 exit /b %errorlevel%
-reg add "HKLM\Software\Policies\Microsoft\Windows\CurrentVersion\WindowsUpdate" /v TargetGroup /t REG_SZ /d "blades" /f
-if %ERRORLEVEL% neq 0 exit /b %errorlevel%
-reg add "HKLM\Software\Policies\Microsoft\Windows\CurrentVersion\WindowsUpdate" /v TargetGroupEnabled /t REG_DWORD /d 1 /f
-if %ERRORLEVEL% neq 0 exit /b %errorlevel%
-
+REM and start it again.
 net start wuauserv
-if %ERRORLEVEL% neq 0 exit /b %errorlevel%
+:startloop
+sc query wuauserv | find "RUNNING"
+if errorlevel 1 (
+	timeout 5
+	net stop wuauserv
+	goto startloop
+)
 
 wuauclt.exe /resetauthorization /detectnow
-if %ERRORLEVEL% neq 0 exit /b %errorlevel%
+
 
 REM Now we must wait for WSUS to do its thing. How do we do that? MSDN says "wait 10 minutes for a detection cycle to finish". :(
 REM Let's just wait for one minute.
