@@ -143,11 +143,16 @@ namespace bladeDirector
         {
             itemToAdd toRet = new itemToAdd();
 
-            if (useNextOwner)
-                toRet.cloneName = this.VMIP + "-" + this.nextOwner + "-" + this.currentSnapshot;
-            else
-                toRet.cloneName = this.VMIP + "-" + this.currentOwner + "-" + this.currentSnapshot;
-            toRet.serverIP = this.currentOwner;
+            // If this is set, we should ignore the 'currentOwner' and use the 'nextOwner' instead. This is used when we are 
+            // preparing a VM for another blade, and have ownership temporarily assigned to the blade director itself.
+            string owner;
+            if (useNextOwner) 
+                owner = this.nextOwner;
+            else 
+                owner = this.currentOwner;
+
+            toRet.cloneName = this.VMIP + "-" + owner + "-" + this.currentSnapshot;
+            toRet.serverIP = owner;
             toRet.snapshotName = this.currentSnapshot;
             toRet.bladeIP = this.VMIP;
             toRet.computerName = this.displayName;

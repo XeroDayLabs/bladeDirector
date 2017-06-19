@@ -9,6 +9,7 @@ REM enable the kernel debugger
 Set KDHOST=%2
 if DEFINED KDHOST ( 
 	bcdedit /dbgsettings net hostip:%2 port:%3 key:%4
+	if %ERRORLEVEL% neq 0 exit /b %errorlevel%
 	bcdedit /debug on
 	if %ERRORLEVEL% neq 0 exit /b %errorlevel%
 )
@@ -16,6 +17,15 @@ if DEFINED KDHOST (
 REM Instruct WSUS to regen its SID so that it operates correctly
 net stop wuauserv
 if %ERRORLEVEL% neq 0 exit /b %errorlevel%
+
+REM wait for the service to stop
+:stoploop
+sc query wuauserv | find "STOPPED"
+if errorlevel 1 (
+	timeout 1
+	goto stoploop
+)
+
 reg delete "HKLM\Software\Microsoft\Windows\CurrentVersion\WindowsUpdate" /v SusClientId /f
 if %ERRORLEVEL% neq 0 exit /b %errorlevel%
 reg delete "HKLM\Software\Microsoft\Windows\CurrentVersion\WindowsUpdate" /v SusClientIdValidation /f
@@ -24,8 +34,10 @@ reg add "HKLM\Software\Policies\Microsoft\Windows\CurrentVersion\WindowsUpdate" 
 if %ERRORLEVEL% neq 0 exit /b %errorlevel%
 reg add "HKLM\Software\Policies\Microsoft\Windows\CurrentVersion\WindowsUpdate" /v TargetGroupEnabled /t REG_DWORD /d 1 /f
 if %ERRORLEVEL% neq 0 exit /b %errorlevel%
+
 net start wuauserv
 if %ERRORLEVEL% neq 0 exit /b %errorlevel%
+
 wuauclt.exe /resetauthorization /detectnow
 if %ERRORLEVEL% neq 0 exit /b %errorlevel%
 
