@@ -30,7 +30,7 @@ namespace tests
 
         public static void doExecTestAsync(clientExecutionMethod exec)
         {
-            using (hypervisor_vmware hyp = machinePools.vmware.createHypervisorForCurrentTest(execType: exec))
+            using (hypervisor_vmware hyp = machinePools.vmware.createHypervisorForNextFreeVMOrWait(execType: exec))
             {
                 prepVM(hyp);
                 IAsyncExecutionResult asyncRes = null;
@@ -52,7 +52,7 @@ namespace tests
 
         public static void doExecTest(clientExecutionMethod exec)
         {
-            using (hypervisor_vmware hyp = machinePools.vmware.createHypervisorForCurrentTest(execType: exec))
+            using (hypervisor_vmware hyp = machinePools.vmware.createHypervisorForNextFreeVMOrWait(execType: exec))
             {
                 prepVM(hyp);
                 executionResult res = hyp.startExecutable("cmd.exe", "/c echo This is a test&&echo and stderr 1>&2 && exit /b 1234");
@@ -64,7 +64,7 @@ namespace tests
 
         public static void doWorkingDirTest(clientExecutionMethod exec, string newWorkingDir)
         {
-            using (hypervisor_vmware hyp = machinePools.vmware.createHypervisorForCurrentTest(execType: exec))
+            using (hypervisor_vmware hyp = machinePools.vmware.createHypervisorForNextFreeVMOrWait(execType: exec))
             {
                 prepVM(hyp);
                 executionResult res = hyp.startExecutable("cmd /c", "cd", newWorkingDir);
