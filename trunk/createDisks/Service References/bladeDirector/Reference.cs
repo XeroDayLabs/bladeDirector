@@ -22,6 +22,20 @@ namespace createDisks.bladeDirector {
         [System.ServiceModel.OperationContractAttribute(Action="http://tempuri.org/keepAlive", ReplyAction="*")]
         System.Threading.Tasks.Task keepAliveAsync();
         
+        [System.ServiceModel.OperationContractAttribute(Action="http://tempuri.org/logIn", ReplyAction="*")]
+        [System.ServiceModel.XmlSerializerFormatAttribute(SupportFaults=true)]
+        void logIn();
+        
+        [System.ServiceModel.OperationContractAttribute(Action="http://tempuri.org/logIn", ReplyAction="*")]
+        System.Threading.Tasks.Task logInAsync();
+        
+        [System.ServiceModel.OperationContractAttribute(Action="http://tempuri.org/getLogInProgress", ReplyAction="*")]
+        [System.ServiceModel.XmlSerializerFormatAttribute(SupportFaults=true)]
+        void getLogInProgress(string waitToken);
+        
+        [System.ServiceModel.OperationContractAttribute(Action="http://tempuri.org/getLogInProgress", ReplyAction="*")]
+        System.Threading.Tasks.Task getLogInProgressAsync(string waitToken);
+        
         [System.ServiceModel.OperationContractAttribute(Action="http://tempuri.org/ListNodes", ReplyAction="*")]
         [System.ServiceModel.XmlSerializerFormatAttribute(SupportFaults=true)]
         string ListNodes();
@@ -131,6 +145,14 @@ namespace createDisks.bladeDirector {
         
         [System.ServiceModel.OperationContractAttribute(Action="http://tempuri.org/selectSnapshotForBladeOrVM_getProgress", ReplyAction="*")]
         System.Threading.Tasks.Task<createDisks.bladeDirector.resultCode> selectSnapshotForBladeOrVM_getProgressAsync(string NodeIP);
+        
+        [System.ServiceModel.OperationContractAttribute(Action="http://tempuri.org/getFreeNASSnapshotPath", ReplyAction="*")]
+        [System.ServiceModel.XmlSerializerFormatAttribute(SupportFaults=true)]
+        [System.ServiceModel.ServiceKnownTypeAttribute(typeof(bladeOwnership))]
+        string getFreeNASSnapshotPath(string NodeIP);
+        
+        [System.ServiceModel.OperationContractAttribute(Action="http://tempuri.org/getFreeNASSnapshotPath", ReplyAction="*")]
+        System.Threading.Tasks.Task<string> getFreeNASSnapshotPathAsync(string NodeIP);
         
         [System.ServiceModel.OperationContractAttribute(Action="http://tempuri.org/getLastDeployedBIOSForBlade", ReplyAction="*")]
         [System.ServiceModel.XmlSerializerFormatAttribute(SupportFaults=true)]
@@ -297,6 +319,66 @@ namespace createDisks.bladeDirector {
     [System.Diagnostics.DebuggerStepThroughAttribute()]
     [System.ComponentModel.DesignerCategoryAttribute("code")]
     [System.Xml.Serialization.XmlTypeAttribute(Namespace="http://tempuri.org/")]
+    public partial class userAddRequest : object, System.ComponentModel.INotifyPropertyChanged {
+        
+        private string usernameField;
+        
+        private string passwordField;
+        
+        private bool isAdministratorField;
+        
+        /// <remarks/>
+        [System.Xml.Serialization.XmlElementAttribute(Order=0)]
+        public string username {
+            get {
+                return this.usernameField;
+            }
+            set {
+                this.usernameField = value;
+                this.RaisePropertyChanged("username");
+            }
+        }
+        
+        /// <remarks/>
+        [System.Xml.Serialization.XmlElementAttribute(Order=1)]
+        public string password {
+            get {
+                return this.passwordField;
+            }
+            set {
+                this.passwordField = value;
+                this.RaisePropertyChanged("password");
+            }
+        }
+        
+        /// <remarks/>
+        [System.Xml.Serialization.XmlElementAttribute(Order=2)]
+        public bool isAdministrator {
+            get {
+                return this.isAdministratorField;
+            }
+            set {
+                this.isAdministratorField = value;
+                this.RaisePropertyChanged("isAdministrator");
+            }
+        }
+        
+        public event System.ComponentModel.PropertyChangedEventHandler PropertyChanged;
+        
+        protected void RaisePropertyChanged(string propertyName) {
+            System.ComponentModel.PropertyChangedEventHandler propertyChanged = this.PropertyChanged;
+            if ((propertyChanged != null)) {
+                propertyChanged(this, new System.ComponentModel.PropertyChangedEventArgs(propertyName));
+            }
+        }
+    }
+    
+    /// <remarks/>
+    [System.CodeDom.Compiler.GeneratedCodeAttribute("System.Xml", "4.6.1099.0")]
+    [System.SerializableAttribute()]
+    [System.Diagnostics.DebuggerStepThroughAttribute()]
+    [System.ComponentModel.DesignerCategoryAttribute("code")]
+    [System.Xml.Serialization.XmlTypeAttribute(Namespace="http://tempuri.org/")]
     public partial class VMSoftwareSpec : object, System.ComponentModel.INotifyPropertyChanged {
         
         private string debuggerHostField;
@@ -305,7 +387,7 @@ namespace createDisks.bladeDirector {
         
         private string debuggerKeyField;
         
-        private bool forceRecreateField;
+        private userAddRequest[] usersToAddField;
         
         /// <remarks/>
         [System.Xml.Serialization.XmlElementAttribute(Order=0)]
@@ -344,14 +426,14 @@ namespace createDisks.bladeDirector {
         }
         
         /// <remarks/>
-        [System.Xml.Serialization.XmlElementAttribute(Order=3)]
-        public bool forceRecreate {
+        [System.Xml.Serialization.XmlArrayAttribute(Order=3)]
+        public userAddRequest[] usersToAdd {
             get {
-                return this.forceRecreateField;
+                return this.usersToAddField;
             }
             set {
-                this.forceRecreateField = value;
-                this.RaisePropertyChanged("forceRecreate");
+                this.usersToAddField = value;
+                this.RaisePropertyChanged("usersToAdd");
             }
         }
         
@@ -1005,6 +1087,22 @@ namespace createDisks.bladeDirector {
             return base.Channel.keepAliveAsync();
         }
         
+        public void logIn() {
+            base.Channel.logIn();
+        }
+        
+        public System.Threading.Tasks.Task logInAsync() {
+            return base.Channel.logInAsync();
+        }
+        
+        public void getLogInProgress(string waitToken) {
+            base.Channel.getLogInProgress(waitToken);
+        }
+        
+        public System.Threading.Tasks.Task getLogInProgressAsync(string waitToken) {
+            return base.Channel.getLogInProgressAsync(waitToken);
+        }
+        
         public string ListNodes() {
             return base.Channel.ListNodes();
         }
@@ -1115,6 +1213,14 @@ namespace createDisks.bladeDirector {
         
         public System.Threading.Tasks.Task<createDisks.bladeDirector.resultCode> selectSnapshotForBladeOrVM_getProgressAsync(string NodeIP) {
             return base.Channel.selectSnapshotForBladeOrVM_getProgressAsync(NodeIP);
+        }
+        
+        public string getFreeNASSnapshotPath(string NodeIP) {
+            return base.Channel.getFreeNASSnapshotPath(NodeIP);
+        }
+        
+        public System.Threading.Tasks.Task<string> getFreeNASSnapshotPathAsync(string NodeIP) {
+            return base.Channel.getFreeNASSnapshotPathAsync(NodeIP);
         }
         
         public string getLastDeployedBIOSForBlade(string NodeIP) {

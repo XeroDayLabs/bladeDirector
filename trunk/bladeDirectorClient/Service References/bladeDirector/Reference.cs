@@ -24,10 +24,17 @@ namespace bladeDirectorClient.bladeDirector {
         
         [System.ServiceModel.OperationContractAttribute(Action="http://tempuri.org/logIn", ReplyAction="*")]
         [System.ServiceModel.XmlSerializerFormatAttribute(SupportFaults=true)]
-        void logIn();
+        string logIn();
         
         [System.ServiceModel.OperationContractAttribute(Action="http://tempuri.org/logIn", ReplyAction="*")]
-        System.Threading.Tasks.Task logInAsync();
+        System.Threading.Tasks.Task<string> logInAsync();
+        
+        [System.ServiceModel.OperationContractAttribute(Action="http://tempuri.org/getLogInProgress", ReplyAction="*")]
+        [System.ServiceModel.XmlSerializerFormatAttribute(SupportFaults=true)]
+        bladeDirectorClient.bladeDirector.resultCode getLogInProgress(string waitToken);
+        
+        [System.ServiceModel.OperationContractAttribute(Action="http://tempuri.org/getLogInProgress", ReplyAction="*")]
+        System.Threading.Tasks.Task<bladeDirectorClient.bladeDirector.resultCode> getLogInProgressAsync(string waitToken);
         
         [System.ServiceModel.OperationContractAttribute(Action="http://tempuri.org/ListNodes", ReplyAction="*")]
         [System.ServiceModel.XmlSerializerFormatAttribute(SupportFaults=true)]
@@ -215,6 +222,40 @@ namespace bladeDirectorClient.bladeDirector {
     /// <remarks/>
     [System.CodeDom.Compiler.GeneratedCodeAttribute("System.Xml", "4.6.1099.0")]
     [System.SerializableAttribute()]
+    [System.Xml.Serialization.XmlTypeAttribute(Namespace="http://tempuri.org/")]
+    public enum resultCode {
+        
+        /// <remarks/>
+        success,
+        
+        /// <remarks/>
+        bladeNotFound,
+        
+        /// <remarks/>
+        bladeInUse,
+        
+        /// <remarks/>
+        bladeQueueFull,
+        
+        /// <remarks/>
+        pending,
+        
+        /// <remarks/>
+        alreadyInProgress,
+        
+        /// <remarks/>
+        genericFail,
+        
+        /// <remarks/>
+        noNeedLah,
+        
+        /// <remarks/>
+        unknown,
+    }
+    
+    /// <remarks/>
+    [System.CodeDom.Compiler.GeneratedCodeAttribute("System.Xml", "4.6.1099.0")]
+    [System.SerializableAttribute()]
     [System.Diagnostics.DebuggerStepThroughAttribute()]
     [System.ComponentModel.DesignerCategoryAttribute("code")]
     [System.Xml.Serialization.XmlTypeAttribute(Namespace="http://tempuri.org/")]
@@ -270,40 +311,6 @@ namespace bladeDirectorClient.bladeDirector {
                 propertyChanged(this, new System.ComponentModel.PropertyChangedEventArgs(propertyName));
             }
         }
-    }
-    
-    /// <remarks/>
-    [System.CodeDom.Compiler.GeneratedCodeAttribute("System.Xml", "4.6.1099.0")]
-    [System.SerializableAttribute()]
-    [System.Xml.Serialization.XmlTypeAttribute(Namespace="http://tempuri.org/")]
-    public enum resultCode {
-        
-        /// <remarks/>
-        success,
-        
-        /// <remarks/>
-        bladeNotFound,
-        
-        /// <remarks/>
-        bladeInUse,
-        
-        /// <remarks/>
-        bladeQueueFull,
-        
-        /// <remarks/>
-        pending,
-        
-        /// <remarks/>
-        alreadyInProgress,
-        
-        /// <remarks/>
-        genericFail,
-        
-        /// <remarks/>
-        noNeedLah,
-        
-        /// <remarks/>
-        unknown,
     }
     
     /// <remarks/>
@@ -1080,12 +1087,20 @@ namespace bladeDirectorClient.bladeDirector {
             return base.Channel.keepAliveAsync();
         }
         
-        public void logIn() {
-            base.Channel.logIn();
+        public string logIn() {
+            return base.Channel.logIn();
         }
         
-        public System.Threading.Tasks.Task logInAsync() {
+        public System.Threading.Tasks.Task<string> logInAsync() {
             return base.Channel.logInAsync();
+        }
+        
+        public bladeDirectorClient.bladeDirector.resultCode getLogInProgress(string waitToken) {
+            return base.Channel.getLogInProgress(waitToken);
+        }
+        
+        public System.Threading.Tasks.Task<bladeDirectorClient.bladeDirector.resultCode> getLogInProgressAsync(string waitToken) {
+            return base.Channel.getLogInProgressAsync(waitToken);
         }
         
         public string ListNodes() {

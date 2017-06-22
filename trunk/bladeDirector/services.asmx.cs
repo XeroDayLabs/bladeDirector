@@ -40,16 +40,16 @@ namespace bladeDirector
         }
 
         [WebMethod]
-        public void logIn()
+        public string logIn()
         {
             string srcIp = sanitizeAddress(HttpContext.Current.Request.UserHostAddress);
-            hostStateDB.logIn(srcIp);
+            return hostStateDB.logIn(srcIp);
         }
 
         [WebMethod]
-        public void getLogInProgress(string waitToken)
+        public resultCode getLogInProgress(string waitToken)
         {
-            hostStateDB.getLogInProgress(waitToken);
+            return hostStateDB.getLogInProgress(waitToken);
         }
 
         public void _keepAlive(string srcIP)

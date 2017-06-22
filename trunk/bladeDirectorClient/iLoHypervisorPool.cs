@@ -347,7 +347,18 @@ namespace bladeDirectorClient
                     {
                         using (servicesSoapClient director = new servicesSoapClient("servicesSoap", machinePools.bladeDirectorURL))
                         {
-                            director.logIn();
+                            string waitToken = director.logIn();
+                            DateTime deadline = DateTime.Now + TimeSpan.FromMinutes(5); 
+                            while (true)
+                            {
+                                resultCode res = director.getLogInProgress(waitToken);
+                                if (res == resultCode.success)
+                                    break;
+                                if (res != resultCode.pending)
+                                    throw new Exception("Can't log in to blade director, recieved status " + res);
+                                if (DateTime.Now > deadline)
+                                    throw new TimeoutException();
+                            }
                         }
                         keepaliveThread = new Thread(keepaliveThreadMain);
                         keepaliveThread.Name = "Blade director keepalive thread";
@@ -358,13 +369,9 @@ namespace bladeDirectorClient
 
             if (!isConnected)
             {
-                using (servicesSoapClient director = new servicesSoapClient("servicesSoap", machinePools.bladeDirectorURL))
+                lock (_connectionLock)
                 {
-                    lock (_connectionLock)
-                    {
-                        director.logIn();
-                        isConnected = true;
-                    }
+                    isConnected = true;
                 }
             }
         }
