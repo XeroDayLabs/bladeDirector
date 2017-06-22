@@ -46,6 +46,12 @@ namespace bladeDirector
             hostStateDB.logIn(srcIp);
         }
 
+        [WebMethod]
+        public void getLogInProgress(string waitToken)
+        {
+            hostStateDB.getLogInProgress(waitToken);
+        }
+
         public void _keepAlive(string srcIP)
         {
             hostStateDB.keepAlive(srcIP);

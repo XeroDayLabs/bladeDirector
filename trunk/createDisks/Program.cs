@@ -453,7 +453,7 @@ namespace createDisks
                 executionResult res = hyp.startExecutable("cmd.exe", args, "c:\\deployment", deadline: DateTime.Now + TimeSpan.FromMinutes(3) );
                 if (res.resultCode != 0)
                 {
-                    throw new  Exception("deployment batch file returned nonzero: stderr '" + res.stderr + "' stdout '" + res.stdout + "'");
+                //    throw new  Exception("deployment batch file returned nonzero: stderr '" + res.stderr + "' stdout '" + res.stdout + "'");
                 }
             }
             finally

@@ -234,7 +234,7 @@ namespace bladeDirector
             }
         }
 
-        public override executionResult startExecutable(string toExecute, string args, string workingdir = null, DateTime deadline = new DateTime())
+        public override executionResult startExecutable(string toExecute, string args, string workingdir = null, DateTime deadline = default(DateTime))
         {
             events.Add(new mockedCall("startExecutable", "toExecute: '" +  toExecute + "' args: '" + args + "'" + " working dir: '" + (workingdir ?? "<null>") + "'"));
 

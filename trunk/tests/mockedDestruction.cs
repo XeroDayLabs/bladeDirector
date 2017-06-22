@@ -57,7 +57,22 @@ namespace tests
             hostStateDB_mocked uut = new hostStateDB_mocked();
             string ourBlade = doBladeAllocationForTest(uut, hostIP, true);
 
-            uut.logIn(hostIP);
+            string waitToken = uut.logIn(hostIP);
+            DateTime timeout = DateTime.Now + TimeSpan.FromSeconds(30);
+            while (true)
+            {
+                resultCode res = uut.getLogInProgress(waitToken);
+                if (res == resultCode.success)
+                    break;
+                if (res == resultCode.pending)
+                {
+                    if (DateTime.Now > timeout)
+                        throw new TimeoutException();
+
+                    continue;
+                }
+                Assert.Fail("Unexpected status during .getLogInProgress: " + res);
+            }
             
             GetBladeStatusResult bladeState = uut.getBladeStatus(ourBlade, hostIP);
             Assert.AreEqual(bladeState, GetBladeStatusResult.unused);

@@ -390,10 +390,51 @@ namespace bladeDirector
             }
         }
 
-        public void logIn(string hostIP)
+        private Dictionary<string, inProgressLogIn> currentlyRunningLogIns = new Dictionary<string, inProgressLogIn>(); 
+        public string logIn(string hostIP)
+        {
+            lock (currentlyRunningLogIns)
+            {
+                // If there's already a login going on for this host, just use that one. Don't do two simultaneously.
+                if (currentlyRunningLogIns.ContainsKey(hostIP))
+                {
+                    if (!currentlyRunningLogIns[hostIP].isFinished)
+                        return currentlyRunningLogIns[hostIP].waitToken;
+                    currentlyRunningLogIns.Remove(hostIP);
+                }
+
+                // Otherwise, make a new task and status, and start before we return.
+                inProgressLogIn newLogIn = new inProgressLogIn()
+                {
+                    waitToken = hostIP.GetHashCode().ToString(),
+                    hostIP = hostIP,
+                    isFinished = false,
+                    status = resultCode.pending
+                };
+                Task loginTask = new Task(() => { logInBlocking(newLogIn); });
+                newLogIn.task = loginTask;
+                currentlyRunningLogIns.Add(newLogIn.waitToken, newLogIn);
+                loginTask.Start();
+
+                return newLogIn.waitToken;
+            }
+        }
+
+        public resultCode getLogInProgress(string waitToken)
+        {
+            lock (currentlyRunningLogIns)
+            {
+                if (currentlyRunningLogIns.ContainsKey(waitToken))
+                    return currentlyRunningLogIns[waitToken].status;
+                else
+                    return resultCode.bladeNotFound;
+            }
+        }
+
+        private void logInBlocking(inProgressLogIn login)
         {
             // Clean up anything that we are currently preparing for this owner
-            IEnumerable<vmSpec> bootingVMs = getAllVMInfo().Where(x => x.currentOwner == "vmserver" && x.nextOwner == hostIP);
+            IEnumerable<vmSpec> bootingVMs = getAllVMInfo().Where(x => x.currentOwner == "vmserver" && x.nextOwner == login.hostIP);
             foreach (vmSpec allocated in bootingVMs)
             {
                 allocated.nextOwner = null;
@@ -403,13 +444,18 @@ namespace bladeDirector
             // Clean up any hosts this blade has left over from any previous run
             lock (connLock)
             {
-                IEnumerable<bladeSpec> allocedBlades = getAllBladeInfo().Where(x => x.currentOwner == hostIP);
+                IEnumerable<bladeSpec> allocedBlades = getAllBladeInfo().Where(x => x.currentOwner == login.hostIP);
                 foreach (bladeSpec allocated in allocedBlades)
-                    releaseBlade(allocated, hostIP, false);
+                    releaseBlade(allocated, login.hostIP, false);
 
-                IEnumerable<vmSpec> allocedVMs = getAllVMInfo().Where(x => x.currentOwner == hostIP);
+                IEnumerable<vmSpec> allocedVMs = getAllVMInfo().Where(x => x.currentOwner == login.hostIP);
                 foreach (vmSpec allocated in allocedVMs)
                     releaseVM(allocated);
+            }
+            lock (currentlyRunningLogIns)
+            {
+                login.status = resultCode.success;
+                login.isFinished = true;
             }
         }
 
@@ -1604,6 +1650,15 @@ namespace bladeDirector
                 return String.Empty;
             return String.Format("{0}-{1}-{2}", nodeIp, requestorIp, ownership.currentSnapshot);
         }
+    }
+
+    public class inProgressLogIn
+    {
+        public string hostIP;
+        public string waitToken;
+        public Task task;
+        public bool isFinished;
+        public resultCode status;
     }
 
     public abstract class vmServerControl
