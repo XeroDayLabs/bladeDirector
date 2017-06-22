@@ -14,7 +14,7 @@ namespace bladeDirectorClient
         private readonly Object hypervisorSpecLock = new Object();
         private ConcurrentDictionary<hypSpec_vmware, bool> hypervisorSpecs = null;
 
-        public hypervisor_vmware createHypervisorForCurrentTest(string snapshotName = "clean", clientExecutionMethod execType = clientExecutionMethod.smb)
+        public hypervisor_vmware createHypervisorForNextFreeVMOrWait(string snapshotName = "clean", clientExecutionMethod execType = clientExecutionMethod.smb)
         {
             while (true)
             {
