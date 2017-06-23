@@ -395,18 +395,20 @@ namespace bladeDirector
         {
             lock (currentlyRunningLogIns)
             {
+                string waitToken = hostIP.GetHashCode().ToString();
+
                 // If there's already a login going on for this host, just use that one. Don't do two simultaneously.
-                if (currentlyRunningLogIns.ContainsKey(hostIP))
+                if (currentlyRunningLogIns.ContainsKey(waitToken))
                 {
-                    if (!currentlyRunningLogIns[hostIP].isFinished)
-                        return currentlyRunningLogIns[hostIP].waitToken;
-                    currentlyRunningLogIns.Remove(hostIP);
+                    if (!currentlyRunningLogIns[waitToken].isFinished)
+                        return currentlyRunningLogIns[waitToken].waitToken;
+                    currentlyRunningLogIns.Remove(waitToken);
                 }
 
                 // Otherwise, make a new task and status, and start before we return.
                 inProgressLogIn newLogIn = new inProgressLogIn()
                 {
-                    waitToken = hostIP.GetHashCode().ToString(),
+                    waitToken = waitToken,
                     hostIP = hostIP,
                     isFinished = false,
                     status = resultCode.pending
@@ -1328,10 +1330,19 @@ namespace bladeDirector
 
                 Task t = new Task(() =>
                 {
-                    Program.repairBladeDeviceNodes(new itemToAdd[] {itm});
-                    lock (currentSnapshotSelections)
+                    try
                     {
-                        currentSnapshotSelections[nodeIp] = resultCode.success;
+                        Program.repairBladeDeviceNodes(new [] { itm });
+                        lock (currentSnapshotSelections)
+                        {
+                            currentSnapshotSelections[nodeIp] = resultCode.success;
+                        }
+                        return;
+                    }
+                    catch (Exception)
+                    {
+                        currentSnapshotSelections[nodeIp] = resultCode.genericFail;
+                        throw;
                     }
                 }
                     );
