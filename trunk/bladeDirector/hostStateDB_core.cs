@@ -1330,10 +1330,19 @@ namespace bladeDirector
 
                 Task t = new Task(() =>
                 {
-                    Program.repairBladeDeviceNodes(new itemToAdd[] {itm});
-                    lock (currentSnapshotSelections)
+                    try
                     {
-                        currentSnapshotSelections[nodeIp] = resultCode.success;
+                        Program.repairBladeDeviceNodes(new [] { itm });
+                        lock (currentSnapshotSelections)
+                        {
+                            currentSnapshotSelections[nodeIp] = resultCode.success;
+                        }
+                        return;
+                    }
+                    catch (Exception)
+                    {
+                        currentSnapshotSelections[nodeIp] = resultCode.genericFail;
+                        throw;
                     }
                 }
                     );
