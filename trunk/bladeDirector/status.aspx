@@ -16,6 +16,7 @@
         div.fixedSize {font-family: monospace;color: pink; border-style: solid; border-color: gray; }
         input { vertical-align: middle; horiz-align: center }
         span.fixedSize {font-family: monospace; color: pink }
+        a {font-family: monospace;color: pink;}
     </style>
     
     <script type="text/javascript" src="jquery.js"></script>

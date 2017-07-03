@@ -20,6 +20,7 @@ namespace bladeDirector
             headerRow.Cells.Add(new TableHeaderCell() { Text = "Currently-selected snapshot" });
             headerRow.Cells.Add(new TableHeaderCell() { Text = "Current owner" });
             headerRow.Cells.Add(new TableHeaderCell() { Text = "Next owner" });
+            headerRow.Cells.Add(new TableHeaderCell() { Text = "Links" });
             headerRow.Cells.Add(new TableHeaderCell() { Text = "Actions" });
 
             tblBladeStatus.Rows.Add(headerRow);
@@ -58,6 +59,12 @@ namespace bladeDirector
                 newRow.Cells.Add(new TableCell() { Text = bladeInfo.currentOwner ?? "none" });
                 newRow.Cells.Add(new TableCell() { Text = bladeInfo.nextOwner ?? "none" });
 
+                string iloURL = String.Format("https://ilo-blade{0}.management.xd.lan/", Int32.Parse(bladeInfo.bladeIP.Split('.')[3]) - 100);
+                HyperLink link = new HyperLink() {NavigateUrl = iloURL, Text = "iLo"};
+                TableCell iloURLtableCell = new TableCell();
+                iloURLtableCell.Controls.Add(link);
+                newRow.Cells.Add(iloURLtableCell);
+            
                 Button btnRelease = new Button
                 {
                     Text = "Force release",
