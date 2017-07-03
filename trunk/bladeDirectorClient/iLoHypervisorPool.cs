@@ -50,7 +50,7 @@ namespace bladeDirectorClient
                     {
                         continue;
                     }
-                    else 
+                    else
                     {
                         throw new bladeAllocationException(results[n].code);
                     }
@@ -80,16 +80,16 @@ namespace bladeDirectorClient
 
                         hypSpec_vmware newSpec = new hypSpec_vmware(
                             vmSpec.displayName, vmServerSpec.bladeIP, vmServerSpec.ESXiUsername, vmServerSpec.ESXiPassword,
-                            vmSpec.username, vmSpec.password, snapshotFriendlyName, snapshotUnfriendlyName, 
+                            vmSpec.username, vmSpec.password, snapshotFriendlyName, snapshotUnfriendlyName,
                             vmSpec.kernelDebugPort, vmSpec.kernelDebugKey, vmSpec.VMIP);
 
                         ensurePortIsFree(vmSpec.kernelDebugPort);
 
                         // FIXME: these credentials should be passed down from the bladeDirector, I think.
                         hypervisor_vmware_FreeNAS newVM = new hypervisor_vmware_FreeNAS(newSpec,
-                            Properties.Settings.Default.iloISCSIIP, 
-                            Properties.Settings.Default.iloISCSIUsername, 
-                            Properties.Settings.Default.iloISCSIPassword, clientExecutionMethod.smb );
+                            Properties.Settings.Default.iloISCSIIP,
+                            Properties.Settings.Default.iloISCSIUsername,
+                            Properties.Settings.Default.iloISCSIPassword, clientExecutionMethod.smb);
 
                         newVM.setDisposalCallback(onDestruction);
                         if (!toRet.TryAdd(vmSpec.VMIP, newVM))
@@ -190,11 +190,11 @@ namespace bladeDirectorClient
         public static void ensurePortIsFree(UInt16 port)
         {
             MIB_UDPTABLE_OWNER_PID[] tableContents = getCurrentUDPListeners();
-            MIB_UDPTABLE_OWNER_PID portUse = tableContents.SingleOrDefault(x => x.localPort == port );
+            MIB_UDPTABLE_OWNER_PID portUse = tableContents.SingleOrDefault(x => x.localPort == port);
             if (portUse == null)
                 return;
 
-            using(Process p = Process.GetProcessById((int) portUse.ownerPID))
+            using (Process p = Process.GetProcessById((int) portUse.ownerPID))
             {
                 p.Kill();
                 p.WaitForExit((int) TimeSpan.FromSeconds(5).TotalMilliseconds);
@@ -221,12 +221,12 @@ namespace bladeDirectorClient
 
                 for (int rowIndex = 0; rowIndex < tableContents.Length; rowIndex++)
                 {
-                    IntPtr pos = tableBuffer + 
+                    IntPtr pos = tableBuffer +
                                  Marshal.SizeOf(typeof (UDP_TABLE_CLASS)) +
                                  ((Marshal.SizeOf(typeof (MIB_UDPTABLE_OWNER_PID)))*rowIndex);
                     MIB_UDPTABLE_OWNER_PID row = (MIB_UDPTABLE_OWNER_PID) Marshal.PtrToStructure(pos, typeof (MIB_UDPTABLE_OWNER_PID));
 
-                    row.localPort = byteswap((UInt16)row.localPort);
+                    row.localPort = byteswap((UInt16) row.localPort);
 
                     tableContents[rowIndex] = row;
                 }
@@ -243,8 +243,8 @@ namespace bladeDirectorClient
         {
             UInt16 toRet = 0;
 
-            toRet |= (UInt16)((localPort & 0x00ff) << 8);
-            toRet |= (UInt16)((localPort & 0xff00) >> 8);
+            toRet |= (UInt16) ((localPort & 0x00ff) << 8);
+            toRet |= (UInt16) ((localPort & 0xff00) >> 8);
 
             return toRet;
         }
@@ -266,7 +266,7 @@ namespace bladeDirectorClient
         public bladeDirectedHypervisor_iLo createSingleHypervisor(string iloHostUsername, string iloHostPassword,
             string iloUsername, string iloPassword,
             string iloISCSIIP, string iloISCSIUsername, string iloISCSIPassword,
-            string iloKernelKey, 
+            string iloKernelKey,
             string snapshotName)
         {
             initialiseIfNeeded();
@@ -303,7 +303,7 @@ namespace bladeDirectorClient
 
                     // Great, now we have ownership of the blade, so we can use it safely.
                     bladeSpec bladeConfig = director.getConfigurationOfBlade(allocatedBladeResult.bladeName);
-                    var res = director.selectSnapshotForBladeOrVM(allocatedBladeResult.bladeName, snapshotName);
+                    resultCode res = director.selectSnapshotForBladeOrVM(allocatedBladeResult.bladeName, snapshotName);
                     while (res == resultCode.pending)
                     {
                         res = director.selectSnapshotForBladeOrVM_getProgress(allocatedBladeResult.bladeName);
@@ -319,7 +319,7 @@ namespace bladeDirectorClient
                         iloISCSIIP, iloISCSIUsername, iloISCSIPassword,
                         snapshotName, unfriendlySnapshotName, bladeConfig.iLOPort, iloKernelKey
                         );
-                    
+
                     ensurePortIsFree(bladeConfig.iLOPort);
 
                     NASAccess nas = new FreeNAS(spec);
@@ -348,7 +348,7 @@ namespace bladeDirectorClient
                         using (servicesSoapClient director = new servicesSoapClient("servicesSoap", machinePools.bladeDirectorURL))
                         {
                             string waitToken = director.logIn();
-                            DateTime deadline = DateTime.Now + TimeSpan.FromMinutes(5); 
+                            DateTime deadline = DateTime.Now + TimeSpan.FromMinutes(5);
                             while (true)
                             {
                                 resultCode res = director.getLogInProgress(waitToken);
@@ -387,7 +387,9 @@ namespace bladeDirectorClient
                     {
                         director.keepAlive();
                     }
-                    catch (TimeoutException) { }
+                    catch (TimeoutException)
+                    {
+                    }
                 }
             }
         }
@@ -425,7 +427,7 @@ namespace bladeDirectorClient
         }
     }
 
-    [StructLayout(LayoutKind.Sequential, Pack =  0)]
+    [StructLayout(LayoutKind.Sequential, Pack = 0)]
     public class UDP_TABLE_CLASS
     {
         public UInt32 numberOfEntries;
@@ -441,7 +443,8 @@ namespace bladeDirectorClient
 
     public class bladeDirectedHypervisor_iLo : hypervisor_iLo
     {
-        public bladeDirectedHypervisor_iLo(hypSpec_iLo spec) : base(spec)
+        public bladeDirectedHypervisor_iLo(hypSpec_iLo spec)
+            : base(spec)
         {
         }
 
