@@ -902,7 +902,7 @@ namespace bladeDirector
 
                     // First, we need to find a blade to use as a VM server. Do we have a free VM server? If so, just use that.
                     List<bladeSpec> allBladeInfo = getAllBladeInfo();
-                    bladeSpec freeVMServer = allBladeInfo.SingleOrDefault((x) => x.currentlyBeingAVMServer && x.canAccommodate(conn, hwSpec));
+                    bladeSpec freeVMServer = allBladeInfo.FirstOrDefault((x) => x.currentlyBeingAVMServer && x.canAccommodate(conn, hwSpec));
                     if (freeVMServer == null)
                     {
                         // Nope, no free VM server. Maybe we can make a new one.
