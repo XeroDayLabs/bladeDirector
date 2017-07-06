@@ -711,52 +711,44 @@ namespace bladeDirector
                 }
             }*/
 
-            // Kill off any pending deployments ASAP
-            lock (biosUpdateState)
+            // Kill off any pending BIOS deployments ASAP. Careful about how we lock, though, so we don't cause a deadlock.
+            bool isLocked = false;
+            try
             {
+                Monitor.Enter(biosUpdateState);
+                isLocked = true;
+
                 if (biosUpdateState.ContainsKey(reqBlade.bladeIP))
                 {
                     biosThreadState toCancel = biosUpdateState[reqBlade.bladeIP];
                     if (!toCancel.isFinished)
                     {
                         toCancel.connectDeadline = DateTime.MinValue;
-                        // Wait until it exits..
+                        // Wait until it exits. Release our lock while we wait.
+                        Monitor.Exit(biosUpdateState);
+                        isLocked = false;
                         while (!toCancel.isFinished)
                         {
                             logEvents.Add("Waiting for BIOS operation on " + reqBlade.bladeIP + " to cancel");
-                            Thread.Sleep(TimeSpan.FromSeconds(10));                            
+                            Thread.Sleep(TimeSpan.FromSeconds(10));
                         }
+                        Monitor.Enter(biosUpdateState);
+                        isLocked = true;
                     }
                     biosThreadState foo;
                     biosUpdateState.TryRemove(reqBlade.bladeIP, out foo);
                 }
             }
+            finally
+            {
+                if (isLocked)
+                    Monitor.Exit(biosUpdateState);
+            }
 
             // Reset any VM-server the blade may be
             reqBlade.currentlyBeingAVMServer = reqBlade.currentlyHavingBIOSDeployed = false;
             foreach (vmSpec child in getVMByVMServerIP(reqBlade.bladeIP))
-            {
-                lock (VMDeployState)
-                {
-                    if (child.VMIP != null &&
-                        VMDeployState.ContainsKey(child.VMIP.ToString()) &&
-                        VMDeployState[child.VMIP].currentProgress.code != resultCode.pending  )
-                    {
-                        // Ahh, this VM is currently being deployed. We can't release it until the thread doing the deployment
-                        VMDeployState[child.VMIP].deployDeadline = DateTime.MinValue;
-                        while (VMDeployState[child.VMIP].currentProgress.code == resultCode.pending)
-                        {
-                            logEvents.Add("Waiting for VM deploy on " + child.VMIP + " to cancel");
-                            Thread.Sleep(TimeSpan.FromSeconds(10));
-                        }
-                    }
-
-                    lock (connLock)
-                    {
-                        child.deleteInDB(conn);
-                    }
-                }
-            }
+                releaseVM(child);
 
             // If there's someone waiting, allocate it to that blade.
             if (reqBlade.state == bladeStatus.releaseRequested)
@@ -785,6 +777,44 @@ namespace bladeDirector
         {
             bladeSpec parentBladeSpec = getConfigurationOfBladeByID((int)toDel.parentBladeID);
             bool vmServerIsEmpty = getVMByVMServerIP(parentBladeSpec.bladeIP).Length == 1;
+
+            // If we are currently being deployed, we must wait until we are at a point wherby we can abort the deploy. We need to
+            // be careful how to lock here, otherwise we risk deadlocking.
+            bool islocked = false;
+            try
+            {
+                Monitor.Enter(VMDeployState);
+                islocked = true;
+
+                if (toDel.VMIP != null &&
+                    VMDeployState.ContainsKey(toDel.VMIP.ToString()) &&
+                    VMDeployState[toDel.VMIP].currentProgress.code != resultCode.pending)
+                {
+                    // Ahh, this VM is currently being deployed. We can't release it until the thread doing the deployment says so.
+                    VMDeployState[toDel.VMIP].deployDeadline = DateTime.MinValue;
+                    while (VMDeployState[toDel.VMIP].currentProgress.code == resultCode.pending)
+                    {
+                        logEvents.Add("Waiting for VM deploy on " + toDel.VMIP + " to cancel");
+
+                        Monitor.Exit(VMDeployState);
+                        islocked = false;
+                        Thread.Sleep(TimeSpan.FromSeconds(10));
+
+                        Monitor.Enter(VMDeployState);
+                        islocked = true;
+                    }
+                }
+
+                lock (connLock)
+                {
+                    toDel.deleteInDB(conn);
+                }
+            }
+            finally
+            {
+                if (islocked)
+                    Monitor.Exit(VMDeployState);
+            }
 
             // VMs always get destroyed on release.
             toDel.deleteInDB(conn);
@@ -946,6 +976,8 @@ namespace bladeDirector
                         }
                         else
                         {
+                            // Oh, a deploy is already in progress for this VM. This should never happen, since .createChildVM
+                            // should never return an already-existing VM.
                             return new resultCodeAndBladeName() { code = resultCode.bladeInUse };
                         }
                     }
@@ -1417,6 +1449,7 @@ namespace bladeDirector
 
                     // otherwise, go ahead and spin up a new thread to handle this update.
                     newState.onBootFinish = SetBIOS;
+                    newState.onBootFailure = handleReadOrWriteBIOSError;
                     newState.rebootThread = new Thread(ltspBootThread);
                     newState.rebootThread.Name = "Booting " + nodeIp + " to LTSP";
                     newState.rebootThread.Start(newState);
@@ -1460,7 +1493,7 @@ namespace bladeDirector
 
                     // otherwise, go ahead and spin up a new thread to handle this update.
                     newState.onBootFinish = GetBIOS;
-                    newState.onBootFailure = handleReadBIOSError;
+                    newState.onBootFailure = handleReadOrWriteBIOSError;
                     newState.rebootThread = new Thread(ltspBootThread);
                     newState.rebootThread.Name = "Booting " + nodeIp + " to LTSP";
                     newState.rebootThread.Start(newState);
@@ -1554,7 +1587,7 @@ namespace bladeDirector
             }
         }
 
-        private void handleReadBIOSError(biosThreadState state)
+        private void handleReadOrWriteBIOSError(biosThreadState state)
         {
             state.result = resultCode.genericFail;
             state.isFinished = true;

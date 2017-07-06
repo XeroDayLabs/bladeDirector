@@ -6,6 +6,7 @@ using System.Threading;
 using bladeDirector;
 using hypervisors;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Microsoft.Win32;
 
 namespace tests
 {
@@ -145,6 +146,12 @@ namespace tests
                 }
             }
             return allocRes;
+        }
+
+        public static executionResult respondToExecutionsCorrectlyButSlowly(hypervisor sender, string command, string args, string dir, DateTime deadline)
+        {
+            Thread.Sleep(TimeSpan.FromSeconds(3));
+            return respondToExecutionsCorrectly(sender, command, args, dir, deadline);
         }
 
         public static executionResult respondToExecutionsCorrectly(hypervisor sender, string command, string args, string dir, DateTime deadline)

@@ -1,6 +1,8 @@
 ﻿using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net;
 using System.Web;
 using System.Web.UI;
 using System.Web.UI.HtmlControls;
@@ -10,6 +12,8 @@ namespace bladeDirector
 {
     public partial class status : System.Web.UI.Page
     {
+        private static ConcurrentDictionary<string, string> DNSCache = new ConcurrentDictionary<string, string>(); 
+
         protected void Page_Load(object sender, EventArgs e)
         {
             TableRow headerRow = new TableRow();
@@ -56,8 +60,8 @@ namespace bladeDirector
                     newRow.Cells.Add(cell);
                 }
                 newRow.Cells.Add(new TableCell() { Text = bladeInfo.currentSnapshot});
-                newRow.Cells.Add(new TableCell() { Text = bladeInfo.currentOwner ?? "none" });
-                newRow.Cells.Add(new TableCell() { Text = bladeInfo.nextOwner ?? "none" });
+                newRow.Cells.Add(new TableCell() { Text = getDNS(bladeInfo.currentOwner) ?? "none" });
+                newRow.Cells.Add(new TableCell() { Text = getDNS(bladeInfo.currentOwner) ?? "none" });
 
                 string iloURL = String.Format("https://ilo-blade{0}.management.xd.lan/", Int32.Parse(bladeInfo.bladeIP.Split('.')[3]) - 100);
                 HyperLink link = new HyperLink() {NavigateUrl = iloURL, Text = "iLo"};
@@ -83,6 +87,34 @@ namespace bladeDirector
             List<string> logEvents = services.hostStateDB.getLogEvents();
             foreach (string logEvent in logEvents)
                 lstLog.Items.Add(logEvent);
+        }
+
+        private string getDNS(string toLookUp)
+        {
+            if (toLookUp == null)
+                return null;
+            string lookedUp;
+            if (DNSCache.TryGetValue(toLookUp, out lookedUp))
+            {
+                if (lookedUp == null)
+                    return toLookUp;
+                else
+                    return lookedUp;
+            }
+
+            try
+            {
+                IPHostEntry entry = Dns.GetHostEntry(IPAddress.Parse(toLookUp));
+                lookedUp = entry.HostName;
+            }
+            catch (Exception)
+            {
+                lookedUp = null;
+            }
+
+            DNSCache.TryAdd(toLookUp, lookedUp);
+
+            return lookedUp;
         }
 
         private string formatDateTimeForWeb(TimeSpan toshow)
