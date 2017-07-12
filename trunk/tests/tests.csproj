@@ -99,7 +99,7 @@
     <Compile Include="testsOnIISWithESXi.cs" />
     <Compile Include="testUtils.cs" />
     <Compile Include="testVMWareExecutor.cs" />
-    <Compile Include="UnitTest1.cs" />
+    <Compile Include="basicBladeTests.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
