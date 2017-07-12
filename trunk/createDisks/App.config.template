@@ -19,9 +19,6 @@
             <setting name="iscsiServerPassword" serializeAs="String">
                 <value>...</value>
             </setting>
-            <setting name="iscsiBaseName" serializeAs="String">
-                <value>bladeBasesnapshot</value>
-            </setting>
             <setting name="debugServers" serializeAs="String">
                 <value>172.16.10.91,172.16.2.235,172.16.10.228</value>
             </setting>
@@ -38,6 +35,9 @@
                 <value>...</value>
             </setting>
             <setting name="iloHostPassword" serializeAs="String">
+                <value>...</value>
+            </setting>
+            <setting name="kernelDebugKey" serializeAs="String">
                 <value>...</value>
             </setting>
         </createDisks.Properties.Settings>

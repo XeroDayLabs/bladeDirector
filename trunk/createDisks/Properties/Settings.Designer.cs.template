@@ -61,18 +61,6 @@ namespace createDisks.Properties {
         
         [global::System.Configuration.UserScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [global::System.Configuration.DefaultSettingValueAttribute("bladeBasesnapshot")]
-        public string iscsiBaseName {
-            get {
-                return ((string)(this["iscsiBaseName"]));
-            }
-            set {
-                this["iscsiBaseName"] = value;
-            }
-        }
-        
-        [global::System.Configuration.UserScopedSettingAttribute()]
-        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
         [global::System.Configuration.DefaultSettingValueAttribute("172.16.10.91,172.16.2.235,172.16.10.228")]
         public string debugServers {
             get {
@@ -140,6 +128,15 @@ namespace createDisks.Properties {
             }
             set {
                 this["iloHostPassword"] = value;
+            }
+        }
+        
+        [global::System.Configuration.ApplicationScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("...")]
+        public string kernelDebugKey {
+            get {
+                return ((string)(this["kernelDebugKey"]));
             }
         }
     }
