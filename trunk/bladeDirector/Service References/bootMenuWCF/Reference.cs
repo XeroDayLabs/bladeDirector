@@ -8,33 +8,39 @@
 // </auto-generated>
 //------------------------------------------------------------------------------
 
+using System.CodeDom.Compiler;
+using System.Diagnostics;
+using System.ServiceModel;
+using System.ServiceModel.Channels;
+using System.Threading.Tasks;
+
 namespace bladeDirector.bootMenuWCF {
     
     
-    [System.CodeDom.Compiler.GeneratedCodeAttribute("System.ServiceModel", "4.0.0.0")]
-    [System.ServiceModel.ServiceContractAttribute(ConfigurationName="bootMenuWCF.IBootMenuWCF")]
+    [GeneratedCode("System.ServiceModel", "4.0.0.0")]
+    [ServiceContract(ConfigurationName="bootMenuWCF.IBootMenuWCF")]
     public interface IBootMenuWCF {
         
-        [System.ServiceModel.OperationContractAttribute(Action="http://tempuri.org/IBootMenuWCF/addMachine", ReplyAction="http://tempuri.org/IBootMenuWCF/addMachineResponse")]
+        [OperationContract(Action="http://tempuri.org/IBootMenuWCF/addMachine", ReplyAction="http://tempuri.org/IBootMenuWCF/addMachineResponse")]
         void addMachine(string IloIP);
         
-        [System.ServiceModel.OperationContractAttribute(Action="http://tempuri.org/IBootMenuWCF/addMachine", ReplyAction="http://tempuri.org/IBootMenuWCF/addMachineResponse")]
-        System.Threading.Tasks.Task addMachineAsync(string IloIP);
+        [OperationContract(Action="http://tempuri.org/IBootMenuWCF/addMachine", ReplyAction="http://tempuri.org/IBootMenuWCF/addMachineResponse")]
+        Task addMachineAsync(string IloIP);
         
-        [System.ServiceModel.OperationContractAttribute(Action="http://tempuri.org/IBootMenuWCF/removeMachine", ReplyAction="http://tempuri.org/IBootMenuWCF/removeMachineResponse")]
+        [OperationContract(Action="http://tempuri.org/IBootMenuWCF/removeMachine", ReplyAction="http://tempuri.org/IBootMenuWCF/removeMachineResponse")]
         void removeMachine(string IloIP);
         
-        [System.ServiceModel.OperationContractAttribute(Action="http://tempuri.org/IBootMenuWCF/removeMachine", ReplyAction="http://tempuri.org/IBootMenuWCF/removeMachineResponse")]
-        System.Threading.Tasks.Task removeMachineAsync(string IloIP);
+        [OperationContract(Action="http://tempuri.org/IBootMenuWCF/removeMachine", ReplyAction="http://tempuri.org/IBootMenuWCF/removeMachineResponse")]
+        Task removeMachineAsync(string IloIP);
     }
     
-    [System.CodeDom.Compiler.GeneratedCodeAttribute("System.ServiceModel", "4.0.0.0")]
-    public interface IBootMenuWCFChannel : bladeDirector.bootMenuWCF.IBootMenuWCF, System.ServiceModel.IClientChannel {
+    [GeneratedCode("System.ServiceModel", "4.0.0.0")]
+    public interface IBootMenuWCFChannel : IBootMenuWCF, IClientChannel {
     }
     
-    [System.Diagnostics.DebuggerStepThroughAttribute()]
-    [System.CodeDom.Compiler.GeneratedCodeAttribute("System.ServiceModel", "4.0.0.0")]
-    public partial class BootMenuWCFClient : System.ServiceModel.ClientBase<bladeDirector.bootMenuWCF.IBootMenuWCF>, bladeDirector.bootMenuWCF.IBootMenuWCF {
+    [DebuggerStepThrough()]
+    [GeneratedCode("System.ServiceModel", "4.0.0.0")]
+    public partial class BootMenuWCFClient : ClientBase<IBootMenuWCF>, IBootMenuWCF {
         
         public BootMenuWCFClient() {
         }
@@ -47,11 +53,11 @@ namespace bladeDirector.bootMenuWCF {
                 base(endpointConfigurationName, remoteAddress) {
         }
         
-        public BootMenuWCFClient(string endpointConfigurationName, System.ServiceModel.EndpointAddress remoteAddress) : 
+        public BootMenuWCFClient(string endpointConfigurationName, EndpointAddress remoteAddress) : 
                 base(endpointConfigurationName, remoteAddress) {
         }
         
-        public BootMenuWCFClient(System.ServiceModel.Channels.Binding binding, System.ServiceModel.EndpointAddress remoteAddress) : 
+        public BootMenuWCFClient(Binding binding, EndpointAddress remoteAddress) : 
                 base(binding, remoteAddress) {
         }
         
@@ -59,7 +65,7 @@ namespace bladeDirector.bootMenuWCF {
             base.Channel.addMachine(IloIP);
         }
         
-        public System.Threading.Tasks.Task addMachineAsync(string IloIP) {
+        public Task addMachineAsync(string IloIP) {
             return base.Channel.addMachineAsync(IloIP);
         }
         
@@ -67,7 +73,7 @@ namespace bladeDirector.bootMenuWCF {
             base.Channel.removeMachine(IloIP);
         }
         
-        public System.Threading.Tasks.Task removeMachineAsync(string IloIP) {
+        public Task removeMachineAsync(string IloIP) {
             return base.Channel.removeMachineAsync(IloIP);
         }
     }

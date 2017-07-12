@@ -18,14 +18,14 @@ namespace tests
         {
             string hostIP = "1.1.1.1";
 
-            hostStateDB_mocked uut = new hostStateDB_mocked();
+            hostStateManagerMocked uut = new hostStateManagerMocked();
 
             VMHardwareSpec hwSpec = new VMHardwareSpec() { memoryMB = 2344, cpuCount = 2 };
             VMSoftwareSpec swSpec = new VMSoftwareSpec();
 
-            resultCodeAndBladeName[] allocRes = doVMAllocationsForTest(uut, hostIP, new[] { new vmHWAndSWSpec(hwSpec, swSpec) } );
+            resultAndBladeName[] allocRes = doVMAllocationsForTest(uut, hostIP, new[] { new vmHWAndSWSpec(hwSpec, swSpec) } );
             Assert.AreEqual(1, allocRes.Length);
-            resultCodeAndBladeName allocatedBlade = allocRes[0];
+            resultAndBladeName allocatedBlade = allocRes[0];
 
             // TODO: check nas events
             List<mockedCall> nasEvents = uut.getNASEvents();
@@ -34,20 +34,22 @@ namespace tests
             // TODO: check executions all happened okay
 
             // This blade should become a VM server
-            GetBladeStatusResult allocated1 = uut.getBladeStatus("172.17.129.131", hostIP);
+            GetBladeStatusResult allocated1 = uut.db.getBladeStatus("172.17.129.130", hostIP);
             Assert.AreEqual(allocated1, GetBladeStatusResult.notYours);
 
             // And there should now be one VM allocated to us at present.
-            Assert.AreEqual("172.17.159.1", allocatedBlade.bladeName);
-            vmSpec VMConfig = uut.getVMByIP(allocatedBlade.bladeName);
-            Assert.AreEqual("VM_31_01", VMConfig.displayName);
-            Assert.AreEqual("172.17.159.1", VMConfig.VMIP);
-            Assert.AreEqual("192.168.159.1", VMConfig.iscsiIP);
-            Assert.AreEqual("00:50:56:00:31:01", VMConfig.eth0MAC);
-            Assert.AreEqual("00:50:56:01:31:01", VMConfig.eth1MAC);
-            Assert.AreEqual(2344, VMConfig.hwSpec.memoryMB);
-            Assert.AreEqual(2, VMConfig.hwSpec.cpuCount);
-            Assert.AreEqual(hostIP, VMConfig.currentOwner);
+            Assert.AreEqual("172.17.158.1", allocatedBlade.bladeName);
+            using (lockableVMSpec VMConfig = uut.db.getVMByIP(allocatedBlade.bladeName))
+            {
+                Assert.AreEqual("VM_30_01", VMConfig.spec.displayName);
+                Assert.AreEqual("172.17.158.1", VMConfig.spec.VMIP);
+                Assert.AreEqual("192.168.158.1", VMConfig.spec.iscsiIP);
+                Assert.AreEqual("00:50:56:00:30:01", VMConfig.spec.eth0MAC);
+                Assert.AreEqual("00:50:56:01:30:01", VMConfig.spec.eth1MAC);
+                Assert.AreEqual(2344, VMConfig.spec.hwSpec.memoryMB);
+                Assert.AreEqual(2, VMConfig.spec.hwSpec.cpuCount);
+                Assert.AreEqual(hostIP, VMConfig.spec.currentOwner);
+            }
         }
 
         [TestMethod]
@@ -55,7 +57,7 @@ namespace tests
         {
             string hostIP = "1.1.1.1";
 
-            hostStateDB_mocked uut = new hostStateDB_mocked();
+            hostStateManagerMocked uut = new hostStateManagerMocked();
 
             vmHWAndSWSpec[] toAlloc = new vmHWAndSWSpec[8];
             for (int i = 0; i < toAlloc.Length; i++)
@@ -65,39 +67,39 @@ namespace tests
                     new VMSoftwareSpec());
             }
 
-            resultCodeAndBladeName[] allocRes = doVMAllocationsForTest(uut, hostIP, toAlloc);
+            resultAndBladeName[] allocRes = doVMAllocationsForTest(uut, hostIP, toAlloc);
             Assert.AreEqual(toAlloc.Length, allocRes.Length);
 
-            // Group blades by their parent blade's DB ID
-            IGrouping<long, resultCodeAndBladeName>[] bladesByParent = allocRes.GroupBy(x => uut.getVMByIP(x.bladeName).parentBladeID).ToArray();
+            // Group blades by their parent blade's IP
+            IGrouping<string, resultAndBladeName>[] bladesByParent = allocRes.GroupBy(x => uut.db.getVMByIP_withoutLocking(x.bladeName).parentBladeIP).ToArray();
 
             // We should have two VM servers in use.
             Assert.AreEqual(2, bladesByParent.Length);
 
             // 5 should be on the first blade, and 3 on the second.
             Assert.AreEqual(5, bladesByParent[0].Count());
-            Assert.AreEqual("172.17.129.131", uut.getConfigurationOfBladeByID((int) bladesByParent[0].Key).bladeIP);
+            Assert.AreEqual("172.17.129.130", bladesByParent[0].Key);
             Assert.AreEqual(3, bladesByParent[1].Count());
-            Assert.AreEqual("172.17.129.130", uut.getConfigurationOfBladeByID((int) bladesByParent[1].Key).bladeIP);
+            Assert.AreEqual("172.17.129.131", bladesByParent[1].Key);
 
             // And release them, checking hardware status after each blade is empty.
-            foreach (IGrouping<long, resultCodeAndBladeName> bladeAndParent in bladesByParent)
+            foreach (IGrouping<string, resultAndBladeName> bladeAndParent in bladesByParent)
             {
-                string parentBladeName = uut.getConfigurationOfBladeByID((int) bladeAndParent.Key).bladeIP;
+                //string parentBladeName = uut.db.getConfigurationOfBladeByID((int)bladeAndParent.Key, bladeLockType.lockNone).spec.bladeIP;
 
-                foreach (resultCodeAndBladeName res in bladeAndParent)
+                foreach (resultAndBladeName res in bladeAndParent)
                 {
                     // The VM server should still be allocated before release..
-                    Assert.AreEqual(uut.getBladeStatus(parentBladeName, hostIP), GetBladeStatusResult.notYours);
+                    Assert.AreEqual(uut.db.getBladeStatus(bladeAndParent.Key, hostIP), GetBladeStatusResult.notYours);
                     uut.releaseBladeOrVM(res.bladeName, hostIP);
                 }
 
                 // This VM server should now be unused.
-                Assert.AreEqual(uut.getBladeStatus(parentBladeName, hostIP), GetBladeStatusResult.unused);
+                Assert.AreEqual(uut.db.getBladeStatus(bladeAndParent.Key, hostIP), GetBladeStatusResult.unused);
             }
         }
 
-        public static resultCodeAndBladeName[] doVMAllocationsForTest(hostStateDB_mocked uut, string hostIP, vmHWAndSWSpec[] specs)
+        public static resultAndBladeName[] doVMAllocationsForTest(hostStateManagerMocked uut, string hostIP, vmHWAndSWSpec[] specs)
         {
             uut.initWithBlades(new[] {"172.17.129.131", "172.17.129.130"});
 
@@ -107,38 +109,38 @@ namespace tests
             return doAllocation(uut, hostIP, specs);
         }
 
-        private static resultCodeAndBladeName[] doAllocation(hostStateDB_mocked uut, string hostIP, vmHWAndSWSpec[] specs )
+        private static resultAndBladeName[] doAllocation(hostStateManagerMocked uut, string hostIP, vmHWAndSWSpec[] specs )
         {
-            resultCodeAndBladeName[] allocRes = new resultCodeAndBladeName[specs.Length];
+            resultAndBladeName[] allocRes = new resultAndBladeName[specs.Length];
 
             for (int i = 0; i < specs.Length; i++)
             {
                 allocRes[i] = uut.RequestAnySingleVM(hostIP, specs[i].hw, specs[i].sw);
-                Assert.AreEqual(resultCode.pending, allocRes[i].code);
+                Assert.AreEqual(resultCode.pending, allocRes[i].result.code);
             }
 
             // Wait until all the allocation operations are complete
             DateTime deadline = DateTime.Now + TimeSpan.FromMinutes(15);
             for (int i = 0; i < specs.Length; i++)
             {
-                string waitToken = allocRes[i].waitToken;
+                waitTokenType waitToken = allocRes[i].waitToken;
 
                 while (true)
                 {
                     allocRes[i] = uut.getProgressOfVMRequest(waitToken);
-                    if (allocRes[i].code == resultCode.pending)
+                    if (allocRes[i].result.code == resultCode.pending)
                     {
                         // .. keep waiting ..
                         Thread.Sleep(TimeSpan.FromSeconds(10));
                     }
-                    else if (allocRes[i].code == resultCode.success)
+                    else if (allocRes[i].result.code == resultCode.success)
                     {
                         // Allocation has finished, yay
                         break;
                     }
                     else
                     {
-                        Assert.Fail("unexpected state during VM provisioning: " + allocRes[i].code);
+                        Assert.Fail("unexpected state during VM provisioning: " + allocRes[i].result.code);
                     }
 
                     if (DateTime.Now > deadline)

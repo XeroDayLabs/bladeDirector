@@ -78,6 +78,7 @@
     <Compile Include="keepalive.cs" />
     <Compile Include="mockedAllocation.cs" />
     <Compile Include="mockedDestruction.cs" />
+    <Compile Include="mockedVMDestruction.cs" />
     <Compile Include="Properties\Resources.Designer.cs">
       <AutoGen>True</AutoGen>
       <DesignTime>True</DesignTime>
@@ -96,6 +97,7 @@
     <Compile Include="testSMBExecutor.cs" />
     <Compile Include="testsOnIIS.cs" />
     <Compile Include="testsOnIISWithESXi.cs" />
+    <Compile Include="testUtils.cs" />
     <Compile Include="testVMWareExecutor.cs" />
     <Compile Include="UnitTest1.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

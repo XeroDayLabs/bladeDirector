@@ -1,13 +1,11 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Web;
 using System.Web.UI;
-using System.Web.UI.WebControls;
+using bladeDirector.Properties;
 
 namespace bladeDirector
 {
-    public partial class getIPXEScript : System.Web.UI.Page
+    public partial class getIPXEScript : Page
     {
         protected void Page_Load(object sender, EventArgs e)
         {
@@ -44,16 +42,16 @@ namespace bladeDirector
             // Select the appropriate template
             string script;
             bladeOwnership owner = null;
-            bladeSpec bladeState = services.hostStateDB.getBladeByIP(srcIP);
+            bladeSpec bladeState = services.hostStateManager.db.getBladeByIP_withoutLocking(srcIP);
             if (bladeState != null)
             {
 
                 if (bladeState.currentlyHavingBIOSDeployed)
-                    script = Properties.Resources.ipxeTemplateForBIOS;
+                    script = Resources.ipxeTemplateForBIOS;
                 else if (bladeState.currentlyBeingAVMServer)
-                    script = Properties.Resources.ipxeTemplateForESXi;
+                    script = Resources.ipxeTemplateForESXi;
                 else
-                    script = Properties.Resources.ipxeTemplate;
+                    script = Resources.ipxeTemplate;
 
                 script = script.Replace("{BLADE_IP_ISCSI}", bladeState.iscsiIP);
                 script = script.Replace("{BLADE_IP_MAIN}", bladeState.bladeIP);
@@ -62,18 +60,18 @@ namespace bladeDirector
             }
             else
             {
-                vmSpec vmState = services.hostStateDB.getVMByIP(srcIP);
+                vmSpec vmState = services.hostStateManager.db.getVMByIP_withoutLocking(srcIP);
 
                 if (vmState == null)
                 {
                     Response.Write("#!ipxe\r\n");
                     Response.Write("prompt No blade configured at this IP address (" + srcIP + ")\r\n");
                     Response.Write("reboot\r\n");
-                    services.hostStateDB.addLogEvent("IPXE script for blade " + srcIP + " requested, but blade is not configured");
+                    services.hostStateManager.addLogEvent("IPXE script for blade " + srcIP + " requested, but blade is not configured");
                     return;
                 }
 
-                script = Properties.Resources.ipxeTemplate;
+                script = Resources.ipxeTemplate;
 
                 script = script.Replace("{BLADE_IP_ISCSI}", vmState.iscsiIP);
                 script = script.Replace("{BLADE_IP_MAIN}", vmState.VMIP);
@@ -87,20 +85,19 @@ namespace bladeDirector
                 {
                     Response.Write("#!ipxe\r\n");
                     Response.Write("prompt Blade does not have any owner");
-                    services.hostStateDB.addLogEvent("IPXE script for blade " + srcIP + " requested, but blade is not currently owned");
+                    services.hostStateManager.addLogEvent("IPXE script for blade " + srcIP + " requested, but blade is not currently owned");
                     return;
                 }
 
-                bladeOwnership bladeOwnership = services.hostStateDB.getBladeOrVMOwnershipByIP(srcIP);
                 script = script.Replace("{BLADE_NETMASK_ISCSI}", "255.255.192.0");
-                string ownershipToPresent = bladeOwnership.currentOwner;
+                string ownershipToPresent = owner.currentOwner;
                 if (ownershipToPresent == "vmserver")
-                    ownershipToPresent = bladeOwnership.nextOwner;
+                    ownershipToPresent = owner.nextOwner;
                 script = script.Replace("{BLADE_OWNER}", ownershipToPresent);
-                script = script.Replace("{BLADE_SNAPSHOT}", bladeOwnership.currentSnapshot);
+                script = script.Replace("{BLADE_SNAPSHOT}", owner.currentSnapshot);
             }
             Response.Write(script);
-            services.hostStateDB.addLogEvent("IPXE script for blade " + srcIP + " generated (owner " + owner.currentOwner + ")");
+            services.hostStateManager.addLogEvent("IPXE script for blade " + srcIP + " generated (owner " + owner.currentOwner + ")");
         }
     }
 }

@@ -1,6 +1,7 @@
 create table bladeOwnership(
-	id integer primary key autoincrement,
+	ownershipKey integer primary key autoincrement,
 	state,
+	VMDeployState,
 	currentOwner,
 	nextOwner,
 	lastKeepAlive,
@@ -8,7 +9,7 @@ create table bladeOwnership(
 	);
 
 create table bladeConfiguration(
-	id integer primary key autoincrement,
+	bladeConfigKey integer primary key autoincrement,
 	ownershipID unique,
     iscsiIP unique,
     bladeIP unique,
@@ -16,21 +17,22 @@ create table bladeConfiguration(
     iLOPort unique,
 	currentlyHavingBIOSDeployed,
 	currentlyBeingAVMServer,
+	vmDeployState,
 	lastDeployedBIOS,
 
-	foreign key (ownershipID) references bladeOwnership(id)
+	foreign key (ownershipID) references bladeOwnership(ownershipKey)
 	);
 
 create table VMConfiguration(
-	id integer primary key autoincrement,
+	vmConfigKey integer primary key autoincrement,
 	indexOnServer,
 	ownershipID unique,
 	parentBladeID,
+	parentBladeIP,
 	memoryMB,
 	cpuCount,
 	vmxPath,
     iscsiIP unique,
-    bladeIP unique,
 	VMIP,
 	eth0MAC,
 	eth1MAC,
@@ -38,6 +40,6 @@ create table VMConfiguration(
     kernelDebugPort,
     kernelDebugKey,
 	
-	foreign key (parentBladeID ) references bladeConfiguration(id),
-	foreign key (ownershipID) references bladeOwnership(id)
+	foreign key (parentBladeID ) references bladeConfiguration(bladeConfigKey),
+	foreign key (ownershipID) references bladeOwnership(ownershipKey)
 	);

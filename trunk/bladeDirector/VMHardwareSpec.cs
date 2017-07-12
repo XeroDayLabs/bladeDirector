@@ -1,4 +1,5 @@
 using System;
+using System.Data;
 using System.Data.SQLite;
 
 namespace bladeDirector
@@ -19,11 +20,11 @@ namespace bladeDirector
             cpuCount = newCPUCount;
         }
 
-        public VMHardwareSpec(SQLiteDataReader reader)
+        public VMHardwareSpec(IDataRecord reader)
         {
-            if (!(reader["memoryMB"] is System.DBNull))
+            if (!(reader["memoryMB"] is DBNull))
                 memoryMB = Convert.ToInt32((long) reader["memoryMB"]);
-            if (!(reader["cpuCount"] is System.DBNull))
+            if (!(reader["cpuCount"] is DBNull))
                 cpuCount = Convert.ToInt32((long)reader["cpuCount"]);
         }
     }

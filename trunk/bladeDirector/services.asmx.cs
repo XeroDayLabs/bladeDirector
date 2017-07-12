@@ -1,10 +1,7 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.ServiceModel.Web;
+using System.ComponentModel;
 using System.Web;
 using System.Web.Services;
-using System.Web.WebSockets;
 
 namespace bladeDirector
 {
@@ -13,23 +10,23 @@ namespace bladeDirector
     /// </summary>
     [WebService(Namespace = "http://tempuri.org/")]
     [WebServiceBinding(ConformsTo = WsiProfiles.BasicProfile1_1)]
-    [System.ComponentModel.ToolboxItem(false)]
+    [ToolboxItem(false)]
     // To allow this Web Service to be called from script, using ASP.NET AJAX, uncomment the following line. 
     // [System.Web.Script.Services.ScriptService]
-    public class services : System.Web.Services.WebService
+    public class services : WebService
     {
-        public static hostStateDB hostStateDB;
+        public static hostStateManager hostStateManager;
 
         public static void initWithBlades(string[] bladeIPs)
         {
-            hostStateDB = new hostStateDB();
-            hostStateDB.initWithBlades(bladeIPs);
+            hostStateManager = new hostStateManager();
+            hostStateManager.initWithBlades(bladeIPs);
         }
 
         public static void initWithBlades(bladeSpec[] spec)
         {
-            hostStateDB = new hostStateDB();
-            hostStateDB.initWithBlades(spec);
+            hostStateManager = new hostStateManager();
+            hostStateManager.initWithBlades(spec);
         }
 
         [WebMethod]
@@ -43,51 +40,44 @@ namespace bladeDirector
         public string logIn()
         {
             string srcIp = sanitizeAddress(HttpContext.Current.Request.UserHostAddress);
-            return hostStateDB.logIn(srcIp);
+            return hostStateManager.logIn(srcIp);
         }
 
         [WebMethod]
         public resultCode getLogInProgress(string waitToken)
         {
-            return hostStateDB.getLogInProgress(waitToken);
+            return hostStateManager.getLogInProgress(waitToken);
         }
 
         public void _keepAlive(string srcIP)
         {
-            hostStateDB.keepAlive(srcIP);
+            hostStateManager.keepAlive(srcIP);
         }
 
         [WebMethod]
         public string ListNodes()
         {
-            string[] IPAddresses = hostStateDB.getAllBladeIP();
+            string[] IPAddresses = hostStateManager.db.getAllBladeIP();
             return String.Join(",", IPAddresses);
         }
 
         [WebMethod]
         public string getBladesByAllocatedServer(string NodeIP)
         {
-            string[] IPAddresses = hostStateDB.getBladesByAllocatedServer(NodeIP);
+            string[] IPAddresses = hostStateManager.getBladesByAllocatedServer(NodeIP);
             return String.Join(",", IPAddresses);
         }
 
         [WebMethod]
         public resultCodeAndBladeName RequestAnySingleNode()
         {
-            string srcIp = sanitizeAddress(HttpContext.Current.Request.UserHostAddress);
-            return hostStateDB.RequestAnySingleNode(srcIp);
+            return RequestAnySingleNode(HttpContext.Current.Request.UserHostAddress);
         }
 
-        [WebMethod]
-        public resultCode RequestNode(string NodeIP)
+        public resultCodeAndBladeName RequestAnySingleNode(string requestorIP)
         {
-            string srcIp = sanitizeAddress(HttpContext.Current.Request.UserHostAddress);
-            return RequestNode(NodeIP, srcIp);
-        }
-
-        public resultCode RequestNode(string NodeIP, string requestorIP)
-        {
-            return hostStateDB.tryRequestNode(NodeIP, requestorIP);
+            string srcIp = sanitizeAddress(requestorIP);
+            return hostStateManager.RequestAnySingleNode(srcIp);
         }
 
         [WebMethod]
@@ -99,7 +89,7 @@ namespace bladeDirector
 
         public GetBladeStatusResult GetBladeStatus(string nodeIP, string requestorIP)
         {
-            return hostStateDB.getBladeStatus(nodeIP, requestorIP);
+            return hostStateManager.getBladeStatus(nodeIP, requestorIP);
         }
 
         [WebMethod]
@@ -111,119 +101,121 @@ namespace bladeDirector
 
         public bool isBladeMine(string nodeIP, string requestorIP)
         {
-            return hostStateDB.isBladeMine(nodeIP, requestorIP);
+            return hostStateManager.isBladeMine(nodeIP, requestorIP);
         }
 
         [WebMethod]
         public resultCode releaseBladeOrVM(string NodeIP)
         {
             string srcIp = sanitizeAddress(HttpContext.Current.Request.UserHostAddress);
-            return hostStateDB.releaseBladeOrVM(NodeIP, srcIp, false);
+            return hostStateManager.releaseBladeOrVM(NodeIP, srcIp, false);
         }
 
         [WebMethod]
         public resultCode releaseBladeDbg(string nodeIP, string requestorIP, bool force = false)
         {
-            return hostStateDB.releaseBladeOrVM(nodeIP, requestorIP, force);
+            return hostStateManager.releaseBladeOrVM(nodeIP, requestorIP, force);
         }
 
-        [WebMethod]
-        public resultCode forceBladeAllocation(string NodeIP, string newOwner)
-        {
-            return hostStateDB.forceBladeAllocation(NodeIP, newOwner);
-        }
-
-        [WebMethod]
-        public bladeSpec getConfigurationOfBlade(string NodeIP)
-        {
-            return hostStateDB.getConfigurationOfBlade(NodeIP);
-        }
-
-        [WebMethod]
-        public bladeSpec getConfigurationOfBladeByID(int NodeID)
-        {
-            return hostStateDB.getConfigurationOfBladeByID(NodeID);
-        }
-        
         [WebMethod]
         public string getCurrentSnapshotForBlade(string NodeIP)
         {
-            return hostStateDB.getCurrentSnapshotForBladeOrVM(NodeIP);
+            return hostStateManager.getCurrentSnapshotForBladeOrVM(NodeIP);
         }
 
         [WebMethod]
         public resultCode selectSnapshotForBladeOrVM(string NodeIP, string snapshotName)
         {
-            return hostStateDB.selectSnapshotForBladeOrVM(NodeIP, snapshotName);
-        }
+            using (disposingList<lockableBladeSpec> blades = hostStateManager.db.getAllBladeInfo(x => x.bladeIP == NodeIP, bladeLockType.lockAll))
+            {
+                if (blades.Count > 0)
+                    return hostStateManager.selectSnapshotForBlade(NodeIP, snapshotName);
+            }
+            using (disposingList<lockableVMSpec> VMs = hostStateManager.db.getAllVMInfo(x => x.VMIP == NodeIP))
+            {
+                if (VMs.Count > 0)
+                    return hostStateManager.selectSnapshotForVM(NodeIP, snapshotName);
+            }
 
-        [WebMethod]
-        public resultCode selectSnapshotForBladeOrVM_getProgress(string NodeIP)
-        {
-            return hostStateDB.selectSnapshotForBladeOrVM_getProgress(NodeIP);
+            return resultCode.bladeNotFound;
         }
         
         [WebMethod]
         public string getFreeNASSnapshotPath(string NodeIP)
         {
             string requestorIP = sanitizeAddress(HttpContext.Current.Request.UserHostAddress);
-            return hostStateDB.getFreeNASSnapshotPath(requestorIP, NodeIP);
+            return hostStateManager.getFreeNASSnapshotPath(requestorIP, NodeIP);
         }
 
         [WebMethod]
         public string getLastDeployedBIOSForBlade(string NodeIP)
         {
-            return hostStateDB.getLastDeployedBIOSForBlade(NodeIP);
+            return hostStateManager.getLastDeployedBIOSForBlade(NodeIP);
         }
 
         [WebMethod]
         public resultCode rebootAndStartDeployingBIOSToBlade(string NodeIP, string BIOSXML)
         {
             string requestorIP = sanitizeAddress(HttpContext.Current.Request.UserHostAddress);
-            return hostStateDB.rebootAndStartDeployingBIOSToBlade(NodeIP, requestorIP, BIOSXML);
+            return hostStateManager.rebootAndStartDeployingBIOSToBlade(NodeIP, requestorIP, BIOSXML);
         }
 
         [WebMethod]
         public resultCode rebootAndStartReadingBIOSConfiguration(string NodeIP)
         {
             string requestorIP = sanitizeAddress(HttpContext.Current.Request.UserHostAddress);
-            return hostStateDB.rebootAndStartReadingBIOSConfiguration(NodeIP, requestorIP);
+            return hostStateManager.rebootAndStartReadingBIOSConfiguration(NodeIP, requestorIP);
         }
 
         [WebMethod]
         public resultCode checkBIOSDeployProgress(string NodeIP)
         {
-            return hostStateDB.checkBIOSWriteProgress(NodeIP);
+            return hostStateManager.checkBIOSWriteProgress(NodeIP);
         }
 
         [WebMethod]
         public resultCodeAndBIOSConfig checkBIOSReadProgress(string NodeIP)
         {
-            return hostStateDB.checkBIOSReadProgress(NodeIP);
+            return hostStateManager.checkBIOSReadProgress(NodeIP);
         }
 
         [WebMethod]
-        public resultCodeAndBladeName RequestAnySingleVM(VMHardwareSpec hwSpec, VMSoftwareSpec swSpec)
+        public resultAndBladeName RequestAnySingleVM(VMHardwareSpec hwSpec, VMSoftwareSpec swSpec)
         {
             string requestorIP = sanitizeAddress(HttpContext.Current.Request.UserHostAddress);
-            return hostStateDB.RequestAnySingleVM(requestorIP, hwSpec, swSpec);
+            return hostStateManager.RequestAnySingleVM(requestorIP, hwSpec, swSpec);
         }
 
-        public resultCodeAndBladeName RequestAnySingleVM(VMHardwareSpec hwSpec, VMSoftwareSpec swSpec, string requestorIP)
+        public resultAndBladeName RequestAnySingleVM(VMHardwareSpec hwSpec, VMSoftwareSpec swSpec, string requestorIP)
         {
-            return hostStateDB.RequestAnySingleVM(requestorIP, hwSpec, swSpec);
+            return hostStateManager.RequestAnySingleVM(requestorIP, hwSpec, swSpec);
         }
 
         [WebMethod]
-        public resultCodeAndBladeName getProgressOfVMRequest(string waitToken)
+        public resultAndBladeName getProgressOfVMRequest(waitTokenType waitToken)
         {
-            return hostStateDB.getProgressOfVMRequest(waitToken);
+            return hostStateManager.getProgressOfVMRequest(waitToken);
         }
-
+        
+        // Only call me from tests, not in 'real' code, because of locking issues otherwise.
         [WebMethod]
         public vmSpec getConfigurationOfVM(string bladeName)
         {
-            return hostStateDB.getVMByIP(bladeName);
+            return hostStateManager.db.getVMByIP_withoutLocking(bladeName);
+        }
+
+        // Only call me from tests, not in 'real' code, because of locking issues otherwise.
+/*        [WebMethod]
+        public resultCode forceBladeAllocation(string NodeIP, string newOwner)
+        {
+            return hostStateDB.forceBladeAllocation(NodeIP, newOwner);
+        }*/
+
+        // Only call me from tests, not in 'real' code, because of locking issues otherwise.
+        [WebMethod]
+        public bladeSpec getConfigurationOfBlade(string NodeIP)
+        {
+            return hostStateManager.db.getBladeByIP_withoutLocking(NodeIP);
         }
 
         private string sanitizeAddress(string toSanitize)

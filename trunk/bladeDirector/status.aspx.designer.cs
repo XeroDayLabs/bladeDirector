@@ -7,6 +7,9 @@
 // </auto-generated>
 //------------------------------------------------------------------------------
 
+using System.Web.UI.HtmlControls;
+using System.Web.UI.WebControls;
+
 namespace bladeDirector {
     
     
@@ -19,7 +22,7 @@ namespace bladeDirector {
         /// Auto-generated field.
         /// To modify move field declaration from designer file to code-behind file.
         /// </remarks>
-        protected global::System.Web.UI.HtmlControls.HtmlForm form1;
+        protected HtmlForm form1;
         
         /// <summary>
         /// tblBladeStatus control.
@@ -28,7 +31,7 @@ namespace bladeDirector {
         /// Auto-generated field.
         /// To modify move field declaration from designer file to code-behind file.
         /// </remarks>
-        protected global::System.Web.UI.WebControls.Table tblBladeStatus;
+        protected Table tblBladeStatus;
         
         /// <summary>
         /// lstLog control.
@@ -37,7 +40,7 @@ namespace bladeDirector {
         /// Auto-generated field.
         /// To modify move field declaration from designer file to code-behind file.
         /// </remarks>
-        protected global::System.Web.UI.WebControls.ListBox lstLog;
+        protected ListBox lstLog;
         
         /// <summary>
         /// txtNewNodeIP control.
@@ -46,7 +49,7 @@ namespace bladeDirector {
         /// Auto-generated field.
         /// To modify move field declaration from designer file to code-behind file.
         /// </remarks>
-        protected global::System.Web.UI.WebControls.TextBox txtNewNodeIP;
+        protected TextBox txtNewNodeIP;
         
         /// <summary>
         /// txtNewIloIP control.
@@ -55,7 +58,7 @@ namespace bladeDirector {
         /// Auto-generated field.
         /// To modify move field declaration from designer file to code-behind file.
         /// </remarks>
-        protected global::System.Web.UI.WebControls.TextBox txtNewIloIP;
+        protected TextBox txtNewIloIP;
         
         /// <summary>
         /// txtNewPort control.
@@ -64,7 +67,7 @@ namespace bladeDirector {
         /// Auto-generated field.
         /// To modify move field declaration from designer file to code-behind file.
         /// </remarks>
-        protected global::System.Web.UI.WebControls.TextBox txtNewPort;
+        protected TextBox txtNewPort;
         
         /// <summary>
         /// txtNewISCSI control.
@@ -73,7 +76,7 @@ namespace bladeDirector {
         /// Auto-generated field.
         /// To modify move field declaration from designer file to code-behind file.
         /// </remarks>
-        protected global::System.Web.UI.WebControls.TextBox txtNewISCSI;
+        protected TextBox txtNewISCSI;
         
         /// <summary>
         /// cmdAddNode control.
@@ -82,6 +85,6 @@ namespace bladeDirector {
         /// Auto-generated field.
         /// To modify move field declaration from designer file to code-behind file.
         /// </remarks>
-        protected global::System.Web.UI.WebControls.Button cmdAddNode;
+        protected Button cmdAddNode;
     }
 }

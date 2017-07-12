@@ -1,11 +1,10 @@
 using System;
 using System.Collections.Generic;
 using System.Data.SQLite;
-using System.Diagnostics;
 using System.Linq;
 using System.Net;
-using System.Runtime.InteropServices;
 using System.Xml.Serialization;
+using bladeDirector.Properties;
 using createDisks;
 
 namespace bladeDirector
@@ -13,89 +12,129 @@ namespace bladeDirector
     [XmlInclude(typeof(bladeOwnership))]
     public class bladeSpec : bladeOwnership
     {
+        // ReSharper disable UnusedMember.Global
+
         // If you add fields, don't forget to add them to the Equals() override too.
-        public string iscsiIP;
-        public string bladeIP;
-        public string iLOIP;
-        public ushort iLOPort;
-        
+        public string iscsiIP 
+        {
+            get { return _iscsiIP; }
+            set { checkPerms("iscsiIP"); _iscsiIP = value;  } 
+        }
+        private string _iscsiIP;
+
+        public string bladeIP
+        {
+            get { return _bladeIP; }
+            set { checkPerms("bladeIP"); _bladeIP = value; }
+        }
+        private string _bladeIP;
+
+        public string iLOIP
+        {
+            get { return _iLOIP; }
+            set { checkPerms("iLOIP"); _iLOIP = value; }
+        }
+        private string _iLOIP;
+
+        public ushort iLOPort
+        {
+            get { return _iLOPort; }
+            set { checkPerms("iLOPort"); _iLOPort = value; }
+        }
+        private ushort _iLOPort;
+
+        public bool currentlyHavingBIOSDeployed
+        {
+            get { return _currentlyHavingBIOSDeployed; }
+            set { checkPerms("currentlyHavingBIOSDeployed"); _currentlyHavingBIOSDeployed = value; }
+        }
+        private bool _currentlyHavingBIOSDeployed;
+
+        public bool currentlyBeingAVMServer
+        {
+            get { return _currentlyBeingAVMServer; }
+            set { checkPerms("currentlyBeingAVMServer"); _currentlyBeingAVMServer = value; }
+        }
+        private bool _currentlyBeingAVMServer;
+
+        public string lastDeployedBIOS
+        {
+            get { return _lastDeployedBIOS; }
+            set { checkPerms("lastDeployedBIOS"); _lastDeployedBIOS = value; }
+        }
+        private string _lastDeployedBIOS;
+        // ReSharper restore UnusedMember.Global
+
+        public long bladeID { get; private set; }
+
+        // ReSharper disable NotAccessedField.Global
+        // ReSharper disable MemberCanBePrivate.Global
         /// <summary>
         /// Exposed via WCF to the service
         /// </summary>
-        // ReSharper disable once MemberCanBePrivate.Global
         public string iLoUsername;
         
         /// <summary>
         /// Exposed via WCF to the service
         /// </summary>
-        // ReSharper disable once MemberCanBePrivate.Global
         public string iLoPassword;
-
-        public bool currentlyHavingBIOSDeployed = false;
-        public bool currentlyBeingAVMServer = false;
-        public string lastDeployedBIOS = null;
-        public long bladeID;
 
         /// <summary>
         /// Exposed via WCF to the service
         /// </summary>
-        // ReSharper disable once MemberCanBePrivate.Global
         public string ESXiUsername;
 
         /// <summary>
         /// Exposed via WCF to the service
         /// </summary>
-        // ReSharper disable once MemberCanBePrivate.Global
         public string ESXiPassword;
+        // ReSharper restore NotAccessedField.Global
+        // ReSharper restore MemberCanBePrivate.Global
 
         private VMCapacity _VMCapacity = new VMCapacity();
-
-        public bladeSpec()
-        {
-            // For XML serialisation
-        }
 
         public bladeSpec(
             string newBladeIP, string newISCSIIP, 
             string newILOIP, ushort newILOPort, 
-            bool newCurrentlyHavingBIOSDeployed, string newCurrentBIOS)
+            bool newCurrentlyHavingBIOSDeployed, VMDeployStatus newVMDeployState, string newCurrentBIOS, bladeLockType permittedAccess)
+            : base(newVMDeployState, permittedAccess)
         {
-            iscsiIP = newISCSIIP;
-            bladeIP = newBladeIP;
-            iLOPort = newILOPort;
-            iLOIP = newILOIP;
+            _iscsiIP = newISCSIIP;
+            _bladeIP = newBladeIP;
+            _iLOPort = newILOPort;
+            _iLOIP = newILOIP;
 
-            currentlyHavingBIOSDeployed = newCurrentlyHavingBIOSDeployed;
-            lastDeployedBIOS = newCurrentBIOS;
+            _currentlyHavingBIOSDeployed = newCurrentlyHavingBIOSDeployed;
+            _lastDeployedBIOS = newCurrentBIOS;
 
-            ESXiUsername = Properties.Settings.Default.esxiUsername;
-            ESXiPassword = Properties.Settings.Default.esxiPassword;
-            iLoUsername = Properties.Settings.Default.iloUsername;
-            iLoPassword = Properties.Settings.Default.iloPassword;
+            ESXiUsername = Settings.Default.esxiUsername;
+            ESXiPassword = Settings.Default.esxiPassword;
+            iLoUsername = Settings.Default.iloUsername;
+            iLoPassword = Settings.Default.iloPassword;
         }
 
-        public bladeSpec(SQLiteDataReader reader)
-            : base(reader)
+        public bladeSpec(SQLiteDataReader reader, bladeLockType permittedAccess)
+            : base(reader, permittedAccess)
         {
-            iscsiIP = (string)reader["iscsiIP"];
-            bladeIP = (string)reader["bladeIP"];
-            iLOPort = ushort.Parse(reader["iLOPort"].ToString());
-            iLOIP = (string)reader["iLOIP"];
+            _iscsiIP = (string)reader["iscsiIP"];
+            _bladeIP = (string)reader["bladeIP"];
+            _iLOPort = ushort.Parse(reader["iLOPort"].ToString());
+            _iLOIP = (string)reader["iLOIP"];
 
-            bladeID = (long)reader["bladeConfigurationid"];
+            bladeID = (long)reader["bladeConfigKey"];
 
-            currentlyHavingBIOSDeployed = (long)reader["currentlyHavingBIOSDeployed"] != 0;
-            currentlyBeingAVMServer = (long)reader["currentlyBeingAVMServer"] != 0;
+            _currentlyHavingBIOSDeployed = (long)reader["currentlyHavingBIOSDeployed"] != 0;
+            _currentlyBeingAVMServer = (long)reader["currentlyBeingAVMServer"] != 0;
 
-            if (reader["lastDeployedBIOS"] is System.DBNull)
-                lastDeployedBIOS = null;
+            if (reader["lastDeployedBIOS"] is DBNull)
+                _lastDeployedBIOS = null;
             else
-                lastDeployedBIOS = (string)reader["lastDeployedBIOS"];
+                _lastDeployedBIOS = (string)reader["lastDeployedBIOS"];
 
-            ESXiUsername = Properties.Settings.Default.esxiUsername;
-            ESXiPassword = Properties.Settings.Default.esxiPassword;
-            iLoUsername = Properties.Settings.Default.iloUsername;
-            iLoPassword = Properties.Settings.Default.iloPassword;
+            ESXiUsername = Settings.Default.esxiUsername;
+            ESXiPassword = Settings.Default.esxiPassword;
+            iLoUsername = Settings.Default.iloUsername;
+            iLoPassword = Settings.Default.iloPassword;
         }
 
         public override bool Equals(object obj)
@@ -118,47 +157,95 @@ namespace bladeDirector
                 return false;
             if (bladeID != compareTo.bladeID)
                 return false;
+            if (VMDeployState != compareTo.VMDeployState)
+                return false;
 
             return true;
         }
 
-        public override resultCode updateInDB(SQLiteConnection conn)
+        protected override List<string> getPermittedFieldsInclInheritors()
+        {
+            List<string> ourFields = getPermittedFields();
+            ourFields.AddRange(base.getPermittedFieldsInclInheritors());
+            return ourFields;
+        }
+
+        private List<string> getPermittedFields()
+        {
+            List<string> toRet = new List<string>();
+            if ((permittedAccess & bladeLockType.lockAll) != bladeLockType.lockNone)
+            {
+                toRet.Add("iscsiIP");
+                toRet.Add("bladeIP");
+                toRet.Add("iLOIP");
+                toRet.Add("iLOPort");
+            }
+            if ((permittedAccess & bladeLockType.lockBIOS) != bladeLockType.lockNone)
+            {
+                toRet.Add("currentlyHavingBIOSDeployed");
+                toRet.Add("lastDeployedBIOS");
+            }
+            if ((permittedAccess & bladeLockType.lockOwnership) != bladeLockType.lockNone)
+            {
+                toRet.Add("currentlyBeingAVMServer");
+            }
+
+            return toRet.Distinct().ToList();
+        }
+
+        public override void updateInDB(SQLiteConnection conn)
         {
             base.updateInDB(conn);
 
-            if (!base.ownershipRowID.HasValue)
+            if (!ownershipRowID.HasValue)
                 throw new ArgumentException("ownershipID");
 
-            string cmdConfiguration = "update bladeConfiguration set " +
-                " currentlyHavingBIOSDeployed=$currentlyHavingBIOSDeployed, " +
-                " currentlyBeingAVMServer=$currentlyBeingAVMServer, " +
-                " lastDeployedBIOS=$lastDeployedBIOS, " +
-                " ownershipID=$ownershipID " +
-                " where bladeIP = $bladeIP";
-            using (SQLiteCommand cmd = new SQLiteCommand(cmdConfiguration, conn))
+            List<string> fieldsToWrite = getPermittedFields();
+            if (fieldsToWrite.Count == 0)
+                return;
+
+            fieldsToWrite.Add("ownershipID");
+
+            string sqlCommand = "update bladeConfiguration set ";
+            sqlCommand += string.Join(",", fieldsToWrite.Select(x => x + "=$" + x));
+            sqlCommand += " where bladeIP = $bladeIP; ";
+
+            using (SQLiteCommand cmd = new SQLiteCommand(sqlCommand, conn))
             {
-                cmd.Parameters.AddWithValue("currentlyHavingBIOSDeployed", currentlyHavingBIOSDeployed ? 1 : 0);
-                cmd.Parameters.AddWithValue("currentlyBeingAVMServer", currentlyBeingAVMServer ? 1 : 0);
-                cmd.Parameters.AddWithValue("bladeIP", bladeIP);
-                cmd.Parameters.AddWithValue("lastDeployedBIOS", lastDeployedBIOS);
-                cmd.Parameters.AddWithValue("ownershipID", base.ownershipRowID.Value);
+
+                cmd.Parameters.AddWithValue("iscsiIP", _iscsiIP);
+                cmd.Parameters.AddWithValue("bladeIP", _bladeIP);
+                cmd.Parameters.AddWithValue("iLOIP", _iLOIP);
+                cmd.Parameters.AddWithValue("iLOPort", _iLOPort);
+                cmd.Parameters.AddWithValue("currentlyHavingBIOSDeployed", _currentlyHavingBIOSDeployed ? 1 : 0);
+                cmd.Parameters.AddWithValue("currentlyBeingAVMServer", _currentlyBeingAVMServer ? 1 : 0);
+                cmd.Parameters.AddWithValue("lastDeployedBIOS", _lastDeployedBIOS);
+                cmd.Parameters.AddWithValue("ownershipID", ownershipRowID.Value);
                 cmd.ExecuteNonQuery();
             }
-            return resultCode.success;
+            return;
         }
 
         public override void createInDB(SQLiteConnection conn)
         {
             base.createInDB(conn);
 
-            if (!base.ownershipRowID.HasValue)
+            if (!ownershipRowID.HasValue)
                 throw new ArgumentException("ownershipID");
 
-            string cmd_bladeConfig = "insert into bladeConfiguration" +
-                                     "(iscsiIP, bladeIP, iLoIP, iLOPort, currentlyHavingBIOSDeployed, currentlyBeingAVMServer, lastDeployedBIOS, ownershipID)" +
-                                     " VALUES " +
-                                     "($iscsiIP, $bladeIP, $iLoIP, $iLOPort, $currentlyHavingBIOSDeployed, $currentlyBeingAVMServer, $lastDeployedBIOS, $ownershipID)";
-            using (SQLiteCommand cmd = new SQLiteCommand(cmd_bladeConfig, conn))
+            List<string> fieldsToWrite = getPermittedFields();
+            if (fieldsToWrite.Count == 0)
+                return;
+
+            fieldsToWrite.Add("ownershipID");
+
+            string sqlCommand = "insert into bladeConfiguration (";
+            sqlCommand += string.Join(",", fieldsToWrite);
+            sqlCommand += ") values (";
+            sqlCommand += string.Join(",", fieldsToWrite.Select(x => "$" + x));
+            sqlCommand += ")";
+
+            using (SQLiteCommand cmd = new SQLiteCommand(sqlCommand, conn))
             {
                 cmd.Parameters.AddWithValue("$iscsiIP", iscsiIP);
                 cmd.Parameters.AddWithValue("$bladeIP", bladeIP);
@@ -167,89 +254,45 @@ namespace bladeDirector
                 cmd.Parameters.AddWithValue("$currentlyHavingBIOSDeployed", currentlyHavingBIOSDeployed ? 1 : 0);
                 cmd.Parameters.AddWithValue("$currentlyBeingAVMServer", currentlyBeingAVMServer ? 1 : 0);
                 cmd.Parameters.AddWithValue("$lastDeployedBIOS", lastDeployedBIOS);
-                cmd.Parameters.AddWithValue("$ownershipID", base.ownershipRowID.Value);
+                cmd.Parameters.AddWithValue("$ownershipID", ownershipRowID.Value);
                 cmd.ExecuteNonQuery();
                 bladeID = (int)conn.LastInsertRowId;
             }            
         }
 
-        public bool canAccommodate(SQLiteConnection conn, VMHardwareSpec req)
+        public bool canAccommodate(hostDB db, VMHardwareSpec req)
         {
-            List<vmSpec> vms = getChildVMs(conn);
+            if ((permittedAccess & bladeLockType.lockVMCreation) == bladeLockType.lockNone)
+                throw  new Exception("lockVMCreation is needed when calling .canAccomodate");
 
-            if (vms.Count + 1 >_VMCapacity.maxVMs)
+            vmserverTotals totals = db.getVMServerTotalsByVMServerIP(bladeIP);
+
+            if (totals.VMs + 1 > _VMCapacity.maxVMs)
                 return false;
-            if (vms.Sum(x => x.hwSpec.memoryMB) + req.memoryMB > _VMCapacity.maxVMMemoryMB)
+            if (totals.ram + req.memoryMB > _VMCapacity.maxVMMemoryMB)
                 return false;
-            if (vms.Sum(x => x.hwSpec.cpuCount) + req.cpuCount > _VMCapacity.maxCPUCount)
+            if (totals.cpus + req.cpuCount > _VMCapacity.maxCPUCount)
                 return false;
 
             return true;
         }
 
-        private List<vmSpec> getChildVMs(SQLiteConnection conn)
+        public lockableVMSpec createChildVM(hostDB db, VMHardwareSpec reqhw, VMSoftwareSpec reqsw, string newOwner)
         {
-            string cmd_bladeConfig = "select *, bladeOwnership.id as bladeOwnershipID from VMConfiguration " + 
-                " join bladeOwnership on bladeOwnership.id == vmconfiguration.ownershipid " + 
-                " where parentBladeID = $VMServerID";
-            List<vmSpec> vms = new List<vmSpec>();
-            using (SQLiteCommand cmd = new SQLiteCommand(cmd_bladeConfig, conn))
-            {
-                cmd.Parameters.AddWithValue("$VMServerID", bladeID);
-                using (SQLiteDataReader reader = cmd.ExecuteReader())
-                {
-                    while (reader.Read())
-                    {
-                        vmSpec newVM = new vmSpec(reader);
-                        vms.Add(newVM);
-                    }
-                }
-            }
-            return vms;
-        }
+            if ((permittedAccess & bladeLockType.lockVMCreation) == bladeLockType.lockNone)
+                throw new Exception("lockVMCreation is needed when calling .createChildVM");
 
-        public void becomeAVMServer(SQLiteConnection conn)
-        {
-            // Delete any VM configurations that have been left lying around.
-
-            string sql = "select VMConfiguration.id from VMConfiguration " +
-                        " join BladeConfiguration on  BladeConfiguration.id = bladeOwnership.id " +
-                        "join bladeOwnership on VMConfiguration.parentBladeID = bladeOwnership.id " +
-                        " where BladeConfiguration.bladeIP = $bladeIP";
-            List<long> toDel = new List<long>();
-            using (SQLiteCommand cmd = new SQLiteCommand(sql, conn))
-            {
-                cmd.Parameters.AddWithValue("$bladeIP",  bladeIP);
-                using (SQLiteDataReader reader = cmd.ExecuteReader())
-                {
-                    while (reader.Read())
-                    {
-                        toDel.Add((long) reader[0]);
-                    }
-                }
-            }
-
-            string deleteSQL = "delete from VMConfiguration where id in (" + String.Join(",", toDel) + ")";
-            using (SQLiteCommand cmd = new SQLiteCommand(deleteSQL, conn))
-            {
-                cmd.ExecuteNonQuery();
-            }
-
-            currentlyBeingAVMServer = true;
-            state = bladeStatus.inUseByDirector;
-        }
-
-        public vmSpec createChildVM(SQLiteConnection conn, VMHardwareSpec reqhw, VMSoftwareSpec reqsw, string newOwner)
-        {
-            vmSpec newVM = new vmSpec();
-            newVM.currentOwner = "vmserver";    // We own the blade until we are done setting it up
+            vmSpec newVM = new vmSpec(VMDeployStatus.needsPowerCycle);
+            newVM.parentBladeIP = bladeIP;
+            newVM.currentOwner = "vmserver"; // We own the blade until we are done setting it up
             newVM.state = bladeStatus.inUseByDirector;
             newVM.nextOwner = newOwner;
-            newVM.parentBladeID = this.bladeID;
+            newVM.parentBladeID = bladeID;
             newVM.hwSpec = reqhw;
-            newVM.indexOnServer = getChildVMs(conn).Count + 1;
+            vmserverTotals totals = db.getVMServerTotalsByVMServerIP(bladeIP);
+            newVM.indexOnServer = totals.VMs + 1;
 
-            byte[] VMServerIPBytes = IPAddress.Parse(this.bladeIP).GetAddressBytes();
+            byte[] VMServerIPBytes = IPAddress.Parse(bladeIP).GetAddressBytes();
 
             // VM IPs are in 172.17.(128+bladeIndex).vmIndex
             newVM.VMIP = "172.17." + (28 + VMServerIPBytes[3]) + "." + newVM.indexOnServer;
@@ -259,13 +302,13 @@ namespace bladeDirector
             newVM.displayName = "VM_" + (VMServerIPBytes[3] - 100).ToString("D2") + "_" + newVM.indexOnServer.ToString("D2");
 
             if (reqsw.debuggerPort == 0)
-                reqsw.debuggerPort = (ushort) (50000 + ((VMServerIPBytes[3] - 100) * 100) + newVM.indexOnServer);
+                reqsw.debuggerPort = (ushort) (50000 + ((VMServerIPBytes[3] - 100)*100) + newVM.indexOnServer);
             newVM.kernelDebugPort = reqsw.debuggerPort;
             newVM.kernelDebugKey = reqsw.debuggerKey;
             // VMs always have this implicit snapshot.
             newVM.currentSnapshot = "vm";
 
-            return newVM;
+            return new lockableVMSpec(db.conn, newVM);
         }
 
         public override itemToAdd toItemToAdd(bool useNextOwner)
@@ -273,13 +316,13 @@ namespace bladeDirector
             itemToAdd toRet = new itemToAdd();
 
             if (useNextOwner)
-                toRet.cloneName = this.bladeIP + "-" + this.nextOwner + "-" + this.currentSnapshot;
+                toRet.cloneName = bladeIP + "-" + nextOwner + "-" + currentSnapshot;
             else
-                toRet.cloneName = this.bladeIP + "-" + this.currentOwner + "-" + this.currentSnapshot;
-            toRet.serverIP = this.currentOwner;
-            toRet.snapshotName = this.currentSnapshot;
-            toRet.bladeIP = this.bladeIP;
-            toRet.computerName = this.bladeIP;
+                toRet.cloneName = bladeIP + "-" + currentOwner + "-" + currentSnapshot;
+            toRet.serverIP = currentOwner;
+            toRet.snapshotName = currentSnapshot;
+            toRet.bladeIP = bladeIP;
+            toRet.computerName = bladeIP;
             toRet.isVirtualMachine = false;
 
             return toRet;

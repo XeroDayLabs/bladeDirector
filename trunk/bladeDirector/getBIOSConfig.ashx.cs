@@ -1,6 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
+﻿using System.Linq;
 using System.Web;
 
 namespace bladeDirector
@@ -20,7 +18,7 @@ namespace bladeDirector
                 return;
             }
 
-            bladeSpec res = services.hostStateDB.getBladeByIP(context.Request.QueryString["hostip"]);
+            bladeSpec res = services.hostStateManager.db.getBladeByIP_withoutLocking(context.Request.QueryString["hostip"]);
             if (res == null)
             {
                 context.Response.Write("Blade not found");

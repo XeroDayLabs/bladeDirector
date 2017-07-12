@@ -1,6 +1,7 @@
 using System;
 using System.Data.SQLite;
 using System.Xml.Serialization;
+using bladeDirector.Properties;
 using createDisks;
 
 namespace bladeDirector
@@ -9,9 +10,10 @@ namespace bladeDirector
     public class vmSpec : bladeOwnership
     {
         public long parentBladeID;
+        public string parentBladeIP;
         public string iscsiIP;
         public string VMIP;
-        public int vmSpecID;
+        public long? vmConfigKey;
         public string eth0MAC;
         public string eth1MAC;
         public string displayName;
@@ -20,39 +22,49 @@ namespace bladeDirector
         public ushort kernelDebugPort;
         public string kernelDebugKey;
 
+        // These two properties are accessed by the client via the XML response. They must be public and non-read-only.
+        // ReSharper disable MemberCanBePrivate.Global
+        // ReSharper disable NotAccessedField.Global
         public string username;
         public string password;
+        // ReSharper restore NotAccessedField.Global
+        // ReSharper restore MemberCanBePrivate.Global
 
         public VMHardwareSpec hwSpec;
 
-        public vmSpec()
+        public vmSpec(VMDeployStatus deployState)
+            : base(deployState,bladeLockType.lockAll)
         {
-            // For XML serialisation
+            vmConfigKey = null;
         }
 
         public vmSpec(SQLiteDataReader reader)
-            : base(reader)
+            : base(reader, bladeLockType.lockAll)
         {
             parentBladeID = (long)reader["parentBladeID"];
-            if (!(reader["iscsiIP"] is System.DBNull))
+            if (!(reader["parentBladeIP"] is DBNull))
+                parentBladeIP = (string)reader["parentBladeIP"];
+            vmConfigKey = (long)reader["vmConfigKey"];
+            if (!(reader["iscsiIP"] is DBNull))
                 iscsiIP = (string)reader["iscsiIP"];
-            if (!(reader["VMIP"] is System.DBNull))
+            if (!(reader["VMIP"] is DBNull))
                 VMIP = (string)reader["VMIP"];
-            if (!(reader["eth0MAC"] is System.DBNull))
+            if (!(reader["eth0MAC"] is DBNull))
                 eth0MAC = (string)reader["eth0MAC"];
-            if (!(reader["eth1MAC"] is System.DBNull))
+            if (!(reader["eth1MAC"] is DBNull))
                 eth1MAC = (string)reader["eth1MAC"];
-            if (!(reader["displayName"] is System.DBNull))
+            if (!(reader["displayName"] is DBNull))
                 displayName = (string)reader["displayName"];
-            if (!(reader["kernelDebugPort"] is System.DBNull))
+            if (!(reader["kernelDebugPort"] is DBNull))
                 kernelDebugPort = Convert.ToUInt16(reader["kernelDebugPort"]);
-            if (!(reader["kernelDebugKey"] is System.DBNull))
+            if (!(reader["kernelDebugKey"] is DBNull))
                 kernelDebugKey = (string)reader["kernelDebugKey"];
-            if (!(reader["indexOnServer"] is System.DBNull))
+            if (!(reader["indexOnServer"] is DBNull))
                 indexOnServer = Convert.ToInt32(reader["indexOnServer"]);
             
-            username = Properties.Settings.Default.vmUsername;
-            password = Properties.Settings.Default.vmPassword;
+
+            username = Settings.Default.vmUsername;
+            password = Settings.Default.vmPassword;
 
             hwSpec = new VMHardwareSpec(reader);
         }
@@ -61,17 +73,18 @@ namespace bladeDirector
         {
             base.createInDB(conn);
 
-            string cmd_bladeConfig = "insert into VMConfiguration" +
-                                     "(ownershipID, parentBladeID, memoryMB, cpuCount, VMIP, iscsiip, eth0mac, eth1mac, displayname, kernelDebugPort, kernelDebugKey, indexOnServer )" +
-                                     " VALUES " +
-                                     "($ownershipID, $parentBladeID, $memoryMB, $cpuCount, $VMIP, $iscsiip, $eth0mac, $eth1mac, $displayname, $kernelDebugPort, $kernelDebugKey, $indexOnServer )";
+            const string cmd_bladeConfig = "insert into VMConfiguration" +
+                                           "(ownershipID, parentBladeID, parentBladeIP, memoryMB, cpuCount, vmConfigKey, VMIP, iscsiip, eth0mac, eth1mac, displayname, kernelDebugPort, kernelDebugKey, indexOnServer )" +
+                                           " VALUES " +
+                                           "($ownershipID, $parentBladeID, $parentBladeIP, $memoryMB, $cpuCount, $vmConfigKey, $VMIP, $iscsiip, $eth0mac, $eth1mac, $displayname, $kernelDebugPort, $kernelDebugKey, $indexOnServer )";
             using (SQLiteCommand cmd = new SQLiteCommand(cmd_bladeConfig, conn))
             {
-                cmd.Parameters.AddWithValue("$ownershipID", base.ownershipRowID);
+                cmd.Parameters.AddWithValue("$ownershipID", ownershipRowID);
                 cmd.Parameters.AddWithValue("$parentBladeID", parentBladeID);
+                cmd.Parameters.AddWithValue("$parentBladeIP", parentBladeIP);
                 cmd.Parameters.AddWithValue("$memoryMB", hwSpec.memoryMB);
                 cmd.Parameters.AddWithValue("$cpuCount", hwSpec.cpuCount);
-                cmd.Parameters.AddWithValue("$vmSpecID", vmSpecID);
+                cmd.Parameters.AddWithValue("$vmConfigKey", vmConfigKey);
                 cmd.Parameters.AddWithValue("$vmIP", VMIP);
                 cmd.Parameters.AddWithValue("$iscsiIP", iscsiIP);
                 cmd.Parameters.AddWithValue("$eth0MAC", eth0MAC);
@@ -82,7 +95,7 @@ namespace bladeDirector
                 cmd.Parameters.AddWithValue("$indexOnServer", indexOnServer);
 
                 cmd.ExecuteNonQuery();
-                vmSpecID = (int)conn.LastInsertRowId;
+                vmConfigKey = (int)conn.LastInsertRowId;
             }
         }
 
@@ -90,39 +103,47 @@ namespace bladeDirector
         {
             base.deleteInDB(conn);
 
-            string cmd_bladeConfig = "delete from VMConfiguration where id = $vmSpecID";
+            const string cmd_bladeConfig = "delete from VMConfiguration where vmConfigKey = $vmConfigKey";
             using (SQLiteCommand cmd = new SQLiteCommand(cmd_bladeConfig, conn))
             {
-                cmd.Parameters.AddWithValue("$vmSpecID", vmSpecID);
+                cmd.Parameters.AddWithValue("$vmConfigKey", vmConfigKey);
                 cmd.ExecuteNonQuery();
             }
         }
 
-        public override resultCode updateInDB(SQLiteConnection conn)
+        public override void updateInDB(SQLiteConnection conn)
         {
             base.updateInDB(conn);
 
-            string cmd_bladeConfig = "update VMConfiguration set " +
-                                     " ownershipID=$ownershipID, " +
-                                     " parentBladeID=$parentBladeID, " +
-                                     " memoryMB=$memoryMB, " +
-                                     " cpuCount=$cpuCount, " +
-                                     " VMIP=$VMIP, " +
-                                     " iscsiIP=$iscsiIP, " +
-                                     " eth0MAC=$eth0MAC, " +
-                                     " eth1MAC=$eth1MAC, " +
-                                     " displayName=$displayName, " +
-                                     " kernelDebugPort=$kernelDebugPort, " +
-                                     " kernelDebugKey=$kernelDebugKey, " +
-                                     " indexOnServer=$indexOnServer  " +
-                                     " where id = $vmSpecID";
+            if (vmConfigKey == null)
+            {
+                createInDB(conn);
+                return;
+            }
+
+            const string cmd_bladeConfig = "update VMConfiguration set " +
+                                           " ownershipID=$ownershipID, " +
+                                           " parentBladeID=$parentBladeID, " +
+                                           " parentBladeIP=$parentBladeIP, " +
+                                           " memoryMB=$memoryMB, " +
+                                           " cpuCount=$cpuCount, " +
+                                           " VMIP=$VMIP, " +
+                                           " iscsiIP=$iscsiIP, " +
+                                           " eth0MAC=$eth0MAC, " +
+                                           " eth1MAC=$eth1MAC, " +
+                                           " displayName=$displayName, " +
+                                           " kernelDebugPort=$kernelDebugPort, " +
+                                           " kernelDebugKey=$kernelDebugKey, " +
+                                           " indexOnServer=$indexOnServer  " +
+                                           " where vmConfigKey = $vmConfigKey";
             using (SQLiteCommand cmd = new SQLiteCommand(cmd_bladeConfig, conn))
             {
-                cmd.Parameters.AddWithValue("$ownershipID", base.ownershipRowID);
+                cmd.Parameters.AddWithValue("$ownershipID", ownershipRowID);
                 cmd.Parameters.AddWithValue("$parentBladeID", parentBladeID);
+                cmd.Parameters.AddWithValue("$parentBladeIP", parentBladeIP);
                 cmd.Parameters.AddWithValue("$memoryMB", hwSpec.memoryMB);
                 cmd.Parameters.AddWithValue("$cpuCount", hwSpec.cpuCount);
-                cmd.Parameters.AddWithValue("$vmSpecID", vmSpecID);
+                cmd.Parameters.AddWithValue("$vmConfigKey", vmConfigKey);
                 cmd.Parameters.AddWithValue("$vmIP", VMIP);
                 cmd.Parameters.AddWithValue("$iscsiIP", iscsiIP);
                 cmd.Parameters.AddWithValue("$eth0MAC", eth0MAC);
@@ -133,10 +154,10 @@ namespace bladeDirector
                 cmd.Parameters.AddWithValue("$indexOnServer", indexOnServer);
                 
                 cmd.ExecuteNonQuery();
-                vmSpecID = (int)conn.LastInsertRowId;
+                vmConfigKey = (int)conn.LastInsertRowId;
             }
 
-            return resultCode.success;
+            return;
         }
  
         public override itemToAdd toItemToAdd(bool useNextOwner = false)
@@ -147,33 +168,20 @@ namespace bladeDirector
             // preparing a VM for another blade, and have ownership temporarily assigned to the blade director itself.
             string owner;
             if (useNextOwner) 
-                owner = this.nextOwner;
+                owner = nextOwner;
             else 
-                owner = this.currentOwner;
+                owner = currentOwner;
 
-            toRet.cloneName = this.VMIP + "-" + owner + "-" + this.currentSnapshot;
+            toRet.cloneName = VMIP + "-" + owner + "-" + currentSnapshot;
             toRet.serverIP = owner;
-            toRet.snapshotName = this.currentSnapshot;
-            toRet.bladeIP = this.VMIP;
-            toRet.computerName = this.displayName;
-            toRet.kernelDebugPort = this.kernelDebugPort;
-            toRet.kernelDebugKey = this.kernelDebugKey;
+            toRet.snapshotName = currentSnapshot;
+            toRet.bladeIP = VMIP;
+            toRet.computerName = displayName;
+            toRet.kernelDebugPort = kernelDebugPort;
+            toRet.kernelDebugKey = kernelDebugKey;
             toRet.isVirtualMachine = true;
 
             return toRet;
-        }
-
-        public bool conflictsWith(vmSpec toTestWith)
-        {
-            if (toTestWith.VMIP == this.VMIP ||
-                toTestWith.displayName == this.displayName ||       // Actually legal, but we don't permit it just because it makes this harder to read
-                toTestWith.eth0MAC == this.eth0MAC ||
-                toTestWith.eth1MAC == this.eth1MAC ||
-                toTestWith.indexOnServer == this.indexOnServer ||
-                toTestWith.iscsiIP == this.iscsiIP)
-                return true;
-
-            return false;
         }
     }
 }
