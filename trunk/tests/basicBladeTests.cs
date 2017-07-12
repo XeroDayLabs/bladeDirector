@@ -10,7 +10,7 @@ using resultCode = bladeDirector.resultCode;
 namespace tests
 {
     [TestClass]
-    public class UnitTest1
+    public class basicBladeTests
     {
         [TestMethod]
         public void canInitWithBladesAndGetListBack()
