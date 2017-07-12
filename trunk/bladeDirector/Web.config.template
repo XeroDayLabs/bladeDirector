@@ -27,6 +27,42 @@
       <setting name="bladeList" serializeAs="String">
         <value>1,2,3,4,28,29,30,31</value>
       </setting>
+      <setting name="baseDebugPort" serializeAs="String">
+        <value>...</value>
+      </setting>
+      <setting name="iloUsername" serializeAs="String">
+        <value>...</value>
+      </setting>
+      <setting name="iloPassword" serializeAs="String">
+        <value>...</value>
+      </setting>
+      <setting name="ltspUsername" serializeAs="String">
+        <value>...</value>
+      </setting>
+      <setting name="ltspPassword" serializeAs="String">
+        <value>...</value>
+      </setting>
+      <setting name="esxiUsername" serializeAs="String">
+        <value>...</value>
+      </setting>
+      <setting name="esxiPassword" serializeAs="String">
+        <value>...</value>
+      </setting>
+      <setting name="vmUsername" serializeAs="String">
+        <value>...</value>
+      </setting>
+      <setting name="vmPassword" serializeAs="String">
+        <value>...</value>
+      </setting>
+      <setting name="iscsiServerIP" serializeAs="String">
+        <value>...</value>
+      </setting>
+      <setting name="iscsiServerUsername" serializeAs="String">
+        <value>...</value>
+      </setting>
+      <setting name="iscsiServerPassword" serializeAs="String">
+        <value>...</value>
+      </setting>
     </bladeDirector.Properties.Settings>
   </applicationSettings>
     <system.webServer>
@@ -35,4 +71,14 @@
             <mimeMap fileExtension=".asmx" mimeType="text/plain" />
         </staticContent>
     </system.webServer>
+  <system.serviceModel>
+    <bindings>
+      <basicHttpBinding>
+        <binding name="BasicHttpBinding_IBootMenuWCF"/>
+      </basicHttpBinding>
+    </bindings>
+    <client>
+      <endpoint address="http://localhost/bootMenuController" binding="basicHttpBinding" bindingConfiguration="BasicHttpBinding_IBootMenuWCF" contract="bootMenuWCF.IBootMenuWCF" name="BasicHttpBinding_IBootMenuWCF"/>
+    </client>
+  </system.serviceModel>
 </configuration>
