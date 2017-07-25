@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<configuration>
+    <configSections>
+        <sectionGroup name="userSettings" type="System.Configuration.UserSettingsGroup, System, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" >
+            <section name="bladeDirectorWCF.Properties.Settings" type="System.Configuration.ClientSettingsSection, System, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" allowExeDefinition="MachineToLocalUser" requirePermission="false" />
+        </sectionGroup>
+    </configSections>
+    <startup> 
+        <supportedRuntime version="v4.0" sku=".NETFramework,Version=v4.5" />
+    </startup>
+    <userSettings>
+        <bladeDirectorWCF.Properties.Settings>
+            <setting name="iloUsername" serializeAs="String">
+                <value>desktopFuzzer</value>
+            </setting>
+            <setting name="iloPassword" serializeAs="String">
+                <value>...</value>
+            </setting>
+            <setting name="ltspUsername" serializeAs="String">
+                <value>root</value>
+            </setting>
+            <setting name="ltspPassword" serializeAs="String">
+                <value>...</value>
+            </setting>
+            <setting name="esxiUsername" serializeAs="String">
+                <value>root</value>
+            </setting>
+            <setting name="esxiPassword" serializeAs="String">
+                <value>...</value>
+            </setting>
+            <setting name="vmUsername" serializeAs="String">
+                <value>aliz</value>
+            </setting>
+            <setting name="vmPassword" serializeAs="String">
+                <value>...</value>
+            </setting>
+            <setting name="iscsiServerIP" serializeAs="String">
+                <value>store.xd.lan</value>
+            </setting>
+            <setting name="iscsiServerUsername" serializeAs="String">
+                <value>root</value>
+            </setting>
+            <setting name="iscsiServerPassword" serializeAs="String">
+                <value>...</value>
+            </setting>
+        </bladeDirectorWCF.Properties.Settings>
+    </userSettings>
+    <system.serviceModel>
+        <bindings>
+          <basicHttpBinding>
+            <binding name="BasicHttpBinding_IBootMenuWCF" />
+          </basicHttpBinding>
+          
+        </bindings>
+        <client>
+            <endpoint address="http://localhost/bootMenuController" binding="basicHttpBinding"
+                bindingConfiguration="BasicHttpBinding_IBootMenuWCF" contract="bootMenuController.IBootMenuWCF"
+                name="BasicHttpBinding_IBootMenuWCF" />
+        </client>
+    </system.serviceModel>
+</configuration>

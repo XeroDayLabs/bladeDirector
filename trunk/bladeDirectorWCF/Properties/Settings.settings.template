@@ -1,0 +1,39 @@
+﻿<?xml version='1.0' encoding='utf-8'?>
+<SettingsFile xmlns="http://schemas.microsoft.com/VisualStudio/2004/01/settings" CurrentProfile="(Default)" GeneratedClassNamespace="bladeDirectorWCF.Properties" GeneratedClassName="Settings">
+  <Profiles />
+  <Settings>
+    <Setting Name="iloUsername" Type="System.String" Scope="User">
+      <Value Profile="(Default)">desktopFuzzer</Value>
+    </Setting>
+    <Setting Name="iloPassword" Type="System.String" Scope="User">
+      <Value Profile="(Default)">...</Value>
+    </Setting>
+    <Setting Name="ltspUsername" Type="System.String" Scope="User">
+      <Value Profile="(Default)">root</Value>
+    </Setting>
+    <Setting Name="ltspPassword" Type="System.String" Scope="User">
+      <Value Profile="(Default)">...</Value>
+    </Setting>
+    <Setting Name="esxiUsername" Type="System.String" Scope="User">
+      <Value Profile="(Default)">root</Value>
+    </Setting>
+    <Setting Name="esxiPassword" Type="System.String" Scope="User">
+      <Value Profile="(Default)">...</Value>
+    </Setting>
+    <Setting Name="vmUsername" Type="System.String" Scope="User">
+      <Value Profile="(Default)">aliz</Value>
+    </Setting>
+    <Setting Name="vmPassword" Type="System.String" Scope="User">
+      <Value Profile="(Default)">...</Value>
+    </Setting>
+    <Setting Name="iscsiServerIP" Type="System.String" Scope="User">
+      <Value Profile="(Default)">store.xd.lan</Value>
+    </Setting>
+    <Setting Name="iscsiServerUsername" Type="System.String" Scope="User">
+      <Value Profile="(Default)">root</Value>
+    </Setting>
+    <Setting Name="iscsiServerPassword" Type="System.String" Scope="User">
+      <Value Profile="(Default)">...</Value>
+    </Setting>
+  </Settings>
+</SettingsFile>
