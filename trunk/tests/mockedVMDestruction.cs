@@ -1,95 +1,88 @@
 using System;
-using bladeDirector;
+using System.Collections.Generic;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-
+using tests.bladeDirectorServices;
 namespace tests
 {
     [TestClass]
     public class mockedVMDestruction
     {
-
         [TestMethod]
         public void willDeallocateOldVMsOnLogon()
         {
-            string hostIP = "1.1.1.1";
-
-            // Allocate all the blades, then login again. The allocated blades should no longer be allocated.
-            hostStateManagerMocked uut = new hostStateManagerMocked();
-            uut.initWithBlades(new[] { "172.17.129.131" });
-            string ourVM = testUtils.doVMAllocationForTest(uut, hostIP);
-
-            // Find the parent blade of the VM we got, and make sure it is now in use (by the blade director)
-            string bladeIP;
-            using (lockableVMSpec VMSpec = uut.db.getVMByIP(ourVM))
+            using (services svc = new services("172.17.129.131"))
             {
-                using (lockableBladeSpec bladeSpec = uut.db.getBladeByIP(VMSpec.spec.parentBladeIP, bladeLockType.lockAll))
-                {
-                    GetBladeStatusResult bladeState = uut.db.getBladeStatus(bladeSpec.spec.bladeIP, hostIP);
-                    bladeIP = bladeSpec.spec.bladeIP;
-                    Assert.AreEqual(bladeState, GetBladeStatusResult.notYours);
-                }
+                string hostIP = "1.1.1.1";
+                testUtils.doLogin(svc, hostIP);
+
+                // Allocate all the blades, then login again. The allocated blades should no longer be allocated.
+                string ourVM = testUtils.doVMAllocationForTest(svc, hostIP);
+
+                // Find the parent blade of the VM we got, and make sure it is now in use (by the blade director)
+                vmSpec VMSpec = svc.uut.getVMByIP_withoutLocking(ourVM);
+                bladeSpec bladeSpec = svc.uut.getBladeByIP_withoutLocking(VMSpec.parentBladeIP);
+
+                GetBladeStatusResult bladeState = svc.uutDebug._GetBladeStatus(hostIP, bladeSpec.bladeIP);
+                string bladeIP = bladeSpec.bladeIP;
+                Assert.AreEqual(bladeState, GetBladeStatusResult.notYours);
+
+                // Do a new login, which should cause our blades to be deallocated.
+                testUtils.doLogin(svc, hostIP);
+
+                // The VM should now not exist.
+                Assert.AreEqual(null, svc.uut.getVMByIP_withoutLocking(ourVM));
+
+                // Find the parent blade of the VM we got, and make sure it is now unused.
+                GetBladeStatusResult bladeState2 = svc.uutDebug._GetBladeStatus(hostIP, bladeIP);
+                Assert.AreEqual(bladeState2, GetBladeStatusResult.unused);
             }
-
-            testUtils.doLogin(uut, hostIP);
-
-            // The VM should now not exist.
-            Assert.AreEqual(null, uut.db.getVMByIP(ourVM));
-
-            // Find the parent blade of the VM we got, and make sure it is now unused.
-            GetBladeStatusResult bladeState2 = uut.db.getBladeStatus(bladeIP, hostIP);
-            Assert.AreEqual(bladeState2, GetBladeStatusResult.unused);
         }
 
         [TestMethod]
         public void willReUseOldVMsAfterLogon()
         {
-            string hostIP = "1.1.1.1";
+            using (services svc = new services("172.17.129.131"))
+            {
+                string hostIP = "1.1.1.1";
 
-            hostStateManagerMocked uut = new hostStateManagerMocked();
-            uut.initWithBlades(new[] { "172.17.129.131" });
+                testUtils.doLogin(svc, hostIP);
+                string firstVM = testUtils.doVMAllocationForTest(svc, hostIP);
 
-            testUtils.doLogin(uut, hostIP);
-            string ourVM = testUtils.doVMAllocationForTest(uut, hostIP);
+                testUtils.doLogin(svc, hostIP);
+                string secondVM = testUtils.doVMAllocationForTest(svc, hostIP);
 
-            testUtils.doLogin(uut, hostIP);
-            ourVM = testUtils.doVMAllocationForTest(uut, hostIP);
+                Assert.AreEqual(firstVM, secondVM);
+            }
         }
 
         [TestMethod]
-        public void willReUseOldVMsAfterLogonDuringBladeBoot()
+        public void willReUseOldVMsAfterLogonDuringBIOSOperation()
         {
-            string hostIP = "1.1.1.1";
+            using (services svc = new services())
+            {
+                string hostIP = "1.1.1.1";
+                svc.uutDebug.initWithBladesFromIPList(new[] { "172.17.129.131" }, true, NASFaultInjectionPolicy.retunSuccessful);
 
-            hostStateManagerMocked uut = new hostStateManagerMocked();
+                testUtils.doLogin(svc, hostIP);
+                string bladeIP = testUtils.doBladeAllocationForTest(svc, hostIP);
+                
+                // Start a 5-minute long BIOS operation, then cancel it by logging in again.
+                svc.uutDebug._setBIOSOperationTimeIfMocked((int) TimeSpan.FromMinutes(5).TotalSeconds);
+                resultAndWaitToken res = svc.uutDebug._rebootAndStartDeployingBIOSToBlade(hostIP, bladeIP, ".... some bios file here ... ");
+                Assert.AreEqual(resultCode.pending, res.result.code);
 
-            testUtils.doLogin(uut, hostIP);
-            string bladeIP = testUtils.doBladeAllocationForTest(uut, hostIP);
-            // Start a 5-minute long BIOS operation, then cancel it by logging in again.
-            ((biosReadWrite_mocked)(uut.biosRWEngine)).biosOperationTime = TimeSpan.FromMinutes(5);
-            resultCode res = uut.rebootAndStartDeployingBIOSToBlade(bladeIP, hostIP, ".... some bios file here ... ");
-            Assert.AreEqual(resultCode.pending, res);
-            Assert.AreEqual(true, uut.isBladeMine(bladeIP, hostIP));
+                Assert.AreEqual(true, svc.uutDebug._isBladeMine(hostIP, bladeIP));
 
-            // Now login again, cancelling the BIOS operation.
-            testUtils.doLogin(uut, hostIP);
+                // Now login again, cancelling the BIOS operation.
+                testUtils.doLogin(svc, hostIP);
 
-            // The blade should no longer be ours.
-            Assert.AreEqual(false, uut.isBladeMine(bladeIP, hostIP));
-        }
+                // The blade should no longer be ours.
+                Assert.AreEqual(false, svc.uutDebug._isBladeMine(hostIP, bladeIP));
 
-        [TestMethod]
-        public void willReUseOldVMsAfterLogonDuringBiosOperation()
-        {
-            string hostIP = "1.1.1.1";
-
-            hostStateManagerMocked uut = new hostStateManagerMocked();
-            uut.initWithBlades(new[] { "172.17.129.131" });
-
-            testUtils.doLogin(uut, hostIP);
-            waitTokenType waitToken = testUtils.startSlowVMAllocationForTest(uut, hostIP);
-
-            testUtils.doLogin(uut, hostIP, TimeSpan.FromMinutes(10));
-            string ourVM = testUtils.doVMAllocationForTest(uut, hostIP);
+                // And after an allocation, our blade should be re-used.
+                string newbladeIP = testUtils.doBladeAllocationForTest(svc, hostIP);
+                Assert.AreEqual(bladeIP, newbladeIP);
+            }
         }
     }
 }

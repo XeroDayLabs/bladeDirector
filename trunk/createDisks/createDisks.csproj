@@ -54,6 +54,27 @@
     <CodeAnalysisRuleSet>MinimumRecommendedRules.ruleset</CodeAnalysisRuleSet>
     <Prefer32Bit>true</Prefer32Bit>
   </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Debug|x86'">
+    <DebugSymbols>true</DebugSymbols>
+    <OutputPath>bin\x86\Debug\</OutputPath>
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <DebugType>full</DebugType>
+    <PlatformTarget>x86</PlatformTarget>
+    <UseVSHostingProcess>false</UseVSHostingProcess>
+    <ErrorReport>prompt</ErrorReport>
+    <CodeAnalysisRuleSet>MinimumRecommendedRules.ruleset</CodeAnalysisRuleSet>
+    <Prefer32Bit>true</Prefer32Bit>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Release|x86'">
+    <OutputPath>bin\x86\Release\</OutputPath>
+    <DefineConstants>TRACE</DefineConstants>
+    <Optimize>true</Optimize>
+    <DebugType>pdbonly</DebugType>
+    <PlatformTarget>x86</PlatformTarget>
+    <ErrorReport>prompt</ErrorReport>
+    <CodeAnalysisRuleSet>MinimumRecommendedRules.ruleset</CodeAnalysisRuleSet>
+    <Prefer32Bit>true</Prefer32Bit>
+  </PropertyGroup>
   <ItemGroup>
     <Reference Include="CommandLine">
       <HintPath>$(Solutiondir)\..\thirdparty\commandline\CommandLine.dll</HintPath>
@@ -64,6 +85,9 @@
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
+    <Reference Include="System.Data.SQLite">
+      <HintPath>..\..\thirdparty\sqlite\System.Data.SQLite.dll</HintPath>
+    </Reference>
     <Reference Include="System.Runtime.Serialization" />
     <Reference Include="System.ServiceModel" />
     <Reference Include="System.Xml.Linq" />
@@ -102,25 +126,37 @@
       <Generator>SettingsSingleFileGenerator</Generator>
       <LastGenOutput>Settings.Designer.cs</LastGenOutput>
     </None>
-    <None Include="Service References\bladeDirector\createDisks.bladeDirector.bladeSpec.datasource">
-      <DependentUpon>Reference.svcmap</DependentUpon>
+    <None Include="Service References\bladeDirector\bladeDirector.xsd">
+      <SubType>Designer</SubType>
     </None>
-    <None Include="Service References\bladeDirector\createDisks.bladeDirector.GetBladeStatusResult.datasource">
-      <DependentUpon>Reference.svcmap</DependentUpon>
+    <None Include="Service References\bladeDirector\bladeDirector1.xsd">
+      <SubType>Designer</SubType>
     </None>
-    <None Include="Service References\bladeDirector\createDisks.bladeDirector.resultCode.datasource">
-      <DependentUpon>Reference.svcmap</DependentUpon>
+    <None Include="Service References\bladeDirector\bladeDirector2.xsd">
+      <SubType>Designer</SubType>
     </None>
-    <None Include="Service References\bladeDirector\createDisks.bladeDirector.resultCodeAndBIOSConfig.datasource">
-      <DependentUpon>Reference.svcmap</DependentUpon>
+    <None Include="Service References\bladeDirector\bladeDirector3.xsd">
+      <SubType>Designer</SubType>
     </None>
-    <None Include="Service References\bladeDirector\createDisks.bladeDirector.resultCodeAndBladeName.datasource">
-      <DependentUpon>Reference.svcmap</DependentUpon>
+    <None Include="Service References\bladeDirector\bladeDirector4.xsd">
+      <SubType>Designer</SubType>
     </None>
-    <None Include="Service References\bladeDirector\createDisks.bladeDirector.vmSpec.datasource">
-      <DependentUpon>Reference.svcmap</DependentUpon>
+    <None Include="Service References\bladeDirector\bladeDirector5.xsd">
+      <SubType>Designer</SubType>
     </None>
-    <None Include="Service References\bladeDirector\services1.wsdl" />
+    <None Include="Service References\bladeDirector\bladeDirector6.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="Service References\bladeDirector\bladeDirector7.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="Service References\bladeDirector\bladeDirector8.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="Service References\bladeDirector\bladeDirector9.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="Service References\bladeDirector\services.wsdl" />
   </ItemGroup>
   <ItemGroup>
     <WCFMetadata Include="Service References\" />
@@ -153,7 +189,7 @@
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
-    <None Include="Service References\bladeDirector\services1.disco" />
+    <None Include="Service References\bladeDirector\bladeDirector.disco" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

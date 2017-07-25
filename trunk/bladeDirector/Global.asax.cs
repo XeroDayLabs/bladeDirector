@@ -8,8 +8,7 @@ namespace bladeDirector
 
         protected void Application_Start(object sender, EventArgs e)
         {
-            string appRoot = Server.MapPath("~");
-            services.hostStateManager = new hostStateManager(appRoot);
+
         }
 
         protected void Session_Start(object sender, EventArgs e)

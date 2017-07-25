@@ -314,7 +314,7 @@ namespace createDisks
             {
                 // We must ensure the blade is allocated to the required blade before we power it on. This will cause it to
                 // use the required iSCSI root path.
-                EndpointAddress ep = new EndpointAddress(String.Format("http://{0}/services.asmx", directorURL));
+            /*    EndpointAddress ep = new EndpointAddress(String.Format("http://{0}/services.asmx", directorURL));
                 BasicHttpBinding binding = new BasicHttpBinding();
                 using (bladeDirector.servicesSoapClient bladeDirectorClient = new bladeDirector.servicesSoapClient(binding, ep))
                 {
@@ -330,7 +330,7 @@ namespace createDisks
                     }
                     if (shotResCode != resultCode.success)
                         throw new Exception("Can't select snapshot on blade " + itemToAdd.bladeIP);
-                }
+                }*/
             }
             Debug.WriteLine(itemToAdd.bladeIP + " allocated, powering up");
             hyp.powerOn();

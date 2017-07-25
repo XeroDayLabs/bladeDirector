@@ -55,8 +55,32 @@
     <ErrorReport>prompt</ErrorReport>
     <CodeAnalysisRuleSet>MinimumRecommendedRules.ruleset</CodeAnalysisRuleSet>
   </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Debug|x86'">
+    <DebugSymbols>true</DebugSymbols>
+    <OutputPath>bin\x86\Debug\</OutputPath>
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <DebugType>full</DebugType>
+    <PlatformTarget>x86</PlatformTarget>
+    <UseVSHostingProcess>false</UseVSHostingProcess>
+    <ErrorReport>prompt</ErrorReport>
+    <CodeAnalysisRuleSet>MinimumRecommendedRules.ruleset</CodeAnalysisRuleSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Release|x86'">
+    <OutputPath>bin\x86\Release\</OutputPath>
+    <DefineConstants>TRACE</DefineConstants>
+    <Optimize>true</Optimize>
+    <DebugType>pdbonly</DebugType>
+    <PlatformTarget>x86</PlatformTarget>
+    <ErrorReport>prompt</ErrorReport>
+    <CodeAnalysisRuleSet>MinimumRecommendedRules.ruleset</CodeAnalysisRuleSet>
+  </PropertyGroup>
   <ItemGroup>
     <Reference Include="System" />
+    <Reference Include="System.Data" />
+    <Reference Include="System.Data.SQLite, Version=1.0.105.2, Culture=neutral, PublicKeyToken=db937bc2d44ff139, processorArchitecture=AMD64">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\..\thirdparty\sqlite\dotnet4.5\x64\System.Data.SQLite.dll</HintPath>
+    </Reference>
     <Reference Include="System.Runtime.Serialization" />
     <Reference Include="System.ServiceModel" />
     <Reference Include="System.Web.Services" />
@@ -75,10 +99,16 @@
     </Otherwise>
   </Choose>
   <ItemGroup>
+    <Compile Include="databaseConcurrencyTests_blades.cs" />
+    <Compile Include="databaseConcurrencyTests_VMs.cs" />
     <Compile Include="keepalive.cs" />
     <Compile Include="mockedAllocation.cs" />
-    <Compile Include="mockedDestruction.cs" />
-    <Compile Include="mockedVMDestruction.cs" />
+    <Compile Include="mockedDestruction.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="mockedVMDestruction.cs">
+      <SubType>Code</SubType>
+    </Compile>
     <Compile Include="Properties\Resources.Designer.cs">
       <AutoGen>True</AutoGen>
       <DesignTime>True</DesignTime>
@@ -89,15 +119,19 @@
       <DesignTimeSharedInput>True</DesignTimeSharedInput>
       <DependentUpon>Settings.settings</DependentUpon>
     </Compile>
-    <Compile Include="Service References\networkService\Reference.cs">
+    <Compile Include="Service References\bladeDirectorServices\Reference.cs">
       <AutoGen>True</AutoGen>
       <DesignTime>True</DesignTime>
       <DependentUpon>Reference.svcmap</DependentUpon>
     </Compile>
+    <Compile Include="services.cs" />
+    <Compile Include="testBladeLockCollection.cs" />
     <Compile Include="testSMBExecutor.cs" />
-    <Compile Include="testsOnIIS.cs" />
+    <Compile Include="testsWithRealBlade.cs" />
     <Compile Include="testsOnIISWithESXi.cs" />
-    <Compile Include="testUtils.cs" />
+    <Compile Include="testUtils.cs">
+      <SubType>Code</SubType>
+    </Compile>
     <Compile Include="testVMWareExecutor.cs" />
     <Compile Include="basicBladeTests.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
@@ -111,9 +145,9 @@
       <Project>{4ABB1CC9-0C59-48F3-BE95-0FA21C420055}</Project>
       <Name>bladeDirectorClient</Name>
     </ProjectReference>
-    <ProjectReference Include="..\bladeDirector\bladeDirector.csproj">
-      <Project>{2f67cd72-58aa-423b-8d9a-4e438686b132}</Project>
-      <Name>bladeDirector</Name>
+    <ProjectReference Include="..\bladeDirectorWCF\bladeDirectorWCF.csproj">
+      <Project>{eeaec90d-5ab7-4948-b37c-e0e3ad003f1e}</Project>
+      <Name>bladeDirectorWCF</Name>
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
@@ -125,37 +159,6 @@
       <Generator>SettingsSingleFileGenerator</Generator>
       <LastGenOutput>Settings.Designer.cs</LastGenOutput>
     </None>
-    <None Include="Service References\networkService\services.wsdl" />
-    <None Include="Service References\networkService\tests.networkService.bladeSpec.datasource">
-      <DependentUpon>Reference.svcmap</DependentUpon>
-    </None>
-    <None Include="Service References\networkService\tests.networkService.GetBladeStatusResult.datasource">
-      <DependentUpon>Reference.svcmap</DependentUpon>
-    </None>
-    <None Include="Service References\networkService\tests.networkService.resultCode.datasource">
-      <DependentUpon>Reference.svcmap</DependentUpon>
-    </None>
-    <None Include="Service References\networkService\tests.networkService.resultCodeAndBIOSConfig.datasource">
-      <DependentUpon>Reference.svcmap</DependentUpon>
-    </None>
-    <None Include="Service References\networkService\tests.networkService.resultCodeAndBladeName.datasource">
-      <DependentUpon>Reference.svcmap</DependentUpon>
-    </None>
-  </ItemGroup>
-  <ItemGroup>
-    <WCFMetadataStorage Include="Service References\networkService\" />
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="Service References\networkService\configuration91.svcinfo" />
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="Service References\networkService\configuration.svcinfo" />
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="Service References\networkService\Reference.svcmap">
-      <Generator>WCF Proxy Generator</Generator>
-      <LastGenOutput>Reference.cs</LastGenOutput>
-    </None>
   </ItemGroup>
   <ItemGroup>
     <EmbeddedResource Include="Properties\Resources.resx">
@@ -164,7 +167,90 @@
     </EmbeddedResource>
   </ItemGroup>
   <ItemGroup>
-    <None Include="Service References\networkService\tests.networkService.vmSpec.datasource">
+    <None Include="Service References\bladeDirectorServices\Arrays2.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="Service References\bladeDirectorServices\Arrays21.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="Service References\bladeDirectorServices\bladeDirectorWCF2.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="Service References\bladeDirectorServices\bladeDirectorWCF21.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="Service References\bladeDirectorServices\createDisks2.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="Service References\bladeDirectorServices\createDisks21.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="Service References\bladeDirectorServices\hypervisors1.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="Service References\bladeDirectorServices\service2.wsdl" />
+    <None Include="Service References\bladeDirectorServices\service21.wsdl" />
+    <None Include="Service References\bladeDirectorServices\service3.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="Service References\bladeDirectorServices\service31.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="Service References\bladeDirectorServices\service32.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="Service References\bladeDirectorServices\service33.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="Service References\bladeDirectorServices\System.ComponentModel.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="Service References\bladeDirectorServices\System.ComponentModel1.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="Service References\bladeDirectorServices\System.Data.Common.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="Service References\bladeDirectorServices\System.Data.Common1.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="Service References\bladeDirectorServices\System.Data.SQLite.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="Service References\bladeDirectorServices\System.Data.SQLite1.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="Service References\bladeDirectorServices\System.Data.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="Service References\bladeDirectorServices\System.Data1.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="Service References\bladeDirectorServices\System.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="Service References\bladeDirectorServices\System1.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="Service References\bladeDirectorServices\tests.bladeDirectorServices.bladeSpec.datasource">
+      <DependentUpon>Reference.svcmap</DependentUpon>
+    </None>
+    <None Include="Service References\bladeDirectorServices\tests.bladeDirectorServices.GetBladeStatusResult.datasource">
+      <DependentUpon>Reference.svcmap</DependentUpon>
+    </None>
+    <None Include="Service References\bladeDirectorServices\tests.bladeDirectorServices.mockedCall.datasource">
+      <DependentUpon>Reference.svcmap</DependentUpon>
+    </None>
+    <None Include="Service References\bladeDirectorServices\tests.bladeDirectorServices.resultAndBladeName.datasource">
+      <DependentUpon>Reference.svcmap</DependentUpon>
+    </None>
+    <None Include="Service References\bladeDirectorServices\tests.bladeDirectorServices.resultAndWaitToken.datasource">
+      <DependentUpon>Reference.svcmap</DependentUpon>
+    </None>
+    <None Include="Service References\bladeDirectorServices\tests.bladeDirectorServices.resultCode.datasource">
+      <DependentUpon>Reference.svcmap</DependentUpon>
+    </None>
+    <None Include="Service References\bladeDirectorServices\tests.bladeDirectorServices.vmSpec.datasource">
       <DependentUpon>Reference.svcmap</DependentUpon>
     </None>
     <None Include="testBIOS.xml">
@@ -172,7 +258,19 @@
     </None>
   </ItemGroup>
   <ItemGroup>
-    <None Include="Service References\networkService\services.disco" />
+    <WCFMetadataStorage Include="Service References\bladeDirectorServices\" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Service References\bladeDirectorServices\configuration91.svcinfo" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Service References\bladeDirectorServices\configuration.svcinfo" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Service References\bladeDirectorServices\Reference.svcmap">
+      <Generator>WCF Proxy Generator</Generator>
+      <LastGenOutput>Reference.cs</LastGenOutput>
+    </None>
   </ItemGroup>
   <Choose>
     <When Condition="'$(VisualStudioVersion)' == '10.0' And '$(IsCodedUITest)' == 'True'">

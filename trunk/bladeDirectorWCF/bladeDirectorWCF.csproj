@@ -1,0 +1,232 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="12.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+    <ProjectGuid>{EEAEC90D-5AB7-4948-B37C-E0E3AD003F1E}</ProjectGuid>
+    <OutputType>Exe</OutputType>
+    <AppDesignerFolder>Properties</AppDesignerFolder>
+    <RootNamespace>bladeDirectorWCF</RootNamespace>
+    <AssemblyName>bladeDirectorWCF</AssemblyName>
+    <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
+    <FileAlignment>512</FileAlignment>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <PlatformTarget>AnyCPU</PlatformTarget>
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>full</DebugType>
+    <Optimize>false</Optimize>
+    <OutputPath>bin\Debug\</OutputPath>
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <PlatformTarget>AnyCPU</PlatformTarget>
+    <DebugType>pdbonly</DebugType>
+    <Optimize>true</Optimize>
+    <OutputPath>bin\Release\</OutputPath>
+    <DefineConstants>TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Debug|x86'">
+    <DebugSymbols>true</DebugSymbols>
+    <OutputPath>bin\x86\Debug\</OutputPath>
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <DebugType>full</DebugType>
+    <PlatformTarget>x86</PlatformTarget>
+    <ErrorReport>prompt</ErrorReport>
+    <CodeAnalysisRuleSet>MinimumRecommendedRules.ruleset</CodeAnalysisRuleSet>
+    <Prefer32Bit>true</Prefer32Bit>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Release|x86'">
+    <OutputPath>bin\x86\Release\</OutputPath>
+    <DefineConstants>TRACE</DefineConstants>
+    <Optimize>true</Optimize>
+    <DebugType>pdbonly</DebugType>
+    <PlatformTarget>x86</PlatformTarget>
+    <ErrorReport>prompt</ErrorReport>
+    <CodeAnalysisRuleSet>MinimumRecommendedRules.ruleset</CodeAnalysisRuleSet>
+    <Prefer32Bit>true</Prefer32Bit>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">
+    <DebugSymbols>true</DebugSymbols>
+    <OutputPath>bin\x64\Debug\</OutputPath>
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <DebugType>full</DebugType>
+    <PlatformTarget>x64</PlatformTarget>
+    <ErrorReport>prompt</ErrorReport>
+    <CodeAnalysisRuleSet>MinimumRecommendedRules.ruleset</CodeAnalysisRuleSet>
+    <Prefer32Bit>true</Prefer32Bit>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">
+    <OutputPath>bin\x64\Release\</OutputPath>
+    <DefineConstants>TRACE</DefineConstants>
+    <Optimize>true</Optimize>
+    <DebugType>pdbonly</DebugType>
+    <PlatformTarget>x64</PlatformTarget>
+    <ErrorReport>prompt</ErrorReport>
+    <CodeAnalysisRuleSet>MinimumRecommendedRules.ruleset</CodeAnalysisRuleSet>
+    <Prefer32Bit>true</Prefer32Bit>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="CommandLine">
+      <HintPath>..\..\thirdparty\commandline\CommandLine.dll</HintPath>
+    </Reference>
+    <Reference Include="System" />
+    <Reference Include="System.Core" />
+    <Reference Include="System.Data.SQLite, Version=1.0.105.2, Culture=neutral, PublicKeyToken=db937bc2d44ff139, processorArchitecture=AMD64">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\..\thirdparty\sqlite\dotnet4.5\x64\System.Data.SQLite.dll</HintPath>
+    </Reference>
+    <Reference Include="System.Runtime.Serialization" />
+    <Reference Include="System.ServiceModel" />
+    <Reference Include="System.ServiceModel.Web" />
+    <Reference Include="System.Web" />
+    <Reference Include="System.Web.Services" />
+    <Reference Include="System.Xml.Linq" />
+    <Reference Include="System.Data.DataSetExtensions" />
+    <Reference Include="Microsoft.CSharp" />
+    <Reference Include="System.Data" />
+    <Reference Include="System.Xml" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="asycExcecutionResult_mocked.cs" />
+    <Compile Include="biosReadWrite_LTSP_iLo.cs" />
+    <Compile Include="biosReadWrite_mocked.cs" />
+    <Compile Include="bladeLockCollection.cs" />
+    <Compile Include="bladeLockType.cs" />
+    <Compile Include="bladeNotFoundException.cs" />
+    <Compile Include="bladeOwnership.cs" />
+    <Compile Include="bladeSpec.cs" />
+    <Compile Include="debugServices.cs" />
+    <Compile Include="disposingList.cs" />
+    <Compile Include="disposingListOfBladesAndVMs.cs" />
+    <Compile Include="hostDB.cs" />
+    <Compile Include="hostStateManager.cs" />
+    <Compile Include="hostStateManagerMocked.cs" />
+    <Compile Include="hostStateManager_core.cs" />
+    <Compile Include="hypervisor_mocked_base.cs" />
+    <Compile Include="IBiosReadWrite.cs" />
+    <Compile Include="IDebugServices.cs" />
+    <Compile Include="inProgressOperation.cs" />
+    <Compile Include="IServices.cs" />
+    <Compile Include="lockableBladeSpec.cs" />
+    <Compile Include="lockableVMSpec.cs" />
+    <Compile Include="mockedExecutionHandler.cs" />
+    <Compile Include="mockedExecutionHandler_successful.cs" />
+    <Compile Include="mockedExecutionResponses.cs" />
+    <Compile Include="Program.cs" />
+    <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="Properties\Resources.Designer.cs">
+      <AutoGen>True</AutoGen>
+      <DesignTime>True</DesignTime>
+      <DependentUpon>Resources.resx</DependentUpon>
+    </Compile>
+    <Compile Include="Properties\Settings.Designer.cs">
+      <AutoGen>True</AutoGen>
+      <DesignTimeSharedInput>True</DesignTimeSharedInput>
+      <DependentUpon>Settings.settings</DependentUpon>
+    </Compile>
+    <Compile Include="Service References\bootMenuController\Reference.cs">
+      <AutoGen>True</AutoGen>
+      <DesignTime>True</DesignTime>
+      <DependentUpon>Reference.svcmap</DependentUpon>
+    </Compile>
+    <Compile Include="services.cs" />
+    <Compile Include="VMHardwareSpec.cs" />
+    <Compile Include="vmServerControl.cs" />
+    <Compile Include="vmServerControl_ESXi.cs" />
+    <Compile Include="vmServerControl_mocked.cs" />
+    <Compile Include="VMSoftwareSpec.cs" />
+    <Compile Include="vmSpec.cs" />
+    <Compile Include="webServices.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="App.config">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="Properties\Settings.settings">
+      <Generator>SettingsSingleFileGenerator</Generator>
+      <LastGenOutput>Settings.Designer.cs</LastGenOutput>
+    </None>
+    <None Include="Resources\applyBIOS.sh" />
+    <None Include="Resources\conrep" />
+    <None Include="Resources\getBIOS.sh" />
+    <None Include="Service References\bootMenuController\bootMenuController.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="Service References\bootMenuController\bootMenuController1.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="Service References\bootMenuController\bootMenuController2.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="Service References\bootMenuController\bootMenuWCF.wsdl" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\thirdparty\hypervisors\trunk\hypervisors\hypervisors.csproj">
+      <Project>{47995dd9-9f78-4313-809d-55c515eaf89e}</Project>
+      <Name>hypervisors</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\createDisks\createDisks.csproj">
+      <Project>{40dadae3-e73b-4b87-90a8-ec315d0aed76}</Project>
+      <Name>createDisks</Name>
+    </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="Properties\Resources.resx">
+      <Generator>ResXFileCodeGenerator</Generator>
+      <LastGenOutput>Resources.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\DBCreation.sql" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\ipxeTemplate.txt" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\ipxeTemplateForBIOS.txt" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\ipxeTemplateForESXi.txt" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\VMServerBIOS.xml" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\conrep.xml" />
+  </ItemGroup>
+  <ItemGroup>
+    <WCFMetadata Include="Service References\" />
+  </ItemGroup>
+  <ItemGroup>
+    <WCFMetadataStorage Include="Service References\bootMenuController\" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Service References\bootMenuController\bootMenuController.disco" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Service References\bootMenuController\configuration91.svcinfo" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Service References\bootMenuController\configuration.svcinfo" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Service References\bootMenuController\Reference.svcmap">
+      <Generator>WCF Proxy Generator</Generator>
+      <LastGenOutput>Reference.cs</LastGenOutput>
+    </None>
+  </ItemGroup>
+  <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
+  <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
+       Other similar extension points exist, see Microsoft.Common.targets.
+  <Target Name="BeforeBuild">
+  </Target>
+  <Target Name="AfterBuild">
+  </Target>
+  -->
+</Project>

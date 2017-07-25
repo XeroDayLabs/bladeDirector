@@ -1,10 +1,10 @@
 using System;
 using System.Threading;
 using bladeDirectorClient;
-using tests.networkService;
+using tests.bladeDirectorServices;
 
 namespace tests
-{
+{/*
     public class keepalive :IDisposable
     {
         private string _serverName ;
@@ -53,5 +53,5 @@ namespace tests
         {
             timeToDie = true;
         }
-    }
+    }*/
 }

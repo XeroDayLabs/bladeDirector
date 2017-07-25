@@ -23,6 +23,7 @@
   </MetadataSources>
   <Metadata>
     <MetadataFile FileName="bootMenuController.xsd" MetadataType="Schema" ID="9424cefe-4b04-4c25-93dd-9de8eb75c6b7" SourceId="1" SourceUrl="http://localhost/bootMenuController?xsd=xsd0" />
+    <MetadataFile FileName="bootMenuController2.xsd" MetadataType="Schema" ID="15178dd9-a229-48bd-8b32-073249be1931" SourceId="1" SourceUrl="http://localhost/bootMenuController?xsd=xsd2" />
     <MetadataFile FileName="bootMenuWCF.wsdl" MetadataType="Wsdl" ID="d039c1dd-d185-4190-9e66-5632b1f489af" SourceId="1" SourceUrl="http://localhost/bootMenuController?wsdl" />
     <MetadataFile FileName="bootMenuController1.xsd" MetadataType="Schema" ID="69c4ab8d-3fcc-4d06-9c51-0883484ca697" SourceId="1" SourceUrl="http://localhost/bootMenuController?xsd=xsd1" />
     <MetadataFile FileName="bootMenuController.disco" MetadataType="Disco" ID="f1ad6fdb-41bc-45ec-bb0d-723cd34135d2" SourceId="1" SourceUrl="http://localhost/bootMenuController?disco" />

@@ -6,6 +6,10 @@ using System.Net;
 using System.Web.UI;
 using System.Web.UI.HtmlControls;
 using System.Web.UI.WebControls;
+using bladeDirector.bladeDirectorDebugSvc;
+using bladeSpec = bladeDirector.bladeDirectorSvc.bladeSpec;
+using ServicesClient = bladeDirector.bladeDirectorSvc.ServicesClient;
+using vmSpec = bladeDirector.bladeDirectorSvc.vmSpec;
 
 namespace bladeDirector
 {
@@ -28,67 +32,73 @@ namespace bladeDirector
 
             tblBladeStatus.Rows.Add(headerRow);
 
-            // Get a list of blades without locking any of them
-            string[] allBladeIPs = services.hostStateManager.db.getAllBladeIP();
-            IEnumerable<bladeSpec> allBladeInfo = allBladeIPs.Select(x => services.hostStateManager.db.getBladeByIP_withoutLocking(x));
-
-            foreach (bladeSpec bladeInfo in allBladeInfo)
+            using (disposableServiceClient<ServicesClient> svc = new disposableServiceClient<bladeDirectorSvc.ServicesClient>())
             {
-                // First, assemble the always-visible status row
-                TableRow newRow = new TableRow();
+                // Get a list of blades without locking any of them
+                string[] allBladeIPs = svc.commObj.getAllBladeIP();
 
-                newRow.Cells.Add(makeTableCell(new ImageButton
+                TimeSpan currentKeepAliveTimeout = svc.commObj.getKeepAliveTimeout();
+
+                foreach (string bladeIP in allBladeIPs)
                 {
+                    bladeSpec bladeInfo = svc.commObj.getBladeByIP_withoutLocking(bladeIP);
+
+                    // First, assemble the always-visible status row
+                    TableRow newRow = new TableRow();
+
+                    newRow.Cells.Add(makeTableCell(new ImageButton
+                    {
                         ImageUrl = "images/collapsed.png",
                         AlternateText = "Details",
-                        OnClientClick = "javascript:toggleDetail($(this), " + bladeInfo.bladeID + "); return false;" 
-                }));
-                newRow.Cells.Add(new TableCell {Text = bladeInfo.state.ToString()});
-                newRow.Cells.Add(new TableCell {Text = bladeInfo.bladeIP});
-                if (bladeInfo.lastKeepAlive == DateTime.MinValue)
-                {
-                    newRow.Cells.Add(new TableCell {Text = "(none)"});
-                }
-                else
-                {
-                    string cssClass = "";
-                    if (DateTime.Now - bladeInfo.lastKeepAlive > services.hostStateManager.keepAliveTimeout)
-                        cssClass = "timedout";
-                    TableCell cell = new TableCell
+                        OnClientClick = "javascript:toggleDetail($(this), " + bladeInfo.ownershipRowID + "); return false;"
+                    }));
+                    newRow.Cells.Add(new TableCell {Text = bladeInfo.state.ToString()});
+                    newRow.Cells.Add(new TableCell {Text = bladeInfo.bladeIP});
+                    if (bladeInfo.lastKeepAlive == DateTime.MinValue)
                     {
-                        Text = formatDateTimeForWeb((DateTime.Now - bladeInfo.lastKeepAlive)),
-                        CssClass = cssClass
+                        newRow.Cells.Add(new TableCell {Text = "(none)"});
+                    }
+                    else
+                    {
+                        string cssClass = "";
+                        if (DateTime.Now - bladeInfo.lastKeepAlive > currentKeepAliveTimeout)
+                            cssClass = "timedout";
+                        TableCell cell = new TableCell
+                        {
+                            Text = formatDateTimeForWeb((DateTime.Now - bladeInfo.lastKeepAlive)),
+                            CssClass = cssClass
+                        };
+                        newRow.Cells.Add(cell);
+                    }
+                    newRow.Cells.Add(new TableCell {Text = bladeInfo.currentSnapshot});
+                    newRow.Cells.Add(new TableCell {Text = getDNS(bladeInfo.currentOwner) ?? "none"});
+                    newRow.Cells.Add(new TableCell {Text = getDNS(bladeInfo.currentOwner) ?? "none"});
+
+                    string iloURL = String.Format("https://ilo-blade{0}.management.xd.lan/", Int32.Parse(bladeInfo.bladeIP.Split('.')[3]) - 100);
+                    HyperLink link = new HyperLink {NavigateUrl = iloURL, Text = "iLo"};
+                    TableCell iloURLtableCell = new TableCell();
+                    iloURLtableCell.Controls.Add(link);
+                    newRow.Cells.Add(iloURLtableCell);
+
+                    Button btnRelease = new Button
+                    {
+                        Text = "Force release",
+                        CommandArgument = bladeInfo.bladeIP
                     };
-                    newRow.Cells.Add(cell);
+                    btnRelease.Click += forceRelease;
+
+                    newRow.Cells.Add(makeTableCell(btnRelease));
+                    tblBladeStatus.Rows.Add(newRow);
+
+                    // Then populate the invisible-until-expanded details row.
+                    tblBladeStatus.Rows.Add(makeDetailRow(bladeInfo));
                 }
-                newRow.Cells.Add(new TableCell { Text = bladeInfo.currentSnapshot});
-                newRow.Cells.Add(new TableCell { Text = getDNS(bladeInfo.currentOwner) ?? "none" });
-                newRow.Cells.Add(new TableCell { Text = getDNS(bladeInfo.currentOwner) ?? "none" });
 
-                string iloURL = String.Format("https://ilo-blade{0}.management.xd.lan/", Int32.Parse(bladeInfo.bladeIP.Split('.')[3]) - 100);
-                HyperLink link = new HyperLink {NavigateUrl = iloURL, Text = "iLo"};
-                TableCell iloURLtableCell = new TableCell();
-                iloURLtableCell.Controls.Add(link);
-                newRow.Cells.Add(iloURLtableCell);
-            
-                Button btnRelease = new Button
-                {
-                    Text = "Force release",
-                    CommandArgument = bladeInfo.bladeIP
-                };
-                btnRelease.Click += forceRelease;
-
-                newRow.Cells.Add(makeTableCell(btnRelease));
-                tblBladeStatus.Rows.Add(newRow);
-
-                // Then populate the invisible-until-expanded details row.
-                tblBladeStatus.Rows.Add(makeDetailRow(bladeInfo));
+                // Finally, populate any log events.
+                string[] logEvents = svc.commObj.getLogEvents();
+                foreach (string logEvent in logEvents)
+                    lstLog.Items.Add(logEvent);
             }
-
-            // Finally, populate any log events.
-            List<string> logEvents = services.hostStateManager.getLogEvents();
-            foreach (string logEvent in logEvents)
-                lstLog.Items.Add(logEvent);
         }
 
         private string getDNS(string toLookUp)
@@ -132,7 +142,7 @@ namespace bladeDirector
             TableRow miscTR = new TableRow();
             miscTR.Cells.Add(makeTableCell(
                 new Label { Text = "Blade DB ID: " },
-                new Label { Text = bladeInfo.bladeID + "<br/>", CssClass = "fixedSize"},
+                new Label { Text = bladeInfo.ownershipRowID + "<br/>", CssClass = "fixedSize" },
                 new Label { Text = "ISCSI IP: "},
                 new Label { Text = bladeInfo.iscsiIP + "<br/>", CssClass = "fixedSize" },
                 new Label { Text = "Kernel debug port: " },
@@ -160,40 +170,42 @@ namespace bladeDirector
                 ));
             detailTable.Rows.Add(biosConfigRow);
 
-
             // And add rows for any VMs. Again, avoid locking any of them.
-            string[] allVMIPs = services.hostStateManager.db.getAllBladeIP();
-            IEnumerable<vmSpec> VMs = allVMIPs.Select(x => services.hostStateManager.db.getVMByIP_withoutLocking(x));
-            if (VMs.Any())
+            using (disposableServiceClient<ServicesClient> svc = new disposableServiceClient<ServicesClient>())
             {
-                TableRow VMHeaderRow = new TableRow();
-                VMHeaderRow.Cells.Add(new TableHeaderCell { Text = "" });
-                VMHeaderRow.Cells.Add(new TableHeaderCell { Text = "Child VM name" });
-                VMHeaderRow.Cells.Add(new TableHeaderCell { Text = "Child VM IP" });
-                VMHeaderRow.Cells.Add(new TableHeaderCell { Text = "iSCSI IP" });
-                VMHeaderRow.Cells.Add(new TableHeaderCell { Text = "Current owner" });
-                VMHeaderRow.Cells.Add(new TableHeaderCell { Text = "Kernel debug info" });
-                //VMHeaderRow.Cells.Add(new TableHeaderCell() { Text = "Current snapshot" });
-                detailTable.Rows.Add(VMHeaderRow);
-            }
-            foreach (vmSpec vmInfo in VMs)
-            {
-                TableRow thisVMRow = new TableRow();
+                IEnumerable<vmSpec> VMs = svc.commObj.getVMByVMServerIP_nolocking(bladeInfo.bladeIP);
+                if (VMs.Any())
+                {
+                    TableRow VMHeaderRow = new TableRow();
+                    VMHeaderRow.Cells.Add(new TableHeaderCell {Text = ""});
+                    VMHeaderRow.Cells.Add(new TableHeaderCell {Text = "Child VM name"});
+                    VMHeaderRow.Cells.Add(new TableHeaderCell {Text = "Child VM IP"});
+                    VMHeaderRow.Cells.Add(new TableHeaderCell {Text = "iSCSI IP"});
+                    VMHeaderRow.Cells.Add(new TableHeaderCell {Text = "Current owner"});
+                    VMHeaderRow.Cells.Add(new TableHeaderCell {Text = "Kernel debug info"});
+                    //VMHeaderRow.Cells.Add(new TableHeaderCell() { Text = "Current snapshot" });
+                    detailTable.Rows.Add(VMHeaderRow);
+                }
 
-                thisVMRow.Cells.Add(makeTableCell(
-                    makeImageButton("show", "images/collapsed.png", string.Format(@"javascript:toggleConfigBox($(this), ""getIPXEScript.aspx?hostip={0}""); return false;", vmInfo.VMIP)),
-                    new Label { Text = "Current PXE script" },
-                    makeInvisibleDiv()
-                    ));
+                foreach (vmSpec vmInfo in VMs)
+                {
+                    TableRow thisVMRow = new TableRow();
 
-                thisVMRow.Cells.Add(new TableCell { Text = vmInfo.displayName });
-                thisVMRow.Cells.Add(new TableCell { Text = vmInfo.VMIP });
-                thisVMRow.Cells.Add(new TableCell { Text = vmInfo.iscsiIP });
-                thisVMRow.Cells.Add(new TableCell { Text = vmInfo.currentOwner });
-                string dbgStr = String.Format("Port {0} key \"{1}\"", vmInfo.kernelDebugPort, vmInfo.kernelDebugKey) ;
-                thisVMRow.Cells.Add(new TableCell { Text = dbgStr });
-                //thisVMRow.Cells.Add(new TableCell() { Text = vmInfo.currentSnapshot });
-                detailTable.Rows.Add(thisVMRow);
+                    thisVMRow.Cells.Add(makeTableCell(
+                        makeImageButton("show", "images/collapsed.png", string.Format(@"javascript:toggleConfigBox($(this), ""getIPXEScript.aspx?hostip={0}""); return false;", vmInfo.VMIP)),
+                        new Label {Text = "Current PXE script"},
+                        makeInvisibleDiv()
+                        ));
+
+                    thisVMRow.Cells.Add(new TableCell {Text = vmInfo.displayName});
+                    thisVMRow.Cells.Add(new TableCell {Text = vmInfo.VMIP});
+                    thisVMRow.Cells.Add(new TableCell {Text = vmInfo.iscsiIP});
+                    thisVMRow.Cells.Add(new TableCell {Text = vmInfo.currentOwner});
+                    string dbgStr = String.Format("Port {0} key \"{1}\"", vmInfo.kernelDebugPort, vmInfo.kernelDebugKey);
+                    thisVMRow.Cells.Add(new TableCell {Text = dbgStr});
+                    //thisVMRow.Cells.Add(new TableCell() { Text = vmInfo.currentSnapshot });
+                    detailTable.Rows.Add(thisVMRow);
+                }
             }
 
             TableHeaderRow toRet = new TableHeaderRow();
@@ -243,13 +255,20 @@ namespace bladeDirector
         {
             Button clicked = (Button) sender;
 
-            services.hostStateManager.releaseBladeOrVM(clicked.CommandArgument, "console", true);
+            using (var svc = new disposableServiceClient<DebugServicesClient>())
+            {
+                svc.commObj._ReleaseBladeOrVM(clicked.CommandArgument, "console", true);
+            }
         }
         
         protected void cmdAddNode_Click(object sender, EventArgs e)
         {
-            bladeSpec newBlade = new bladeSpec(txtNewNodeIP.Text, txtNewISCSI.Text, txtNewIloIP.Text, ushort.Parse(txtNewPort.Text), false, VMDeployStatus.needsPowerCycle,  "bios stuff", bladeLockType.lockAll);
-            services.hostStateManager.db.addNode(newBlade);
+            using (var svc = new disposableServiceClient<ServicesClient>())
+            {
+//                bladeDirectorDebugSvc.bladeSpec newBlade = svcDbg.commObj.createBladeSpec(                    , 
+//                    false, VMDeployStatus.needsPowerCycle, "bios stuff", bladeLockType.lockAll);
+                svc.commObj.addNode(txtNewNodeIP.Text, txtNewISCSI.Text, txtNewIloIP.Text, ushort.Parse(txtNewPort.Text));
+            }
         }
     }
 }
