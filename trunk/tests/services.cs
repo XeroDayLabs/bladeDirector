@@ -23,6 +23,7 @@ namespace tests
 
             string bladeDirectorWCFExe = Path.Combine(Properties.Settings.Default.repoRoot, "trunk\\bladeDirectorWCF\\bin\\x64\\Debug\\bladeDirectorWCF.exe");
             ProcessStartInfo bladeDirectorExeInfo = new ProcessStartInfo(bladeDirectorWCFExe);
+            bladeDirectorExeInfo.WorkingDirectory = Path.GetDirectoryName(bladeDirectorWCFExe);
             bladeDirectorExeInfo.Arguments = "--baseURL " + baseURL;
             bladeDirectorExeInfo.UseShellExecute = false;
             bladeDirectorExeInfo.RedirectStandardOutput = true;
