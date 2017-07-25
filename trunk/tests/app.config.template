@@ -1,29 +1,33 @@
-﻿<?xml version="1.0" encoding="utf-8" ?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <configuration>
     <configSections>
-        <sectionGroup name="userSettings" type="System.Configuration.UserSettingsGroup, System, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" >
-            <section name="tests.Properties.Settings" type="System.Configuration.ClientSettingsSection, System, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" allowExeDefinition="MachineToLocalUser" requirePermission="false" />
+        <sectionGroup name="userSettings" type="System.Configuration.UserSettingsGroup, System, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089">
+            <section name="tests.Properties.Settings" type="System.Configuration.ClientSettingsSection, System, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" allowExeDefinition="MachineToLocalUser" requirePermission="false"/>
         </sectionGroup>
     </configSections>
+
     <system.serviceModel>
+        <diagnostics>
+            <messageLogging logMalformedMessages="true" logMessagesAtServiceLevel="true"
+                logMessagesAtTransportLevel="true" />
+        </diagnostics>
         <bindings>
-            <basicHttpBinding>
-                <binding name="servicesSoap" />
-            </basicHttpBinding>
-            <customBinding>
-                <binding name="servicesSoap12">
-                    <textMessageEncoding messageVersion="Soap12" />
-                    <httpTransport />
-                </binding>
-            </customBinding>
+            <wsHttpBinding>
+                <binding name="WSHttpBinding_IServices" />
+                <binding name="WSHttpBinding_IDebugServices" />
+            </wsHttpBinding>
         </bindings>
         <client>
-            <endpoint address="http://localhost/bladedirector/services.asmx"
-                binding="basicHttpBinding" bindingConfiguration="servicesSoap"
-                contract="networkService.servicesSoap" name="servicesSoap" />
-            <endpoint address="http://localhost/bladedirector/services.asmx"
-                binding="customBinding" bindingConfiguration="servicesSoap12"
-                contract="networkService.servicesSoap" name="servicesSoap12" />
+            <endpoint address="http://127.0.0.1/bladeDirector" binding="wsHttpBinding"
+                bindingConfiguration="WSHttpBinding_IServices" contract="bladeDirectorServices.IServices"
+                name="WSHttpBinding_IServices">
+
+            </endpoint>
+            <endpoint address="http://127.0.0.1/bladeDirectorDebug" binding="wsHttpBinding"
+                bindingConfiguration="WSHttpBinding_IDebugServices" contract="bladeDirectorServices.IDebugServices"
+                name="WSHttpBinding_IDebugServices">
+
+            </endpoint>
         </client>
     </system.serviceModel>
     <userSettings>
