@@ -39,12 +39,14 @@ namespace bladeDirectorWCF
         {
             AppDomain.CurrentDomain.FirstChanceException += (sender, args) =>
             {
-                services.hostStateManager.addLogEvent("First-chance exception: " + args.Exception.ToString());
-            };
-
-            AppDomain.CurrentDomain.UnhandledException += (sender, args) =>
-            {
-                services.hostStateManager.addLogEvent("Fatal exception: " + ((Exception)args.ExceptionObject).ToString());
+                try
+                {
+                    services.hostStateManager.addLogEvent("First-chance exception: " + args.Exception.ToString());
+                }
+                catch (Exception)
+                {
+                    // ...
+                }
             };
 
             if (!parsedArgs.baseURL.EndsWith("/"))
@@ -97,11 +99,6 @@ namespace bladeDirectorWCF
             
             ServiceBehaviorAttribute svcBehav = svc.Description.Behaviors.Find<ServiceBehaviorAttribute>();
             svcBehav.IncludeExceptionDetailInFaults = true;
-
-            svc.Faulted += (sender, args) =>
-            {
-                Debug.WriteLine("oh no");
-            };
 
             foreach (ChannelDispatcherBase channelDispatcherBase in svc.ChannelDispatchers)
             {
