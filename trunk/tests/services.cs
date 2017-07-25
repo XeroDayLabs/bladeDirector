@@ -1,5 +1,6 @@
 using System;
 using System.Diagnostics;
+using System.IO;
 using System.ServiceModel;
 using System.Threading;
 using tests.bladeDirectorServices;
@@ -20,7 +21,8 @@ namespace tests
             string servicesURL = baseURL + "/bladeDirector";
             string servicesDebugURL = baseURL + "/bladeDirectorDebug";
 
-            ProcessStartInfo bladeDirectorExeInfo = new ProcessStartInfo("bladeDirectorWCF.exe");
+            string bladeDirectorWCFExe = Path.Combine(Properties.Settings.Default.repoRoot, "trunk\\bladeDirectorWCF\\bin\\x64\\Debug\\bladeDirectorWCF.exe");
+            ProcessStartInfo bladeDirectorExeInfo = new ProcessStartInfo(bladeDirectorWCFExe);
             bladeDirectorExeInfo.Arguments = "--baseURL " + baseURL;
             bladeDirectorExeInfo.UseShellExecute = false;
             bladeDirectorExeInfo.RedirectStandardOutput = true;

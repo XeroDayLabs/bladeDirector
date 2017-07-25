@@ -34,6 +34,9 @@
             <setting name="VMPassword" serializeAs="String">
                 <value>...</value>
             </setting>
+            <setting name="repoRoot" serializeAs="String">
+                <value>C:\code\bladeDirector</value>
+            </setting>
         </tests.Properties.Settings>
     </userSettings>
 </configuration>

@@ -46,5 +46,15 @@ namespace tests.Properties {
                 this["VMPassword"] = value;
             }
         }
-    }
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("C:\\code\\bladeDirector")]
+        public string repoRoot {
+            get {
+                return ((string)(this["repoRoot"]));
+            }
+            set {
+                this["repoRoot"] = value;
+            }
+        }    }
 }

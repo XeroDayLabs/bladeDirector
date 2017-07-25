@@ -125,6 +125,7 @@
       <DependentUpon>Reference.svcmap</DependentUpon>
     </Compile>
     <Compile Include="services.cs" />
+    <Compile Include="Settings.cs" />
     <Compile Include="testBladeLockCollection.cs" />
     <Compile Include="testSMBExecutor.cs" />
     <Compile Include="testsWithRealBlade.cs" />
