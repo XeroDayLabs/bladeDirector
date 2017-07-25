@@ -1,0 +1,264 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<xs:schema xmlns:tns="http://tempuri.org/" elementFormDefault="qualified" targetNamespace="http://tempuri.org/" xmlns:xs="http://www.w3.org/2001/XMLSchema">
+  <xs:import namespace="http://schemas.datacontract.org/2004/07/bladeDirectorWCF" />
+  <xs:import namespace="http://schemas.microsoft.com/2003/10/Serialization/Arrays" />
+  <xs:import namespace="http://schemas.microsoft.com/2003/10/Serialization/" />
+  <xs:element name="keepAlive">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element minOccurs="0" name="srcIP" nillable="true" type="xs:string" />
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="keepAliveResponse">
+    <xs:complexType>
+      <xs:sequence />
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="logIn">
+    <xs:complexType>
+      <xs:sequence />
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="logInResponse">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element xmlns:q1="http://schemas.datacontract.org/2004/07/bladeDirectorWCF" minOccurs="0" name="logInResult" nillable="true" type="q1:resultAndWaitToken" />
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="getProgress">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element minOccurs="0" name="waitToken" nillable="true" type="xs:string" />
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="getProgressResponse">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element xmlns:q2="http://schemas.datacontract.org/2004/07/bladeDirectorWCF" minOccurs="0" name="getProgressResult" nillable="true" type="q2:resultAndWaitToken" />
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="getAllBladeIP">
+    <xs:complexType>
+      <xs:sequence />
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="getAllBladeIPResponse">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element xmlns:q3="http://schemas.microsoft.com/2003/10/Serialization/Arrays" minOccurs="0" name="getAllBladeIPResult" nillable="true" type="q3:ArrayOfstring" />
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="RequestAnySingleNode">
+    <xs:complexType>
+      <xs:sequence />
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="RequestAnySingleNodeResponse">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element xmlns:q4="http://schemas.datacontract.org/2004/07/bladeDirectorWCF" minOccurs="0" name="RequestAnySingleNodeResult" nillable="true" type="q4:resultAndWaitToken" />
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="GetBladeStatus">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element minOccurs="0" name="nodeIP" nillable="true" type="xs:string" />
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="GetBladeStatusResponse">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element xmlns:q5="http://schemas.datacontract.org/2004/07/bladeDirectorWCF" minOccurs="0" name="GetBladeStatusResult" type="q5:GetBladeStatusResult" />
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="ReleaseBladeOrVM">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element minOccurs="0" name="nodeIP" nillable="true" type="xs:string" />
+        <xs:element minOccurs="0" name="force" type="xs:boolean" />
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="ReleaseBladeOrVMResponse">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element xmlns:q6="http://schemas.datacontract.org/2004/07/bladeDirectorWCF" minOccurs="0" name="ReleaseBladeOrVMResult" nillable="true" type="q6:resultAndWaitToken" />
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="isBladeMine">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element minOccurs="0" name="nodeIP" nillable="true" type="xs:string" />
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="isBladeMineResponse">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element minOccurs="0" name="isBladeMineResult" type="xs:boolean" />
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="rebootAndStartDeployingBIOSToBlade">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element minOccurs="0" name="NodeIP" nillable="true" type="xs:string" />
+        <xs:element minOccurs="0" name="BIOSXML" nillable="true" type="xs:string" />
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="rebootAndStartDeployingBIOSToBladeResponse">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element xmlns:q7="http://schemas.datacontract.org/2004/07/bladeDirectorWCF" minOccurs="0" name="rebootAndStartDeployingBIOSToBladeResult" nillable="true" type="q7:resultAndWaitToken" />
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="rebootAndStartReadingBIOSConfiguration">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element minOccurs="0" name="NodeIP" nillable="true" type="xs:string" />
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="rebootAndStartReadingBIOSConfigurationResponse">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element xmlns:q8="http://schemas.datacontract.org/2004/07/bladeDirectorWCF" minOccurs="0" name="rebootAndStartReadingBIOSConfigurationResult" nillable="true" type="q8:resultAndWaitToken" />
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="RequestAnySingleVM">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element xmlns:q9="http://schemas.datacontract.org/2004/07/bladeDirectorWCF" minOccurs="0" name="hwSpec" nillable="true" type="q9:VMHardwareSpec" />
+        <xs:element xmlns:q10="http://schemas.datacontract.org/2004/07/bladeDirectorWCF" minOccurs="0" name="swSpec" nillable="true" type="q10:VMSoftwareSpec" />
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="RequestAnySingleVMResponse">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element xmlns:q11="http://schemas.datacontract.org/2004/07/bladeDirectorWCF" minOccurs="0" name="RequestAnySingleVMResult" nillable="true" type="q11:resultAndBladeName" />
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="generateIPXEScript">
+    <xs:complexType>
+      <xs:sequence />
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="generateIPXEScriptResponse">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element minOccurs="0" name="generateIPXEScriptResult" nillable="true" type="xs:string" />
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="getKeepAliveTimeout">
+    <xs:complexType>
+      <xs:sequence />
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="getKeepAliveTimeoutResponse">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element xmlns:q12="http://schemas.microsoft.com/2003/10/Serialization/" minOccurs="0" name="getKeepAliveTimeoutResult" type="q12:duration" />
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="addNode">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element minOccurs="0" name="nodeIP" nillable="true" type="xs:string" />
+        <xs:element minOccurs="0" name="iSCSIIP" nillable="true" type="xs:string" />
+        <xs:element minOccurs="0" name="iLoIP" nillable="true" type="xs:string" />
+        <xs:element minOccurs="0" name="debugPort" type="xs:unsignedShort" />
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="addNodeResponse">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element xmlns:q13="http://schemas.datacontract.org/2004/07/bladeDirectorWCF" minOccurs="0" name="addNodeResult" type="q13:resultCode" />
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="getVMByIP_withoutLocking">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element minOccurs="0" name="VMIP" nillable="true" type="xs:string" />
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="getVMByIP_withoutLockingResponse">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element xmlns:q14="http://schemas.datacontract.org/2004/07/bladeDirectorWCF" minOccurs="0" name="getVMByIP_withoutLockingResult" nillable="true" type="q14:vmSpec" />
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="getBladeByIP_withoutLocking">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element minOccurs="0" name="bladeIP" nillable="true" type="xs:string" />
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="getBladeByIP_withoutLockingResponse">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element xmlns:q15="http://schemas.datacontract.org/2004/07/bladeDirectorWCF" minOccurs="0" name="getBladeByIP_withoutLockingResult" nillable="true" type="q15:bladeSpec" />
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="getBladesByAllocatedServer">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element minOccurs="0" name="serverIP" nillable="true" type="xs:string" />
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="getBladesByAllocatedServerResponse">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element xmlns:q16="http://schemas.microsoft.com/2003/10/Serialization/Arrays" minOccurs="0" name="getBladesByAllocatedServerResult" nillable="true" type="q16:ArrayOfstring" />
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="getVMByVMServerIP_nolocking">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element minOccurs="0" name="bladeIP" nillable="true" type="xs:string" />
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="getVMByVMServerIP_nolockingResponse">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element xmlns:q17="http://schemas.datacontract.org/2004/07/bladeDirectorWCF" minOccurs="0" name="getVMByVMServerIP_nolockingResult" nillable="true" type="q17:ArrayOfvmSpec" />
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="getLogEvents">
+    <xs:complexType>
+      <xs:sequence />
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="getLogEventsResponse">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element xmlns:q18="http://schemas.microsoft.com/2003/10/Serialization/Arrays" minOccurs="0" name="getLogEventsResult" nillable="true" type="q18:ArrayOfstring" />
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+</xs:schema>
