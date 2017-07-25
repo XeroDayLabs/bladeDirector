@@ -1,11 +1,11 @@
 ﻿using System;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.ServiceModel;
 using System.Threading;
-using bladeDirector;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using bladeSpec = bladeDirector.bladeSpec;
-using resultCode = bladeDirector.resultCode;
+using tests.bladeDirectorServices;
 
 namespace tests
 {
@@ -15,133 +15,158 @@ namespace tests
         [TestMethod]
         public void canInitWithBladesAndGetListBack()
         {
-            bladeDirector.services.initWithBlades(new[] {"1.1.1.1", "2.2.2.2", "3.3.3.3"});
+            using (services svc = new services(new[] { "1.1.1.1", "2.2.2.2", "3.3.3.3" }))
+            {
+                string[] foundIPs = svc.uut.getAllBladeIP();
 
-            services uut = new bladeDirector.services();
-
-            string res = uut.ListNodes();
-            string[] foundIPs = res.Split(',');
-            Assert.AreEqual(3, foundIPs.Length);
-            Assert.IsTrue(foundIPs.Contains("1.1.1.1"));
-            Assert.IsTrue(foundIPs.Contains("2.2.2.2"));
-            Assert.IsTrue(foundIPs.Contains("3.3.3.3"));
+                Assert.AreEqual(3, foundIPs.Length);
+                Assert.IsTrue(foundIPs.Contains("1.1.1.1"));
+                Assert.IsTrue(foundIPs.Contains("2.2.2.2"));
+                Assert.IsTrue(foundIPs.Contains("3.3.3.3"));
+            }
         }
 
         [TestMethod]
         public void canGetBladeSpec()
         {
-            bladeSpec spec1Expected = new bladeSpec("blade1ip", "blade1iscsiIP", "blade1ILOIP", 111, false, VMDeployStatus.needsPowerCycle,  null, bladeLockType.lockAll);
-            bladeSpec spec2Expected = new bladeSpec("blade2ip", "blade2iscsiIP", "blade2ILOIP", 222, false, VMDeployStatus.needsPowerCycle, null, bladeLockType.lockAll);
-            bladeDirector.services.initWithBlades(new[] {spec1Expected, spec2Expected});
+            using (services svc = new services())
+            {
+                bladeSpec spec1Expected = svc.uutDebug.createBladeSpec("blade1ip", "blade1iscsiIP", "blade1ILOIP", 111, false, VMDeployStatus.needsPowerCycle, null, bladeLockType.lockAll, bladeLockType.lockAll );
+                bladeSpec spec2Expected = svc.uutDebug.createBladeSpec("blade2ip", "blade2iscsiIP", "blade2ILOIP", 222, false, VMDeployStatus.needsPowerCycle, null, bladeLockType.lockAll, bladeLockType.lockAll);
+                bladeSpec[] expected = new[] {spec1Expected, spec2Expected};
 
-            services uut = new bladeDirector.services();
+                svc.uutDebug.initWithBladesFromBladeSpec(expected, false, NASFaultInjectionPolicy.retunSuccessful);
 
-            bladeSpec spec1Actual = uut.getConfigurationOfBlade("blade1ip");
-            bladeSpec spec2Actual = uut.getConfigurationOfBlade("blade2ip");
+                bladeSpec spec1Actual = svc.uut.getBladeByIP_withoutLocking("blade1ip");
+                bladeSpec spec2Actual = svc.uut.getBladeByIP_withoutLocking("blade2ip");
+                bladeSpec[] actual = new[] { spec1Actual, spec2Actual };
 
-            Assert.AreEqual(spec1Expected, spec1Actual);
-            Assert.AreEqual(spec2Expected, spec2Actual);
+                for (int i = 0; i < 2; i++)
+                {
+                    Assert.AreEqual(expected[i].bladeIP, actual[i].bladeIP);
+                    Assert.AreEqual(expected[i].ESXiPassword, actual[i].ESXiPassword);
+                    Assert.AreEqual(expected[i].ESXiUsername, actual[i].ESXiUsername);
+                    Assert.AreEqual(expected[i].currentlyBeingAVMServer, actual[i].currentlyBeingAVMServer);
+                    Assert.AreEqual(expected[i].currentlyHavingBIOSDeployed, actual[i].currentlyHavingBIOSDeployed);
+                    Assert.AreEqual(expected[i].iLOIP, actual[i].iLOIP);
+                    Assert.AreEqual(expected[i].iLOPort, actual[i].iLOPort);
+                    Assert.AreEqual(expected[i].iLoPassword, actual[i].iLoPassword);
+                    Assert.AreEqual(expected[i].iLoUsername, actual[i].iLoUsername);
+                    Assert.AreEqual(expected[i].iscsiIP, actual[i].iscsiIP);
+                    Assert.AreEqual(expected[i].lastDeployedBIOS, actual[i].lastDeployedBIOS);
+                    Assert.AreEqual(expected[i].ESXiPassword, actual[i].ESXiPassword);
+                    Assert.AreEqual(expected[i].ESXiUsername, actual[i].ESXiUsername);
+                    // thats enough for now
+                }
+            }
         }
 
         [TestMethod]
         public void canAllocateBlade()
         {
-            bladeDirector.services.initWithBlades(new[] {"1.1.1.1", "2.2.2.2", "3.3.3.3"});
-            services uut = new bladeDirector.services();
+            using (services uut = new services(new[] {"1.1.1.1", "2.2.2.2", "3.3.3.3"}))
+            {
+                resultAndWaitToken requestStatus = uut.uutDebug._RequestAnySingleNode("192.168.1.1");
+                Assert.AreEqual(resultCode.success, requestStatus.result.code);
 
-            Assert.AreEqual(resultCode.success, uut.RequestAnySingleNode("192.168.1.1").code);
-
-            string allocated = uut.getBladesByAllocatedServer("192.168.1.1");
-            Assert.IsTrue(allocated.Contains("1.1.1.1"), "String '" + allocated + "' does not contain IP we allocated");
+                string[] allocated = uut.uut.getBladesByAllocatedServer("192.168.1.1");
+                Assert.IsTrue(allocated.Contains("1.1.1.1"), "String '" + allocated + "' does not contain IP we allocated");
+            }
         }
 
         [TestMethod]
         public void willReAllocateNode()
         {
-            bladeDirector.services.initWithBlades(new[] {"1.1.1.1" });
-            services uut = new bladeDirector.services();
-            string hostip = "192.168.1.1";
+            using (services uut = new services(new[] {"1.1.1.1"}))
+            {
+                string hostip = "192.168.1.1";
 
-            Assert.AreEqual(resultCode.success, uut.RequestAnySingleNode(hostip).code);
+                Assert.AreEqual(resultCode.success, uut.uutDebug._RequestAnySingleNode(hostip).result.code);
 
-            // First, the node should be ours.
-            Assert.AreEqual(GetBladeStatusResult.yours, uut.GetBladeStatus("1.1.1.1", hostip));
+                // First, the node should be ours.
+                Assert.AreEqual(GetBladeStatusResult.yours, uut.uutDebug._GetBladeStatus(hostip, "1.1.1.1"));
 
-            // Then, someoene else requests it..
-            Assert.AreEqual(resultCode.pending, uut.RequestAnySingleNode("192.168.2.2").code);
+                // Then, someoene else requests it..
+                Assert.AreEqual(resultCode.pending, uut.uutDebug._RequestAnySingleNode("192.168.2.2").result.code);
 
-            // and it should be pending.
-            Assert.AreEqual(GetBladeStatusResult.releasePending, uut.GetBladeStatus("1.1.1.1", hostip));
-            Assert.AreEqual(GetBladeStatusResult.releasePending, uut.GetBladeStatus("1.1.1.1", "192.168.2.2"));
+                // and it should be pending.
+                Assert.AreEqual(GetBladeStatusResult.releasePending, uut.uutDebug._GetBladeStatus(hostip, "1.1.1.1"));
+                Assert.AreEqual(GetBladeStatusResult.releasePending, uut.uutDebug._GetBladeStatus("192.168.2.2", "1.1.1.1"));
 
-            // Then, we release it.. 
-            Assert.AreEqual(resultCode.success, uut.releaseBladeDbg("1.1.1.1", hostip));
+                // Then, we release it.. 
+                resultAndWaitToken res = uut.uutDebug._ReleaseBladeOrVM(hostip, "1.1.1.1", false);
+                testUtils.waitForSuccess(uut, res, TimeSpan.FromSeconds(5));
 
-            // and it should belong to the second requestor.
-            Assert.AreEqual(GetBladeStatusResult.notYours, uut.GetBladeStatus("1.1.1.1", hostip));
-            Assert.AreEqual(GetBladeStatusResult.yours, uut.GetBladeStatus("1.1.1.1", "192.168.2.2"));
+                // and it should belong to the second requestor.
+                Assert.AreEqual(GetBladeStatusResult.notYours, uut.uutDebug._GetBladeStatus(hostip, "1.1.1.1"));
+                Assert.AreEqual(GetBladeStatusResult.yours, uut.uutDebug._GetBladeStatus("192.168.2.2", "1.1.1.1"));
+            }
         }
 
         [TestMethod]
         public void willReAllocateNodeAfterTimeout()
         {
-            bladeDirector.services.initWithBlades(new[] {"1.1.1.1"});
-            services uut = new bladeDirector.services();
-            services.hostStateManager.setKeepAliveTimeout(TimeSpan.FromSeconds(10));
-
-            Assert.AreEqual(resultCode.success, uut.RequestAnySingleNode("192.168.1.1").code);
-            Assert.AreEqual(resultCode.pending, uut.RequestAnySingleNode("192.168.2.2").code);
-
-            // 1.1 has it, 2.2 is queued
-            Assert.IsTrue(uut.isBladeMine("1.1.1.1", "192.168.1.1"));
-            Assert.IsFalse(uut.isBladeMine("1.1.1.1", "192.168.2.2"));
-
-            // Now let 1.1 timeout
-            for (int i = 0; i < 11; i++)
+            using (services uut = new services(new[] {"1.1.1.1"}))
             {
-                uut._keepAlive("192.168.2.2");
-                Thread.Sleep(TimeSpan.FromSeconds(1));
-            }
+                uut.uutDebug.setKeepAliveTimeout(10);
 
-            // and it should belong to the second requestor.
-            Assert.IsFalse(uut.isBladeMine("1.1.1.1", "192.168.1.1"));
-            Assert.IsTrue(uut.isBladeMine("1.1.1.1", "192.168.2.2"));
+                Assert.AreEqual(resultCode.success, uut.uutDebug._RequestAnySingleNode("192.168.1.1").result.code);
+                Assert.AreEqual(resultCode.pending, uut.uutDebug._RequestAnySingleNode("192.168.2.2").result.code);
+
+                // 1.1 has it, 2.2 is queued
+                Assert.IsTrue(uut.uutDebug._isBladeMine("192.168.1.1", "1.1.1.1"));
+                Assert.IsFalse(uut.uutDebug._isBladeMine("192.168.2.2", "1.1.1.1"));
+
+                // Now let 1.1 timeout
+                for (int i = 0; i < 11; i++)
+                {
+                    uut.uutDebug._keepAlive("192.168.2.2");
+                    Thread.Sleep(TimeSpan.FromSeconds(1));
+                }
+
+                // and it should belong to the second requestor.
+                Assert.IsFalse(uut.uutDebug._isBladeMine("192.168.1.1", "1.1.1.1"));
+                Assert.IsTrue(uut.uutDebug._isBladeMine("192.168.2.2", "1.1.1.1"));
+            }
         }
 
         [TestMethod]
         public void willTimeoutOnNoKeepalives()
         {
-            bladeDirector.services.initWithBlades(new[] {"1.1.1.1"});
-            services uut = new bladeDirector.services();
-            services.hostStateManager.setKeepAliveTimeout(TimeSpan.FromSeconds(10));
+            using (services uut = new services(new[] {"1.1.1.1"}))
+            {
+                uut.uutDebug.setKeepAliveTimeout(10);
+                
+                string hostip = "192.168.1.1";
 
-            string hostip = "192.168.1.1";
-
-            Assert.AreEqual(resultCode.success, uut.RequestAnySingleNode(hostip).code);
-            Assert.AreEqual(GetBladeStatusResult.yours, uut.GetBladeStatus("1.1.1.1", hostip));
-            Thread.Sleep(TimeSpan.FromSeconds(11));
-            Assert.AreEqual(GetBladeStatusResult.unused, uut.GetBladeStatus("1.1.1.1", hostip));
+                resultAndWaitToken resp = uut.uutDebug._RequestAnySingleNode(hostip);
+                resultAndBladeName resWithName = (resultAndBladeName) resp;
+                Assert.AreEqual(resultCode.success, resp.result.code);
+                Assert.AreEqual("1.1.1.1", resWithName.bladeName);
+                Assert.AreEqual(GetBladeStatusResult.yours, uut.uutDebug._GetBladeStatus(hostip, resWithName.bladeName));
+                Thread.Sleep(TimeSpan.FromSeconds(11));
+                Assert.AreEqual(GetBladeStatusResult.unused, uut.uutDebug._GetBladeStatus(hostip, resWithName.bladeName));
+            }
         }
 
         [TestMethod]
         public void willNotTimeoutWhenWeSendKeepalives()
         {
-            bladeDirector.services.initWithBlades(new[] {"1.1.1.1"});
-            services uut = new bladeDirector.services();
-            services.hostStateManager.setKeepAliveTimeout(TimeSpan.FromSeconds(10));
-
-            string hostip = "192.168.1.1";
-
-            Assert.AreEqual(resultCode.success, uut.RequestAnySingleNode(hostip).code);
-            Assert.AreEqual(GetBladeStatusResult.yours, uut.GetBladeStatus("1.1.1.1", hostip));
-
-            for (int i = 0; i < 11; i++)
+            using (services uut = new services(new[] {"1.1.1.1"}))
             {
-                uut._keepAlive("192.168.1.1");
-                Thread.Sleep(TimeSpan.FromSeconds(1));
+                uut.uutDebug.setKeepAliveTimeout(10);
+                string hostip = "192.168.1.1";
+
+                Assert.AreEqual(resultCode.success, uut.uutDebug._RequestAnySingleNode(hostip).result.code);
+                Assert.AreEqual(GetBladeStatusResult.yours, uut.uutDebug._GetBladeStatus(hostip, "1.1.1.1"));
+
+                for (int i = 0; i < 11; i++)
+                {
+                    uut.uutDebug._keepAlive("192.168.1.1");
+                    Thread.Sleep(TimeSpan.FromSeconds(1));
+                }
+                Assert.AreEqual(GetBladeStatusResult.yours, uut.uutDebug._GetBladeStatus(hostip, "1.1.1.1"));
             }
-            Assert.AreEqual(GetBladeStatusResult.yours, uut.GetBladeStatus("1.1.1.1", hostip));
         }
-    
     }
 }

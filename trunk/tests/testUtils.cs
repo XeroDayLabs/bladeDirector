@@ -1,88 +1,93 @@
 using System;
-using bladeDirector;
+using System.Collections.Generic;
+using System.Text;
+using System.Threading;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using tests.bladeDirectorServices;
 
 namespace tests
 {
     public static class testUtils
     {
-        public static void doLogin(hostStateManagerMocked uut, string hostIP, TimeSpan permissibleDelay = default(TimeSpan))
+        public static void doLogin(services uut, string hostIP, TimeSpan permissibleDelay = default(TimeSpan))
         {
             if (permissibleDelay == default(TimeSpan))
                 permissibleDelay = TimeSpan.FromSeconds(30);
 
-            string waitToken = uut.logIn(hostIP);
-            DateTime timeout = DateTime.Now + permissibleDelay;
-            while (true)
+            resultAndWaitToken res = uut.uutDebug._logIn(hostIP);
+            res = waitForSuccess(uut, res, permissibleDelay);
+        }
+
+        public static string doBladeAllocationForTest(services uut, string hostIP)
+        {
+            uut.uutDebug._setExecutionResultsIfMocked(mockedExecutionResponses.successful);
+
+            resultAndWaitToken allocRes = uut.uutDebug._RequestAnySingleNode(hostIP);
+            Assert.AreEqual(resultCode.success, allocRes.result.code);
+
+
+            return ((resultAndBladeName)allocRes).bladeName;
+        }
+
+        public static string doVMAllocationForTest(services uut, string hostIP)
+        {
+            uut.uutDebug._setExecutionResultsIfMocked(mockedExecutionResponses.successful);
+
+            VMHardwareSpec hwspec = new VMHardwareSpec
             {
-                resultCode res = uut.getLogInProgress(waitToken);
-                if (res == resultCode.success)
-                    break;
-                if (res == resultCode.pending)
+                cpuCount = 1,
+                memoryMB = 1024*3
+            };
+            VMSoftwareSpec swspec = new VMSoftwareSpec();
+
+            resultAndWaitToken res = uut.uutDebug._requestAnySingleVM(hostIP, hwspec, swspec);
+            res = waitForSuccess(uut, res, TimeSpan.FromSeconds(30));
+            return ((resultAndBladeName)res).bladeName;
+        }
+
+        public static resultAndWaitToken waitForSuccess(services uut, resultAndWaitToken res, TimeSpan timeout)
+        {
+            DateTime deadline = DateTime.Now + timeout;
+            while (res.result.code != resultCode.success)
+            {
+                switch (res.result.code)
                 {
-                    if (DateTime.Now > timeout)
-                        throw new TimeoutException();
+                    case resultCode.success:
+                    case resultCode.noNeedLah:
+                        break;
 
-                    continue;
+                    case resultCode.pending:
+                        if (DateTime.Now > deadline)
+                            throw new TimeoutException();
+                        res = uut.uut.getProgress(res.waitToken);
+                        continue;
+
+                    default:
+                        Assert.Fail("Unexpected status during .getProgress: " + res.result.code + " / " + res.result.errMsg);
+                        break;
                 }
-                Assert.Fail("Unexpected status during .getLogInProgress: " + res);
+                Thread.Sleep(TimeSpan.FromSeconds(1));
             }
+            return res;
         }
 
-        public static string doBladeAllocationForTest(hostStateManagerMocked uut, string hostIP, bool failTCPConnectAttempts = false)
+        public static resultAndBladeName startAsyncVMAllocationForTest(services uut, string hostIP)
         {
-            uut.initWithBlades(new[] { "172.17.129.131" });
+            uut.uutDebug._setExecutionResultsIfMocked(mockedExecutionResponses.successful);
 
-            uut.onMockedExecution += mockedAllocation.respondToExecutionsCorrectly;
-            uut.onTCPConnectionAttempt += (ip, port, finish, error, time, state) => { return !failTCPConnectAttempts; };
-
-            resultCodeAndBladeName allocRes = uut.RequestAnySingleNode(hostIP);
-            Assert.AreEqual(resultCode.success, allocRes.code);
-
-            return allocRes.bladeName;
-        }
-
-        public static string doVMAllocationForTest(hostStateManagerMocked uut, string hostIP, bool failTCPConnectAttempts = false)
-        {
-            uut.onMockedExecution += mockedAllocation.respondToExecutionsCorrectly;
-            uut.onTCPConnectionAttempt += (ip, port, finish, error, time, state) => { return !failTCPConnectAttempts; };
-
-            VMHardwareSpec hwspec = new VMHardwareSpec(1024 * 3, 1);
-            VMSoftwareSpec swspec = new VMSoftwareSpec();
-            resultAndBladeName allocRes = uut.RequestAnySingleVM(hostIP, hwspec, swspec);
-            waitTokenType token = allocRes.waitToken;
-            if (allocRes.result.code != resultCode.pending && allocRes.result.code != resultCode.success)
-                Assert.Fail(allocRes.result.ToString());
-
-            DateTime deadline = DateTime.Now + TimeSpan.FromSeconds(30);
-            while (true)
+            VMHardwareSpec hwspec = new VMHardwareSpec
             {
-                allocRes = uut.getProgressOfVMRequest(token);
-                if (allocRes.result.code == resultCode.success)
-                    break;
-                Assert.AreEqual(resultCode.pending, allocRes.result.code);
-
-                if (DateTime.Now > deadline)
-                    throw new TimeoutException();
-            }
-
-            return allocRes.bladeName;
-        }
-
-        public static waitTokenType startSlowVMAllocationForTest(hostStateManagerMocked uut, string hostIP)
-        {
-            uut.initWithBlades(new[] { "172.17.129.131" });
-
-            uut.onMockedExecution += mockedAllocation.respondToExecutionsCorrectlyButSlowly;
-            uut.onTCPConnectionAttempt += (ip, port, finish, error, time, state) => { return true; };
-
-            VMHardwareSpec hwspec = new VMHardwareSpec(1024 * 3, 1);
+                cpuCount = 1,
+                memoryMB = 1024 * 3
+            };
             VMSoftwareSpec swspec = new VMSoftwareSpec();
-            resultAndBladeName allocRes = uut.RequestAnySingleVM(hostIP, hwspec, swspec);
-            if (allocRes.result.code != resultCode.pending)
-                Assert.Fail();
 
-            return allocRes.waitToken;
+            resultAndBladeName allocRes = uut.uutDebug._requestAnySingleVM(hostIP, hwspec, swspec);
+            if (allocRes.result.code != resultCode.pending && allocRes.result.code != resultCode.success)
+                Assert.Fail("unexpected status: " + allocRes.result.code.ToString());
+
+            return allocRes;
         }
+
     }
 }
