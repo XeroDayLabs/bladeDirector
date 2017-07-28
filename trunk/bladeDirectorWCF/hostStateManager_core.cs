@@ -278,56 +278,20 @@ namespace bladeDirectorWCF
             // Kill off VMs first, and then physical blades.
             // TODO: lock properly, so that no new VMs can be created before we destroy the physical blades
 
-            using (disposingList<lockableBladeSpec> currentlyOwned = db.getAllBladeInfo(
-                x => x.currentOwner == login.hostIP, bladeLockType.lockOwnership, bladeLockType.lockOwnership, true, true))
-            {
-                addLogEvent("aaaaaaaaaaa");
-            }
-
             // Destroy any VMs currently being deployed
             using (disposingList<lockableVMSpec> bootingVMs = db.getAllVMInfo(
                 x => (x.currentOwner == "vmserver" && x.nextOwner == login.hostIP), 
                 bladeLockType.lockOwnership, bladeLockType.lockOwnership))
             {
-                using (disposingList<lockableBladeSpec> currentlyOwned = db.getAllBladeInfo(
-                    x => x.currentOwner == login.hostIP, bladeLockType.lockOwnership, bladeLockType.lockOwnership, true, true))
-                {
-                    addLogEvent("dddddddddddd");
-                }
-
                 foreach (lockableVMSpec allocated in bootingVMs)
                 {
-                    using (disposingList<lockableBladeSpec> currentlyOwned = db.getAllBladeInfo(
-                        x => x.currentOwner == login.hostIP, bladeLockType.lockOwnership, bladeLockType.lockOwnership, true, true))
-                    {
-                        addLogEvent("eeeeeeeeeeee");
-                    }
-
                     allocated.upgradeLocks(bladeLockType.lockVMCreation | bladeLockType.lockBIOS | bladeLockType.lockSnapshot | bladeLockType.lockNASOperations | bladeLockType.lockvmDeployState | bladeLockType.lockVirtualHW,
                         bladeLockType.lockVMCreation | bladeLockType.lockBIOS | bladeLockType.lockSnapshot | bladeLockType.lockNASOperations | bladeLockType.lockvmDeployState);
 
-                    using (disposingList<lockableBladeSpec> currentlyOwned = db.getAllBladeInfo(
-                         x => x.currentOwner == login.hostIP, bladeLockType.lockOwnership, bladeLockType.lockOwnership, true, true))
-                    {
-                        addLogEvent("ggggggggggggg");
-                    }
-                    
                     releaseVM(allocated, 
                         bladeLockType.lockVMCreation | bladeLockType.lockBIOS | bladeLockType.lockSnapshot | bladeLockType.lockNASOperations | bladeLockType.lockvmDeployState | bladeLockType.lockVirtualHW,
                         bladeLockType.lockVMCreation | bladeLockType.lockBIOS | bladeLockType.lockSnapshot | bladeLockType.lockNASOperations | bladeLockType.lockvmDeployState);
-
-                    using (disposingList<lockableBladeSpec> currentlyOwned = db.getAllBladeInfo(
-                         x => x.currentOwner == login.hostIP, bladeLockType.lockOwnership, bladeLockType.lockOwnership, true, true))
-                    {
-                        addLogEvent("ffffffffffff");
-                    }
                 }
-            }
-
-            using (disposingList<lockableBladeSpec> currentlyOwned = db.getAllBladeInfo(
-                x => x.currentOwner == login.hostIP, bladeLockType.lockOwnership, bladeLockType.lockOwnership, true, true))
-            {
-                addLogEvent("bbbbbbbbbb");
             }
 
             // And any VMs that have finished allocation.
@@ -345,12 +309,6 @@ namespace bladeDirectorWCF
                 }
             }
 
-            using (disposingList<lockableBladeSpec> currentlyOwned = db.getAllBladeInfo(
-                x => x.currentOwner == login.hostIP, bladeLockType.lockOwnership, bladeLockType.lockOwnership, true, true))
-            {
-                addLogEvent("cccccccccccc");
-            }
-
             // Clean up any fully-allocated blades this blade has left over from any previous run
             using (disposingList<lockableBladeSpec> currentlyOwned = db.getAllBladeInfo(
                 x => x.currentOwner == login.hostIP, bladeLockType.lockOwnership, bladeLockType.lockOwnership, true, true))
@@ -363,12 +321,6 @@ namespace bladeDirectorWCF
                     allocated.downgradeLocks(bladeLockType.lockVMCreation | bladeLockType.lockBIOS | bladeLockType.lockSnapshot | bladeLockType.lockNASOperations | bladeLockType.lockvmDeployState | bladeLockType.lockVirtualHW,
                         bladeLockType.lockVMCreation | bladeLockType.lockBIOS | bladeLockType.lockSnapshot | bladeLockType.lockNASOperations | bladeLockType.lockvmDeployState);
                 }
-            }
-
-            using (disposingList<lockableBladeSpec> currentlyOwned = db.getAllBladeInfo(
-                x => x.currentOwner == login.hostIP, bladeLockType.lockOwnership, bladeLockType.lockOwnership, true, true))
-            {
-                addLogEvent("dddddddddddd");
             }
 
             // And now report that the login is complete.
@@ -563,24 +515,7 @@ namespace bladeDirectorWCF
 
                         Monitor.Enter(_vmDeployState);
                         islocked = true;
-
-                        using (disposingList<lockableBladeSpec> currentlyOwned = db.getAllBladeInfo(
-                             x => true, bladeLockType.lockOwnership, bladeLockType.lockOwnership, true, true))
-                        {
-                            addLogEvent("j...");
-                        }
                     }
-
-                    using (disposingList<lockableBladeSpec> currentlyOwned = db.getAllBladeInfo(
-                         x => true, bladeLockType.lockOwnership, bladeLockType.lockOwnership, true, true))
-                    {
-                        addLogEvent("hhhhhhhhhhhhhhhh");
-                    }
-                }
-                using (disposingList<lockableBladeSpec> currentlyOwned = db.getAllBladeInfo(
-                     x => true, bladeLockType.lockOwnership, bladeLockType.lockOwnership, true, true))
-                {
-                    addLogEvent("iiiiiiiiiiiiiiiiii");
                 }
             }
             finally
