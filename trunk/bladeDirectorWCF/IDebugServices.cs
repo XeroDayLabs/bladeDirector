@@ -15,7 +15,7 @@ namespace bladeDirectorWCF
 
         [OperationContract]
         bladeSpec createBladeSpec(string newBladeIP, string newISCSIIP, string newILOIP, ushort newILOPort, 
-            bool newCurrentlyHavingBIOSDeployed, VMDeployStatus newVMDeployState, string newCurrentBIOS, 
+            bool newCurrentlyHavingBIOSDeployed, VMDeployStatus newvmDeployState, string newCurrentBIOS, 
             bladeLockType permittedAccessRead, bladeLockType permittedAccessWrite);
 
         [OperationContract]

@@ -23,10 +23,6 @@ namespace bladeDirectorWCF
         public bladeStatus state { get { checkPermsR("state"); return _state; } set {  checkPermsW("state"); _state = value; } }
         private bladeStatus _state;
 
-        // FIXME: this shuld be a blade property, not an ownership property
-        public VMDeployStatus VMDeployState { get { checkPermsR("VMDeployState"); return _VMDeployState; } set { checkPermsW("VMDeployState"); _VMDeployState = value; } }
-        private VMDeployStatus _VMDeployState;
-
         public string currentOwner { get { checkPermsR("currentOwner"); return _currentOwner; } set { checkPermsW("currentOwner"); _currentOwner = value; } }
         private string _currentOwner;
 
@@ -53,13 +49,12 @@ namespace bladeDirectorWCF
             permittedAccessWrite = bladeLockType.lockAll;
         }
 
-        protected bladeOwnership(SQLiteConnection conn, VMDeployStatus newVMDeployState, bladeLockType permittedAccessRead, bladeLockType permittedAccessWrite)
+        protected bladeOwnership(SQLiteConnection conn, bladeLockType permittedAccessRead, bladeLockType permittedAccessWrite)
         {
             this.conn = conn;
             _state = bladeStatus.unused;
             this.permittedAccessRead = permittedAccessRead;
             this.permittedAccessWrite = permittedAccessWrite;
-            _VMDeployState = newVMDeployState;
 
             if (conn != null)
             {
@@ -71,7 +66,7 @@ namespace bladeDirectorWCF
         protected bladeOwnership(SQLiteConnection conn, SQLiteDataReader reader, bladeLockType permittedAccessRead, bladeLockType permittedAccessWrite)
         {
             this.conn = conn;
-            this.permittedAccessRead = permittedAccessRead;
+            this.permittedAccessRead = permittedAccessRead ;
             this.permittedAccessWrite = permittedAccessWrite;
 
             parseFromDBRow(reader);
@@ -94,14 +89,6 @@ namespace bladeDirectorWCF
                     long enumIdx = (long) reader["state"];
                     _state = (bladeStatus) ((int) enumIdx);
                 }
-            }
-
-            if (fieldList.Contains("VMDeployState"))
-            {
-                if (reader["VMDeployState"] is DBNull)
-                    _VMDeployState = VMDeployStatus.needsPowerCycle;
-                else
-                    _VMDeployState = (VMDeployStatus) Convert.ToInt32(reader["VMDeployState"]);
             }
 
             if (fieldList.Contains("ownershipKey"))
@@ -183,10 +170,6 @@ namespace bladeDirectorWCF
                 toRet.Add("state");
                 toRet.Add("currentOwner");
                 toRet.Add("nextOwner");
-            }
-            if ((lockType & bladeLockType.lockVMDeployState) != bladeLockType.lockNone)
-            {
-                toRet.Add("VMDeployState");
             }
             if ((lockType & bladeLockType.lockSnapshot) != bladeLockType.lockNone)
             {
@@ -345,7 +328,6 @@ namespace bladeDirectorWCF
                 cmd.Parameters.AddWithValue("$currentOwner", _currentOwner);
                 cmd.Parameters.AddWithValue("$nextOwner", _nextOwner);
                 cmd.Parameters.AddWithValue("$lastKeepAlive", _lastKeepAlive);
-                cmd.Parameters.AddWithValue("$VMDeployState", _VMDeployState);
                 cmd.Parameters.AddWithValue("$currentSnapshot", _currentSnapshot);
                 if (ownershipRowID.HasValue)
                     cmd.Parameters.AddWithValue("$ownershipKey", ownershipRowID);
@@ -402,9 +384,4 @@ namespace bladeDirectorWCF
         }
     }
 
-    public enum VMDeployStatus
-    {
-        needsPowerCycle = 0,
-        readyForDeployment = 1
-    }
 }

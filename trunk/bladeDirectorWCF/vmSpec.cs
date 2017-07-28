@@ -111,8 +111,8 @@ namespace bladeDirectorWCF
             // Used for XML de/ser
         }
 
-        public vmSpec(SQLiteConnection conn, VMDeployStatus deployState, bladeLockType readLock, bladeLockType writeLock)
-            : base(conn, deployState, readLock, writeLock)
+        public vmSpec(SQLiteConnection conn, bladeLockType readLock, bladeLockType writeLock)
+            : base(conn, readLock, writeLock)
         {
             vmConfigKey = null;
 
@@ -120,7 +120,7 @@ namespace bladeDirectorWCF
         }
 
         public vmSpec(SQLiteConnection conn, string IP , bladeLockType readLock, bladeLockType writeLock)
-            : base(conn, VMDeployStatus.needsPowerCycle, readLock, writeLock)
+            : base(conn, readLock, writeLock)
         {
             vmConfigKey = null;
             VMIP = IP;
@@ -368,6 +368,11 @@ namespace bladeDirectorWCF
             script = script.Replace("{BLADE_IP_MAIN}", VMIP);
 
             return base.generateIPXEScript(script);
+        }
+
+        public void Dispose()
+        {
+            throw new NotImplementedException();
         }
     }
 }

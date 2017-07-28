@@ -1,7 +1,6 @@
 create table bladeOwnership(
 	ownershipKey integer primary key autoincrement,
 	state,
-	VMDeployState,
 	currentOwner,
 	nextOwner,
 	lastKeepAlive,

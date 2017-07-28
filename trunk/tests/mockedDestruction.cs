@@ -115,6 +115,40 @@ namespace tests
         }
 
         [TestMethod]
+        public void willDeallocateBladeAtLoginDuringVMProvisioning()
+        {
+            using (services svc = new services())
+            {
+                string hostIP = "1.1.1.1";
+                svc.uutDebug.initWithBladesFromIPList(new[] { "172.17.129.131" }, true, NASFaultInjectionPolicy.retunSuccessful);
+
+                VMHardwareSpec hwspec = new VMHardwareSpec
+                {
+                    cpuCount = 1,
+                    memoryMB = 1024 * 3
+                };
+                VMSoftwareSpec swspec = new VMSoftwareSpec();
+
+                // Start a slow VM allocation
+                svc.uutDebug._setExecutionResultsIfMocked(mockedExecutionResponses.successfulButSlow);
+                resultAndWaitToken res = svc.uutDebug._requestAnySingleVM(hostIP, hwspec, swspec);
+                Assert.AreEqual(resultCode.pending, res.result.code);
+
+                // Then re-login. The VM operation should be cancelled.
+                resultAndWaitToken releaseRes = svc.uutDebug._logIn(hostIP);
+                testUtils.waitForSuccess(svc, releaseRes, TimeSpan.FromMinutes(1));
+
+                // And it should be no longer provisioning the VM.
+                resultAndWaitToken bladeState = svc.uut.getProgress(res.waitToken);
+                Assert.AreNotEqual(resultCode.pending, bladeState.result.code);
+
+                // And should not be allocated.
+                GetBladeStatusResult ownershipRes = svc.uut.GetBladeStatus("172.17.129.131");
+                Assert.AreEqual(GetBladeStatusResult.unused, ownershipRes);
+            }
+        }
+
+        [TestMethod]
         public void willDeallocateOldBladesOnLogon()
         {
             using (services svc = new services())

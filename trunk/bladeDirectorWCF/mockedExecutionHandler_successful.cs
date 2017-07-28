@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Threading;
 using hypervisors;
 
 namespace bladeDirectorWCF
@@ -17,6 +18,15 @@ namespace bladeDirectorWCF
 
             throw new hypervisorExecutionException("Injected fault");
         }        
+    }
+
+    public class mockedExecutionHandler_successfulButSlow : mockedExecutionHandler_successful
+    {
+        public override executionResult callMockedExecutionHandler(hypervisor sender, string command, string args, string workingdir, DateTime deadline)
+        {
+            Thread.Sleep(TimeSpan.FromSeconds(10));
+            return base.callMockedExecutionHandler(sender, command, args, workingdir, deadline);
+        }
     }
 
     public class mockedExecutionHandler_successful : mockedExecutionHandler

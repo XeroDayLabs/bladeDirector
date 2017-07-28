@@ -257,15 +257,15 @@ namespace bladeDirectorWCF
 
         private void _ltspBootThreadStart(biosThreadState param)
         {
-            using (lockableBladeSpec blade = _hostManager.db.getBladeByIP(param.nodeIP, bladeLockType.lockBIOS, bladeLockType.lockBIOS))
+            using (lockableBladeSpec blade = _hostManager.db.getBladeByIP(param.nodeIP, bladeLockType.lockBIOS, bladeLockType.lockBIOS, permitAccessDuringBIOS: true))
             {
                 blade.spec.currentlyHavingBIOSDeployed = true;
             }
             param.isStarted = true;
 
             using (lockableBladeSpec blade = _hostManager.db.getBladeByIP(param.nodeIP,
-                bladeLockType.lockOwnership | bladeLockType.lockSnapshot, 
-                bladeLockType.lockNone))
+                bladeLockType.lockOwnership | bladeLockType.lockSnapshot,
+                bladeLockType.lockNone, permitAccessDuringBIOS: true))
             {
                 // Power cycle it
                 _hostManager.startBladePowerOff(blade);

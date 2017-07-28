@@ -481,9 +481,6 @@ namespace tests.bladeDirectorServices {
         private System.Runtime.Serialization.ExtensionDataObject extensionDataField;
         
         [System.Runtime.Serialization.OptionalFieldAttribute()]
-        private tests.bladeDirectorServices.VMDeployStatus VMDeployStateField;
-        
-        [System.Runtime.Serialization.OptionalFieldAttribute()]
         private tests.bladeDirectorServices.SQLiteConnection connField;
         
         [System.Runtime.Serialization.OptionalFieldAttribute()]
@@ -517,19 +514,6 @@ namespace tests.bladeDirectorServices {
             }
             set {
                 this.extensionDataField = value;
-            }
-        }
-        
-        [System.Runtime.Serialization.DataMemberAttribute()]
-        public tests.bladeDirectorServices.VMDeployStatus VMDeployState {
-            get {
-                return this.VMDeployStateField;
-            }
-            set {
-                if ((this.VMDeployStateField.Equals(value) != true)) {
-                    this.VMDeployStateField = value;
-                    this.RaisePropertyChanged("VMDeployState");
-                }
             }
         }
         
@@ -824,6 +808,9 @@ namespace tests.bladeDirectorServices {
         private string ESXiUsernameField;
         
         [System.Runtime.Serialization.OptionalFieldAttribute()]
+        private tests.bladeDirectorServices.VMDeployStatus VMDeployStateField;
+        
+        [System.Runtime.Serialization.OptionalFieldAttribute()]
         private System.Nullable<long> bladeIDField;
         
         [System.Runtime.Serialization.OptionalFieldAttribute()]
@@ -875,6 +862,19 @@ namespace tests.bladeDirectorServices {
                 if ((object.ReferenceEquals(this.ESXiUsernameField, value) != true)) {
                     this.ESXiUsernameField = value;
                     this.RaisePropertyChanged("ESXiUsername");
+                }
+            }
+        }
+        
+        [System.Runtime.Serialization.DataMemberAttribute()]
+        public tests.bladeDirectorServices.VMDeployStatus VMDeployState {
+            get {
+                return this.VMDeployStateField;
+            }
+            set {
+                if ((this.VMDeployStateField.Equals(value) != true)) {
+                    this.VMDeployStateField = value;
+                    this.RaisePropertyChanged("VMDeployState");
                 }
             }
         }
@@ -1258,17 +1258,6 @@ namespace tests.bladeDirectorServices {
     }
     
     [System.CodeDom.Compiler.GeneratedCodeAttribute("System.Runtime.Serialization", "4.0.0.0")]
-    [System.Runtime.Serialization.DataContractAttribute(Name="VMDeployStatus", Namespace="http://schemas.datacontract.org/2004/07/bladeDirectorWCF")]
-    public enum VMDeployStatus : int {
-        
-        [System.Runtime.Serialization.EnumMemberAttribute()]
-        needsPowerCycle = 0,
-        
-        [System.Runtime.Serialization.EnumMemberAttribute()]
-        readyForDeployment = 1,
-    }
-    
-    [System.CodeDom.Compiler.GeneratedCodeAttribute("System.Runtime.Serialization", "4.0.0.0")]
     [System.FlagsAttribute()]
     [System.Runtime.Serialization.DataContractAttribute(Name="bladeLockType", Namespace="http://schemas.datacontract.org/2004/07/bladeDirectorWCF")]
     public enum bladeLockType : int {
@@ -1302,6 +1291,9 @@ namespace tests.bladeDirectorServices {
         
         [System.Runtime.Serialization.EnumMemberAttribute()]
         lockLongRunningBIOS = 4096,
+        
+        [System.Runtime.Serialization.EnumMemberAttribute()]
+        lockLongRunningVM = 8192,
         
         [System.Runtime.Serialization.EnumMemberAttribute()]
         lockNone = 0,
@@ -1341,10 +1333,10 @@ namespace tests.bladeDirectorServices {
     [System.Runtime.Serialization.KnownTypeAttribute(typeof(tests.bladeDirectorServices.VMSoftwareSpec))]
     [System.Runtime.Serialization.KnownTypeAttribute(typeof(tests.bladeDirectorServices.vmSpec))]
     [System.Runtime.Serialization.KnownTypeAttribute(typeof(tests.bladeDirectorServices.bladeOwnership))]
-    [System.Runtime.Serialization.KnownTypeAttribute(typeof(tests.bladeDirectorServices.VMDeployStatus))]
     [System.Runtime.Serialization.KnownTypeAttribute(typeof(tests.bladeDirectorServices.bladeLockType))]
     [System.Runtime.Serialization.KnownTypeAttribute(typeof(tests.bladeDirectorServices.bladeStatus))]
     [System.Runtime.Serialization.KnownTypeAttribute(typeof(tests.bladeDirectorServices.bladeSpec))]
+    [System.Runtime.Serialization.KnownTypeAttribute(typeof(tests.bladeDirectorServices.VMDeployStatus))]
     [System.Runtime.Serialization.KnownTypeAttribute(typeof(tests.bladeDirectorServices.vmSpec[]))]
     [System.Runtime.Serialization.KnownTypeAttribute(typeof(string[]))]
     [System.Runtime.Serialization.KnownTypeAttribute(typeof(tests.bladeDirectorServices.userAddRequest[]))]
@@ -1412,10 +1404,10 @@ namespace tests.bladeDirectorServices {
     [System.Runtime.Serialization.KnownTypeAttribute(typeof(tests.bladeDirectorServices.VMSoftwareSpec))]
     [System.Runtime.Serialization.KnownTypeAttribute(typeof(tests.bladeDirectorServices.vmSpec))]
     [System.Runtime.Serialization.KnownTypeAttribute(typeof(tests.bladeDirectorServices.bladeOwnership))]
-    [System.Runtime.Serialization.KnownTypeAttribute(typeof(tests.bladeDirectorServices.VMDeployStatus))]
     [System.Runtime.Serialization.KnownTypeAttribute(typeof(tests.bladeDirectorServices.bladeLockType))]
     [System.Runtime.Serialization.KnownTypeAttribute(typeof(tests.bladeDirectorServices.bladeStatus))]
     [System.Runtime.Serialization.KnownTypeAttribute(typeof(tests.bladeDirectorServices.bladeSpec))]
+    [System.Runtime.Serialization.KnownTypeAttribute(typeof(tests.bladeDirectorServices.VMDeployStatus))]
     [System.Runtime.Serialization.KnownTypeAttribute(typeof(tests.bladeDirectorServices.vmSpec[]))]
     [System.Runtime.Serialization.KnownTypeAttribute(typeof(string[]))]
     [System.Runtime.Serialization.KnownTypeAttribute(typeof(tests.bladeDirectorServices.userAddRequest[]))]
@@ -1469,6 +1461,26 @@ namespace tests.bladeDirectorServices {
                 }
             }
         }
+    }
+    
+    [System.CodeDom.Compiler.GeneratedCodeAttribute("System.Runtime.Serialization", "4.0.0.0")]
+    [System.Runtime.Serialization.DataContractAttribute(Name="VMDeployStatus", Namespace="http://schemas.datacontract.org/2004/07/bladeDirectorWCF")]
+    public enum VMDeployStatus : int {
+        
+        [System.Runtime.Serialization.EnumMemberAttribute()]
+        notBeingDeployed = 0,
+        
+        [System.Runtime.Serialization.EnumMemberAttribute()]
+        needsPowerCycle = 1,
+        
+        [System.Runtime.Serialization.EnumMemberAttribute()]
+        waitingForPowerUp = 2,
+        
+        [System.Runtime.Serialization.EnumMemberAttribute()]
+        readyForDeployment = 3,
+        
+        [System.Runtime.Serialization.EnumMemberAttribute()]
+        failed = 4,
     }
     
     [System.CodeDom.Compiler.GeneratedCodeAttribute("System.Runtime.Serialization", "4.0.0.0")]
@@ -1744,13 +1756,10 @@ namespace tests.bladeDirectorServices {
         [System.NonSerializedAttribute()]
         private System.Runtime.Serialization.ExtensionDataObject extensionDataField;
         
-        [System.Runtime.Serialization.OptionalFieldAttribute()]
         private string functionNameField;
         
-        [System.Runtime.Serialization.OptionalFieldAttribute()]
         private string messageField;
         
-        [System.Runtime.Serialization.OptionalFieldAttribute()]
         private System.DateTime timestampField;
         
         [global::System.ComponentModel.BrowsableAttribute(false)]
@@ -1763,7 +1772,7 @@ namespace tests.bladeDirectorServices {
             }
         }
         
-        [System.Runtime.Serialization.DataMemberAttribute()]
+        [System.Runtime.Serialization.DataMemberAttribute(IsRequired=true)]
         public string functionName {
             get {
                 return this.functionNameField;
@@ -1776,7 +1785,7 @@ namespace tests.bladeDirectorServices {
             }
         }
         
-        [System.Runtime.Serialization.DataMemberAttribute()]
+        [System.Runtime.Serialization.DataMemberAttribute(IsRequired=true)]
         public string message {
             get {
                 return this.messageField;
@@ -1789,7 +1798,7 @@ namespace tests.bladeDirectorServices {
             }
         }
         
-        [System.Runtime.Serialization.DataMemberAttribute()]
+        [System.Runtime.Serialization.DataMemberAttribute(IsRequired=true)]
         public System.DateTime timestamp {
             get {
                 return this.timestampField;

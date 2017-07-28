@@ -12,11 +12,12 @@ namespace bladeDirectorWCF
         lockSnapshot = 1 << 2,
         lockNASOperations = 1 << 3,
         lockOwnership = 1 << 4,
-        lockVMDeployState = 1 << 5,
+        lockvmDeployState = 1 << 5,
         lockIPAddresses = 1 << 6,
         lockVirtualHW = 1 << 7,
 
         lockLongRunningBIOS = 0x1000,
+        lockLongRunningVM = 0x2000,
         lockNone = 0x0,
     }
 }

@@ -22,6 +22,7 @@
         <xs:sequence>
           <xs:element minOccurs="0" name="ESXiPassword" nillable="true" type="xs:string" />
           <xs:element minOccurs="0" name="ESXiUsername" nillable="true" type="xs:string" />
+          <xs:element minOccurs="0" name="VMDeployState" type="tns:VMDeployStatus" />
           <xs:element minOccurs="0" name="bladeID" nillable="true" type="xs:long" />
           <xs:element minOccurs="0" name="bladeIP" nillable="true" type="xs:string" />
           <xs:element minOccurs="0" name="currentlyBeingAVMServer" type="xs:boolean" />
@@ -39,7 +40,6 @@
   <xs:element name="bladeSpec" nillable="true" type="tns:bladeSpec" />
   <xs:complexType name="bladeOwnership">
     <xs:sequence>
-      <xs:element minOccurs="0" name="VMDeployState" type="tns:VMDeployStatus" />
       <xs:element xmlns:q1="http://schemas.datacontract.org/2004/07/System.Data.SQLite" minOccurs="0" name="conn" nillable="true" type="q1:SQLiteConnection" />
       <xs:element minOccurs="0" name="currentOwner" nillable="true" type="xs:string" />
       <xs:element minOccurs="0" name="currentSnapshot" nillable="true" type="xs:string" />
@@ -52,13 +52,6 @@
     </xs:sequence>
   </xs:complexType>
   <xs:element name="bladeOwnership" nillable="true" type="tns:bladeOwnership" />
-  <xs:simpleType name="VMDeployStatus">
-    <xs:restriction base="xs:string">
-      <xs:enumeration value="needsPowerCycle" />
-      <xs:enumeration value="readyForDeployment" />
-    </xs:restriction>
-  </xs:simpleType>
-  <xs:element name="VMDeployStatus" nillable="true" type="tns:VMDeployStatus" />
   <xs:simpleType name="bladeLockType">
     <xs:list>
       <xs:simpleType>
@@ -133,6 +126,13 @@
               </xs:appinfo>
             </xs:annotation>
           </xs:enumeration>
+          <xs:enumeration value="lockLongRunningVM">
+            <xs:annotation>
+              <xs:appinfo>
+                <EnumerationValue xmlns="http://schemas.microsoft.com/2003/10/Serialization/">8192</EnumerationValue>
+              </xs:appinfo>
+            </xs:annotation>
+          </xs:enumeration>
           <xs:enumeration value="lockNone">
             <xs:annotation>
               <xs:appinfo>
@@ -154,6 +154,16 @@
     </xs:restriction>
   </xs:simpleType>
   <xs:element name="bladeStatus" nillable="true" type="tns:bladeStatus" />
+  <xs:simpleType name="VMDeployStatus">
+    <xs:restriction base="xs:string">
+      <xs:enumeration value="notBeingDeployed" />
+      <xs:enumeration value="needsPowerCycle" />
+      <xs:enumeration value="waitingForPowerUp" />
+      <xs:enumeration value="readyForDeployment" />
+      <xs:enumeration value="failed" />
+    </xs:restriction>
+  </xs:simpleType>
+  <xs:element name="VMDeployStatus" nillable="true" type="tns:VMDeployStatus" />
   <xs:complexType name="resultAndWaitToken">
     <xs:sequence>
       <xs:element minOccurs="0" name="result" nillable="true" type="tns:result" />

@@ -1,8 +1,10 @@
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Threading;
+using System.Web.UI.WebControls;
 
 namespace bladeDirectorWCF
 {
@@ -17,7 +19,7 @@ namespace bladeDirectorWCF
         private readonly string _name;
         private Dictionary<string, ReaderWriterLock> locksForThisBlade = new Dictionary<string, ReaderWriterLock>();
         private Dictionary<string, LockCookie> lockCookiesForThisBlade = new Dictionary<string, LockCookie>();
-        private Dictionary<string, takenLockInfo> _readTakenList = new Dictionary<string, takenLockInfo>();
+        private Dictionary<string, List<takenLockInfo>> _readTakenList = new Dictionary<string, List<takenLockInfo>>();
         private Dictionary<string, takenLockInfo> _writeTakenList = new Dictionary<string, takenLockInfo>();
 
         private bladeLockType _readLock;
@@ -34,7 +36,7 @@ namespace bladeDirectorWCF
             foreach (string lockTypeName in getLockNames())
             {
                 locksForThisBlade.Add(lockTypeName, new ReaderWriterLock());
-                _readTakenList.Add(lockTypeName, new takenLockInfo());
+                _readTakenList.Add(lockTypeName, new List<takenLockInfo>());
                 _writeTakenList.Add(lockTypeName, new takenLockInfo());
             }
 
@@ -86,7 +88,10 @@ namespace bladeDirectorWCF
                         locksForThisBlade[lockTypeName].ReleaseReaderLock();
 
                         // The read lock is now not taken.
-                        _readTakenList[lockTypeName].threadID = -1;
+                        lock (_readTakenList) // fixme: ugh locking
+                        {
+                            _readTakenList[lockTypeName].RemoveAll(x => x.threadID == Thread.CurrentThread.ManagedThreadId);
+                        }
                         _readLock = clearField(_readLock, lockType);
                     }
                     else
@@ -103,9 +108,10 @@ namespace bladeDirectorWCF
                         Debug.WriteLine(Thread.CurrentThread.ManagedThreadId + " bladeLockCollection release for blade " + _name + lockTypeName + " downgrading (!willReleaseReaderLock)");
                         locksForThisBlade[lockTypeName].DowngradeFromWriterLock(ref lockCookie);
 
-                        // The read lock is now taken.
-                        _readTakenList[lockTypeName].threadID = Thread.CurrentThread.ManagedThreadId;
-                        _readTakenList[lockTypeName].stackTrace = Environment.StackTrace;
+                        lock (_readTakenList) // fixme: ugh locking
+                        {
+                            _readTakenList[lockTypeName].RemoveAll(x => x.threadID == Thread.CurrentThread.ManagedThreadId);
+                        }
                         _readLock |= lockType;
                     }
                 }
@@ -114,7 +120,11 @@ namespace bladeDirectorWCF
                     // Only release a read lock if we aren't releasing the whole write lock.
                     if (willReleaseReadLock)
                     {
-                        _readTakenList[lockTypeName].threadID = -1;
+                        lock (_readTakenList) // fixme: ugh locking
+                        {
+                            _readTakenList[lockTypeName].RemoveAll(x => x.threadID == Thread.CurrentThread.ManagedThreadId);
+                        }
+
                         _readLock = clearField(_readLock, lockType);
                         Debug.WriteLine(Thread.CurrentThread.ManagedThreadId + " bladeLockCollection release for blade " + _name + " " + lockTypeName + " releasing reader lock (!willReleaseWriterLock)");
                         locksForThisBlade[lockTypeName].ReleaseReaderLock();
@@ -124,10 +134,35 @@ namespace bladeDirectorWCF
             Debug.WriteLine(Thread.CurrentThread.ManagedThreadId + " bladeLockCollection release for blade " + _name + " finished, new access " + _readLock + " / " + _writeLock);
         }
 
+        private List<Thread> seenThreads = new List<Thread>(); 
+
         public void acquire(bladeLockType readTypes, bladeLockType writeTypes)
         {
             Debug.WriteLine(Thread.CurrentThread.ManagedThreadId + " bladeLockCollection for blade " + _name + " acquiring " + readTypes + " / " + writeTypes); 
             Debug.WriteLine(Thread.CurrentThread.ManagedThreadId + Environment.StackTrace);
+
+            lock (seenThreads)
+            {
+                if (!seenThreads.Contains(Thread.CurrentThread))
+                    seenThreads.Add(Thread.CurrentThread);
+            }
+
+            lock (seenThreads)
+            {
+                foreach (Thread seenThread in seenThreads)
+                {
+                    if (!seenThread.IsAlive)
+                    {
+                        //Debug.WriteLine("managed thread " + seenThread.ManagedThreadId + " is dead");
+                        if (_readTakenList.Any(y => y.Value.Any(x => x.threadID == seenThread.ManagedThreadId)))
+                            throw new AbandonedMutexException();
+                        if (_writeTakenList.Any(x => x.Value.threadID == seenThread.ManagedThreadId))
+                            throw new AbandonedMutexException();
+                        //seenThreads.Remove(seenThread);
+                    }
+                }
+            }
+
             foreach (string lockTypeName in getLockNames())
             {
                 int lockBitMask = (int)Enum.Parse(typeof(bladeLockType), lockTypeName);
@@ -142,11 +177,20 @@ namespace bladeDirectorWCF
                 if (readRequested && writeAlreadyTaken)
                     throw new Exception("oh no");
 
-                if (readRequested && _readTakenList[lockTypeName].threadID == Thread.CurrentThread.ManagedThreadId)
-                    throw new Exception("this thread already owns the read lock on " + lockTypeName + "! Previous lock was taken by " + _readTakenList[lockTypeName].stackTrace + " <stack trace end>");
+                if (readRequested)
+                {
+                    lock (_readTakenList)
+                    {
+                        foreach (takenLockInfo takenLockInfo in _readTakenList[lockTypeName])
+                        {
+                            if (takenLockInfo.threadID == Thread.CurrentThread.ManagedThreadId)
+                                throw new Exception("this thread already owns the read lock on " + lockTypeName + "! Previous lock was taken by " + takenLockInfo.stackTrace + " <stack trace end>");
+                        }
+                    }
+                }
 
                 if (writeRequested &&  _writeTakenList[lockTypeName].threadID == Thread.CurrentThread.ManagedThreadId)
-                    throw new Exception("this thread already owns the write lock on " + lockTypeName + "! Previous lock was taken by " + _readTakenList[lockTypeName].stackTrace + " <stack trace end>");
+                    throw new Exception("this thread already owns the write lock on " + lockTypeName + "! Previous lock was taken by " + _writeTakenList[lockTypeName].stackTrace + " <stack trace end>");
 
                 // IF we get to this point, we have either a read lock, a writer lock, or both. Writer locks imply read locks, so
                 // we need to take the read lock now.
@@ -161,14 +205,26 @@ namespace bladeDirectorWCF
                     }
                     catch (ApplicationException)
                     {
-                        string msg = "Failed to acquire read lock '" + lockTypeName + "', currently held by thread ID " +
-                                     _writeTakenList[lockTypeName].threadID + " allocated at " + _writeTakenList[lockTypeName].stackTrace;
+                        string msg = "Failed to acquire lock '" + lockTypeName + "' for read. \nRead locks are currently held by: ";
+                        foreach (takenLockInfo info in _readTakenList[lockTypeName])
+                        {
+                            if (info.threadID == Thread.CurrentThread.ManagedThreadId)
+                                continue;
+                            msg += " ***  Thread ID " + info.threadID + " allocated at " + info.stackTrace + "\n\n";
+                        }
+                        if (_writeTakenList[lockTypeName].threadID != -1)
+                            msg += "\nWrite lock is currently held by thread ID " + _writeTakenList[lockTypeName].threadID + " allocated at " + _writeTakenList[lockTypeName].stackTrace;
                         throw new Exception(msg);
                     }
-
-                    _readTakenList[lockTypeName].threadID = Thread.CurrentThread.ManagedThreadId;
-                    _readTakenList[lockTypeName].stackTrace = Environment.StackTrace;
-                    _readLock = _readLock | (bladeLockType) lockBitMask;
+                    
+                    takenLockInfo newInfo = new takenLockInfo();
+                    newInfo.threadID = Thread.CurrentThread.ManagedThreadId;
+                    newInfo.stackTrace = Environment.StackTrace;
+                    lock (_readTakenList) // fixme: ugh locking
+                    {
+                        _readTakenList[lockTypeName].Add(newInfo);
+                    } 
+                    _readLock = _readLock | (bladeLockType)lockBitMask;
                 }
 
                 if (writeRequested)
@@ -183,8 +239,15 @@ namespace bladeDirectorWCF
                     }
                     catch (ApplicationException)
                     {
-                        string msg = "Failed to acquire write lock '" + lockTypeName + "', currently held by thread ID " +
-                            _writeTakenList[lockTypeName].threadID + " allocated at " + _writeTakenList[lockTypeName].stackTrace;
+                        string msg = "Failed to acquire lock '" + lockTypeName + "' for write. \nRead locks are currently held by: ";
+                        foreach (takenLockInfo info in _readTakenList[lockTypeName])
+                        {
+                            if (info.threadID == Thread.CurrentThread.ManagedThreadId)
+                                continue;
+                            msg += " ***  Thread ID " + info.threadID + " allocated at " + info.stackTrace + "\n\n";
+                        }
+                        if (_writeTakenList[lockTypeName].threadID != -1)
+                            msg += "\nWrite lock is currently held by thread ID " + _writeTakenList[lockTypeName].threadID + " allocated at " + _writeTakenList[lockTypeName].stackTrace;
                         throw new Exception(msg);
                     }
 
@@ -208,7 +271,20 @@ namespace bladeDirectorWCF
 
         public bool assertLocks(bladeLockType read, bladeLockType write)
         {
-            return _writeLock == write && _readLock == read;
+            if (_writeLock != write || _readLock != read) 
+                return false;
+
+            // If we're being asserted that no locks are held, also check they actually aren't.
+            if (read == bladeLockType.lockNone && write == bladeLockType.lockNone)
+            {
+                foreach (string lockTypeName in getLockNames())
+                {
+                    locksForThisBlade[lockTypeName].AcquireReaderLock(TimeSpan.FromSeconds(1));
+                    LockCookie foo = locksForThisBlade[lockTypeName].UpgradeToWriterLock(TimeSpan.FromSeconds(1));
+                    locksForThisBlade[lockTypeName].ReleaseWriterLock();
+                }
+            }
+            return true;
         }
     }
 }

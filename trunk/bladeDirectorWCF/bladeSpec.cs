@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Data.SQLite;
+using System.Diagnostics;
 using System.Linq;
 using System.Net;
 using System.Xml.Serialization;
@@ -42,6 +43,13 @@ namespace bladeDirectorWCF
             set { checkPermsW("iLOPort"); _iLOPort = value; }
         }
         private ushort _iLOPort;
+
+        public VMDeployStatus vmDeployState
+        {
+            get { checkPermsR("vmDeployState"); return _vmDeployState; }
+            set { checkPermsW("vmDeployState"); _vmDeployState = value; }
+        }
+        private VMDeployStatus _vmDeployState;
 
         public bool currentlyHavingBIOSDeployed
         {
@@ -103,7 +111,7 @@ namespace bladeDirectorWCF
         public bladeSpec(SQLiteConnection conn,
             string newBladeIP, string newISCSIIP,
             string newILOIP, ushort newILOPort)
-            : base(conn, VMDeployStatus.needsPowerCycle, bladeLockType.lockAll, bladeLockType.lockAll)
+            : base(conn, bladeLockType.lockAll, bladeLockType.lockAll)
         {
             _iscsiIP = newISCSIIP;
             _bladeIP = newBladeIP;
@@ -112,6 +120,7 @@ namespace bladeDirectorWCF
 
             _currentlyHavingBIOSDeployed = false;
             _lastDeployedBIOS = null;
+            _vmDeployState = VMDeployStatus.notBeingDeployed;
 
             ESXiUsername = Settings.Default.esxiUsername;
             ESXiPassword = Settings.Default.esxiPassword;
@@ -128,8 +137,8 @@ namespace bladeDirectorWCF
         public bladeSpec(SQLiteConnection conn,
             string newBladeIP, string newISCSIIP, 
             string newILOIP, ushort newILOPort, 
-            bool newCurrentlyHavingBIOSDeployed, VMDeployStatus newVMDeployState, string newCurrentBIOS, bladeLockType permittedAccessRead, bladeLockType permittedAccessWrite)
-            : base(conn, newVMDeployState, permittedAccessRead, permittedAccessWrite)
+            bool newCurrentlyHavingBIOSDeployed, VMDeployStatus newvmDeployState, string newCurrentBIOS, bladeLockType permittedAccessRead, bladeLockType permittedAccessWrite)
+            : base(conn, permittedAccessRead, permittedAccessWrite)
         {
             _iscsiIP = newISCSIIP;
             _bladeIP = newBladeIP;
@@ -138,6 +147,7 @@ namespace bladeDirectorWCF
 
             _currentlyHavingBIOSDeployed = newCurrentlyHavingBIOSDeployed;
             _lastDeployedBIOS = newCurrentBIOS;
+            _vmDeployState = newvmDeployState;
 
             ESXiUsername = Settings.Default.esxiUsername;
             ESXiPassword = Settings.Default.esxiPassword;
@@ -180,6 +190,15 @@ namespace bladeDirectorWCF
             if (fieldList.Contains("iLOIP"))
                 _iLOIP = (string)reader["iLOIP"];
 
+            if (fieldList.Contains("vmDeployState"))
+            {
+                Debug.WriteLine(reader["vmDeployState"].GetType());
+                if (reader["vmDeployState"] is DBNull)
+                    _vmDeployState = VMDeployStatus.notBeingDeployed;
+                else
+                    _vmDeployState = (VMDeployStatus) ((long) reader["vmDeployState"]);
+            }
+
             if (fieldList.Contains("bladeConfigKey"))
             {
                 if (reader["bladeConfigKey"] is DBNull)
@@ -221,9 +240,9 @@ namespace bladeDirectorWCF
                 return false;
             if (currentlyBeingAVMServer != compareTo.currentlyBeingAVMServer)
                 return false;
-            if (bladeID != compareTo.bladeID)
+            if (vmDeployState != compareTo.vmDeployState)
                 return false;
-            if (VMDeployState != compareTo.VMDeployState)
+            if (bladeID != compareTo.bladeID)
                 return false;
 
             return true;
@@ -269,6 +288,10 @@ namespace bladeDirectorWCF
                 toRet.Add("bladeIP");
                 toRet.Add("iLOIP");
                 toRet.Add("iLOPort");
+            }
+            if ((lockType & bladeLockType.lockvmDeployState) != bladeLockType.lockNone)
+            {
+                toRet.Add("vmDeployState");
             }
             if ((lockType & bladeLockType.lockBIOS) != bladeLockType.lockNone)
             {
@@ -367,6 +390,7 @@ namespace bladeDirectorWCF
                 cmd.Parameters.AddWithValue("iLOIP", _iLOIP);
                 cmd.Parameters.AddWithValue("iLOPort", _iLOPort);
                 cmd.Parameters.AddWithValue("currentlyHavingBIOSDeployed", _currentlyHavingBIOSDeployed ? 1 : 0);
+                cmd.Parameters.AddWithValue("vmDeployState", _vmDeployState);
                 cmd.Parameters.AddWithValue("currentlyBeingAVMServer", _currentlyBeingAVMServer ? 1 : 0);
                 cmd.Parameters.AddWithValue("lastDeployedBIOS", _lastDeployedBIOS);
 
@@ -402,7 +426,7 @@ namespace bladeDirectorWCF
             if ((permittedAccessRead & bladeLockType.lockVMCreation) == bladeLockType.lockNone)
                 throw new Exception("lockVMCreation is needed when calling .createChildVM");
 
-            vmSpec newVM = new vmSpec(conn, VMDeployStatus.needsPowerCycle, bladeLockType.lockAll, bladeLockType.lockAll);
+            vmSpec newVM = new vmSpec(conn, bladeLockType.lockAll, bladeLockType.lockAll);
             newVM.parentBladeIP = bladeIP;
             newVM.currentOwner = "vmserver"; // We own the blade until we are done setting it up
             newVM.state = bladeStatus.inUseByDirector;
@@ -475,5 +499,14 @@ namespace bladeDirectorWCF
         public int maxVMs = 20;
         public int maxVMMemoryMB = 1024 * 20;
         public int maxCPUCount = 12;
+    }
+
+    public enum VMDeployStatus
+    {
+        notBeingDeployed = 0,
+        needsPowerCycle = 1,
+        waitingForPowerUp = 2,
+        readyForDeployment = 3,
+        failed = 4
     }
 }

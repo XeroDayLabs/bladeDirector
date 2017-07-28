@@ -155,6 +155,9 @@ namespace bladeDirectorWCF
                 case mockedExecutionResponses.successful:
                     handler = new mockedExecutionHandler_successful();
                     break;
+                case mockedExecutionResponses.successfulButSlow:
+                    handler = new mockedExecutionHandler_successfulButSlow();
+                    break;
                 default:
                     throw new ArgumentException();
             }

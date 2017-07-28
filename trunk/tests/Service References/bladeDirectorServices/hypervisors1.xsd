@@ -8,9 +8,9 @@
   <xs:element name="ArrayOfmockedCall" nillable="true" type="tns:ArrayOfmockedCall" />
   <xs:complexType name="mockedCall">
     <xs:sequence>
-      <xs:element minOccurs="0" name="functionName" nillable="true" type="xs:string" />
-      <xs:element minOccurs="0" name="message" nillable="true" type="xs:string" />
-      <xs:element minOccurs="0" name="timestamp" type="xs:dateTime" />
+      <xs:element name="functionName" nillable="true" type="xs:string" />
+      <xs:element name="message" nillable="true" type="xs:string" />
+      <xs:element name="timestamp" type="xs:dateTime" />
     </xs:sequence>
   </xs:complexType>
   <xs:element name="mockedCall" nillable="true" type="tns:mockedCall" />

@@ -77,7 +77,7 @@ namespace tests
                 foreach (string msg in uut.getLogEvents())
                     Debug.WriteLine(msg);
             }
-            catch (CommunicationObjectFaultedException) { }
+            catch (Exception) { }
 
             // FIXME: why these casts?
             try { ((IDisposable)uutDebug).Dispose(); } catch (CommunicationException) { }

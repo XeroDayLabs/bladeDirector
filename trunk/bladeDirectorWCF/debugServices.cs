@@ -42,11 +42,11 @@ namespace bladeDirectorWCF
         // Reusing existing types isn't supported for non-WCF services, so we need to do this silly workaround until we scrap IIS
         // and run entirely from WCF.
         public bladeSpec createBladeSpec(string newBladeIP, string newISCSIIP, string newILOIP, ushort newILOPort,
-            bool newCurrentlyHavingBIOSDeployed, VMDeployStatus newVMDeployState, string newCurrentBIOS,
+            bool newCurrentlyHavingBIOSDeployed, VMDeployStatus newvmDeployState, string newCurrentBIOS,
             bladeLockType permittedAccessRead, bladeLockType permittedAccessWrite)
         {
             return new bladeSpec(null, newBladeIP, newISCSIIP, newILOIP, newILOPort, newCurrentlyHavingBIOSDeployed,
-                newVMDeployState, newCurrentBIOS, permittedAccessRead, permittedAccessWrite);
+                newvmDeployState, newCurrentBIOS, permittedAccessRead, permittedAccessWrite);
         }
         
         public resultAndWaitToken _logIn(string requestorIP)

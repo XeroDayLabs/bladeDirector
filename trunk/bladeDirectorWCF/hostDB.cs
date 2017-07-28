@@ -127,47 +127,20 @@ namespace bladeDirectorWCF
             }
         }
 
-        public disposingList<lockableBladeSpec> getAllBladeInfo(Func<bladeSpec, bool> filter, bladeLockType lockTypeRead, bladeLockType lockTypeWrite, int max = Int32.MaxValue)
+        public disposingList<lockableBladeSpec> getAllBladeInfo(Func<bladeSpec, bool> filter, bladeLockType lockTypeRead, bladeLockType lockTypeWrite, bool permitAccessDuringBIOS = false, bool permitAccessDuringDeployment = false, int max = Int32.MaxValue)
         {
             //lock (connLock)
             {
                 disposingList<lockableBladeSpec> toRet = new disposingList<lockableBladeSpec>();
                 foreach (string bladeIP in getAllBladeIP())
                 {
-                    lockableBladeSpec blade = getBladeByIP(bladeIP, lockTypeRead, lockTypeWrite);
+                    lockableBladeSpec blade = getBladeByIP(bladeIP, lockTypeRead, lockTypeWrite, permitAccessDuringBIOS, permitAccessDuringDeployment);
                     if (filter(blade.spec))
                         toRet.Add(blade);
                     else
                         blade.Dispose();
                 }
                 return toRet;
-            }
-        }
-
-        public List<bladeSpec> getAllBladeInfo_nolocking(Func<bladeSpec, bool> filter, int max = Int32.MaxValue)
-        {
-            //lock (connLock)
-            {
-                string sqlCommand = "select * from bladeOwnership " +
-                                    "join bladeConfiguration on ownershipKey = bladeConfiguration.ownershipID ";
-                using (SQLiteCommand cmd = new SQLiteCommand(sqlCommand, conn))
-                {
-                    using (SQLiteDataReader reader = cmd.ExecuteReader())
-                    {
-                        List<bladeSpec> toRet = new List<bladeSpec>();
-
-                        while (reader.Read())
-                        {
-                            bladeSpec newSpec = new bladeSpec(conn, reader, bladeLockType.lockAll, bladeLockType.lockAll);
-                            if (filter(newSpec))
-                                toRet.Add(newSpec);
-                            if (toRet.Count > max)
-                                break;
-                        }
-
-                        return toRet;
-                    }
-                }
             }
         }
 
@@ -189,32 +162,52 @@ namespace bladeDirectorWCF
         }
 
         // FIXME: code duplication
-        public lockableBladeSpec getBladeByIP(string IP, bladeLockType readLock, bladeLockType writeLock)
+        public lockableBladeSpec getBladeByIP(string IP, bladeLockType readLock, bladeLockType writeLock, bool permitAccessDuringBIOS = false, bool permitAccessDuringDeployment = false)
         {
-            //lock (connLock)
+            bladeLockType origReadLock = readLock | writeLock;
+            readLock = origReadLock;
+
+            // We need to lock IP addressess, since we're searching by them.
+            readLock = readLock | bladeLockType.lockIPAddresses;
+            readLock = readLock | bladeLockType.lockvmDeployState;
+            readLock = readLock | bladeLockType.lockBIOS;
+
+            lockableBladeSpec toRet = new lockableBladeSpec(conn, IP, readLock, writeLock);
+
+            string sqlCommand = "select * from bladeOwnership " +
+                                "join bladeConfiguration on ownershipKey = bladeConfiguration.ownershipID " +
+                                "where bladeIP = $bladeIP";
+            using (SQLiteCommand cmd = new SQLiteCommand(sqlCommand, conn))
             {
-                // We need to lock IP addressess, since we're searching by them.
-                readLock = readLock | bladeLockType.lockIPAddresses;
-
-                lockableBladeSpec toRet = new lockableBladeSpec(conn, IP, readLock, writeLock);
-
-                string sqlCommand = "select * from bladeOwnership " +
-                                    "join bladeConfiguration on ownershipKey = bladeConfiguration.ownershipID " +
-                                    "where bladeIP = $bladeIP";
-                using (SQLiteCommand cmd = new SQLiteCommand(sqlCommand, conn))
+                cmd.Parameters.AddWithValue("$bladeIP", IP);
+                using (SQLiteDataReader reader = cmd.ExecuteReader())
                 {
-                    cmd.Parameters.AddWithValue("$bladeIP", IP);
-                    using (SQLiteDataReader reader = cmd.ExecuteReader())
+                    if (reader.Read())
                     {
-                        if (reader.Read())
-                        {
-                            toRet.setSpec(new bladeSpec(conn, reader, readLock, writeLock));
-                            return toRet;
-                        }
-                        // No records returned.
-                        toRet.Dispose();
-                        throw new bladeNotFoundException();
+                        bladeSpec newSpec = new bladeSpec(conn, reader, readLock, writeLock);
+
+                        if ((!permitAccessDuringDeployment) && 
+                            newSpec.vmDeployState != VMDeployStatus.notBeingDeployed &&
+                            newSpec.vmDeployState != VMDeployStatus.readyForDeployment)
+                            throw new Exception("Attempt to access blade during VM deployment");
+                        if ((!permitAccessDuringBIOS) && newSpec.currentlyHavingBIOSDeployed)
+                            throw new Exception("Attempt to access blade during BIOS deployment");
+
+                        toRet.setSpec(newSpec);
+
+                        if ((origReadLock & bladeLockType.lockvmDeployState) == 0 &&
+                            (writeLock & bladeLockType.lockvmDeployState) == 0)
+                            toRet.downgradeLocks(bladeLockType.lockvmDeployState, bladeLockType.lockNone);
+
+                        if ((origReadLock & bladeLockType.lockBIOS) == 0 &&
+                            (writeLock & bladeLockType.lockBIOS) == 0)
+                            toRet.downgradeLocks(bladeLockType.lockBIOS, bladeLockType.lockNone);
+
+                        return toRet;
                     }
+                    // No records returned.
+                    toRet.Dispose();
+                    throw new bladeNotFoundException();
                 }
             }
         }
@@ -383,14 +376,12 @@ namespace bladeDirectorWCF
             }
         }
 
-        public disposingListOfBladesAndVMs getBladesAndVMs(Func<bladeSpec, bool> BladeFilter, Func<vmSpec, bool> VMFilter, 
-            bladeLockType lockTypeRead, bladeLockType lockTypeWrite
-            )
+        public disposingListOfBladesAndVMs getBladesAndVMs(Func<bladeSpec, bool> BladeFilter, Func<vmSpec, bool> VMFilter, bladeLockType lockTypeRead, bladeLockType lockTypeWrite, bool permitAccessDuringBIOS = false, bool permitAccessDuringDeployment = false)
         {
             disposingListOfBladesAndVMs toRet = new disposingListOfBladesAndVMs();
             //lock (connLock)
             {
-                toRet.blades = getAllBladeInfo(BladeFilter, lockTypeRead, lockTypeWrite);
+                toRet.blades = getAllBladeInfo(BladeFilter, lockTypeRead, lockTypeWrite, permitAccessDuringBIOS, permitAccessDuringDeployment);
                 toRet.VMs = getAllVMInfo(VMFilter, lockTypeRead, lockTypeWrite);
             }
             return toRet;
@@ -480,7 +471,7 @@ namespace bladeDirectorWCF
                 toConvert.spec.state = bladeStatus.inUseByDirector;
                 // Since we don't know if the blade has been left in a good state (or even if it was a VM server previously) we 
                 // force a power cycle before we use it.
-                toConvert.spec.VMDeployState = VMDeployStatus.needsPowerCycle;
+                toConvert.spec.vmDeployState = VMDeployStatus.needsPowerCycle;
             }
         }
 

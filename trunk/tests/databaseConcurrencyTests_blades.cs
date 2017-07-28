@@ -32,7 +32,7 @@ namespace tests
                     Assert.AreEqual(toDB.iscsiIP, fromDB.spec.iscsiIP);
                     Assert.AreEqual(toDB.lastDeployedBIOS, fromDB.spec.lastDeployedBIOS);
                     Assert.AreEqual(toDB.currentOwner, fromDB.spec.currentOwner);
-                    Assert.AreEqual(toDB.VMDeployState, fromDB.spec.VMDeployState);
+                    Assert.AreEqual(toDB.vmDeployState, fromDB.spec.vmDeployState);
                     Assert.AreEqual(toDB.lastKeepAlive, fromDB.spec.lastKeepAlive);
                     Assert.AreEqual(toDB.nextOwner, fromDB.spec.nextOwner);
                     Assert.AreEqual(toDB.state, fromDB.spec.state);
@@ -172,6 +172,38 @@ namespace tests
                     failIfThrow(() => { refA.spec.currentOwner = "Dave_Lister"; });
                     failIfThrow(() => { Debug.WriteLine(refA.spec.lastDeployedBIOS); });
                     failIfThrow(() => { Debug.WriteLine(refA.spec.currentOwner); });
+                }
+            }
+        }
+
+        [TestMethod]
+        public void testDBObjectWritePermsImplyReadPerms()
+        {
+            using (hostDB db = new hostDB())
+            {
+                bladeSpec toDB = new bladeSpec(db.conn, "1.1.1.1", "2.1.1.1", "3.1.1.1", 1234);
+                db.addNode(toDB);
+
+                using (lockableBladeSpec fromDB = db.getBladeByIP("1.1.1.1", bladeLockType.lockNone, bladeLockType.lockOwnership))
+                {
+                    Debug.WriteLine(fromDB.spec.currentlyBeingAVMServer);
+                    fromDB.spec.currentlyBeingAVMServer = true;
+                }
+            }
+        }
+
+        [TestMethod]
+        public void testDBObjectWritePermsImplyReadPermsViaUpgrade()
+        {
+            using (hostDB db = new hostDB())
+            {
+                bladeSpec toDB = new bladeSpec(db.conn, "1.1.1.1", "2.1.1.1", "3.1.1.1", 1234);
+                db.addNode(toDB);
+
+                using (lockableBladeSpec fromDB = db.getBladeByIP("1.1.1.1", bladeLockType.lockNone, bladeLockType.lockNone))
+                {
+                    fromDB.upgradeLocks(bladeLockType.lockNone, bladeLockType.lockOwnership);
+                    Debug.WriteLine(fromDB.spec.currentlyBeingAVMServer);
                 }
             }
         }

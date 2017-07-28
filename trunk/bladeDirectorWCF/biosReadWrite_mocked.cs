@@ -106,33 +106,38 @@ namespace bladeDirectorWCF
             catch (Exception)
             {
                 paramTyped.result = new result(resultCode.success);
-                paramTyped.isFinished = true;
+            }
+            finally
+            {
+                using (lockableBladeSpec blade = paramTyped.db.getBladeByIP(paramTyped.nodeIP, bladeLockType.lockBIOS, bladeLockType.lockBIOS, true, true))
+                {
+                    blade.spec.currentlyHavingBIOSDeployed = false;
+                    paramTyped.isFinished = true;
+                }
             }
         }
 
         private static void mockedBiosThread(mockedBiosThreadParams param)
         {
-            using (lockableBladeSpec blade = param.db.getBladeByIP(param.nodeIP, bladeLockType.lockBIOS, bladeLockType.lockBIOS))
+            using (lockableBladeSpec blade = param.db.getBladeByIP(param.nodeIP, bladeLockType.lockBIOS, bladeLockType.lockBIOS, true, true))
             {
                 blade.spec.currentlyHavingBIOSDeployed = true;
             }
             param.isStarted = true;
 
-            using (param.db.getBladeByIP(param.nodeIP, bladeLockType.lockLongRunningBIOS, bladeLockType.lockLongRunningBIOS))
+            using (param.db.getBladeByIP(param.nodeIP, bladeLockType.lockLongRunningBIOS, bladeLockType.lockLongRunningBIOS, true, true))
             {
                 while (true)
                 {
                     if (DateTime.Now > param.deadline)
                     {
                         param.result = new result(resultCode.success);
-                        param.isFinished = true;
                         return;
                     }
 
                     if (param.isCancelled)
                     {
                         param.result = new result(resultCode.cancelled);
-                        param.isFinished = true;
                         return;
                     }
 

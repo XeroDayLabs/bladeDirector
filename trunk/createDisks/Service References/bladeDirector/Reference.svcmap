@@ -18,21 +18,20 @@
     <ServiceContractMappings />
   </ClientOptions>
   <MetadataSources>
-    <MetadataSource Address="http://localhost/bladedirector" Protocol="http" SourceId="1" />
+    <MetadataSource Address="http://localhost/bladedirector/mex" Protocol="mex" SourceId="1" />
   </MetadataSources>
   <Metadata>
-    <MetadataFile FileName="bladeDirector.xsd" MetadataType="Schema" ID="4fe17381-bd99-4e61-a386-0cb6db1f363a" SourceId="1" SourceUrl="http://127.0.0.1/bladeDirector?xsd=xsd3" />
-    <MetadataFile FileName="bladeDirector1.xsd" MetadataType="Schema" ID="e885fb4e-cea8-402b-842c-fd46e5d35d42" SourceId="1" SourceUrl="http://127.0.0.1/bladeDirector?xsd=xsd8" />
-    <MetadataFile FileName="bladeDirector2.xsd" MetadataType="Schema" ID="ba0d6f56-0c62-49e5-9731-abcafe6291e7" SourceId="1" SourceUrl="http://127.0.0.1/bladeDirector?xsd=xsd1" />
-    <MetadataFile FileName="bladeDirector.disco" MetadataType="Disco" ID="a3372753-661c-4baf-8871-7ddf5e344f90" SourceId="1" SourceUrl="http://127.0.0.1/bladeDirector?disco" />
-    <MetadataFile FileName="bladeDirector3.xsd" MetadataType="Schema" ID="b66631bb-96b8-41ec-b48e-d189bc457431" SourceId="1" SourceUrl="http://127.0.0.1/bladeDirector?xsd=xsd4" />
-    <MetadataFile FileName="bladeDirector4.xsd" MetadataType="Schema" ID="a6105c76-38a7-4d07-8b5c-ac67d58d28f6" SourceId="1" SourceUrl="http://127.0.0.1/bladeDirector?xsd=xsd2" />
-    <MetadataFile FileName="bladeDirector5.xsd" MetadataType="Schema" ID="6a1c138a-8e64-4efb-be94-70299c9444d3" SourceId="1" SourceUrl="http://127.0.0.1/bladeDirector?xsd=xsd6" />
-    <MetadataFile FileName="bladeDirector6.xsd" MetadataType="Schema" ID="8f07ea99-ea16-4d2c-b64c-c2d0f771797c" SourceId="1" SourceUrl="http://127.0.0.1/bladeDirector?xsd=xsd0" />
-    <MetadataFile FileName="bladeDirector7.xsd" MetadataType="Schema" ID="3f865aa0-4a4a-403a-9b02-7fe7ad57d33f" SourceId="1" SourceUrl="http://127.0.0.1/bladeDirector?xsd=xsd9" />
-    <MetadataFile FileName="bladeDirector8.xsd" MetadataType="Schema" ID="315334e2-6206-486c-b14f-bd9f57160082" SourceId="1" SourceUrl="http://127.0.0.1/bladeDirector?xsd=xsd7" />
-    <MetadataFile FileName="services.wsdl" MetadataType="Wsdl" ID="f3d33528-bb46-4715-b6cd-bbcb4d08ebb9" SourceId="1" SourceUrl="http://127.0.0.1/bladeDirector?wsdl" />
-    <MetadataFile FileName="bladeDirector9.xsd" MetadataType="Schema" ID="6b49d0ce-d1da-4b55-9273-c1a6d3c8e163" SourceId="1" SourceUrl="http://127.0.0.1/bladeDirector?xsd=xsd5" />
+    <MetadataFile FileName="service.wsdl" MetadataType="Wsdl" ID="a5c54bbc-2c86-4d4a-b784-5930c8be7295" SourceId="1" SourceUrl="http://localhost/bladedirector/mex" />
+    <MetadataFile FileName="service.xsd" MetadataType="Schema" ID="274289f2-b5cc-4b0a-9f26-ae992512fa07" SourceId="1" SourceUrl="http://localhost/bladedirector/mex" />
+    <MetadataFile FileName="bladeDirectorWCF.xsd" MetadataType="Schema" ID="7e2c22a3-3520-46c8-9f72-6ee43d299f17" SourceId="1" SourceUrl="http://localhost/bladedirector/mex" />
+    <MetadataFile FileName="service1.xsd" MetadataType="Schema" ID="55d102d3-8d59-4a4f-9e68-31b1ee804c6f" SourceId="1" SourceUrl="http://localhost/bladedirector/mex" />
+    <MetadataFile FileName="Arrays.xsd" MetadataType="Schema" ID="3c8e8189-211e-45b9-a3ac-e52590dcbf97" SourceId="1" SourceUrl="http://localhost/bladedirector/mex" />
+    <MetadataFile FileName="createDisks.xsd" MetadataType="Schema" ID="d5bdaabb-6274-45dd-83ae-07bbe659995a" SourceId="1" SourceUrl="http://localhost/bladedirector/mex" />
+    <MetadataFile FileName="System.Data.SQLite.xsd" MetadataType="Schema" ID="be372d54-218a-4ed8-bb8f-07bf1593f8b8" SourceId="1" SourceUrl="http://localhost/bladedirector/mex" />
+    <MetadataFile FileName="System.Data.Common.xsd" MetadataType="Schema" ID="7fd050dc-1962-49a0-aa7c-882607dbae71" SourceId="1" SourceUrl="http://localhost/bladedirector/mex" />
+    <MetadataFile FileName="System.ComponentModel.xsd" MetadataType="Schema" ID="f419e8e2-9bbc-4dcd-b0af-177671d8913f" SourceId="1" SourceUrl="http://localhost/bladedirector/mex" />
+    <MetadataFile FileName="System.xsd" MetadataType="Schema" ID="8985e917-4794-4873-8c5d-3ba28483fd9f" SourceId="1" SourceUrl="http://localhost/bladedirector/mex" />
+    <MetadataFile FileName="System.Data.xsd" MetadataType="Schema" ID="768910d0-2b71-4fb3-a67a-fc3106a83933" SourceId="1" SourceUrl="http://localhost/bladedirector/mex" />
   </Metadata>
   <Extensions>
     <ExtensionFile FileName="configuration91.svcinfo" Name="configuration91.svcinfo" />

@@ -33,7 +33,7 @@ namespace bladeDirectorWCF
 
         public readonly hostDB db;
 
-        private Dictionary<string, VMThreadState> _VMDeployState = new Dictionary<string, VMThreadState>();
+        private Dictionary<string, VMThreadState> _vmDeployState = new Dictionary<string, VMThreadState>();
 
         private Dictionary<string, inProgressOperation> _currentlyRunningLogIns = new Dictionary<string, inProgressOperation>();
         private Dictionary<string, inProgressOperation> _currentlyRunningReleases = new Dictionary<string, inProgressOperation>();
@@ -84,17 +84,20 @@ namespace bladeDirectorWCF
 
         public void addLogEvent(string newEntry)
         {
+            Debug.WriteLine(newEntry);
             lock (_logEvents)
             {
                 _logEvents.Add(DateTime.Now + " : " + newEntry);
             }
         }
 
-        public hypervisor makeHypervisorForVM(string bladeIP, string VMIP)
+        public hypervisor makeHypervisorForVM(string bladeIP, string VMIP, bool permitAccessDuringBIOS, bool permitAccessDuringDeploy)
         {
-            using(var blade = db.getBladeByIP(bladeIP, bladeLockType.lockNone, bladeLockType.lockNone))
+            using (lockableBladeSpec blade = db.getBladeByIP(bladeIP, bladeLockType.lockIPAddresses, bladeLockType.lockNone, permitAccessDuringBIOS, permitAccessDuringDeploy))
             {
-                using (lockableVMSpec VM = db.getVMByIP(VMIP, bladeLockType.lockNone, bladeLockType.lockNone))
+                using (lockableVMSpec VM = db.getVMByIP(VMIP,
+                    bladeLockType.lockIPAddresses | bladeLockType.lockSnapshot | bladeLockType.lockOwnership | bladeLockType.lockVirtualHW,
+                    bladeLockType.lockNone))
                 {
                     return makeHypervisorForVM(VM, blade);
                 }
@@ -103,7 +106,7 @@ namespace bladeDirectorWCF
 
         public hypervisor makeHypervisorForBlade_ESXi(string bladeIP)
         {
-            using (var blade = db.getBladeByIP(bladeIP, bladeLockType.lockSnapshot, bladeLockType.lockNone))
+            using (lockableBladeSpec blade = db.getBladeByIP(bladeIP, bladeLockType.lockSnapshot, bladeLockType.lockNone, true, true))
             {
                 return makeHypervisorForBlade_ESXi(blade);
             }
@@ -129,6 +132,8 @@ namespace bladeDirectorWCF
                 reqBlade.spec.currentOwner = requestorID;
                 reqBlade.spec.state = bladeStatus.inUse;
                 reqBlade.spec.lastKeepAlive = DateTime.Now;
+                reqBlade.spec.currentlyBeingAVMServer = false;
+                reqBlade.spec.vmDeployState = VMDeployStatus.notBeingDeployed;
 
                 string msg = "Blade " + requestorID + " requested blade " + bladeIP + "(success, blade was idle)";
                 addLogEvent(msg);
@@ -253,35 +258,124 @@ namespace bladeDirectorWCF
 
         private void logInBlocking(inProgressOperation login)
         {
-            // Lock with almost everything, but not the IP-addresses lock, since we don't change that. 
-            using (disposingListOfBladesAndVMs currentlyOwned = db.getBladesAndVMs(
-                x =>  x.currentOwner == login.hostIP,
-                x => (x.currentOwner == "vmserver" && x.nextOwner == login.hostIP) |  x.currentOwner == login.hostIP ,
-                bladeLockType.lockVMCreation | bladeLockType.lockBIOS | bladeLockType.lockSnapshot | bladeLockType.lockNASOperations | bladeLockType.lockOwnership | bladeLockType.lockVMDeployState | bladeLockType.lockVirtualHW,
-                bladeLockType.lockVMCreation | bladeLockType.lockBIOS | bladeLockType.lockSnapshot | bladeLockType.lockNASOperations | bladeLockType.lockOwnership | bladeLockType.lockVMDeployState))
+            try
             {
-                // Lock all hosts that are either owner by this owner, or that we are preparing for this owner.
-                IEnumerable<lockableVMSpec> bootingVMs = currentlyOwned.VMs.Where(x => x.spec.currentOwner == "vmserver");
-                IEnumerable<lockableVMSpec> allocedVMs = currentlyOwned.VMs.Where(x => x.spec.currentOwner == login.hostIP);
-
-                // Clean up anything that we are currently preparing for this owner
-                foreach (lockableVMSpec allocated in bootingVMs)
-                    releaseVM(allocated);
-
-                // Clean up any hosts this blade has left over from any previous run
-                foreach (lockableBladeSpec allocated in currentlyOwned.blades)
-                    releaseBlade(allocated);
-
-                // Clean up any VMs that have finished allocation
-                foreach (lockableVMSpec allocated in allocedVMs)
-                    releaseVM(allocated);
-
-                // And now report that the login is complete.
+                _logInBlocking(login);
+            }
+            catch (Exception e)
+            {
                 lock (_currentlyRunningLogIns)
                 {
-                    login.status.code = resultCode.success;
+                    login.status= new result(resultCode.genericFail, e.Message + "\n\n" + e.StackTrace);
                     login.isFinished = true;
                 }
+                throw;
+            }
+        }
+
+        private void _logInBlocking(inProgressOperation login)
+        {
+            // Kill off VMs first, and then physical blades.
+            // TODO: lock properly, so that no new VMs can be created before we destroy the physical blades
+
+            using (disposingList<lockableBladeSpec> currentlyOwned = db.getAllBladeInfo(
+                x => x.currentOwner == login.hostIP, bladeLockType.lockOwnership, bladeLockType.lockOwnership, true, true))
+            {
+                addLogEvent("aaaaaaaaaaa");
+            }
+
+            // Destroy any VMs currently being deployed
+            using (disposingList<lockableVMSpec> bootingVMs = db.getAllVMInfo(
+                x => (x.currentOwner == "vmserver" && x.nextOwner == login.hostIP), 
+                bladeLockType.lockOwnership, bladeLockType.lockOwnership))
+            {
+                using (disposingList<lockableBladeSpec> currentlyOwned = db.getAllBladeInfo(
+                    x => x.currentOwner == login.hostIP, bladeLockType.lockOwnership, bladeLockType.lockOwnership, true, true))
+                {
+                    addLogEvent("dddddddddddd");
+                }
+
+                foreach (lockableVMSpec allocated in bootingVMs)
+                {
+                    using (disposingList<lockableBladeSpec> currentlyOwned = db.getAllBladeInfo(
+                        x => x.currentOwner == login.hostIP, bladeLockType.lockOwnership, bladeLockType.lockOwnership, true, true))
+                    {
+                        addLogEvent("eeeeeeeeeeee");
+                    }
+
+                    allocated.upgradeLocks(bladeLockType.lockVMCreation | bladeLockType.lockBIOS | bladeLockType.lockSnapshot | bladeLockType.lockNASOperations | bladeLockType.lockvmDeployState | bladeLockType.lockVirtualHW,
+                        bladeLockType.lockVMCreation | bladeLockType.lockBIOS | bladeLockType.lockSnapshot | bladeLockType.lockNASOperations | bladeLockType.lockvmDeployState);
+
+                    using (disposingList<lockableBladeSpec> currentlyOwned = db.getAllBladeInfo(
+                         x => x.currentOwner == login.hostIP, bladeLockType.lockOwnership, bladeLockType.lockOwnership, true, true))
+                    {
+                        addLogEvent("ggggggggggggg");
+                    }
+                    
+                    releaseVM(allocated, 
+                        bladeLockType.lockVMCreation | bladeLockType.lockBIOS | bladeLockType.lockSnapshot | bladeLockType.lockNASOperations | bladeLockType.lockvmDeployState | bladeLockType.lockVirtualHW,
+                        bladeLockType.lockVMCreation | bladeLockType.lockBIOS | bladeLockType.lockSnapshot | bladeLockType.lockNASOperations | bladeLockType.lockvmDeployState);
+
+                    using (disposingList<lockableBladeSpec> currentlyOwned = db.getAllBladeInfo(
+                         x => x.currentOwner == login.hostIP, bladeLockType.lockOwnership, bladeLockType.lockOwnership, true, true))
+                    {
+                        addLogEvent("ffffffffffff");
+                    }
+                }
+            }
+
+            using (disposingList<lockableBladeSpec> currentlyOwned = db.getAllBladeInfo(
+                x => x.currentOwner == login.hostIP, bladeLockType.lockOwnership, bladeLockType.lockOwnership, true, true))
+            {
+                addLogEvent("bbbbbbbbbb");
+            }
+
+            // And any VMs that have finished allocation.
+            using (disposingList<lockableVMSpec> bootingVMs = db.getAllVMInfo(
+                x => (x.currentOwner == login.hostIP),
+                bladeLockType.lockOwnership, bladeLockType.lockOwnership))
+            {
+                foreach (lockableVMSpec allocated in bootingVMs)
+                {
+                    allocated.upgradeLocks(bladeLockType.lockVMCreation | bladeLockType.lockBIOS | bladeLockType.lockSnapshot | bladeLockType.lockNASOperations | bladeLockType.lockvmDeployState | bladeLockType.lockVirtualHW,
+                        bladeLockType.lockVMCreation | bladeLockType.lockBIOS | bladeLockType.lockSnapshot | bladeLockType.lockNASOperations | bladeLockType.lockvmDeployState);
+                    releaseVM(allocated,
+                        bladeLockType.lockVMCreation | bladeLockType.lockBIOS | bladeLockType.lockSnapshot | bladeLockType.lockNASOperations | bladeLockType.lockvmDeployState | bladeLockType.lockVirtualHW,
+                        bladeLockType.lockVMCreation | bladeLockType.lockBIOS | bladeLockType.lockSnapshot | bladeLockType.lockNASOperations | bladeLockType.lockvmDeployState);
+                }
+            }
+
+            using (disposingList<lockableBladeSpec> currentlyOwned = db.getAllBladeInfo(
+                x => x.currentOwner == login.hostIP, bladeLockType.lockOwnership, bladeLockType.lockOwnership, true, true))
+            {
+                addLogEvent("cccccccccccc");
+            }
+
+            // Clean up any fully-allocated blades this blade has left over from any previous run
+            using (disposingList<lockableBladeSpec> currentlyOwned = db.getAllBladeInfo(
+                x => x.currentOwner == login.hostIP, bladeLockType.lockOwnership, bladeLockType.lockOwnership, true, true))
+            {
+                foreach (lockableBladeSpec allocated in currentlyOwned)
+                {
+                    allocated.upgradeLocks(bladeLockType.lockVMCreation | bladeLockType.lockBIOS | bladeLockType.lockSnapshot | bladeLockType.lockNASOperations | bladeLockType.lockvmDeployState | bladeLockType.lockVirtualHW,
+                        bladeLockType.lockVMCreation | bladeLockType.lockBIOS | bladeLockType.lockSnapshot | bladeLockType.lockNASOperations | bladeLockType.lockvmDeployState);
+                    releaseBlade(allocated);
+                    allocated.downgradeLocks(bladeLockType.lockVMCreation | bladeLockType.lockBIOS | bladeLockType.lockSnapshot | bladeLockType.lockNASOperations | bladeLockType.lockvmDeployState | bladeLockType.lockVirtualHW,
+                        bladeLockType.lockVMCreation | bladeLockType.lockBIOS | bladeLockType.lockSnapshot | bladeLockType.lockNASOperations | bladeLockType.lockvmDeployState);
+                }
+            }
+
+            using (disposingList<lockableBladeSpec> currentlyOwned = db.getAllBladeInfo(
+                x => x.currentOwner == login.hostIP, bladeLockType.lockOwnership, bladeLockType.lockOwnership, true, true))
+            {
+                addLogEvent("dddddddddddd");
+            }
+
+            // And now report that the login is complete.
+            lock (_currentlyRunningLogIns)
+            {
+                login.status.code = resultCode.success;
+                login.isFinished = true;
             }
         }
         
@@ -332,8 +426,8 @@ namespace bladeDirectorWCF
             // Lock with almost everything, but not the IP-addresses lock, since we don't change that. 
             using (lockableBladeSpec reqBlade = 
                 db.getBladeByIP(reqBladeIP, 
-                bladeLockType.lockVMCreation | bladeLockType.lockBIOS | bladeLockType.lockSnapshot | bladeLockType.lockNASOperations | bladeLockType.lockOwnership  | bladeLockType.lockVMDeployState, 
-                bladeLockType.lockVMCreation | bladeLockType.lockBIOS | bladeLockType.lockSnapshot | bladeLockType.lockNASOperations | bladeLockType.lockOwnership  | bladeLockType.lockVMDeployState))
+                bladeLockType.lockVMCreation | bladeLockType.lockBIOS | bladeLockType.lockSnapshot | bladeLockType.lockNASOperations | bladeLockType.lockOwnership  | bladeLockType.lockvmDeployState, 
+                bladeLockType.lockVMCreation | bladeLockType.lockBIOS | bladeLockType.lockSnapshot | bladeLockType.lockNASOperations | bladeLockType.lockOwnership  | bladeLockType.lockvmDeployState))
             {
                 if (!force)
                 {
@@ -359,7 +453,7 @@ namespace bladeDirectorWCF
                 result BIOSProgress = biosRWEngine.checkBIOSOperationProgress(toRelease.spec.bladeIP);
                 while (BIOSProgress.code == resultCode.pending)
                 {
-                    Debug.WriteLine("Waiting for blade " + toRelease.spec.bladeIP + " to cancel BIOS operation...");
+                    addLogEvent("Waiting for blade " + toRelease.spec.bladeIP + " to cancel BIOS operation...");
                     Thread.Sleep(TimeSpan.FromSeconds(3));
                     BIOSProgress = biosRWEngine.checkBIOSOperationProgress(toRelease.spec.bladeIP);
                 }
@@ -370,9 +464,35 @@ namespace bladeDirectorWCF
             // Reset any VM server the blade may be
             if (toRelease.spec.currentlyBeingAVMServer)
             {
-                // TODO: cancel VM deployment process
-
                 toRelease.spec.currentlyBeingAVMServer = false;
+/*
+                // Is it currently being deployed?
+                if (toRelease.spec.vmDeployState != VMDeployStatus.notBeingDeployed &&
+                    toRelease.spec.vmDeployState != VMDeployStatus.failed)
+                {
+                    // Oh, it is being deployed. Cancel any deploys that reference this blade.
+                    KeyValuePair<string, VMThreadState>[] deployingChildVMs;
+                    lock (_vmDeployState)
+                    {
+                        deployingChildVMs = _vmDeployState.Where(x => x.Value.vmServerIP == toRelease.spec.bladeIP).ToArray();
+
+                        foreach (KeyValuePair<string, VMThreadState> kvp in deployingChildVMs)
+                            kvp.Value.deployDeadline = DateTime.MinValue;
+                    }
+
+                    foreach (KeyValuePair<string, VMThreadState> childVM in deployingChildVMs)
+                    {
+                        while (true)
+                        {
+                            if (childVM.Value.currentProgress.result.code != resultCode.pending)
+                                break;
+                            addLogEvent("Waiting for VM " + childVM.Value.childVMIP + " to cancel VM deployment operation...");
+                            Thread.Sleep(TimeSpan.FromSeconds(3));
+                        }
+                    }
+                }*/
+
+                // OK, all deployments are finished. Release any VMs that succeeded.
                 List<vmSpec> childVMs = db.getVMByVMServerIP_nolocking(toRelease.spec.bladeIP);
                 foreach (vmSpec child in childVMs)
                 {
@@ -407,50 +527,69 @@ namespace bladeDirectorWCF
         private result releaseVM(string reqBladeIP)
         {
             using (lockableVMSpec lockedVM = db.getVMByIP(reqBladeIP,
-                bladeLockType.lockOwnership | bladeLockType.lockIPAddresses | bladeLockType.lockSnapshot | bladeLockType.lockVirtualHW,
+                bladeLockType.lockOwnership | bladeLockType.lockSnapshot | bladeLockType.lockVirtualHW,
                 bladeLockType.lockOwnership))
             {
-                return releaseVM(lockedVM);
+                return releaseVM(lockedVM, 
+                    bladeLockType.lockOwnership | bladeLockType.lockSnapshot | bladeLockType.lockVirtualHW,
+                    bladeLockType.lockOwnership);
             }
         }
 
-        private result releaseVM(lockableVMSpec lockedVM)
+        private result releaseVM(lockableVMSpec lockedVM, bladeLockType additionalPrivsToDowngradeRead, bladeLockType additionalPrivsToDowngradeWrite)
         {
             // If we are currently being deployed, we must wait until we are at a point wherby we can abort the deploy. We need
             // to be careful how to lock here, otherwise we risk deadlocking.
             bool islocked = false;
             try
             {
-                Monitor.Enter(_VMDeployState);
+                Monitor.Enter(_vmDeployState);
                 islocked = true;
 
-                string waitToken = handleTypes.REL + "_" + lockedVM.spec.VMIP.GetHashCode();
+                string waitToken = handleTypes.DEP + "_" + lockedVM.spec.VMIP.GetHashCode();
 
-                if (_VMDeployState.ContainsKey(waitToken) &&
-                    _VMDeployState[waitToken].currentProgress.result.code != resultCode.pending)
+                if (_vmDeployState.ContainsKey(waitToken) &&
+                    _vmDeployState[waitToken].currentProgress.result.code == resultCode.pending)
                 {
                     // Ahh, this VM is currently being deployed. We can't release it until the thread doing the deployment says so.
-                    _VMDeployState[waitToken].deployDeadline = DateTime.MinValue;
-                    while (_VMDeployState[waitToken].currentProgress.result.code == resultCode.pending)
+                    _vmDeployState[waitToken].deployDeadline = DateTime.MinValue;
+                    while (_vmDeployState[waitToken].currentProgress.result.code == resultCode.pending)
                     {
                         _logEvents.Add("Waiting for VM deploy on " + lockedVM.spec.VMIP + " to cancel");
 
-                        Monitor.Exit(_VMDeployState);
+                        Monitor.Exit(_vmDeployState);
                         islocked = false;
                         Thread.Sleep(TimeSpan.FromSeconds(10));
 
-                        Monitor.Enter(_VMDeployState);
+                        Monitor.Enter(_vmDeployState);
                         islocked = true;
+
+                        using (disposingList<lockableBladeSpec> currentlyOwned = db.getAllBladeInfo(
+                             x => true, bladeLockType.lockOwnership, bladeLockType.lockOwnership, true, true))
+                        {
+                            addLogEvent("j...");
+                        }
                     }
+
+                    using (disposingList<lockableBladeSpec> currentlyOwned = db.getAllBladeInfo(
+                         x => true, bladeLockType.lockOwnership, bladeLockType.lockOwnership, true, true))
+                    {
+                        addLogEvent("hhhhhhhhhhhhhhhh");
+                    }
+                }
+                using (disposingList<lockableBladeSpec> currentlyOwned = db.getAllBladeInfo(
+                     x => true, bladeLockType.lockOwnership, bladeLockType.lockOwnership, true, true))
+                {
+                    addLogEvent("iiiiiiiiiiiiiiiiii");
                 }
             }
             finally
             {
                 if (islocked)
-                    Monitor.Exit(_VMDeployState);
+                    Monitor.Exit(_vmDeployState);
             }
-
-            // VMs always get destroyed on release. First, though, power the relevant VM off on the hypervisor.
+            /*
+            // VMs always get destroyed on release. First, though, power the relevant blade off on the hypervisor.
             try
             {
                 using (lockableBladeSpec parentBlade = db.getBladeByIP(lockedVM.spec.parentBladeIP, bladeLockType.lockOwnership, bladeLockType.lockNone))
@@ -464,27 +603,31 @@ namespace bladeDirectorWCF
             catch (SocketException) { }
             catch (WebException) { }
             catch (VMNotFoundException) { } // ?!
+            
+            // Now, if the VM server is empty, we can power it off. Otherwise, just power off the VM instead.
+            vmserverTotals VMTotals = db.getVMServerTotalsByVMServerIP(lockedVM.spec.parentBladeIP);
+            if (VMTotals.VMs == 0)
+            {
+                using (lockableBladeSpec parentBlade = db.getBladeByIP(lockedVM.spec.parentBladeIP,
+                    bladeLockType.lockOwnership | bladeLockType.lockBIOS | bladeLockType.lockvmDeployState,
+                    bladeLockType.lockOwnership | bladeLockType.lockBIOS))
+                {
+                    VMTotals = db.getVMServerTotalsByVMServerIP(lockedVM.spec.parentBladeIP);
+
+                    if (VMTotals.VMs == 0)
+                        return releaseBlade(parentBlade);
+                }
+            }
+            */
+            lockedVM.downgradeLocks(additionalPrivsToDowngradeRead, additionalPrivsToDowngradeWrite);
 
             // Now we dispose the blade, and then specify that the next release of the blade (ie, that done by the parent) should
             // be inhibited. This means the caller is left with a disposed, invalid, VM, but is able to call .Dispose (or leave a
             // using() {..} block) as normal.
             lockedVM.deleteOnRelease = true;
             lockedVM.Dispose();
-            lockedVM.inhibitNextDisposal();
-
-            // Now, if the VM server is empty, we can power it off. Otherwise, just power off the VM instead.
-            vmserverTotals VMTotals = db.getVMServerTotalsByVMServerIP(lockedVM.spec.parentBladeIP);
-            {
-                if (VMTotals.VMs == 0)
-                {
-                    using (lockableBladeSpec parentBlade = db.getBladeByIP(lockedVM.spec.parentBladeIP, 
-                        bladeLockType.lockOwnership | bladeLockType.lockBIOS,
-                        bladeLockType.lockOwnership | bladeLockType.lockBIOS))
-                    {
-                        return releaseBlade(parentBlade);
-                    }
-                }
-            }
+            lockedVM.inhibitNextDisposal(); 
+            
             return new result(resultCode.success);
         }
 
@@ -517,7 +660,7 @@ namespace bladeDirectorWCF
                 return new resultAndBladeName(resultCode.genericFail, null, msg);
             }
 
-            lock (_VMDeployState) // lock this since we're accessing the _VMDeployState variable
+            lock (_vmDeployState) // lock this since we're accessing the _vmDeployState variable
             {
                 lockableBladeSpec freeVMServer = findAndLockBladeForNewVM(hwSpec);
                 if (freeVMServer == null)
@@ -533,15 +676,15 @@ namespace bladeDirectorWCF
                     {
                         waitToken = handleTypes.DEP + "_" + childVM.spec.VMIP.GetHashCode();
 
-                        if (_VMDeployState.ContainsKey(waitToken))
+                        if (_vmDeployState.ContainsKey(waitToken))
                         {
-                            if (_VMDeployState[waitToken].currentProgress.result.code == resultCode.pending )
+                            if (_vmDeployState[waitToken].currentProgress.result.code == resultCode.pending )
                             {
                                 // Oh, a deploy is already in progress for this VM. This should never happen, since .createChildVM
                                 // should never return an already-existing VM.
                                 return new resultAndBladeName(resultCode.bladeInUse, waitToken, "Newly-created blade is already being deployed");
                             }
-                            _VMDeployState.Remove(waitToken);
+                            _vmDeployState.Remove(waitToken);
                         }
 
                         // Now start a new thread, which will ensure the VM server is powered up and will then add the child VMs.
@@ -556,10 +699,7 @@ namespace bladeDirectorWCF
                             deployDeadline = DateTime.Now + TimeSpan.FromMinutes(25),
                             currentProgress = new resultAndBladeName(resultCode.pending, waitToken, null)
                         };
-                        _VMDeployState.Add(waitToken, deployState);
-                        // We must dispose of our childVM before we start the worker thread, to ensure it is flushed to the DB.
-                        // FIXME/TODO: how do we ensure that no-one else will use the child VM before our thread claims it?
-                        // ^^^ by downgrading and holding the lock?
+                        _vmDeployState.Add(waitToken, deployState);
                     }
                     worker.Start(waitToken);
                     return new resultAndBladeName(resultCode.pending, waitToken, "Thread created");
@@ -573,10 +713,9 @@ namespace bladeDirectorWCF
 //            checkKeepAlives();
             // First, we need to find a blade to use as a VM server. Do we have a free VM server? If so, just use that.
             // We create a new bladeSpec to make sure that we don't double-release when the disposingList is released.
-            using (disposingList<lockableBladeSpec> serverList = db.getAllBladeInfo(x => true,
-                bladeLockType.lockOwnership | bladeLockType.lockVMDeployState | bladeLockType.lockVMCreation,
-                bladeLockType.lockOwnership | bladeLockType.lockVMDeployState | bladeLockType.lockVMCreation 
-                ))
+            using (disposingList<lockableBladeSpec> serverList = db.getAllBladeInfo( x => true,
+                bladeLockType.lockVMCreation | bladeLockType.lockOwnership,
+                bladeLockType.lockNone, true, true))
             {
                 lockableBladeSpec[] freeVMServerList = serverList.Where(x => 
                     x.spec.currentlyBeingAVMServer && x.spec.canAccommodate(db, hwSpec)).ToArray();
@@ -590,18 +729,36 @@ namespace bladeDirectorWCF
                 else
                 {
                     // Nope, no free VM server. Maybe we can make a new one.
-                    IEnumerable<lockableBladeSpec> freeNodes = serverList.Where(x => x.spec.currentOwner == null);
-                    foreach (lockableBladeSpec freeNode in freeNodes)
+                    foreach (lockableBladeSpec spec in serverList)
                     {
-                        result resp = requestBlade(freeNode, "vmserver");
-                        if (resp.code == resultCode.success)
+                        spec.upgradeLocks(bladeLockType.lockvmDeployState | bladeLockType.lockBIOS, bladeLockType.lockNone);
+                        if (spec.spec.currentOwner != null ||
+                            spec.spec.currentlyBeingAVMServer ||
+                            spec.spec.currentlyHavingBIOSDeployed)
                         {
-                            // Great, we allocated a new VM server. Note that we return this freeVMServer locked, so we don't 'use ..'
-                            // it here.
-                            freeVMServer = freeNode;
-                            db.makeIntoAVMServer(freeVMServer);
-                            freeVMServer.inhibitNextDisposal();
-                            break;
+                            spec.downgradeLocks(bladeLockType.lockvmDeployState | bladeLockType.lockBIOS, bladeLockType.lockNone);
+                            continue;
+                        }
+                        spec.upgradeLocks(bladeLockType.lockNone, 
+                            bladeLockType.lockvmDeployState | bladeLockType.lockBIOS | bladeLockType.lockOwnership);
+
+                        try
+                        {
+                            result resp = requestBlade(spec, "vmserver");
+                            if (resp.code == resultCode.success)
+                            {
+                                // Great, we allocated a new VM server. Note that we return this freeVMServer locked, so we don't 'use ..'
+                                // it here.
+                                freeVMServer = spec;
+                                db.makeIntoAVMServer(freeVMServer);
+                                freeVMServer.inhibitNextDisposal();
+                                break;
+                            }
+                        }
+                        finally
+                        {
+                            spec.downgradeLocks(bladeLockType.lockvmDeployState | bladeLockType.lockBIOS,
+                                bladeLockType.lockvmDeployState | bladeLockType.lockBIOS | bladeLockType.lockOwnership);
                         }
                     }
 
@@ -663,63 +820,93 @@ namespace bladeDirectorWCF
         {
             string operationHandle = (string)param;
             VMThreadState threadState;
-            lock (_VMDeployState)
+            lock (_vmDeployState)
             {
-                threadState = _VMDeployState[operationHandle];
+                threadState = _vmDeployState[operationHandle];
             }
 
-            using (lockableVMSpec newVM = db.getVMByIP(threadState.childVMIP,
-                bladeLockType.lockOwnership | bladeLockType.lockIPAddresses | bladeLockType.lockSnapshot | bladeLockType.lockVirtualHW,
-                bladeLockType.lockNone))
+            vmSpec newVM = db.getVMByIP_withoutLocking(threadState.childVMIP);
+            try
             {
-                try
+                result res = _VMServerBootThread(threadState.vmServerIP, newVM, threadState);
+                threadState.currentProgress.bladeName = threadState.childVMIP;
+                threadState.currentProgress.result = res;
+            }
+            catch (Exception e)
+            {
+                string msg = "VMServer boot thread fatal exception: " + e.Message + " at " + e.StackTrace;
+                _logEvents.Add(msg);
+                
+                using (lockableBladeSpec VMServer = db.getBladeByIP(threadState.vmServerIP,
+//                    bladeLockType.lockvmDeployState | bladeLockType.lockOwnership,
+bladeLockType.lockvmDeployState,  // <-- TODO/FIXME: write perms shuold imply read perms, but everything breaks if we don't specify a read lockOwnership here!
+                    bladeLockType.lockvmDeployState | bladeLockType.lockOwnership, true, true))
                 {
-                    result res = _VMServerBootThread(threadState.vmServerIP, newVM, threadState.deployDeadline);
-                    threadState.currentProgress.bladeName = threadState.childVMIP;
-                    threadState.currentProgress.result = res;
+                    // FIXME: what if only one VM fails to deploy, we shouldn't set this to false
+                    VMServer.spec.currentlyBeingAVMServer = false;
+                    VMServer.spec.vmDeployState = VMDeployStatus.failed;
                 }
-                catch (Exception e)
-                {
-                    string msg = "VMServer boot thread fatal exception: " + e.Message + " at " + e.StackTrace;
-                    _logEvents.Add(msg);
-                    threadState.currentProgress.result = new result(resultCode.genericFail, msg);
-                }
+                
+                threadState.currentProgress.result = new result(resultCode.genericFail, msg);
+            }
+            finally
+            {
+                if (threadState.currentProgress.result.code == resultCode.pending)
+                    threadState.currentProgress.result.code = resultCode.genericFail;
             }
         }
 
-        private result _VMServerBootThread(string vmServerIP, lockableVMSpec childVM, DateTime deployDeadline)
+        private result _VMServerBootThread(string vmServerIP, vmSpec childVM_unsafe, VMThreadState threadState)
         {
             // First, bring up the physical machine. It'll get the ESXi ISCSI config and boot up.
             // Ensure only one thread tries to power on each VM server at once, by locking the physical blade. The first thread 
-            // can get the responsilibility of observing the vmServerBootState and power on/off as neccessary.
+            // will get the responsilibility of observing the vmServerBootState and power on/off as neccessary, and then will set
+            // the .vmServerBootState to waitingForPowerUp, and then finally to readyForDeployment.
+            //
+            // We are careful throughout this whole process not to lock either the newly-created VM nor the owning blade for any
+            // long length of time. This is because the .loginblocking/.release code path needs to be able to lock both for write
+            // to almost all of the fields. We carefully copy fields we need, and rely on the .getBladeByIP path denying access
+            // while .VMDeployStatus is not notBeingDeployed.
             long VMServerBladeID;
-            using (lockableBladeSpec VMServer = db.getBladeByIP(vmServerIP, 
-                bladeLockType.lockVMDeployState | bladeLockType.lockSnapshot,
-                bladeLockType.lockVMDeployState ))
+            string VMServerBladeIPAddress;
+
+            bool thisThreadWillPowerUp = false;
+            using (lockableBladeSpec VMServer = db.getBladeByIP(vmServerIP,
+                bladeLockType.lockvmDeployState, bladeLockType.lockvmDeployState, true, true))
             {
-                if (VMServer.spec.VMDeployState == VMDeployStatus.needsPowerCycle)
+                if (VMServer.spec.vmDeployState == VMDeployStatus.needsPowerCycle)
                 {
-                    using (hypervisor hyp = makeHypervisorForBlade_ESXi(VMServer))
+                    thisThreadWillPowerUp = true;
+                    VMServer.spec.vmDeployState = VMDeployStatus.waitingForPowerUp;
+                }
+                VMServerBladeID = VMServer.spec.bladeID.Value;
+                VMServerBladeIPAddress = VMServer.spec.bladeIP;
+            }
+            if (thisThreadWillPowerUp)
+            {
+                try
+                {
+                    using (hypervisor hyp = makeHypervisorForBlade_ESXi(VMServerBladeIPAddress))
                     {
-                        if (deployDeadline < DateTime.Now)
+                        if (threadState.deployDeadline < DateTime.Now)
                             throw new TimeoutException();
 
                         hyp.connect();
 
                         // Write the correct BIOS to the blade, and block until this is complete
-                        result res = biosRWEngine.rebootAndStartWritingBIOSConfiguration(this, VMServer.spec.bladeIP, Resources.VMServerBIOS);
+                        result res = biosRWEngine.rebootAndStartWritingBIOSConfiguration(this, VMServerBladeIPAddress, Resources.VMServerBIOS);
                         if (res.code != resultCode.pending)
                             return res;
 
-                        result progress = biosRWEngine.checkBIOSOperationProgress(VMServer.spec.bladeIP);
+                        result progress = biosRWEngine.checkBIOSOperationProgress(VMServerBladeIPAddress);
                         while (progress.code == resultCode.pending || progress.code == resultCode.unknown)
                         {
                             Thread.Sleep(TimeSpan.FromSeconds(3));
-                            progress = biosRWEngine.checkBIOSOperationProgress(VMServer.spec.bladeIP);
+                            progress = biosRWEngine.checkBIOSOperationProgress(VMServerBladeIPAddress);
                         }
                         if (progress.code != resultCode.success && progress.code != resultCode.pending)
                             return progress;
-                        hyp.powerOn(deployDeadline);
+                        hyp.powerOn(threadState.deployDeadline);
 
                         waitForESXiBootToComplete(hyp);
 
@@ -728,111 +915,140 @@ namespace bladeDirectorWCF
                         // always work first time.
                         _vmServerControl.mountDataStore(hyp, "esxivms", "store.xd.lan", "/mnt/SSDs/esxivms");
                     }
-                    VMServer.spec.VMDeployState = VMDeployStatus.readyForDeployment;
                 }
-                // Store some info about the VM server here.
-                VMServerBladeID = VMServer.spec.bladeID.Value;
+                catch (Exception)
+                {
+                    using (lockableBladeSpec VMServer = db.getBladeByIP(vmServerIP,
+                        bladeLockType.lockvmDeployState, bladeLockType.lockvmDeployState, true, true))
+                    {
+                        VMServer.spec.vmDeployState = VMDeployStatus.failed;
+                    }
+
+                    throw;
+                }
+
+                using (lockableBladeSpec VMServer = db.getBladeByIP(vmServerIP,
+                    bladeLockType.lockvmDeployState, bladeLockType.lockvmDeployState, true, true))
+                {
+                    VMServer.spec.vmDeployState = VMDeployStatus.readyForDeployment;
+                }
+            }
+            else
+            {
+                // Wait for another thread to finish powering this blade on.
+                while (true)
+                {
+                    using (lockableBladeSpec VMServer = db.getBladeByIP(vmServerIP,
+                        bladeLockType.lockvmDeployState, bladeLockType.lockNone, true, true))
+                    {
+                        if (VMServer.spec.vmDeployState == VMDeployStatus.readyForDeployment)
+                            break;
+                        if (VMServer.spec.vmDeployState == VMDeployStatus.failed)
+                            return new result(resultCode.cancelled, "Cancelled due to failure to configure on hardware blade");
+                    }
+                    Thread.Sleep(TimeSpan.FromSeconds(1));
+
+                    if (threadState.deployDeadline < DateTime.Now)
+                        throw new TimeoutException();
+                }
             }
 
             using (hypervisor hyp = makeHypervisorForBlade_ESXi(vmServerIP))
             {
                 // now SSH to the blade and actually create the VM.
-                string destDir = "/vmfs/volumes/esxivms/" + VMServerBladeID + "_" + childVM.spec.vmConfigKey;
-                string destDirDatastoreType = "[esxivms] " + VMServerBladeID + "_" + childVM.spec.vmConfigKey;
+                string destDir = "/vmfs/volumes/esxivms/" + VMServerBladeID + "_" + childVM_unsafe.vmConfigKey;
+                string destDirDatastoreType = "[esxivms] " + VMServerBladeID + "_" + childVM_unsafe.vmConfigKey;
                 string vmxPath = destDir + "/PXETemplate.vmx";
 
-                if (deployDeadline < DateTime.Now)
+                if (threadState.deployDeadline < DateTime.Now)
                     throw new TimeoutException();
 
                 // Remove the VM if it's already there. We don't mind if these commands fail - which they will, if the VM doesn't
                 // exist. We power off by directory and also by name, just in case a previous provision has left the VM hanging around.
                 string dstDatastoreDirEscaped = destDirDatastoreType.Replace("[", "\\[").Replace("]", "\\]");
-                hypervisor.doWithRetryOnSomeExceptions(() => hyp.startExecutable("vim-cmd", "vmsvc/power.off `vim-cmd vmsvc/getallvms | grep \"" + dstDatastoreDirEscaped + "\"`"));
-                hypervisor.doWithRetryOnSomeExceptions(() => hyp.startExecutable("vim-cmd", "vmsvc/power.off `vim-cmd vmsvc/getallvms | grep \"" + childVM.spec.displayName + "\"`"));
-                hypervisor.doWithRetryOnSomeExceptions(() => hyp.startExecutable("vim-cmd", "vmsvc/unregister `vim-cmd vmsvc/getallvms | grep \"" + dstDatastoreDirEscaped + "\"`"));
-                hypervisor.doWithRetryOnSomeExceptions(() => hyp.startExecutable("vim-cmd", "vmsvc/unregister `vim-cmd vmsvc/getallvms | grep \"" + childVM.spec.displayName + "\"`"));
+                hypervisor.doWithRetryOnSomeExceptions(() => { throwIfTimedOut(threadState.deployDeadline); hyp.startExecutable("vim-cmd", "vmsvc/power.off `vim-cmd vmsvc/getallvms | grep \"" + dstDatastoreDirEscaped + "\"`"); }, deadline: threadState.deployDeadline);
+                hypervisor.doWithRetryOnSomeExceptions(() => hyp.startExecutable("vim-cmd", "vmsvc/power.off `vim-cmd vmsvc/getallvms | grep \"" + childVM_unsafe.displayName + "\"`"), deadline: threadState.deployDeadline);
+                hypervisor.doWithRetryOnSomeExceptions(() => hyp.startExecutable("vim-cmd", "vmsvc/unregister `vim-cmd vmsvc/getallvms | grep \"" + dstDatastoreDirEscaped + "\"`"), deadline: threadState.deployDeadline);
+                hypervisor.doWithRetryOnSomeExceptions(() => hyp.startExecutable("vim-cmd", "vmsvc/unregister `vim-cmd vmsvc/getallvms | grep \"" + childVM_unsafe.displayName + "\"`"), deadline: threadState.deployDeadline);
 
                 // copy the template VM into a new directory
-                doCmdAndCheckSuccess(hyp, "rm", " -rf " + destDir);
-                doCmdAndCheckSuccess(hyp, "cp", " -R /vmfs/volumes/esxivms/PXETemplate " + destDir);
+                doCmdAndCheckSuccess(hyp, "rm", " -rf " + destDir, threadState.deployDeadline);
+                doCmdAndCheckSuccess(hyp, "cp", " -R /vmfs/volumes/esxivms/PXETemplate " + destDir, threadState.deployDeadline);
                 // and then customise it.
-                doCmdAndCheckSuccess(hyp, "sed", " -e 's/ethernet0.address[= ].*/ethernet0.address = \"" + childVM.spec.eth0MAC + "\"/g' -i " + vmxPath);
-                doCmdAndCheckSuccess(hyp, "sed", " -e 's/ethernet1.address[= ].*/ethernet1.address = \"" + childVM.spec.eth1MAC + "\"/g' -i " + vmxPath);
-                doCmdAndCheckSuccess(hyp, "sed", " -e 's/displayName[= ].*/displayName = \"" + childVM.spec.displayName + "\"/g' -i " + vmxPath);
-                doCmdAndCheckSuccess(hyp, "sed", " -e 's/memSize[= ].*/memSize = \"" + childVM.spec.memoryMB + "\"/g' -i " + vmxPath);
-                doCmdAndCheckSuccess(hyp, "sed", " -e 's/sched.mem.min[= ].*/sched.mem.min = \"" + childVM.spec.memoryMB + "\"/g' -i " + vmxPath);
-                doCmdAndCheckSuccess(hyp, "sed", " -e 's/sched.mem.minSize[= ].*/sched.mem.minSize = \"" + childVM.spec.memoryMB + "\"/g' -i " + vmxPath);
-                doCmdAndCheckSuccess(hyp, "sed", " -e 's/numvcpus[= ].*/numvcpus = \"" + childVM.spec.cpuCount + "\"/g' -i " + vmxPath);
-                doCmdAndCheckSuccess(hyp, "sed", " -e 's/uuid.bios[= ].*//g' -i " + vmxPath);
-                doCmdAndCheckSuccess(hyp, "sed", " -e 's/uuid.location[= ].*//g' -i " + vmxPath);
-                // doCmdAndCheckSuccess(hyp, "sed", " -e 's/serial0.fileName[= ].*/" + "serial0.fileName = \"telnet://:" + (1000 + threadState.childVM.vmSpecID) + "\"/g' -i " + vmxPath));
+                doCmdAndCheckSuccess(hyp, "sed", " -e 's/ethernet0.address[= ].*/ethernet0.address = \"" + childVM_unsafe.eth0MAC + "\"/g' -i " + vmxPath, threadState.deployDeadline);
+                doCmdAndCheckSuccess(hyp, "sed", " -e 's/ethernet1.address[= ].*/ethernet1.address = \"" + childVM_unsafe.eth1MAC + "\"/g' -i " + vmxPath, threadState.deployDeadline);
+                doCmdAndCheckSuccess(hyp, "sed", " -e 's/displayName[= ].*/displayName = \"" + childVM_unsafe.displayName + "\"/g' -i " + vmxPath, threadState.deployDeadline);
+                doCmdAndCheckSuccess(hyp, "sed", " -e 's/memSize[= ].*/memSize = \"" + childVM_unsafe.memoryMB + "\"/g' -i " + vmxPath, threadState.deployDeadline);
+                doCmdAndCheckSuccess(hyp, "sed", " -e 's/sched.mem.min[= ].*/sched.mem.min = \"" + childVM_unsafe.memoryMB + "\"/g' -i " + vmxPath, threadState.deployDeadline);
+                doCmdAndCheckSuccess(hyp, "sed", " -e 's/sched.mem.minSize[= ].*/sched.mem.minSize = \"" + childVM_unsafe.memoryMB + "\"/g' -i " + vmxPath, threadState.deployDeadline);
+                doCmdAndCheckSuccess(hyp, "sed", " -e 's/numvcpus[= ].*/numvcpus = \"" + childVM_unsafe.cpuCount + "\"/g' -i " + vmxPath, threadState.deployDeadline);
+                doCmdAndCheckSuccess(hyp, "sed", " -e 's/uuid.bios[= ].*//g' -i " + vmxPath, threadState.deployDeadline);
+                doCmdAndCheckSuccess(hyp, "sed", " -e 's/uuid.location[= ].*//g' -i " + vmxPath, threadState.deployDeadline);
+                // doCmdAndCheckSuccess(hyp, "sed", " -e 's/serial0.fileName[= ].*/" + "serial0.fileName = \"telnet://:" + (1000 + threadState.childVM.vmSpecID) + "\"/g' -i " + vmxPath), threadState.deployDeadline);
 
                 // Now add that VM to ESXi, and the VM is ready to use.
                 // We do this with a retry, because I'm seeing it fail occasionally >_<
-                hypervisor.doWithRetryOnSomeExceptions(() =>
-                    doCmdAndCheckSuccess(hyp, "vim-cmd", " solo/registervm " + vmxPath)
-                    );
-
-                if (deployDeadline < DateTime.Now)
-                    throw new TimeoutException();
+                hypervisor.doWithRetryOnSomeExceptions(() => doCmdAndCheckSuccess(hyp, "vim-cmd", " solo/registervm " + vmxPath, threadState.deployDeadline));
             }
 
-            // If the VM already has disks set up, delete them.
-            // Note that we own the VM now, but want to make the VM as if the real requestor owned it.
-            itemToAdd itm = childVM.spec.toItemToAdd(true);
+            itemToAdd itm = childVM_unsafe.toItemToAdd(true);
 
-            if (deployDeadline < DateTime.Now)
+            if (threadState.deployDeadline < DateTime.Now)
                 throw new TimeoutException();
 
             // Now we can select the new snapshot. We must be very careful and do this quickly, with the appropriate write lock
             // held, because it will block the ipxe script creation until we unlock.
-            childVM.upgradeLocks(bladeLockType.lockNone, bladeLockType.lockSnapshot);
-            resultCode snapshotRes = selectSnapshotForVM(childVM, itm.snapshotName);
-            childVM.downgradeLocks(bladeLockType.lockNone, bladeLockType.lockSnapshot);
-
-            if (snapshotRes != resultCode.success)
+            using (lockableVMSpec childVMFromDB = db.getVMByIP(childVM_unsafe.VMIP, bladeLockType.lockSnapshot, bladeLockType.lockSnapshot))
             {
-                Debug.WriteLine(DateTime.Now + childVM.spec.VMIP + ": Failed to select snapshot,  " + snapshotRes);
-                _logEvents.Add(DateTime.Now + childVM.spec.VMIP + ": Failed to select snapshot,  " + snapshotRes);
+                childVMFromDB.spec.currentSnapshot = itm.snapshotName;
             }
 
             using (lockableBladeSpec bladeSpec = db.getBladeByIP(vmServerIP, 
                 bladeLockType.lockNASOperations,
-                bladeLockType.lockNone))
+                bladeLockType.lockNone, true, true))
             {
                 NASAccess nas = getNasForDevice(bladeSpec.spec);
                 createDisks.Program.deleteBlade(itm.cloneName, nas);
 
-                if (deployDeadline < DateTime.Now)
+                if (threadState.deployDeadline < DateTime.Now)
                     throw new TimeoutException();
 
+                // TODO: handle timeouts in makeHypervisorForVM
+
                 // Now create the disks, and customise the VM by naming it appropriately.
-                // TODO: is _basePath correct?
                 createDisks.Program.addBlades(nas, new[] { itm }, itm.snapshotName, _basePath, "bladebasestable-esxi", null, null,
                     (a, b) => {
-                        return (hypervisorWithSpec<hypSpec_vmware>)makeHypervisorForVM(childVM, bladeSpec);
-                    }, deployDeadline);
+                        return (hypervisorWithSpec<hypSpec_vmware>)makeHypervisorForVM(bladeSpec.spec.bladeIP, childVM_unsafe.VMIP, true, true);
+                    }, threadState.deployDeadline);
             }
             // TODO: Ability to deploy transportDriver
 
-            if (deployDeadline < DateTime.Now)
+            if (threadState.deployDeadline < DateTime.Now)
                 throw new TimeoutException();
 
             // All done. We can mark the blade as in use. Again, we are careful to hold write locks for as short a time as is
             // possible, to avoid blocking the PXE-script generation.
-            childVM.upgradeLocks(bladeLockType.lockNone, bladeLockType.lockOwnership);
-            childVM.spec.state = bladeStatus.inUse;
-            childVM.spec.currentOwner = childVM.spec.nextOwner;
-            childVM.spec.nextOwner = null;
-            childVM.spec.lastKeepAlive = DateTime.Now;
-            childVM.downgradeLocks(bladeLockType.lockNone, bladeLockType.lockOwnership);
-
+            using (lockableVMSpec childVMFromDB = db.getVMByIP(childVM_unsafe.VMIP,
+                bladeLockType.lockOwnership | bladeLockType.lockSnapshot,
+                bladeLockType.lockOwnership | bladeLockType.lockvmDeployState))
+            {
+                childVMFromDB.spec.state = bladeStatus.inUse;
+                childVMFromDB.spec.currentOwner = childVMFromDB.spec.nextOwner;
+                childVMFromDB.spec.nextOwner = null;
+                childVMFromDB.spec.lastKeepAlive = DateTime.Now;
+            }
             return new result(resultCode.success);
         }
 
-        private void doCmdAndCheckSuccess(hypervisor hyp, string cmd, string args)
+        private static void throwIfTimedOut(DateTime deployDeadline)
         {
-            executionResult res = hypervisor.doWithRetryOnSomeExceptions(() => hyp.startExecutable(cmd, args));
+            if (deployDeadline < DateTime.Now)
+                throw new TimeoutException();
+        }
+
+        private void doCmdAndCheckSuccess(hypervisor hyp, string cmd, string args, DateTime deadline)
+        {
+            executionResult res = hypervisor.doWithRetryOnSomeExceptions(() => hyp.startExecutable(cmd, args, deadline: deadline));
             if (res.resultCode != 0)
             {
                 _logEvents.Add(string.Format("Command '{0}' with args '{1}' returned failure code {2}; stdout is '{3} and stderr is '{4}'", cmd, args, res.resultCode, res.stdout, res.stderr));
@@ -845,30 +1061,33 @@ namespace bladeDirectorWCF
             if (waitToken == null)
                 return new resultAndBladeName(new result(resultCode.bladeNotFound, "No waitToken supplied"), null);
             
-            if (!Monitor.TryEnter(_VMDeployState, TimeSpan.FromSeconds(15)))
+            if (!Monitor.TryEnter(_vmDeployState, TimeSpan.FromSeconds(15)))
             {
-                return new resultAndBladeName(new result(resultCode.unknown, "unable to acquire lock on VMDeployState after 15 seconds"), waitToken);
+                return new resultAndBladeName(new result(resultCode.unknown, "unable to acquire lock on vmDeployState after 15 seconds"), waitToken);
             }
             try
             {
-                lock (_VMDeployState)
+                lock (_vmDeployState)
                 {
-                    if (!_VMDeployState.ContainsKey(waitToken))
+                    if (!_vmDeployState.ContainsKey(waitToken))
                         return new resultAndBladeName(new result(resultCode.bladeNotFound, "Blade not currently being deployed"), waitToken);
 
-                    return _VMDeployState[waitToken].currentProgress;
+                    return _vmDeployState[waitToken].currentProgress;
                 }
             }
             finally 
             {
-                Monitor.Exit(_VMDeployState);
+                Monitor.Exit(_vmDeployState);
             }
         }
        
         public resultAndBladeName RequestAnySingleNode(string requestorIP)
         {
             // Put blades in an order of preference. First come unused blades, then used blades with an empty queue.
-            using (disposingList<lockableBladeSpec> blades = db.getAllBladeInfo(x => true, bladeLockType.lockOwnership, bladeLockType.lockOwnership))
+            using (disposingList<lockableBladeSpec> blades = db.getAllBladeInfo(
+                x => x.currentlyBeingAVMServer == false && x.currentlyHavingBIOSDeployed == false,
+                bladeLockType.lockOwnership | bladeLockType.lockvmDeployState | bladeLockType.lockBIOS,
+                bladeLockType.lockOwnership | bladeLockType.lockvmDeployState))
             {
                 IEnumerable<lockableBladeSpec> unusedBlades = blades.Where(x => x.spec.currentOwner == null);
                 IEnumerable<lockableBladeSpec> emptyQueueBlades = blades.Where(x => x.spec.currentOwner != null && x.spec.nextOwner == null);
@@ -912,10 +1131,11 @@ namespace bladeDirectorWCF
         {
             checkKeepAlives(requestorIp);
 
-            using (disposingList<lockableBladeSpec> coll = db.getAllBladeInfo(
-                x => (x.currentOwner == requestorIp) && (x.bladeIP == nodeIp), bladeLockType.lockOwnership, bladeLockType.lockNone))
+            using (var blade = db.getBladeByIP(nodeIp, bladeLockType.lockOwnership | bladeLockType.lockBIOS, bladeLockType.lockNone, true, true))
             {
-                return coll.Count > 0;
+                if (blade.spec.currentlyBeingAVMServer == true || blade.spec.currentlyHavingBIOSDeployed == true)
+                    return false;
+                return blade.spec.currentOwner == requestorIp;
             }
         }
 
@@ -1014,7 +1234,7 @@ namespace bladeDirectorWCF
             using (disposingList<lockableBladeSpec> bladeInfo = db.getAllBladeInfo(
                 x => x.currentOwner == forOwnerIP, 
                 bladeLockType.lockOwnership | bladeLockType.lockBIOS,
-                bladeLockType.lockOwnership))
+                bladeLockType.lockOwnership, true, true))
             {
                 foreach (lockableBladeSpec blade in bladeInfo)
                     checkKeepAlives(blade);

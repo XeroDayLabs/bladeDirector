@@ -77,7 +77,17 @@ namespace tests
 
             Assert.IsFalse(failed);
         }
-        
+
+        [TestMethod]
+        public void testLockingWritesImplyReads()
+        {
+            bladeLockCollection uut = new bladeLockCollection(bladeLockType.lockNone, bladeLockType.lockBIOS);
+
+            uut.release(bladeLockType.lockNone, bladeLockType.lockBIOS);
+
+            Assert.IsFalse(uut.assertLocks(bladeLockType.lockNone, bladeLockType.lockNone));
+        }
+
         [TestMethod]
         public void testReaderLockCanBeUpgradedAndThenReleased()
         {

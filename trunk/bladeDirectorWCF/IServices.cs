@@ -49,9 +49,6 @@ namespace bladeDirectorWCF
         [OperationContract]
         resultAndWaitToken rebootAndStartReadingBIOSConfiguration(string NodeIP);
 
-//        [OperationContract]
-//        resultCodeAndBIOSConfig checkBIOSOperationProgress(string NodeIP);
-
         [OperationContract]
         resultAndBladeName RequestAnySingleVM(VMHardwareSpec hwSpec, VMSoftwareSpec swSpec);
 

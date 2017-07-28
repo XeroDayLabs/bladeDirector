@@ -122,7 +122,7 @@ namespace bladeDirectorWCF.Properties {
         ///   Looks up a localized string similar to create table bladeOwnership(
         ///	ownershipKey integer primary key autoincrement,
         ///	state,
-        ///	VMDeployState,
+        ///	vmDeployState,
         ///	currentOwner,
         ///	nextOwner,
         ///	lastKeepAlive,
