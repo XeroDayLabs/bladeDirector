@@ -285,7 +285,8 @@ namespace bladeDirectorWCF
             {
                 foreach (lockableVMSpec allocated in bootingVMs)
                 {
-                    allocated.upgradeLocks(bladeLockType.lockVMCreation | bladeLockType.lockBIOS | bladeLockType.lockSnapshot | bladeLockType.lockNASOperations | bladeLockType.lockvmDeployState | bladeLockType.lockVirtualHW,
+                    allocated.upgradeLocks(
+                        bladeLockType.lockVMCreation | bladeLockType.lockBIOS | bladeLockType.lockSnapshot | bladeLockType.lockNASOperations | bladeLockType.lockvmDeployState | bladeLockType.lockVirtualHW,
                         bladeLockType.lockVMCreation | bladeLockType.lockBIOS | bladeLockType.lockSnapshot | bladeLockType.lockNASOperations | bladeLockType.lockvmDeployState);
 
                     releaseVM(allocated, 
@@ -336,7 +337,9 @@ namespace bladeDirectorWCF
             bladeSpec[] specs = new bladeSpec[bladeIPs.Length];
             int n = 0;
             foreach (string bladeIP in bladeIPs)
-                specs[n++] = new bladeSpec(db.conn, bladeIP, n.ToString(), n.ToString(), (ushort)n, false, VMDeployStatus.needsPowerCycle, "bioscontents", bladeLockType.lockAll, bladeLockType.lockAll);
+                specs[n++] = new bladeSpec(db.conn, bladeIP, n.ToString(), n.ToString(),
+                    (ushort)n, false, VMDeployStatus.notBeingDeployed, "bioscontents", 
+                    bladeLockType.lockAll, bladeLockType.lockAll);
 
             initWithBlades(specs);
         }
@@ -375,11 +378,13 @@ namespace bladeDirectorWCF
 
         private result releaseBlade(string reqBladeIP, string requestorIP, bool force)
         {
-            // Lock with almost everything, but not the IP-addresses lock, since we don't change that. 
+            // Lock with almost everything, but not the IP-addresses lock, since we don't change that. Note that we permit access
+            // during BIOS or VM deployment here, since we check and wait for that in releaseBlade(lockableBladeSpec).
             using (lockableBladeSpec reqBlade = 
                 db.getBladeByIP(reqBladeIP, 
                 bladeLockType.lockVMCreation | bladeLockType.lockBIOS | bladeLockType.lockSnapshot | bladeLockType.lockNASOperations | bladeLockType.lockOwnership  | bladeLockType.lockvmDeployState, 
-                bladeLockType.lockVMCreation | bladeLockType.lockBIOS | bladeLockType.lockSnapshot | bladeLockType.lockNASOperations | bladeLockType.lockOwnership  | bladeLockType.lockvmDeployState))
+                bladeLockType.lockVMCreation | bladeLockType.lockBIOS | bladeLockType.lockSnapshot | bladeLockType.lockNASOperations | bladeLockType.lockOwnership  | bladeLockType.lockvmDeployState,
+                permitAccessDuringBIOS: true, permitAccessDuringDeployment: true))
             {
                 if (!force)
                 {
@@ -394,7 +399,7 @@ namespace bladeDirectorWCF
             }
         }
 
-        private result releaseBlade(lockableBladeSpec toRelease)
+        private result releaseBlade(lockableBladeSpec toRelease, bool omitChildVMs = false)
         {
             // Kill off any pending BIOS deployments ASAP.
             if (toRelease.spec.currentlyHavingBIOSDeployed)
@@ -406,7 +411,16 @@ namespace bladeDirectorWCF
                 while (BIOSProgress.code == resultCode.pending)
                 {
                     addLogEvent("Waiting for blade " + toRelease.spec.bladeIP + " to cancel BIOS operation...");
+
+                    // We need to drop these locks temporarily, since they are needed for the BIOS deploy to cancel.
+                    toRelease.downgradeLocks(bladeLockType.lockBIOS | bladeLockType.lockvmDeployState, 
+                        bladeLockType.lockBIOS | bladeLockType.lockvmDeployState);
+
                     Thread.Sleep(TimeSpan.FromSeconds(3));
+
+                    toRelease.upgradeLocks(bladeLockType.lockBIOS | bladeLockType.lockvmDeployState, 
+                        bladeLockType.lockBIOS | bladeLockType.lockvmDeployState);
+
                     BIOSProgress = biosRWEngine.checkBIOSOperationProgress(toRelease.spec.bladeIP);
                 }
                 // We don't even care if the cancelled operation fails instead of cancelling, at this point. As long as it's over
@@ -414,43 +428,46 @@ namespace bladeDirectorWCF
             }
 
             // Reset any VM server the blade may be
-            if (toRelease.spec.currentlyBeingAVMServer)
+            if (!omitChildVMs)
             {
-                toRelease.spec.currentlyBeingAVMServer = false;
-/*
-                // Is it currently being deployed?
-                if (toRelease.spec.vmDeployState != VMDeployStatus.notBeingDeployed &&
-                    toRelease.spec.vmDeployState != VMDeployStatus.failed)
+                if (toRelease.spec.currentlyBeingAVMServer)
                 {
-                    // Oh, it is being deployed. Cancel any deploys that reference this blade.
-                    KeyValuePair<string, VMThreadState>[] deployingChildVMs;
-                    lock (_vmDeployState)
-                    {
-                        deployingChildVMs = _vmDeployState.Where(x => x.Value.vmServerIP == toRelease.spec.bladeIP).ToArray();
+                    toRelease.spec.currentlyBeingAVMServer = false;
 
-                        foreach (KeyValuePair<string, VMThreadState> kvp in deployingChildVMs)
-                            kvp.Value.deployDeadline = DateTime.MinValue;
-                    }
-
-                    foreach (KeyValuePair<string, VMThreadState> childVM in deployingChildVMs)
+                    // Is it currently being deployed?
+                    if (toRelease.spec.vmDeployState != VMDeployStatus.notBeingDeployed &&
+                        toRelease.spec.vmDeployState != VMDeployStatus.failed)
                     {
-                        while (true)
+                        // Oh, it is being deployed. Cancel any deploys that reference this blade.
+                        KeyValuePair<string, VMThreadState>[] deployingChildVMs;
+                        lock (_vmDeployState)
                         {
-                            if (childVM.Value.currentProgress.result.code != resultCode.pending)
-                                break;
-                            addLogEvent("Waiting for VM " + childVM.Value.childVMIP + " to cancel VM deployment operation...");
-                            Thread.Sleep(TimeSpan.FromSeconds(3));
+                            deployingChildVMs = _vmDeployState.Where(x => x.Value.vmServerIP == toRelease.spec.bladeIP).ToArray();
+
+                            foreach (KeyValuePair<string, VMThreadState> kvp in deployingChildVMs)
+                                kvp.Value.deployDeadline = DateTime.MinValue;
+                        }
+
+                        foreach (KeyValuePair<string, VMThreadState> childVM in deployingChildVMs)
+                        {
+                            while (true)
+                            {
+                                if (childVM.Value.currentProgress.result.code != resultCode.pending)
+                                    break;
+                                addLogEvent("Waiting for VM " + childVM.Value.childVMIP + " to cancel VM deployment operation...");
+                                Thread.Sleep(TimeSpan.FromSeconds(3));
+                            }
                         }
                     }
-                }*/
 
-                // OK, all deployments are finished. Release any VMs that succeeded.
-                List<vmSpec> childVMs = db.getVMByVMServerIP_nolocking(toRelease.spec.bladeIP);
-                foreach (vmSpec child in childVMs)
-                {
-                    result res = releaseVM(child.VMIP);
-                    if (res.code != resultCode.success)
-                        return res;
+                    // OK, all deployments are finished. Release any VMs that succeeded.
+                    List<vmSpec> childVMs = db.getVMByVMServerIP_nolocking(toRelease.spec.bladeIP);
+                    foreach (vmSpec child in childVMs)
+                    {
+                        result res = releaseVM(child.VMIP);
+                        if (res.code != resultCode.success)
+                            return res;
+                    }
                 }
             }
 
@@ -537,31 +554,35 @@ namespace bladeDirectorWCF
             }
             catch (SocketException) { }
             catch (WebException) { }
-            catch (VMNotFoundException) { } // ?!
-            
-            // Now, if the VM server is empty, we can power it off. Otherwise, just power off the VM instead.
-            vmserverTotals VMTotals = db.getVMServerTotalsByVMServerIP(lockedVM.spec.parentBladeIP);
-            if (VMTotals.VMs == 0)
-            {
-                using (lockableBladeSpec parentBlade = db.getBladeByIP(lockedVM.spec.parentBladeIP,
-                    bladeLockType.lockOwnership | bladeLockType.lockBIOS | bladeLockType.lockvmDeployState,
-                    bladeLockType.lockOwnership | bladeLockType.lockBIOS))
-                {
-                    VMTotals = db.getVMServerTotalsByVMServerIP(lockedVM.spec.parentBladeIP);
+            catch (VMNotFoundException) { } // ?!*/
 
-                    if (VMTotals.VMs == 0)
-                        return releaseBlade(parentBlade);
-                }
-            }
-            */
+            // Make a note of the VM server IP so we can use it later
+            string vmserverip = lockedVM.spec.parentBladeIP;
+
             lockedVM.downgradeLocks(additionalPrivsToDowngradeRead, additionalPrivsToDowngradeWrite);
 
-            // Now we dispose the blade, and then specify that the next release of the blade (ie, that done by the parent) should
+            // Now we dispose the VM, and then specify that the next release of the VM (ie, that done by the parent) should
             // be inhibited. This means the caller is left with a disposed, invalid, VM, but is able to call .Dispose (or leave a
             // using() {..} block) as normal.
             lockedVM.deleteOnRelease = true;
             lockedVM.Dispose();
-            lockedVM.inhibitNextDisposal(); 
+            lockedVM.inhibitNextDisposal();
+
+            // Now, if the VM server is empty, we can power it off. Otherwise, just power off the VM instead.
+            vmserverTotals VMTotals = db.getVMServerTotalsByVMServerIP(vmserverip);
+            if (VMTotals.VMs == 0)
+            {
+                using (lockableBladeSpec parentBlade = db.getBladeByIP(vmserverip,
+                    bladeLockType.lockOwnership | bladeLockType.lockBIOS | bladeLockType.lockvmDeployState,
+                    bladeLockType.lockOwnership | bladeLockType.lockBIOS))
+                {
+                    VMTotals = db.getVMServerTotalsByVMServerIP(vmserverip);
+
+                    // double lock for performance.
+                    if (VMTotals.VMs == 0)
+                        return releaseBlade(parentBlade);
+                }
+            }
             
             return new result(resultCode.success);
         }
@@ -707,12 +728,20 @@ namespace bladeDirectorWCF
             return freeVMServer;
         }
         
-        public resultAndWaitToken rebootAndStartDeployingBIOSToBlade(string requestorIp, string nodeIp, string biosxml)
+        public resultAndWaitToken rebootAndStartDeployingBIOSToBlade(string requestorIp, string nodeIp, string biosxml, bool ignoreOwnership = false)
         {
-            using (lockableBladeSpec reqBlade = db.getBladeByIP(nodeIp, bladeLockType.lockOwnership, bladeLockType.lockNone))
+            using (lockableBladeSpec reqBlade = db.getBladeByIP(nodeIp, bladeLockType.lockOwnership, bladeLockType.lockNone, false, true))
             {
-                if (reqBlade.spec.currentOwner != requestorIp)
+                if (reqBlade.spec.currentOwner != "vmserver" && 
+                    reqBlade.spec.currentOwner != requestorIp)
                     return new resultAndWaitToken(resultCode.bladeInUse, "");
+/*
+                lock (_currentBIOSOperations)
+                {
+                    string waitToken = handleTypes.BOS + "_" + reqBlade.spec.bladeIP.GetHashCode().ToString();
+                    if (_currentBIOSOperations.ContainsKey(waitToken))
+                        return new resultAndWaitToken(resultCode.alreadyInProgress, "This blade is already having a BIOS operation performed on it");
+                }*/
 
                 return doAsync(_currentBIOSOperations, nodeIp, handleTypes.BOS, (op) =>
                 {
@@ -769,7 +798,7 @@ namespace bladeDirectorWCF
             }
             catch (Exception e)
             {
-                string msg = "VMServer boot thread fatal exception: " + e.Message + " at " + e.StackTrace;
+                string msg = "VMServer boot thread fatal exception: " + formatWithInner(e);
                 _logEvents.Add(msg);
                 
                 using (lockableBladeSpec VMServer = db.getBladeByIP(threadState.vmServerIP,
@@ -829,18 +858,22 @@ bladeLockType.lockvmDeployState,  // <-- TODO/FIXME: write perms shuold imply re
                         hyp.connect();
 
                         // Write the correct BIOS to the blade, and block until this is complete
-                        result res = biosRWEngine.rebootAndStartWritingBIOSConfiguration(this, VMServerBladeIPAddress, Resources.VMServerBIOS);
-                        if (res.code != resultCode.pending)
-                            return res;
+                        resultAndWaitToken res = rebootAndStartDeployingBIOSToBlade(null, VMServerBladeIPAddress, Resources.VMServerBIOS);
+                        if (res.result.code != resultCode.pending)
+                            return res.result;
 
-                        result progress = biosRWEngine.checkBIOSOperationProgress(VMServerBladeIPAddress);
-                        while (progress.code == resultCode.pending || progress.code == resultCode.unknown)
+                        resultAndBIOSConfig progress = checkBIOSOperationProgress(res.waitToken);
+                        while ( progress.result.code == resultCode.pending || 
+                                progress.result.code == resultCode.unknown   )
                         {
                             Thread.Sleep(TimeSpan.FromSeconds(3));
-                            progress = biosRWEngine.checkBIOSOperationProgress(VMServerBladeIPAddress);
+                            progress = checkBIOSOperationProgress(res.waitToken);
                         }
-                        if (progress.code != resultCode.success && progress.code != resultCode.pending)
-                            return progress;
+                        if (progress.result.code != resultCode.success &&
+                            progress.result.code != resultCode.pending)
+                        {
+                            return progress.result;
+                        }
                         hyp.powerOn(threadState.deployDeadline);
 
                         waitForESXiBootToComplete(hyp);
@@ -964,7 +997,7 @@ bladeLockType.lockvmDeployState,  // <-- TODO/FIXME: write perms shuold imply re
             // All done. We can mark the blade as in use. Again, we are careful to hold write locks for as short a time as is
             // possible, to avoid blocking the PXE-script generation.
             using (lockableVMSpec childVMFromDB = db.getVMByIP(childVM_unsafe.VMIP,
-                bladeLockType.lockOwnership | bladeLockType.lockSnapshot,
+                bladeLockType.lockOwnership | bladeLockType.lockvmDeployState | bladeLockType.lockSnapshot,
                 bladeLockType.lockOwnership | bladeLockType.lockvmDeployState))
             {
                 childVMFromDB.spec.state = bladeStatus.inUse;
@@ -979,6 +1012,14 @@ bladeLockType.lockvmDeployState,  // <-- TODO/FIXME: write perms shuold imply re
         {
             if (deployDeadline < DateTime.Now)
                 throw new TimeoutException();
+        }
+
+        private object formatWithInner(Exception e)
+        {
+            string toRet = e.ToString();
+            if (e.InnerException != null)
+                toRet += formatWithInner(e.InnerException);
+            return toRet;
         }
 
         private void doCmdAndCheckSuccess(hypervisor hyp, string cmd, string args, DateTime deadline)
@@ -1062,14 +1103,17 @@ bladeLockType.lockvmDeployState,  // <-- TODO/FIXME: write perms shuold imply re
             db.refreshKeepAliveForRequestor(requestorIP);
         }
 
-        public bool isBladeMine(string nodeIp, string requestorIp)
+        public bool isBladeMine(string nodeIp, string requestorIp, bool ignoreDeployments = false)
         {
             checkKeepAlives(requestorIp);
 
             using (var blade = db.getBladeByIP(nodeIp, bladeLockType.lockOwnership | bladeLockType.lockBIOS, bladeLockType.lockNone, true, true))
             {
-                if (blade.spec.currentlyBeingAVMServer == true || blade.spec.currentlyHavingBIOSDeployed == true)
-                    return false;
+                if (!ignoreDeployments)
+                {
+                    if (blade.spec.currentlyBeingAVMServer == true || blade.spec.currentlyHavingBIOSDeployed == true)
+                        return false;
+                }
                 return blade.spec.currentOwner == requestorIp;
             }
         }
@@ -1137,7 +1181,6 @@ bladeLockType.lockvmDeployState,  // <-- TODO/FIXME: write perms shuold imply re
 
             reqBlade.spec.currentlyHavingBIOSDeployed = false;
             reqBlade.spec.lastDeployedBIOS = biosxml;
-
         }
 
         private resultAndBIOSConfig checkBIOSOperationProgress(string waitToken)
@@ -1153,7 +1196,11 @@ bladeLockType.lockvmDeployState,  // <-- TODO/FIXME: write perms shuold imply re
 
                 if (status.code == resultCode.success)
                 {
-                    using (lockableBladeSpec blade = db.getBladeByIP(hostIP, bladeLockType.lockBIOS, bladeLockType.lockNone))
+                    using (lockableBladeSpec blade = db.getBladeByIP(hostIP, 
+                        bladeLockType.lockBIOS, 
+                        bladeLockType.lockNone, 
+                        permitAccessDuringDeployment: true, // BIOS deploys can happen during the VM deployment process
+                        permitAccessDuringBIOS: true))
                     {
                         result res = new result(resultCode.success, "Read BIOS OK");
                         return new resultAndBIOSConfig(res, null, blade.spec.lastDeployedBIOS);
@@ -1266,7 +1313,8 @@ bladeLockType.lockvmDeployState,  // <-- TODO/FIXME: write perms shuold imply re
             {
                 using (lockableBladeSpec sourceBlade = db.getBladeByIP(srcIP, 
                     bladeLockType.lockOwnership | bladeLockType.lockBIOS | bladeLockType.lockSnapshot, 
-                    bladeLockType.lockNone))
+                    bladeLockType.lockNone,
+                    permitAccessDuringBIOS: true, permitAccessDuringDeployment: true))
                 {
                     return sourceBlade.spec.generateIPXEScript();
                 }
@@ -1275,6 +1323,8 @@ bladeLockType.lockvmDeployState,  // <-- TODO/FIXME: write perms shuold imply re
             {
                 using (lockableVMSpec vmState = db.getVMByIP(srcIP, bladeLockType.lockOwnership | bladeLockType.lockSnapshot, bladeLockType.lockNone))
                 {
+                    if (vmState == null)
+                        return "No blade at this IP address";
                     return vmState.spec.generateIPXEScript();
                 }
             }

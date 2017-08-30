@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<SavedWcfConfigurationInformation xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema" Version="9.1" CheckSum="OGpnyszRq+BI2o+bex7MVj6Q0AU=">
+<SavedWcfConfigurationInformation xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema" Version="9.1" CheckSum="MiXg3UtaLt0xt/XT35rRI2UXrBU=">
   <bindingConfigurations>
     <bindingConfiguration bindingType="wsHttpBinding" name="WSHttpBinding_IServices">
       <properties>
@@ -251,10 +251,10 @@
     </bindingConfiguration>
   </bindingConfigurations>
   <endpoints>
-    <endpoint name="WSHttpBinding_IServices" contract="bladeDirectorServices.IServices" bindingType="wsHttpBinding" address="http://0.0.0.0/bladeDirector" bindingConfiguration="WSHttpBinding_IServices">
+    <endpoint name="WSHttpBinding_IServices" contract="bladeDirectorServices.IServices" bindingType="wsHttpBinding" address="http://127.0.0.1/bladeDirector" bindingConfiguration="WSHttpBinding_IServices">
       <properties>
         <property path="/address" isComplexType="false" isExplicitlyDefined="true" clrType="System.Uri, System, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089">
-          <serializedValue>http://0.0.0.0/bladeDirector</serializedValue>
+          <serializedValue>http://127.0.0.1/bladeDirector</serializedValue>
         </property>
         <property path="/behaviorConfiguration" isComplexType="false" isExplicitlyDefined="false" clrType="System.String, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089">
           <serializedValue />
@@ -336,10 +336,10 @@
         </property>
       </properties>
     </endpoint>
-    <endpoint name="WSHttpBinding_IDebugServices" contract="bladeDirectorServices.IDebugServices" bindingType="wsHttpBinding" address="http://0.0.0.0/bladeDirectorDebug" bindingConfiguration="WSHttpBinding_IDebugServices">
+    <endpoint name="WSHttpBinding_IDebugServices" contract="bladeDirectorServices.IDebugServices" bindingType="wsHttpBinding" address="http://127.0.0.1/bladeDirectorDebug" bindingConfiguration="WSHttpBinding_IDebugServices">
       <properties>
         <property path="/address" isComplexType="false" isExplicitlyDefined="true" clrType="System.Uri, System, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089">
-          <serializedValue>http://0.0.0.0/bladeDirectorDebug</serializedValue>
+          <serializedValue>http://127.0.0.1/bladeDirectorDebug</serializedValue>
         </property>
         <property path="/behaviorConfiguration" isComplexType="false" isExplicitlyDefined="false" clrType="System.String, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089">
           <serializedValue />

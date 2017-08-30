@@ -43,7 +43,7 @@ namespace bladeDirectorWCF
         GetBladeStatusResult _GetBladeStatus(string requestorIP, string nodeIP);
         
         [OperationContract]
-        bool _isBladeMine(string requestorIP, string clientIP);
+        bool _isBladeMine(string requestorIP, string clientIP, bool ignoreDeployments = false);
         
         [OperationContract]
         resultAndWaitToken _ReleaseBladeOrVM(string requestorIP, string nodeIP, bool force = false);

@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Threading;
 using bladeDirectorClient.bladeDirector;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using tests.bladeDirectorServices;
@@ -38,7 +39,14 @@ namespace tests
                 resultAndReadBack = writeBIOSAndReadBack(svc, hostip, res.bladeName, testBiosXML);
                 Assert.IsTrue(resultAndReadBack.BIOSConfig.Contains("<Section name=\"NumLock\">On</Section>"));
 
-                Assert.AreEqual(resultCode.success, svc.uutDebug._ReleaseBladeOrVM(hostip, res.bladeName, false).result.code);
+                string bladeName = res.bladeName;
+                resultAndWaitToken relRes = svc.uutDebug._ReleaseBladeOrVM(hostip, res.bladeName, false);
+                while (relRes.result.code == resultCode.pending)
+                {
+                    Thread.Sleep(TimeSpan.FromSeconds(3));
+                    relRes = svc.uutDebug._ReleaseBladeOrVM(hostip, bladeName, false);
+                }
+                Assert.AreEqual(resultCode.success, relRes.result.code);
             }
         }
 

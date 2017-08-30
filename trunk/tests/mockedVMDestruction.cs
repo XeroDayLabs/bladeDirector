@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using tests.bladeDirectorServices;
+
 namespace tests
 {
     [TestClass]
@@ -71,13 +72,13 @@ namespace tests
                 resultAndWaitToken res = svc.uutDebug._rebootAndStartDeployingBIOSToBlade(hostIP, bladeIP, ".... some bios file here ... ");
                 Assert.AreEqual(resultCode.pending, res.result.code);
 
-                Assert.AreEqual(true, svc.uutDebug._isBladeMine(hostIP, bladeIP));
+                Assert.AreEqual(true, svc.uutDebug._isBladeMine(hostIP, bladeIP, true));
 
                 // Now login again, cancelling the BIOS operation.
                 testUtils.doLogin(svc, hostIP);
 
                 // The blade should no longer be ours.
-                Assert.AreEqual(false, svc.uutDebug._isBladeMine(hostIP, bladeIP));
+                Assert.AreEqual(false, svc.uutDebug._isBladeMine(hostIP, bladeIP, false));
 
                 // And after an allocation, our blade should be re-used.
                 string newbladeIP = testUtils.doBladeAllocationForTest(svc, hostIP);

@@ -162,7 +162,7 @@
               </xs:appinfo>
             </xs:annotation>
           </xs:enumeration>
-          <xs:enumeration value="lockVMDeployState">
+          <xs:enumeration value="lockvmDeployState">
             <xs:annotation>
               <xs:appinfo>
                 <EnumerationValue xmlns="http://schemas.microsoft.com/2003/10/Serialization/">32</EnumerationValue>
@@ -224,7 +224,6 @@
         <xs:sequence>
           <xs:element minOccurs="0" name="ESXiPassword" nillable="true" type="xs:string" />
           <xs:element minOccurs="0" name="ESXiUsername" nillable="true" type="xs:string" />
-          <xs:element minOccurs="0" name="VMDeployState" type="tns:VMDeployStatus" />
           <xs:element minOccurs="0" name="bladeID" nillable="true" type="xs:long" />
           <xs:element minOccurs="0" name="bladeIP" nillable="true" type="xs:string" />
           <xs:element minOccurs="0" name="currentlyBeingAVMServer" type="xs:boolean" />
@@ -235,6 +234,7 @@
           <xs:element minOccurs="0" name="iLoUsername" nillable="true" type="xs:string" />
           <xs:element minOccurs="0" name="iscsiIP" nillable="true" type="xs:string" />
           <xs:element minOccurs="0" name="lastDeployedBIOS" nillable="true" type="xs:string" />
+          <xs:element minOccurs="0" name="vmDeployState" type="tns:VMDeployStatus" />
         </xs:sequence>
       </xs:extension>
     </xs:complexContent>

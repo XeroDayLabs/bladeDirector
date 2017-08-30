@@ -808,9 +808,6 @@ namespace tests.bladeDirectorServices {
         private string ESXiUsernameField;
         
         [System.Runtime.Serialization.OptionalFieldAttribute()]
-        private tests.bladeDirectorServices.VMDeployStatus VMDeployStateField;
-        
-        [System.Runtime.Serialization.OptionalFieldAttribute()]
         private System.Nullable<long> bladeIDField;
         
         [System.Runtime.Serialization.OptionalFieldAttribute()]
@@ -840,6 +837,9 @@ namespace tests.bladeDirectorServices {
         [System.Runtime.Serialization.OptionalFieldAttribute()]
         private string lastDeployedBIOSField;
         
+        [System.Runtime.Serialization.OptionalFieldAttribute()]
+        private tests.bladeDirectorServices.VMDeployStatus vmDeployStateField;
+        
         [System.Runtime.Serialization.DataMemberAttribute()]
         public string ESXiPassword {
             get {
@@ -862,19 +862,6 @@ namespace tests.bladeDirectorServices {
                 if ((object.ReferenceEquals(this.ESXiUsernameField, value) != true)) {
                     this.ESXiUsernameField = value;
                     this.RaisePropertyChanged("ESXiUsername");
-                }
-            }
-        }
-        
-        [System.Runtime.Serialization.DataMemberAttribute()]
-        public tests.bladeDirectorServices.VMDeployStatus VMDeployState {
-            get {
-                return this.VMDeployStateField;
-            }
-            set {
-                if ((this.VMDeployStateField.Equals(value) != true)) {
-                    this.VMDeployStateField = value;
-                    this.RaisePropertyChanged("VMDeployState");
                 }
             }
         }
@@ -1005,6 +992,19 @@ namespace tests.bladeDirectorServices {
                 if ((object.ReferenceEquals(this.lastDeployedBIOSField, value) != true)) {
                     this.lastDeployedBIOSField = value;
                     this.RaisePropertyChanged("lastDeployedBIOS");
+                }
+            }
+        }
+        
+        [System.Runtime.Serialization.DataMemberAttribute()]
+        public tests.bladeDirectorServices.VMDeployStatus vmDeployState {
+            get {
+                return this.vmDeployStateField;
+            }
+            set {
+                if ((this.vmDeployStateField.Equals(value) != true)) {
+                    this.vmDeployStateField = value;
+                    this.RaisePropertyChanged("vmDeployState");
                 }
             }
         }
@@ -1281,7 +1281,7 @@ namespace tests.bladeDirectorServices {
         lockOwnership = 16,
         
         [System.Runtime.Serialization.EnumMemberAttribute()]
-        lockVMDeployState = 32,
+        lockvmDeployState = 32,
         
         [System.Runtime.Serialization.EnumMemberAttribute()]
         lockIPAddresses = 64,
@@ -1998,7 +1998,7 @@ namespace tests.bladeDirectorServices {
         void initWithBladesFromBladeSpec(tests.bladeDirectorServices.bladeSpec[] spec, bool useMockedManager, tests.bladeDirectorServices.NASFaultInjectionPolicy faultInjection);
         
         [System.ServiceModel.OperationContractAttribute(Action="http://tempuri.org/IDebugServices/createBladeSpec", ReplyAction="http://tempuri.org/IDebugServices/createBladeSpecResponse")]
-        tests.bladeDirectorServices.bladeSpec createBladeSpec(string newBladeIP, string newISCSIIP, string newILOIP, ushort newILOPort, bool newCurrentlyHavingBIOSDeployed, tests.bladeDirectorServices.VMDeployStatus newVMDeployState, string newCurrentBIOS, tests.bladeDirectorServices.bladeLockType permittedAccessRead, tests.bladeDirectorServices.bladeLockType permittedAccessWrite);
+        tests.bladeDirectorServices.bladeSpec createBladeSpec(string newBladeIP, string newISCSIIP, string newILOIP, ushort newILOPort, bool newCurrentlyHavingBIOSDeployed, tests.bladeDirectorServices.VMDeployStatus newvmDeployState, string newCurrentBIOS, tests.bladeDirectorServices.bladeLockType permittedAccessRead, tests.bladeDirectorServices.bladeLockType permittedAccessWrite);
         
         [System.ServiceModel.OperationContractAttribute(Action="http://tempuri.org/IDebugServices/_logIn", ReplyAction="http://tempuri.org/IDebugServices/_logInResponse")]
         tests.bladeDirectorServices.resultAndWaitToken _logIn(string requestorIP);
@@ -2026,7 +2026,7 @@ namespace tests.bladeDirectorServices {
         tests.bladeDirectorServices.GetBladeStatusResult _GetBladeStatus(string requestorIP, string nodeIP);
         
         [System.ServiceModel.OperationContractAttribute(Action="http://tempuri.org/IDebugServices/_isBladeMine", ReplyAction="http://tempuri.org/IDebugServices/_isBladeMineResponse")]
-        bool _isBladeMine(string requestorIP, string clientIP);
+        bool _isBladeMine(string requestorIP, string clientIP, bool ignoreDeployments);
         
         [System.ServiceModel.OperationContractAttribute(Action="http://tempuri.org/IDebugServices/_ReleaseBladeOrVM", ReplyAction="http://tempuri.org/IDebugServices/_ReleaseBladeOrVMResponse")]
         tests.bladeDirectorServices.resultAndWaitToken _ReleaseBladeOrVM(string requestorIP, string nodeIP, bool force);
@@ -2076,8 +2076,8 @@ namespace tests.bladeDirectorServices {
             base.Channel.initWithBladesFromBladeSpec(spec, useMockedManager, faultInjection);
         }
         
-        public tests.bladeDirectorServices.bladeSpec createBladeSpec(string newBladeIP, string newISCSIIP, string newILOIP, ushort newILOPort, bool newCurrentlyHavingBIOSDeployed, tests.bladeDirectorServices.VMDeployStatus newVMDeployState, string newCurrentBIOS, tests.bladeDirectorServices.bladeLockType permittedAccessRead, tests.bladeDirectorServices.bladeLockType permittedAccessWrite) {
-            return base.Channel.createBladeSpec(newBladeIP, newISCSIIP, newILOIP, newILOPort, newCurrentlyHavingBIOSDeployed, newVMDeployState, newCurrentBIOS, permittedAccessRead, permittedAccessWrite);
+        public tests.bladeDirectorServices.bladeSpec createBladeSpec(string newBladeIP, string newISCSIIP, string newILOIP, ushort newILOPort, bool newCurrentlyHavingBIOSDeployed, tests.bladeDirectorServices.VMDeployStatus newvmDeployState, string newCurrentBIOS, tests.bladeDirectorServices.bladeLockType permittedAccessRead, tests.bladeDirectorServices.bladeLockType permittedAccessWrite) {
+            return base.Channel.createBladeSpec(newBladeIP, newISCSIIP, newILOIP, newILOPort, newCurrentlyHavingBIOSDeployed, newvmDeployState, newCurrentBIOS, permittedAccessRead, permittedAccessWrite);
         }
         
         public tests.bladeDirectorServices.resultAndWaitToken _logIn(string requestorIP) {
@@ -2112,8 +2112,8 @@ namespace tests.bladeDirectorServices {
             return base.Channel._GetBladeStatus(requestorIP, nodeIP);
         }
         
-        public bool _isBladeMine(string requestorIP, string clientIP) {
-            return base.Channel._isBladeMine(requestorIP, clientIP);
+        public bool _isBladeMine(string requestorIP, string clientIP, bool ignoreDeployments) {
+            return base.Channel._isBladeMine(requestorIP, clientIP, ignoreDeployments);
         }
         
         public tests.bladeDirectorServices.resultAndWaitToken _ReleaseBladeOrVM(string requestorIP, string nodeIP, bool force) {

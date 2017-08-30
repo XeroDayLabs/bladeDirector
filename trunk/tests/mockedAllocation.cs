@@ -51,7 +51,7 @@ namespace tests
                 Assert.AreEqual(hostIP, VMConfig.currentOwner);
             }
         }
-        
+
         [TestMethod]
         public void canAllocateANumberOfVMMocked()
         {

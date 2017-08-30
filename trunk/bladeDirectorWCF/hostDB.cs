@@ -174,41 +174,48 @@ namespace bladeDirectorWCF
 
             lockableBladeSpec toRet = new lockableBladeSpec(conn, IP, readLock, writeLock);
 
-            string sqlCommand = "select * from bladeOwnership " +
-                                "join bladeConfiguration on ownershipKey = bladeConfiguration.ownershipID " +
-                                "where bladeIP = $bladeIP";
-            using (SQLiteCommand cmd = new SQLiteCommand(sqlCommand, conn))
+            try
             {
-                cmd.Parameters.AddWithValue("$bladeIP", IP);
-                using (SQLiteDataReader reader = cmd.ExecuteReader())
+                string sqlCommand = "select * from bladeOwnership " +
+                                    "join bladeConfiguration on ownershipKey = bladeConfiguration.ownershipID " +
+                                    "where bladeIP = $bladeIP";
+                using (SQLiteCommand cmd = new SQLiteCommand(sqlCommand, conn))
                 {
-                    if (reader.Read())
+                    cmd.Parameters.AddWithValue("$bladeIP", IP);
+                    using (SQLiteDataReader reader = cmd.ExecuteReader())
                     {
-                        bladeSpec newSpec = new bladeSpec(conn, reader, readLock, writeLock);
+                        if (reader.Read())
+                        {
+                            bladeSpec newSpec = new bladeSpec(conn, reader, readLock, writeLock);
+                            toRet.setSpec(newSpec);
 
-                        if ((!permitAccessDuringDeployment) && 
-                            newSpec.vmDeployState != VMDeployStatus.notBeingDeployed &&
-                            newSpec.vmDeployState != VMDeployStatus.readyForDeployment)
-                            throw new Exception("Attempt to access blade during VM deployment");
-                        if ((!permitAccessDuringBIOS) && newSpec.currentlyHavingBIOSDeployed)
-                            throw new Exception("Attempt to access blade during BIOS deployment");
+                            if ((!permitAccessDuringDeployment) &&
+                                newSpec.vmDeployState != VMDeployStatus.notBeingDeployed &&
+                                newSpec.vmDeployState != VMDeployStatus.failed &&
+                                newSpec.vmDeployState != VMDeployStatus.readyForDeployment)
+                                throw new Exception("Attempt to access blade during VM deployment");
+                            if ((!permitAccessDuringBIOS) && newSpec.currentlyHavingBIOSDeployed)
+                                throw new Exception("Attempt to access blade during BIOS deployment");
 
-                        toRet.setSpec(newSpec);
+                            if ((origReadLock & bladeLockType.lockvmDeployState) == 0 &&
+                                (writeLock & bladeLockType.lockvmDeployState) == 0)
+                                toRet.downgradeLocks(bladeLockType.lockvmDeployState, bladeLockType.lockNone);
 
-                        if ((origReadLock & bladeLockType.lockvmDeployState) == 0 &&
-                            (writeLock & bladeLockType.lockvmDeployState) == 0)
-                            toRet.downgradeLocks(bladeLockType.lockvmDeployState, bladeLockType.lockNone);
+                            if ((origReadLock & bladeLockType.lockBIOS) == 0 &&
+                                (writeLock & bladeLockType.lockBIOS) == 0)
+                                toRet.downgradeLocks(bladeLockType.lockBIOS, bladeLockType.lockNone);
 
-                        if ((origReadLock & bladeLockType.lockBIOS) == 0 &&
-                            (writeLock & bladeLockType.lockBIOS) == 0)
-                            toRet.downgradeLocks(bladeLockType.lockBIOS, bladeLockType.lockNone);
-
-                        return toRet;
+                            return toRet;
+                        }
+                        // No records returned.
+                        throw new bladeNotFoundException();
                     }
-                    // No records returned.
-                    toRet.Dispose();
-                    throw new bladeNotFoundException();
                 }
+            }
+            catch (Exception)
+            {
+                toRet.Dispose();
+                throw;
             }
         }
 
@@ -391,7 +398,8 @@ namespace bladeDirectorWCF
         {
             //lock (connLock)
             {
-                using (lockableBladeSpec blade = getBladeByIP(nodeIp, bladeLockType.lockOwnership, bladeLockType.lockNone))
+                using (lockableBladeSpec blade = getBladeByIP(nodeIp, bladeLockType.lockOwnership, bladeLockType.lockNone, 
+                    permitAccessDuringBIOS: true, permitAccessDuringDeployment: true))
                 {
                     switch (blade.spec.state)
                     {

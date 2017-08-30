@@ -30,6 +30,8 @@ namespace bladeDirectorWCF
                     isFinished = false,
                     nodeIP = nodeIp,
                     db = parent.db,
+                    parent = parent,
+                    BIOSToWrite = biosxml,
                     deadline = DateTime.Now + biosOperationTime
                 };
                 _threads.Add(nodeIp, newParams);
@@ -40,7 +42,7 @@ namespace bladeDirectorWCF
                 };
                 newThread.Start(newParams);
 
-                return new result(resultCode.pending, "Mocked BIOS thread created)");
+                return new result(resultCode.pending, "Mocked BIOS thread created");
             }
         }
 
@@ -103,13 +105,14 @@ namespace bladeDirectorWCF
             {
                 mockedBiosThread(paramTyped);
             }
-            catch (Exception)
+            catch (Exception e)
             {
-                paramTyped.result = new result(resultCode.success);
+                paramTyped.result = new result(resultCode.genericFail, e.Message + " @ " + e.StackTrace);
             }
             finally
             {
-                using (lockableBladeSpec blade = paramTyped.db.getBladeByIP(paramTyped.nodeIP, bladeLockType.lockBIOS, bladeLockType.lockBIOS, true, true))
+                using (lockableBladeSpec blade = paramTyped.db.getBladeByIP(paramTyped.nodeIP, 
+                    bladeLockType.lockBIOS, bladeLockType.lockBIOS, true, true))
                 {
                     blade.spec.currentlyHavingBIOSDeployed = false;
                     paramTyped.isFinished = true;
@@ -125,13 +128,18 @@ namespace bladeDirectorWCF
             }
             param.isStarted = true;
 
-            using (param.db.getBladeByIP(param.nodeIP, bladeLockType.lockLongRunningBIOS, bladeLockType.lockLongRunningBIOS, true, true))
+            using (lockableBladeSpec blade = param.db.getBladeByIP(param.nodeIP, bladeLockType.lockLongRunningBIOS, bladeLockType.lockLongRunningBIOS, true, true))
             {
                 while (true)
                 {
                     if (DateTime.Now > param.deadline)
                     {
+                        blade.upgradeLocks(bladeLockType.lockBIOS, bladeLockType.lockBIOS);
+                        
+                        param.parent.markLastKnownBIOS(blade, param.BIOSToWrite);
                         param.result = new result(resultCode.success);
+
+                        blade.downgradeLocks(bladeLockType.lockBIOS, bladeLockType.lockBIOS);
                         return;
                     }
 

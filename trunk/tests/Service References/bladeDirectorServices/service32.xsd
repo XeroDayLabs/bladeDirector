@@ -39,7 +39,7 @@
         <xs:element minOccurs="0" name="newILOIP" nillable="true" type="xs:string" />
         <xs:element minOccurs="0" name="newILOPort" type="xs:unsignedShort" />
         <xs:element minOccurs="0" name="newCurrentlyHavingBIOSDeployed" type="xs:boolean" />
-        <xs:element xmlns:q5="http://schemas.datacontract.org/2004/07/bladeDirectorWCF" minOccurs="0" name="newVMDeployState" type="q5:VMDeployStatus" />
+        <xs:element xmlns:q5="http://schemas.datacontract.org/2004/07/bladeDirectorWCF" minOccurs="0" name="newvmDeployState" type="q5:VMDeployStatus" />
         <xs:element minOccurs="0" name="newCurrentBIOS" nillable="true" type="xs:string" />
         <xs:element xmlns:q6="http://schemas.datacontract.org/2004/07/bladeDirectorWCF" minOccurs="0" name="permittedAccessRead" type="q6:bladeLockType" />
         <xs:element xmlns:q7="http://schemas.datacontract.org/2004/07/bladeDirectorWCF" minOccurs="0" name="permittedAccessWrite" type="q7:bladeLockType" />
@@ -168,6 +168,7 @@
       <xs:sequence>
         <xs:element minOccurs="0" name="requestorIP" nillable="true" type="xs:string" />
         <xs:element minOccurs="0" name="clientIP" nillable="true" type="xs:string" />
+        <xs:element minOccurs="0" name="ignoreDeployments" type="xs:boolean" />
       </xs:sequence>
     </xs:complexType>
   </xs:element>

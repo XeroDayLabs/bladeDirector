@@ -1243,9 +1243,9 @@
   </wsdl:binding>
   <wsdl:service name="services">
     <wsdl:port name="WSHttpBinding_IServices" binding="tns:WSHttpBinding_IServices">
-      <soap12:address location="http://0.0.0.0/bladeDirector" />
+      <soap12:address location="http://127.0.0.1/bladeDirector" />
       <wsa10:EndpointReference>
-        <wsa10:Address>http://0.0.0.0/bladeDirector</wsa10:Address>
+        <wsa10:Address>http://127.0.0.1/bladeDirector</wsa10:Address>
         <Identity xmlns="http://schemas.xmlsoap.org/ws/2006/02/addressingidentity">
           <Upn>ALIZANALYSIS\ACH</Upn>
         </Identity>

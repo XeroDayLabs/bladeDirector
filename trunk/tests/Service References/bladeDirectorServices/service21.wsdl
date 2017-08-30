@@ -1067,9 +1067,9 @@
   </wsdl:binding>
   <wsdl:service name="debugServices">
     <wsdl:port name="WSHttpBinding_IDebugServices" binding="tns:WSHttpBinding_IDebugServices">
-      <soap12:address location="http://0.0.0.0/bladeDirectorDebug" />
+      <soap12:address location="http://127.0.0.1/bladeDirectorDebug" />
       <wsa10:EndpointReference>
-        <wsa10:Address>http://0.0.0.0/bladeDirectorDebug</wsa10:Address>
+        <wsa10:Address>http://127.0.0.1/bladeDirectorDebug</wsa10:Address>
         <Identity xmlns="http://schemas.xmlsoap.org/ws/2006/02/addressingidentity">
           <Upn>ALIZANALYSIS\ACH</Upn>
         </Identity>

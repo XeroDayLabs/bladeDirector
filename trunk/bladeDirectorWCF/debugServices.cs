@@ -89,9 +89,9 @@ namespace bladeDirectorWCF
             return services.hostStateManager.getBladeStatus(requestorIP, nodeIP);
         }
         
-        public bool _isBladeMine(string requestorIP, string clientIP)
+        public bool _isBladeMine(string requestorIP, string clientIP, bool ignoreDeployments)
         {
-            return services.hostStateManager.isBladeMine(clientIP, requestorIP);
+            return services.hostStateManager.isBladeMine(clientIP, requestorIP, ignoreDeployments);
         }
 
         public resultAndWaitToken _ReleaseBladeOrVM(string requestorIP, string nodeIP, bool force = false)

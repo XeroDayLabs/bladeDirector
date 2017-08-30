@@ -114,8 +114,8 @@ namespace tests
                 Assert.AreEqual(resultCode.pending, uut.uutDebug._RequestAnySingleNode("192.168.2.2").result.code);
 
                 // 1.1 has it, 2.2 is queued
-                Assert.IsTrue(uut.uutDebug._isBladeMine("192.168.1.1", "1.1.1.1"));
-                Assert.IsFalse(uut.uutDebug._isBladeMine("192.168.2.2", "1.1.1.1"));
+                Assert.IsTrue(uut.uutDebug._isBladeMine("192.168.1.1", "1.1.1.1", false));
+                Assert.IsFalse(uut.uutDebug._isBladeMine("192.168.2.2", "1.1.1.1", false));
 
                 // Now let 1.1 timeout
                 for (int i = 0; i < 11; i++)
@@ -125,8 +125,8 @@ namespace tests
                 }
 
                 // and it should belong to the second requestor.
-                Assert.IsFalse(uut.uutDebug._isBladeMine("192.168.1.1", "1.1.1.1"));
-                Assert.IsTrue(uut.uutDebug._isBladeMine("192.168.2.2", "1.1.1.1"));
+                Assert.IsFalse(uut.uutDebug._isBladeMine("192.168.1.1", "1.1.1.1", false));
+                Assert.IsTrue(uut.uutDebug._isBladeMine("192.168.2.2", "1.1.1.1", false));
             }
         }
 

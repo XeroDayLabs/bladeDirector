@@ -17,6 +17,8 @@ namespace bladeDirectorWCF
         public hostDB db;
         public DateTime deadline;
         public bool isStarted;
+        public hostStateManager_core parent;
+        public string BIOSToWrite;
     }
 
     /// <summary>
@@ -257,7 +259,8 @@ namespace bladeDirectorWCF
 
         private void _ltspBootThreadStart(biosThreadState param)
         {
-            using (lockableBladeSpec blade = _hostManager.db.getBladeByIP(param.nodeIP, bladeLockType.lockBIOS, bladeLockType.lockBIOS, permitAccessDuringBIOS: true))
+            using (lockableBladeSpec blade = _hostManager.db.getBladeByIP(param.nodeIP, bladeLockType.lockBIOS, bladeLockType.lockBIOS, 
+                permitAccessDuringBIOS: true, permitAccessDuringDeployment: true))
             {
                 blade.spec.currentlyHavingBIOSDeployed = true;
             }
@@ -265,7 +268,7 @@ namespace bladeDirectorWCF
 
             using (lockableBladeSpec blade = _hostManager.db.getBladeByIP(param.nodeIP,
                 bladeLockType.lockOwnership | bladeLockType.lockSnapshot,
-                bladeLockType.lockNone, permitAccessDuringBIOS: true))
+                bladeLockType.lockNone, permitAccessDuringBIOS: true, permitAccessDuringDeployment: true))
             {
                 // Power cycle it
                 _hostManager.startBladePowerOff(blade);
