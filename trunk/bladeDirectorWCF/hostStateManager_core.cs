@@ -19,6 +19,12 @@ namespace bladeDirectorWCF
         REL, // Release of VM or blade
         DEP, // Deploying a VM server
         BOS, // Reading or writing BIOS configuration
+        SHT, // Setting a blade snapshot
+    }
+
+    public class objectDictionary<TKey, TValue> : Dictionary<TKey, TValue>
+    {
+        
     }
 
     /// <summary>
@@ -33,11 +39,12 @@ namespace bladeDirectorWCF
 
         public readonly hostDB db;
 
-        private Dictionary<string, VMThreadState> _vmDeployState = new Dictionary<string, VMThreadState>();
+        private objectDictionary<waitToken, VMThreadState> _vmDeployState = new objectDictionary<waitToken, VMThreadState>();
 
-        private Dictionary<string, inProgressOperation> _currentlyRunningLogIns = new Dictionary<string, inProgressOperation>();
-        private Dictionary<string, inProgressOperation> _currentlyRunningReleases = new Dictionary<string, inProgressOperation>();
-        private Dictionary<string, inProgressOperation> _currentBIOSOperations = new Dictionary<string, inProgressOperation>();
+        private objectDictionary<waitToken, inProgressOperation> _currentlyRunningLogIns = new objectDictionary<waitToken, inProgressOperation>();
+        private objectDictionary<waitToken, inProgressOperation> _currentlyRunningReleases = new objectDictionary<waitToken, inProgressOperation>();
+        private objectDictionary<waitToken, inProgressOperation> _currentBIOSOperations = new objectDictionary<waitToken, inProgressOperation>();
+        private objectDictionary<waitToken, inProgressOperation> _currentlyRunningSnapshotSets = new objectDictionary<waitToken, inProgressOperation>();
 
         public abstract hypervisor makeHypervisorForVM(lockableVMSpec VM, lockableBladeSpec parentBladeSpec);
         public abstract hypervisor makeHypervisorForBlade_windows(lockableBladeSpec bladeSpec);
@@ -188,11 +195,11 @@ namespace bladeDirectorWCF
             return doAsync(_currentlyRunningReleases, NodeIP, handleTypes.REL, (e) => { releaseBladeOrVMBlocking(e, NodeIP, requestorIP, force); });
         }
 
-        private resultAndWaitToken doAsync(Dictionary<string, inProgressOperation> currentlyRunning, string hostIP, handleTypes tokenPrefix, Action<inProgressOperation> taskCreator, Action<inProgressOperation> taskAfterStart = null)
+        private resultAndWaitToken doAsync(objectDictionary<waitToken, inProgressOperation> currentlyRunning, string hostIP, handleTypes tokenPrefix, Action<inProgressOperation> taskCreator, Action<inProgressOperation> taskAfterStart = null)
         {
             lock (currentlyRunning)
             {
-                string waitToken = tokenPrefix + "_" + hostIP.GetHashCode().ToString();
+                waitToken waitToken = new waitToken(tokenPrefix, hostIP.GetHashCode().ToString());
 
                 // If there's already a 'thing' going on for this host, just use that one. Don't do two simultaneously.
                 if (currentlyRunning.ContainsKey(waitToken))
@@ -223,15 +230,10 @@ namespace bladeDirectorWCF
             }
         }
 
-        public resultAndWaitToken getProgress(string waitToken)
+        public resultAndWaitToken getProgress(waitToken waitToken)
         {
-            string tokenPrefix = waitToken.Split('_')[0];
-            handleTypes handleType;
-            if (!Enum.TryParse(tokenPrefix, true, out handleType))
-                return new resultAndWaitToken(resultCode.bladeNotFound, "Invalid token prefix of " + tokenPrefix);
-
-            Dictionary<string, inProgressOperation> toOperateOn;
-            switch (handleType)
+            objectDictionary<waitToken, inProgressOperation> toOperateOn;
+            switch (waitToken.handleType)
             {
                 case handleTypes.LGI:
                     toOperateOn = _currentlyRunningLogIns;
@@ -240,18 +242,21 @@ namespace bladeDirectorWCF
                     return getProgressOfVMRequest(waitToken);
                 case handleTypes.BOS:
                     return checkBIOSOperationProgress(waitToken);
+                case handleTypes.SHT:
+                    toOperateOn = _currentlyRunningSnapshotSets;
+                    break;
                 case handleTypes.REL:
                     toOperateOn = _currentlyRunningReleases;
                     break;
                 default:
-                    return new resultAndWaitToken(resultCode.bladeNotFound, "Invalid token prefix of " + tokenPrefix);
+                    throw new ArgumentException("waitToken.handleType");
             }
 
             lock (toOperateOn)
             {
                 if (toOperateOn.ContainsKey(waitToken))
                     return new resultAndWaitToken(toOperateOn[waitToken].status, waitToken);
-                return new resultAndWaitToken(resultCode.bladeNotFound, "");
+                return new resultAndWaitToken(resultCode.bladeNotFound);
             }
         }
 #endregion
@@ -439,16 +444,16 @@ namespace bladeDirectorWCF
                         toRelease.spec.vmDeployState != VMDeployStatus.failed)
                     {
                         // Oh, it is being deployed. Cancel any deploys that reference this blade.
-                        KeyValuePair<string, VMThreadState>[] deployingChildVMs;
+                        KeyValuePair<waitToken, VMThreadState>[] deployingChildVMs;
                         lock (_vmDeployState)
                         {
                             deployingChildVMs = _vmDeployState.Where(x => x.Value.vmServerIP == toRelease.spec.bladeIP).ToArray();
 
-                            foreach (KeyValuePair<string, VMThreadState> kvp in deployingChildVMs)
+                            foreach (KeyValuePair<waitToken, VMThreadState> kvp in deployingChildVMs)
                                 kvp.Value.deployDeadline = DateTime.MinValue;
                         }
 
-                        foreach (KeyValuePair<string, VMThreadState> childVM in deployingChildVMs)
+                        foreach (KeyValuePair<waitToken, VMThreadState> childVM in deployingChildVMs)
                         {
                             while (true)
                             {
@@ -515,7 +520,7 @@ namespace bladeDirectorWCF
                 Monitor.Enter(_vmDeployState);
                 islocked = true;
 
-                string waitToken = handleTypes.DEP + "_" + lockedVM.spec.VMIP.GetHashCode();
+                waitToken waitToken = new waitToken(handleTypes.DEP, lockedVM.spec.VMIP.GetHashCode().ToString());
 
                 if (_vmDeployState.ContainsKey(waitToken) &&
                     _vmDeployState[waitToken].currentProgress.result.code == resultCode.pending)
@@ -587,23 +592,20 @@ namespace bladeDirectorWCF
             return new result(resultCode.success);
         }
 
-        public string getCurrentSnapshotForBladeOrVM(string nodeIp)
+        private string getCurrentSnapshotForBladeOrVM(string nodeIp)
         {
-            using (var reqBlade = db.getBladeByIP(nodeIp, bladeLockType.lockSnapshot, bladeLockType.lockNone))
+            if (db.getAllBladeIP().Contains(nodeIp))
             {
-                if (reqBlade.spec != null)
+                using (lockableBladeSpec reqBlade = db.getBladeByIP(nodeIp, bladeLockType.lockSnapshot, bladeLockType.lockNone))
+                {
                     return String.Format("{0}-{1}", reqBlade.spec.bladeIP, reqBlade.spec.currentSnapshot);
+                }
             }
 
             using (lockableVMSpec vmSpec = db.getVMByIP(nodeIp, bladeLockType.lockSnapshot | bladeLockType.lockOwnership, bladeLockType.lockNone))
             {
-                if (vmSpec.spec != null)
-                {
-                    return String.Format("{0}-{1}", vmSpec.spec.VMIP, vmSpec.spec.currentSnapshot);
-                }
+                return String.Format("{0}-{1}", vmSpec.spec.VMIP, vmSpec.spec.currentSnapshot);
             }
-
-            return null;
         }
 
         public resultAndBladeName RequestAnySingleVM(string requestorIP, VMHardwareSpec hwSpec, VMSoftwareSpec swReq )
@@ -627,10 +629,10 @@ namespace bladeDirectorWCF
                     // VM which conflicts with anything. If it does conflict, check the conflict is with an unused VM, and then 
                     // delete it before we add.
                     Thread worker;
-                    string waitToken;
+                    waitToken waitToken;
                     using (lockableVMSpec childVM = freeVMServer.spec.createChildVM(db.conn, db, hwSpec, swReq, requestorIP))
                     {
-                        waitToken = handleTypes.DEP + "_" + childVM.spec.VMIP.GetHashCode();
+                        waitToken = new waitToken(handleTypes.DEP, childVM.spec.VMIP.GetHashCode().ToString());
 
                         if (_vmDeployState.ContainsKey(waitToken))
                         {
@@ -734,14 +736,7 @@ namespace bladeDirectorWCF
             {
                 if (reqBlade.spec.currentOwner != "vmserver" && 
                     reqBlade.spec.currentOwner != requestorIp)
-                    return new resultAndWaitToken(resultCode.bladeInUse, "");
-/*
-                lock (_currentBIOSOperations)
-                {
-                    string waitToken = handleTypes.BOS + "_" + reqBlade.spec.bladeIP.GetHashCode().ToString();
-                    if (_currentBIOSOperations.ContainsKey(waitToken))
-                        return new resultAndWaitToken(resultCode.alreadyInProgress, "This blade is already having a BIOS operation performed on it");
-                }*/
+                    return new resultAndWaitToken(resultCode.bladeInUse);
 
                 return doAsync(_currentBIOSOperations, nodeIp, handleTypes.BOS, (op) =>
                 {
@@ -782,7 +777,7 @@ namespace bladeDirectorWCF
 
         private void VMServerBootThread(object param)
         {
-            string operationHandle = (string)param;
+            waitToken operationHandle = (waitToken) param;
             VMThreadState threadState;
             lock (_vmDeployState)
             {
@@ -1032,7 +1027,7 @@ bladeLockType.lockvmDeployState,  // <-- TODO/FIXME: write perms shuold imply re
             }
         }
 
-        public resultAndBladeName getProgressOfVMRequest(string waitToken)
+        public resultAndBladeName getProgressOfVMRequest(waitToken waitToken)
         {
             if (waitToken == null)
                 return new resultAndBladeName(new result(resultCode.bladeNotFound, "No waitToken supplied"), null);
@@ -1126,56 +1121,98 @@ bladeLockType.lockvmDeployState,  // <-- TODO/FIXME: write perms shuold imply re
                 return toRet;
             }
         }
-        
-        public resultCode selectSnapshotForBlade(string bladeName, string newShot)
-        {
-            using (var blade = db.getBladeByIP(bladeName, bladeLockType.lockSnapshot | bladeLockType.lockNASOperations, bladeLockType.lockSnapshot | bladeLockType.lockNASOperations))
-            {
-                blade.spec.currentSnapshot = newShot;
-                itemToAdd itm = blade.spec.toItemToAdd(false);
-                createDisks.Program.repairBladeDeviceNodes(new[] { itm });
 
-                return resultCode.success;
+        public resultAndWaitToken selectSnapshotForBladeOrVM(string requestorIP, string bladeName, string newShot)
+        {
+            if (db.getAllBladeIP().Contains(bladeName))
+            {
+                return selectSnapshotForBlade(requestorIP, bladeName, newShot);
+            }
+            else if (db.getAllVMIP().Contains(bladeName))
+            {
+                return selectSnapshotForVM(requestorIP, bladeName, newShot);
+            }
+            else
+            {
+                return new resultAndWaitToken(resultCode.bladeNotFound);
             }
         }
 
-        public resultCode selectSnapshotForVM(string vmName, string newShot)
+        public resultAndWaitToken selectSnapshotForBlade(string requestorIP, string bladeName, string newShot)
         {
-            using (lockableVMSpec vm = db.getVMByIP(vmName, bladeLockType.lockSnapshot, bladeLockType.lockSnapshot))
+            return doAsync(_currentlyRunningSnapshotSets, bladeName, handleTypes.SHT,
+                (e) =>
+                {
+                    using (var blade = db.getBladeByIP(bladeName,
+                        bladeLockType.lockSnapshot | bladeLockType.lockNASOperations | bladeLockType.lockOwnership,
+                        bladeLockType.lockSnapshot | bladeLockType.lockNASOperations))
+                    {
+                        try
+                        {
+                            if (blade.spec.currentOwner != requestorIP)
+                            {
+                                _currentlyRunningSnapshotSets[e.waitToken].status = new result(resultCode.bladeInUse, "Blade is not yours");
+                                return;
+                            }
+
+                            blade.spec.currentSnapshot = newShot;
+                            itemToAdd itm = blade.spec.toItemToAdd(false);
+                            createDisks.Program.repairBladeDeviceNodes(new[] {itm});
+
+                            _currentlyRunningSnapshotSets[e.waitToken].status = new result(resultCode.success);
+                        }
+                        catch (Exception excep)
+                        {
+                            _currentlyRunningSnapshotSets[e.waitToken].status = new result(resultCode.genericFail, excep.Message + " @ " + excep.StackTrace);
+                        }
+                        finally
+                        {
+                            _currentlyRunningSnapshotSets[e.waitToken].isFinished = true;
+                        }
+                    }
+                });
+        }
+
+        public resultAndWaitToken selectSnapshotForVM(string requestorIP, string vmName, string newShot)
+        {
+            using (lockableVMSpec vm = db.getVMByIP(vmName, 
+                bladeLockType.lockSnapshot | bladeLockType.lockOwnership, 
+                bladeLockType.lockSnapshot))
             {
-                return selectSnapshotForVM(vm, newShot);
+                if (vm.spec.currentOwner != requestorIP)
+                    return new resultAndWaitToken(resultCode.bladeInUse, "VM is not yours");
+
+                vm.spec.currentSnapshot = newShot;
+
+                return new resultAndWaitToken(resultCode.success);
             }
         }
 
-        private static resultCode selectSnapshotForVM(lockableVMSpec VM, string newShot)
+        private string getFreeNASSnapshotPath(string nodeIp)
         {
-            VM.spec.currentSnapshot = newShot;
-
-            return resultCode.success;
-        }
-
-        public string getFreeNASSnapshotPath(string requestorIp, string nodeIp)
-        {
-            using (var ownership = db.getBladeByIP(nodeIp, bladeLockType.lockNone, bladeLockType.lockNone))
+            if (db.getAllBladeIP().Contains(nodeIp))
             {
-                if (ownership.spec != null)
-                    return String.Format("{0}-{1}-{2}", nodeIp, requestorIp, ownership.spec.currentSnapshot);
+                using (lockableBladeSpec ownership = db.getBladeByIP(nodeIp,
+                    bladeLockType.lockSnapshot | bladeLockType.lockOwnership,
+                    bladeLockType.lockNone))
+                {
+                    return String.Format("{0}-{1}-{2}", nodeIp, ownership.spec.currentOwner, ownership.spec.currentSnapshot);
+                }
             }
 
-            using (lockableVMSpec ownership = db.getVMByIP(nodeIp, bladeLockType.lockSnapshot, bladeLockType.lockNone))
+            using (lockableVMSpec ownership = db.getVMByIP(nodeIp,
+                bladeLockType.lockSnapshot | bladeLockType.lockOwnership,
+                bladeLockType.lockNone))
             {
-                if (ownership.spec != null)
-                    return String.Format("{0}-{1}-{2}", nodeIp, requestorIp, ownership.spec.currentSnapshot);
+                return String.Format("{0}-{1}-{2}", nodeIp, ownership.spec.currentOwner, ownership.spec.currentSnapshot);
             }
-
-            throw new Exception("todo: report blade not found error");
         }
         
         public void markLastKnownBIOS(lockableBladeSpec reqBlade, string biosxml)
         {
             lock (_currentBIOSOperations)
             {
-                string waitToken = handleTypes.BOS + "_" + reqBlade.spec.bladeIP.GetHashCode().ToString();
+                waitToken waitToken = new waitToken(handleTypes.BOS, reqBlade.spec.bladeIP.GetHashCode().ToString());
                 _currentBIOSOperations[waitToken].isFinished = true;
             }
 
@@ -1183,7 +1220,7 @@ bladeLockType.lockvmDeployState,  // <-- TODO/FIXME: write perms shuold imply re
             reqBlade.spec.lastDeployedBIOS = biosxml;
         }
 
-        private resultAndBIOSConfig checkBIOSOperationProgress(string waitToken)
+        private resultAndBIOSConfig checkBIOSOperationProgress(waitToken waitToken)
         {
             lock (_currentBIOSOperations)
             {
@@ -1355,6 +1392,25 @@ bladeLockType.lockvmDeployState,  // <-- TODO/FIXME: write perms shuold imply re
         public vmSpec[] getVMByVMServerIP_nolocking(string bladeIP)
         {
             return db.getVMByVMServerIP_nolocking(bladeIP).ToArray();
+        }
+
+        public vmServerCredentials _getCredentialsForVMServerByVMIP(string vmip)
+        {
+            // All VMs have the same credentials for now.
+            return new vmServerCredentials()
+            {
+                username = Properties.Settings.Default.esxiUsername,
+                password = Properties.Settings.Default.esxiPassword
+            };
+        }
+
+        public snapshotDetails _getCurrentSnapshotDetails(string hostIP)
+        {
+            return  new snapshotDetails()
+            {
+                friendlyName = getCurrentSnapshotForBladeOrVM(hostIP), 
+                path = getFreeNASSnapshotPath(hostIP)
+            };
         }
     }
 

@@ -2,7 +2,6 @@
 using System.Collections.Concurrent;
 using System.Text;
 using System.Threading.Tasks;
-using bladeDirectorClient.bladeDirector;
 using hypervisors;
 
 namespace bladeDirectorClient

@@ -88,12 +88,12 @@
       <DesignTimeSharedInput>True</DesignTimeSharedInput>
       <DependentUpon>Settings.settings</DependentUpon>
     </Compile>
-    <Compile Include="Service References\bladeDirector\Reference.cs">
+    <Compile Include="machinePools.cs" />
+    <Compile Include="Service References\bladeDirectorService\Reference.cs">
       <AutoGen>True</AutoGen>
       <DesignTime>True</DesignTime>
       <DependentUpon>Reference.svcmap</DependentUpon>
     </Compile>
-    <Compile Include="machinePools.cs" />
     <Compile Include="VMWareHypervisorPool.cs" />
   </ItemGroup>
   <ItemGroup>
@@ -111,43 +111,79 @@
       <Generator>SettingsSingleFileGenerator</Generator>
       <LastGenOutput>Settings.Designer.cs</LastGenOutput>
     </None>
-    <None Include="Service References\bladeDirector\bladeDirectorClient.bladeDirector.bladeSpec.datasource">
+    <None Include="Service References\bladeDirectorService\bladeDirector.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="Service References\bladeDirectorService\bladeDirector1.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="Service References\bladeDirectorService\bladeDirector2.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="Service References\bladeDirectorService\bladeDirector3.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="Service References\bladeDirectorService\bladeDirector4.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="Service References\bladeDirectorService\bladeDirector5.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="Service References\bladeDirectorService\bladeDirector6.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="Service References\bladeDirectorService\bladeDirector7.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="Service References\bladeDirectorService\bladeDirector8.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="Service References\bladeDirectorService\bladeDirector9.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="Service References\bladeDirectorService\bladeDirectorClient.bladeDirectorService.bladeSpec.datasource">
       <DependentUpon>Reference.svcmap</DependentUpon>
     </None>
-    <None Include="Service References\bladeDirector\bladeDirectorClient.bladeDirector.GetBladeStatusResult.datasource">
+    <None Include="Service References\bladeDirectorService\bladeDirectorClient.bladeDirectorService.GetBladeStatusResult.datasource">
       <DependentUpon>Reference.svcmap</DependentUpon>
     </None>
-    <None Include="Service References\bladeDirector\bladeDirectorClient.bladeDirector.resultCode.datasource">
+    <None Include="Service References\bladeDirectorService\bladeDirectorClient.bladeDirectorService.resultAndBladeName.datasource">
       <DependentUpon>Reference.svcmap</DependentUpon>
     </None>
-    <None Include="Service References\bladeDirector\bladeDirectorClient.bladeDirector.resultCodeAndBIOSConfig.datasource">
+    <None Include="Service References\bladeDirectorService\bladeDirectorClient.bladeDirectorService.resultAndWaitToken.datasource">
       <DependentUpon>Reference.svcmap</DependentUpon>
     </None>
-    <None Include="Service References\bladeDirector\bladeDirectorClient.bladeDirector.resultCodeAndBladeName.datasource">
+    <None Include="Service References\bladeDirectorService\bladeDirectorClient.bladeDirectorService.resultCode.datasource">
       <DependentUpon>Reference.svcmap</DependentUpon>
     </None>
-    <None Include="Service References\bladeDirector\bladeDirectorClient.bladeDirector.vmSpec.datasource">
+    <None Include="Service References\bladeDirectorService\bladeDirectorClient.bladeDirectorService.snapshotDetails.datasource">
       <DependentUpon>Reference.svcmap</DependentUpon>
     </None>
-    <None Include="Service References\bladeDirector\services1.wsdl" />
+    <None Include="Service References\bladeDirectorService\bladeDirectorClient.bladeDirectorService.vmServerCredentials.datasource">
+      <DependentUpon>Reference.svcmap</DependentUpon>
+    </None>
+    <None Include="Service References\bladeDirectorService\bladeDirectorClient.bladeDirectorService.vmSpec.datasource">
+      <DependentUpon>Reference.svcmap</DependentUpon>
+    </None>
+    <None Include="Service References\bladeDirectorService\services.wsdl" />
   </ItemGroup>
   <ItemGroup>
-    <WCFMetadataStorage Include="Service References\bladeDirector\" />
+    <WCFMetadataStorage Include="Service References\bladeDirectorService\" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="Service References\bladeDirector\configuration91.svcinfo" />
+    <None Include="Service References\bladeDirectorService\bladeDirector.disco" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="Service References\bladeDirector\configuration.svcinfo" />
+    <None Include="Service References\bladeDirectorService\configuration91.svcinfo" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="Service References\bladeDirector\Reference.svcmap">
+    <None Include="Service References\bladeDirectorService\configuration.svcinfo" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Service References\bladeDirectorService\Reference.svcmap">
       <Generator>WCF Proxy Generator</Generator>
       <LastGenOutput>Reference.cs</LastGenOutput>
     </None>
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="Service References\bladeDirector\services1.disco" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

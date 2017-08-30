@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Security.Cryptography.X509Certificates;
 using System.ServiceModel;
 using System.ServiceModel.Web;
 
@@ -20,25 +21,25 @@ namespace bladeDirectorWCF
     public interface IServices
     {
         [OperationContract]
-        void keepAlive(string srcIP);
+        void keepAlive();
 
         [OperationContract]
         resultAndWaitToken logIn();
 
         [OperationContract]
-        resultAndWaitToken getProgress(string waitToken);
+        resultAndWaitToken getProgress(waitToken waitToken);
 
         [OperationContract]
         string[] getAllBladeIP();
 
         [OperationContract]
-        resultAndWaitToken RequestAnySingleNode();
+        resultAndBladeName RequestAnySingleNode();
 
         [OperationContract]
         GetBladeStatusResult GetBladeStatus(string nodeIP);
 
         [OperationContract]
-        resultAndWaitToken ReleaseBladeOrVM(string nodeIP, bool force);
+        resultAndWaitToken ReleaseBladeOrVM(string nodeIP);
 
         [OperationContract]
         bool isBladeMine(string nodeIP);
@@ -75,5 +76,20 @@ namespace bladeDirectorWCF
 
         [OperationContract]
         string[] getLogEvents();
+
+        [OperationContract]
+        vmServerCredentials getCredentialsForVMServerByVMIP(string VMIP);
+
+        [OperationContract]
+        snapshotDetails getCurrentSnapshotDetails(string nodeIP);
+
+        [OperationContract]
+        resultAndWaitToken selectSnapshotForBladeOrVM(string bladeName, string newShot);
+    }
+
+    public class snapshotDetails
+    {
+        public string friendlyName;
+        public string path;
     }
 }

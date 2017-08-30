@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Threading;
-using bladeDirectorClient.bladeDirector;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using tests.bladeDirectorServices;
 using bladeSpec = tests.bladeDirectorServices.bladeSpec;
