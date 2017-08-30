@@ -822,6 +822,120 @@
       </wsp:All>
     </wsp:ExactlyOne>
   </wsp:Policy>
+  <wsp:Policy wsu:Id="WSHttpBinding_IServices_getCredentialsForVMServerByVMIP_Input_policy">
+    <wsp:ExactlyOne>
+      <wsp:All>
+        <sp:SignedParts xmlns:sp="http://schemas.xmlsoap.org/ws/2005/07/securitypolicy">
+          <sp:Body />
+          <sp:Header Name="To" Namespace="http://www.w3.org/2005/08/addressing" />
+          <sp:Header Name="From" Namespace="http://www.w3.org/2005/08/addressing" />
+          <sp:Header Name="FaultTo" Namespace="http://www.w3.org/2005/08/addressing" />
+          <sp:Header Name="ReplyTo" Namespace="http://www.w3.org/2005/08/addressing" />
+          <sp:Header Name="MessageID" Namespace="http://www.w3.org/2005/08/addressing" />
+          <sp:Header Name="RelatesTo" Namespace="http://www.w3.org/2005/08/addressing" />
+          <sp:Header Name="Action" Namespace="http://www.w3.org/2005/08/addressing" />
+        </sp:SignedParts>
+        <sp:EncryptedParts xmlns:sp="http://schemas.xmlsoap.org/ws/2005/07/securitypolicy">
+          <sp:Body />
+        </sp:EncryptedParts>
+      </wsp:All>
+    </wsp:ExactlyOne>
+  </wsp:Policy>
+  <wsp:Policy wsu:Id="WSHttpBinding_IServices_getCredentialsForVMServerByVMIP_output_policy">
+    <wsp:ExactlyOne>
+      <wsp:All>
+        <sp:SignedParts xmlns:sp="http://schemas.xmlsoap.org/ws/2005/07/securitypolicy">
+          <sp:Body />
+          <sp:Header Name="To" Namespace="http://www.w3.org/2005/08/addressing" />
+          <sp:Header Name="From" Namespace="http://www.w3.org/2005/08/addressing" />
+          <sp:Header Name="FaultTo" Namespace="http://www.w3.org/2005/08/addressing" />
+          <sp:Header Name="ReplyTo" Namespace="http://www.w3.org/2005/08/addressing" />
+          <sp:Header Name="MessageID" Namespace="http://www.w3.org/2005/08/addressing" />
+          <sp:Header Name="RelatesTo" Namespace="http://www.w3.org/2005/08/addressing" />
+          <sp:Header Name="Action" Namespace="http://www.w3.org/2005/08/addressing" />
+        </sp:SignedParts>
+        <sp:EncryptedParts xmlns:sp="http://schemas.xmlsoap.org/ws/2005/07/securitypolicy">
+          <sp:Body />
+        </sp:EncryptedParts>
+      </wsp:All>
+    </wsp:ExactlyOne>
+  </wsp:Policy>
+  <wsp:Policy wsu:Id="WSHttpBinding_IServices_getCurrentSnapshotDetails_Input_policy">
+    <wsp:ExactlyOne>
+      <wsp:All>
+        <sp:SignedParts xmlns:sp="http://schemas.xmlsoap.org/ws/2005/07/securitypolicy">
+          <sp:Body />
+          <sp:Header Name="To" Namespace="http://www.w3.org/2005/08/addressing" />
+          <sp:Header Name="From" Namespace="http://www.w3.org/2005/08/addressing" />
+          <sp:Header Name="FaultTo" Namespace="http://www.w3.org/2005/08/addressing" />
+          <sp:Header Name="ReplyTo" Namespace="http://www.w3.org/2005/08/addressing" />
+          <sp:Header Name="MessageID" Namespace="http://www.w3.org/2005/08/addressing" />
+          <sp:Header Name="RelatesTo" Namespace="http://www.w3.org/2005/08/addressing" />
+          <sp:Header Name="Action" Namespace="http://www.w3.org/2005/08/addressing" />
+        </sp:SignedParts>
+        <sp:EncryptedParts xmlns:sp="http://schemas.xmlsoap.org/ws/2005/07/securitypolicy">
+          <sp:Body />
+        </sp:EncryptedParts>
+      </wsp:All>
+    </wsp:ExactlyOne>
+  </wsp:Policy>
+  <wsp:Policy wsu:Id="WSHttpBinding_IServices_getCurrentSnapshotDetails_output_policy">
+    <wsp:ExactlyOne>
+      <wsp:All>
+        <sp:SignedParts xmlns:sp="http://schemas.xmlsoap.org/ws/2005/07/securitypolicy">
+          <sp:Body />
+          <sp:Header Name="To" Namespace="http://www.w3.org/2005/08/addressing" />
+          <sp:Header Name="From" Namespace="http://www.w3.org/2005/08/addressing" />
+          <sp:Header Name="FaultTo" Namespace="http://www.w3.org/2005/08/addressing" />
+          <sp:Header Name="ReplyTo" Namespace="http://www.w3.org/2005/08/addressing" />
+          <sp:Header Name="MessageID" Namespace="http://www.w3.org/2005/08/addressing" />
+          <sp:Header Name="RelatesTo" Namespace="http://www.w3.org/2005/08/addressing" />
+          <sp:Header Name="Action" Namespace="http://www.w3.org/2005/08/addressing" />
+        </sp:SignedParts>
+        <sp:EncryptedParts xmlns:sp="http://schemas.xmlsoap.org/ws/2005/07/securitypolicy">
+          <sp:Body />
+        </sp:EncryptedParts>
+      </wsp:All>
+    </wsp:ExactlyOne>
+  </wsp:Policy>
+  <wsp:Policy wsu:Id="WSHttpBinding_IServices_selectSnapshotForBladeOrVM_Input_policy">
+    <wsp:ExactlyOne>
+      <wsp:All>
+        <sp:SignedParts xmlns:sp="http://schemas.xmlsoap.org/ws/2005/07/securitypolicy">
+          <sp:Body />
+          <sp:Header Name="To" Namespace="http://www.w3.org/2005/08/addressing" />
+          <sp:Header Name="From" Namespace="http://www.w3.org/2005/08/addressing" />
+          <sp:Header Name="FaultTo" Namespace="http://www.w3.org/2005/08/addressing" />
+          <sp:Header Name="ReplyTo" Namespace="http://www.w3.org/2005/08/addressing" />
+          <sp:Header Name="MessageID" Namespace="http://www.w3.org/2005/08/addressing" />
+          <sp:Header Name="RelatesTo" Namespace="http://www.w3.org/2005/08/addressing" />
+          <sp:Header Name="Action" Namespace="http://www.w3.org/2005/08/addressing" />
+        </sp:SignedParts>
+        <sp:EncryptedParts xmlns:sp="http://schemas.xmlsoap.org/ws/2005/07/securitypolicy">
+          <sp:Body />
+        </sp:EncryptedParts>
+      </wsp:All>
+    </wsp:ExactlyOne>
+  </wsp:Policy>
+  <wsp:Policy wsu:Id="WSHttpBinding_IServices_selectSnapshotForBladeOrVM_output_policy">
+    <wsp:ExactlyOne>
+      <wsp:All>
+        <sp:SignedParts xmlns:sp="http://schemas.xmlsoap.org/ws/2005/07/securitypolicy">
+          <sp:Body />
+          <sp:Header Name="To" Namespace="http://www.w3.org/2005/08/addressing" />
+          <sp:Header Name="From" Namespace="http://www.w3.org/2005/08/addressing" />
+          <sp:Header Name="FaultTo" Namespace="http://www.w3.org/2005/08/addressing" />
+          <sp:Header Name="ReplyTo" Namespace="http://www.w3.org/2005/08/addressing" />
+          <sp:Header Name="MessageID" Namespace="http://www.w3.org/2005/08/addressing" />
+          <sp:Header Name="RelatesTo" Namespace="http://www.w3.org/2005/08/addressing" />
+          <sp:Header Name="Action" Namespace="http://www.w3.org/2005/08/addressing" />
+        </sp:SignedParts>
+        <sp:EncryptedParts xmlns:sp="http://schemas.xmlsoap.org/ws/2005/07/securitypolicy">
+          <sp:Body />
+        </sp:EncryptedParts>
+      </wsp:All>
+    </wsp:ExactlyOne>
+  </wsp:Policy>
   <wsdl:types>
     <xsd:schema targetNamespace="http://tempuri.org/Imports">
       <xsd:import namespace="http://tempuri.org/" />
@@ -950,6 +1064,24 @@
   <wsdl:message name="IServices_getLogEvents_OutputMessage">
     <wsdl:part name="parameters" element="tns:getLogEventsResponse" />
   </wsdl:message>
+  <wsdl:message name="IServices_getCredentialsForVMServerByVMIP_InputMessage">
+    <wsdl:part name="parameters" element="tns:getCredentialsForVMServerByVMIP" />
+  </wsdl:message>
+  <wsdl:message name="IServices_getCredentialsForVMServerByVMIP_OutputMessage">
+    <wsdl:part name="parameters" element="tns:getCredentialsForVMServerByVMIPResponse" />
+  </wsdl:message>
+  <wsdl:message name="IServices_getCurrentSnapshotDetails_InputMessage">
+    <wsdl:part name="parameters" element="tns:getCurrentSnapshotDetails" />
+  </wsdl:message>
+  <wsdl:message name="IServices_getCurrentSnapshotDetails_OutputMessage">
+    <wsdl:part name="parameters" element="tns:getCurrentSnapshotDetailsResponse" />
+  </wsdl:message>
+  <wsdl:message name="IServices_selectSnapshotForBladeOrVM_InputMessage">
+    <wsdl:part name="parameters" element="tns:selectSnapshotForBladeOrVM" />
+  </wsdl:message>
+  <wsdl:message name="IServices_selectSnapshotForBladeOrVM_OutputMessage">
+    <wsdl:part name="parameters" element="tns:selectSnapshotForBladeOrVMResponse" />
+  </wsdl:message>
   <wsdl:portType name="IServices">
     <wsdl:operation name="keepAlive">
       <wsdl:input wsam:Action="http://tempuri.org/IServices/keepAlive" message="tns:IServices_keepAlive_InputMessage" />
@@ -1026,6 +1158,18 @@
     <wsdl:operation name="getLogEvents">
       <wsdl:input wsam:Action="http://tempuri.org/IServices/getLogEvents" message="tns:IServices_getLogEvents_InputMessage" />
       <wsdl:output wsam:Action="http://tempuri.org/IServices/getLogEventsResponse" message="tns:IServices_getLogEvents_OutputMessage" />
+    </wsdl:operation>
+    <wsdl:operation name="getCredentialsForVMServerByVMIP">
+      <wsdl:input wsam:Action="http://tempuri.org/IServices/getCredentialsForVMServerByVMIP" message="tns:IServices_getCredentialsForVMServerByVMIP_InputMessage" />
+      <wsdl:output wsam:Action="http://tempuri.org/IServices/getCredentialsForVMServerByVMIPResponse" message="tns:IServices_getCredentialsForVMServerByVMIP_OutputMessage" />
+    </wsdl:operation>
+    <wsdl:operation name="getCurrentSnapshotDetails">
+      <wsdl:input wsam:Action="http://tempuri.org/IServices/getCurrentSnapshotDetails" message="tns:IServices_getCurrentSnapshotDetails_InputMessage" />
+      <wsdl:output wsam:Action="http://tempuri.org/IServices/getCurrentSnapshotDetailsResponse" message="tns:IServices_getCurrentSnapshotDetails_OutputMessage" />
+    </wsdl:operation>
+    <wsdl:operation name="selectSnapshotForBladeOrVM">
+      <wsdl:input wsam:Action="http://tempuri.org/IServices/selectSnapshotForBladeOrVM" message="tns:IServices_selectSnapshotForBladeOrVM_InputMessage" />
+      <wsdl:output wsam:Action="http://tempuri.org/IServices/selectSnapshotForBladeOrVMResponse" message="tns:IServices_selectSnapshotForBladeOrVM_OutputMessage" />
     </wsdl:operation>
   </wsdl:portType>
   <wsdl:binding name="WSHttpBinding_IServices" type="tns:IServices">
@@ -1237,6 +1381,39 @@
       </wsdl:input>
       <wsdl:output>
         <wsp:PolicyReference URI="#WSHttpBinding_IServices_getLogEvents_output_policy" />
+        <soap12:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="getCredentialsForVMServerByVMIP">
+      <soap12:operation soapAction="http://tempuri.org/IServices/getCredentialsForVMServerByVMIP" style="document" />
+      <wsdl:input>
+        <wsp:PolicyReference URI="#WSHttpBinding_IServices_getCredentialsForVMServerByVMIP_Input_policy" />
+        <soap12:body use="literal" />
+      </wsdl:input>
+      <wsdl:output>
+        <wsp:PolicyReference URI="#WSHttpBinding_IServices_getCredentialsForVMServerByVMIP_output_policy" />
+        <soap12:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="getCurrentSnapshotDetails">
+      <soap12:operation soapAction="http://tempuri.org/IServices/getCurrentSnapshotDetails" style="document" />
+      <wsdl:input>
+        <wsp:PolicyReference URI="#WSHttpBinding_IServices_getCurrentSnapshotDetails_Input_policy" />
+        <soap12:body use="literal" />
+      </wsdl:input>
+      <wsdl:output>
+        <wsp:PolicyReference URI="#WSHttpBinding_IServices_getCurrentSnapshotDetails_output_policy" />
+        <soap12:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="selectSnapshotForBladeOrVM">
+      <soap12:operation soapAction="http://tempuri.org/IServices/selectSnapshotForBladeOrVM" style="document" />
+      <wsdl:input>
+        <wsp:PolicyReference URI="#WSHttpBinding_IServices_selectSnapshotForBladeOrVM_Input_policy" />
+        <soap12:body use="literal" />
+      </wsdl:input>
+      <wsdl:output>
+        <wsp:PolicyReference URI="#WSHttpBinding_IServices_selectSnapshotForBladeOrVM_output_policy" />
         <soap12:body use="literal" />
       </wsdl:output>
     </wsdl:operation>

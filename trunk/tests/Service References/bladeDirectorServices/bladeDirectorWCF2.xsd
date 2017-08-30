@@ -3,20 +3,20 @@
   <xs:import namespace="http://schemas.datacontract.org/2004/07/createDisks" />
   <xs:import namespace="http://schemas.datacontract.org/2004/07/System.Data.SQLite" />
   <xs:import namespace="http://schemas.microsoft.com/2003/10/Serialization/" />
-  <xs:complexType name="resultAndBIOSConfig">
+  <xs:complexType name="resultAndBladeName">
     <xs:complexContent mixed="false">
       <xs:extension base="tns:resultAndWaitToken">
         <xs:sequence>
-          <xs:element minOccurs="0" name="BIOSConfig" nillable="true" type="xs:string" />
+          <xs:element minOccurs="0" name="bladeName" nillable="true" type="xs:string" />
         </xs:sequence>
       </xs:extension>
     </xs:complexContent>
   </xs:complexType>
-  <xs:element name="resultAndBIOSConfig" nillable="true" type="tns:resultAndBIOSConfig" />
+  <xs:element name="resultAndBladeName" nillable="true" type="tns:resultAndBladeName" />
   <xs:complexType name="resultAndWaitToken">
     <xs:sequence>
       <xs:element minOccurs="0" name="result" nillable="true" type="tns:result" />
-      <xs:element minOccurs="0" name="waitToken" nillable="true" type="xs:string" />
+      <xs:element minOccurs="0" name="waitToken" nillable="true" type="tns:waitToken" />
     </xs:sequence>
   </xs:complexType>
   <xs:element name="resultAndWaitToken" nillable="true" type="tns:resultAndWaitToken" />
@@ -42,16 +42,33 @@
     </xs:restriction>
   </xs:simpleType>
   <xs:element name="resultCode" nillable="true" type="tns:resultCode" />
-  <xs:complexType name="resultAndBladeName">
+  <xs:complexType name="waitToken">
+    <xs:sequence>
+      <xs:element minOccurs="0" name="handleType" type="tns:handleTypes" />
+      <xs:element minOccurs="0" name="t" nillable="true" type="xs:string" />
+    </xs:sequence>
+  </xs:complexType>
+  <xs:element name="waitToken" nillable="true" type="tns:waitToken" />
+  <xs:simpleType name="handleTypes">
+    <xs:restriction base="xs:string">
+      <xs:enumeration value="LGI" />
+      <xs:enumeration value="REL" />
+      <xs:enumeration value="DEP" />
+      <xs:enumeration value="BOS" />
+      <xs:enumeration value="SHT" />
+    </xs:restriction>
+  </xs:simpleType>
+  <xs:element name="handleTypes" nillable="true" type="tns:handleTypes" />
+  <xs:complexType name="resultAndBIOSConfig">
     <xs:complexContent mixed="false">
       <xs:extension base="tns:resultAndWaitToken">
         <xs:sequence>
-          <xs:element minOccurs="0" name="bladeName" nillable="true" type="xs:string" />
+          <xs:element minOccurs="0" name="BIOSConfig" nillable="true" type="xs:string" />
         </xs:sequence>
       </xs:extension>
     </xs:complexContent>
   </xs:complexType>
-  <xs:element name="resultAndBladeName" nillable="true" type="tns:resultAndBladeName" />
+  <xs:element name="resultAndBIOSConfig" nillable="true" type="tns:resultAndBIOSConfig" />
   <xs:simpleType name="GetBladeStatusResult">
     <xs:restriction base="xs:string">
       <xs:enumeration value="bladeNotFound" />
@@ -256,4 +273,18 @@
     </xs:sequence>
   </xs:complexType>
   <xs:element name="ArrayOfvmSpec" nillable="true" type="tns:ArrayOfvmSpec" />
+  <xs:complexType name="vmServerCredentials">
+    <xs:sequence>
+      <xs:element minOccurs="0" name="password" nillable="true" type="xs:string" />
+      <xs:element minOccurs="0" name="username" nillable="true" type="xs:string" />
+    </xs:sequence>
+  </xs:complexType>
+  <xs:element name="vmServerCredentials" nillable="true" type="tns:vmServerCredentials" />
+  <xs:complexType name="snapshotDetails">
+    <xs:sequence>
+      <xs:element minOccurs="0" name="friendlyName" nillable="true" type="xs:string" />
+      <xs:element minOccurs="0" name="path" nillable="true" type="xs:string" />
+    </xs:sequence>
+  </xs:complexType>
+  <xs:element name="snapshotDetails" nillable="true" type="tns:snapshotDetails" />
 </xs:schema>

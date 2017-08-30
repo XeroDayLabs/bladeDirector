@@ -252,6 +252,12 @@
     <None Include="Service References\bladeDirectorServices\tests.bladeDirectorServices.resultCode.datasource">
       <DependentUpon>Reference.svcmap</DependentUpon>
     </None>
+    <None Include="Service References\bladeDirectorServices\tests.bladeDirectorServices.snapshotDetails.datasource">
+      <DependentUpon>Reference.svcmap</DependentUpon>
+    </None>
+    <None Include="Service References\bladeDirectorServices\tests.bladeDirectorServices.vmServerCredentials.datasource">
+      <DependentUpon>Reference.svcmap</DependentUpon>
+    </None>
     <None Include="Service References\bladeDirectorServices\tests.bladeDirectorServices.vmSpec.datasource">
       <DependentUpon>Reference.svcmap</DependentUpon>
     </None>
