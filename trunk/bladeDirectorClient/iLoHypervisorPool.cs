@@ -45,12 +45,9 @@ namespace bladeDirectorClient
                 for (int n = 0; n < specs.Length; n++)
                 {
                     results[n] = director.RequestAnySingleVM(specs[n].hw, specs[n].sw);
-                    if (results[n].code == resultCode.success ||
-                        results[n].code == resultCode.pending)
-                    {
-                        continue;
-                    }
-                    else
+
+                    if (results[n].code != resultCode.success &&
+                        results[n].code != resultCode.pending)
                     {
                         throw new bladeAllocationException(results[n].code);
                     }
