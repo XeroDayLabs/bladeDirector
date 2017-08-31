@@ -22,7 +22,7 @@ namespace tests
                 string hostip = "1.2.3.4";
 
                 // We will be using this blade for our tests.
-                bladeSpec spec = svc.uutDebug.createBladeSpec("172.17.129.131", "192.168.129.131", "172.17.2.131", 1234, false, VMDeployStatus.needsPowerCycle, " ... ", bladeLockType.lockAll, bladeLockType.lockAll);
+                bladeSpec spec = svc.uutDebug.createBladeSpec("172.17.129.131", "192.168.129.131", "172.17.2.131", 1234, false, VMDeployStatus.notBeingDeployed, " ... ", bladeLockType.lockAll, bladeLockType.lockAll);
                 svc.uutDebug.initWithBladesFromBladeSpec(new[] { spec }, false, NASFaultInjectionPolicy.retunSuccessful);
 
                 resultAndBladeName res = svc.uutDebug._RequestAnySingleNode(hostip);
@@ -57,7 +57,7 @@ namespace tests
                 string hostip = "1.2.3.4";
 
                 // We will be using this blade for our tests.
-                bladeSpec spec = svc.uutDebug.createBladeSpec("172.17.129.131", "192.168.129.131", "172.17.2.131", 1234, false, VMDeployStatus.needsPowerCycle, " ... ", bladeLockType.lockAll, bladeLockType.lockAll);
+                bladeSpec spec = svc.uutDebug.createBladeSpec("172.17.129.131", "192.168.129.131", "172.17.2.131", 1234, false, VMDeployStatus.notBeingDeployed, " ... ", bladeLockType.lockAll, bladeLockType.lockAll);
                 svc.uutDebug.initWithBladesFromBladeSpec(new[] { spec }, false, NASFaultInjectionPolicy.retunSuccessful);
 
                 VMSoftwareSpec sw = new VMSoftwareSpec() { debuggerHost = "172.16.10.91", debuggerKey = "a.b.c.d", debuggerPort = 10234};

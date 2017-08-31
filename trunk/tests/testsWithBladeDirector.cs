@@ -18,8 +18,8 @@ namespace tests
                 string hostip = "172.16.10.91";
 
                 bladeSpec spec = svc.uutDebug.createBladeSpec(
-                    "172.17.129.131", "192.168.129.131", "172.17.2.131", 1234, 
-                    false, VMDeployStatus.needsPowerCycle, " ... ", bladeLockType.lockAll, bladeLockType.lockAll);
+                    "172.17.129.131", "192.168.129.131", "172.17.2.131", 1234,
+                    false, VMDeployStatus.notBeingDeployed, " ... ", bladeLockType.lockAll, bladeLockType.lockAll);
 
                 svc.uutDebug.initWithBladesFromBladeSpec(new[] { spec }, false, NASFaultInjectionPolicy.retunSuccessful);
 

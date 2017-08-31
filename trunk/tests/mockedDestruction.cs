@@ -2,6 +2,7 @@ using System;
 using System.Diagnostics;
 using System.Linq;
 using System.Net;
+using System.Threading;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using tests.bladeDirectorServices;
 
@@ -49,7 +50,13 @@ namespace tests
                 Assert.AreEqual(bladeState, GetBladeStatusResult.yours);
 
                 // Then free it 'dirtily', by logging in again.
-                svc.uutDebug._logIn(hostIP);
+                resultAndWaitToken res = svc.uutDebug._logIn(hostIP);
+                while (res.result.code == resultCode.pending)
+                {
+                    res = svc.uut.getProgress(res.waitToken);
+                    Thread.Sleep(TimeSpan.FromSeconds(3));
+                }
+                Assert.AreEqual(resultCode.success, res.result.code);
 
                 // The blade should now be unused.
                 bladeState = svc.uutDebug._GetBladeStatus(hostIP, ourBlade);

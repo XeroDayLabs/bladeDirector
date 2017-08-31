@@ -26,6 +26,7 @@ namespace bladeDirectorWCF
         private object _writeLockPadlock = new object();
         private bladeLockType _readLock;
         private bladeLockType _writeLock;
+        private TimeSpan lockTimeout = TimeSpan.FromSeconds(30);
 
         public bladeLockCollection(bladeLockType readLocks, bladeLockType writeLocks)
             : this("idk", readLocks, writeLocks)
@@ -157,35 +158,11 @@ namespace bladeDirectorWCF
             }
         }
 
-        private List<Thread> seenThreads = new List<Thread>(); 
-
         public void acquire(bladeLockType readTypes, bladeLockType writeTypes)
         {
             Debug.WriteLine(Thread.CurrentThread.ManagedThreadId + " bladeLockCollection for blade " + _name + " acquiring " + readTypes + " / " + writeTypes); 
             Debug.WriteLine(Thread.CurrentThread.ManagedThreadId + Environment.StackTrace);
-            /*
-            lock (seenThreads)
-            {
-                if (!seenThreads.Contains(Thread.CurrentThread))
-                    seenThreads.Add(Thread.CurrentThread);
-            }
-            
-            lock (seenThreads)
-            {
-                foreach (Thread seenThread in seenThreads)
-                {
-                    if (!seenThread.IsAlive)
-                    {
-                        //Debug.WriteLine("managed thread " + seenThread.ManagedThreadId + " is dead");
-                        if (_readTakenList.Any(y => y.Value.Any(x => x.threadID == seenThread.ManagedThreadId)))
-                            throw new AbandonedMutexException();
-                        if (_writeTakenList.Any(x => x.Value.threadID == seenThread.ManagedThreadId))
-                            throw new AbandonedMutexException();
-                        //seenThreads.Remove(seenThread);
-                    }
-                }
-            }
-            */
+
             foreach (string lockTypeName in getLockNames())
             {
                 int lockBitMask = (int)Enum.Parse(typeof(bladeLockType), lockTypeName);
@@ -226,7 +203,7 @@ namespace bladeDirectorWCF
                     try
                     {
                         Debug.WriteLine(Thread.CurrentThread.ManagedThreadId + " bladeLockCollection for blade " + _name + lockTypeName + " acquiring reader lock");
-                        locksForThisBlade[lockTypeName].AcquireReaderLock(TimeSpan.FromSeconds(30));
+                        locksForThisBlade[lockTypeName].AcquireReaderLock(lockTimeout);
                     }
                     catch (ApplicationException)
                     {

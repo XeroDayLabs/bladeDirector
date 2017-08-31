@@ -31,8 +31,8 @@ namespace tests
         {
             using (services svc = new services())
             {
-                bladeSpec spec1Expected = svc.uutDebug.createBladeSpec("blade1ip", "blade1iscsiIP", "blade1ILOIP", 111, false, VMDeployStatus.needsPowerCycle, null, bladeLockType.lockAll, bladeLockType.lockAll );
-                bladeSpec spec2Expected = svc.uutDebug.createBladeSpec("blade2ip", "blade2iscsiIP", "blade2ILOIP", 222, false, VMDeployStatus.needsPowerCycle, null, bladeLockType.lockAll, bladeLockType.lockAll);
+                bladeSpec spec1Expected = svc.uutDebug.createBladeSpec("blade1ip", "blade1iscsiIP", "blade1ILOIP", 111, false, VMDeployStatus.notBeingDeployed, null, bladeLockType.lockAll, bladeLockType.lockAll );
+                bladeSpec spec2Expected = svc.uutDebug.createBladeSpec("blade2ip", "blade2iscsiIP", "blade2ILOIP", 222, false, VMDeployStatus.notBeingDeployed, null, bladeLockType.lockAll, bladeLockType.lockAll);
                 bladeSpec[] expected = new[] {spec1Expected, spec2Expected};
 
                 svc.uutDebug.initWithBladesFromBladeSpec(expected, false, NASFaultInjectionPolicy.retunSuccessful);
@@ -102,7 +102,7 @@ namespace tests
                 Assert.AreEqual(GetBladeStatusResult.yours, uut.uutDebug._GetBladeStatus("192.168.2.2", "1.1.1.1"));
             }
         }
-
+         
         [TestMethod]
         public void willReAllocateNodeAfterTimeout()
         {
