@@ -24,6 +24,8 @@ namespace bladeDirectorService
         protected override void OnStart(string[] args)
         {
             bladeDirectorArgs wcfargs = new bladeDirectorArgs();
+            wcfargs.baseURL = "http://0.0.0.0/bladeDirector";
+            wcfargs.webURL = "http://0.0.0.0:81";
             wcfargs.stopEvent = stopEvent;
             bladeDirectorWCF.Program._Main(wcfargs);
         }
