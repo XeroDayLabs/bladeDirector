@@ -3,8 +3,6 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 2013
 VisualStudioVersion = 12.0.40629.0
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "bladeDirector", "bladeDirector\bladeDirector.csproj", "{2F67CD72-58AA-423B-8D9A-4E438686B132}"
-EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "tests", "tests\tests.csproj", "{84741AEF-36FB-4A50-9098-9AA07D618EA4}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "createDisks", "createDisks\createDisks.csproj", "{40DADAE3-E73B-4B87-90A8-EC315D0AED76}"
@@ -16,9 +14,6 @@ EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{FC044D82-66F4-4B0B-800D-12484BFBC4B8}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "bladeDirectorClient", "bladeDirectorClient\bladeDirectorClient.csproj", "{4ABB1CC9-0C59-48F3-BE95-0FA21C420055}"
-	ProjectSection(ProjectDependencies) = postProject
-		{2F67CD72-58AA-423B-8D9A-4E438686B132} = {2F67CD72-58AA-423B-8D9A-4E438686B132}
-	EndProjectSection
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "bladeDirectorWCF", "bladeDirectorWCF\bladeDirectorWCF.csproj", "{EEAEC90D-5AB7-4948-B37C-E0E3AD003F1E}"
 EndProject
@@ -34,18 +29,6 @@ Global
 		Release|x86 = Release|x86
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
-		{2F67CD72-58AA-423B-8D9A-4E438686B132}.Debug|AnyCPU.ActiveCfg = Debug|Any CPU
-		{2F67CD72-58AA-423B-8D9A-4E438686B132}.Debug|AnyCPU.Build.0 = Debug|Any CPU
-		{2F67CD72-58AA-423B-8D9A-4E438686B132}.Debug|x64.ActiveCfg = Debug|x64
-		{2F67CD72-58AA-423B-8D9A-4E438686B132}.Debug|x64.Build.0 = Debug|x64
-		{2F67CD72-58AA-423B-8D9A-4E438686B132}.Debug|x86.ActiveCfg = Debug|x86
-		{2F67CD72-58AA-423B-8D9A-4E438686B132}.Debug|x86.Build.0 = Debug|x86
-		{2F67CD72-58AA-423B-8D9A-4E438686B132}.Release|AnyCPU.ActiveCfg = Release|x64
-		{2F67CD72-58AA-423B-8D9A-4E438686B132}.Release|AnyCPU.Build.0 = Release|x64
-		{2F67CD72-58AA-423B-8D9A-4E438686B132}.Release|x64.ActiveCfg = Release|x64
-		{2F67CD72-58AA-423B-8D9A-4E438686B132}.Release|x64.Build.0 = Release|x64
-		{2F67CD72-58AA-423B-8D9A-4E438686B132}.Release|x86.ActiveCfg = Release|x86
-		{2F67CD72-58AA-423B-8D9A-4E438686B132}.Release|x86.Build.0 = Release|x86
 		{84741AEF-36FB-4A50-9098-9AA07D618EA4}.Debug|AnyCPU.ActiveCfg = Debug|Any CPU
 		{84741AEF-36FB-4A50-9098-9AA07D618EA4}.Debug|AnyCPU.Build.0 = Debug|Any CPU
 		{84741AEF-36FB-4A50-9098-9AA07D618EA4}.Debug|x64.ActiveCfg = Debug|x64
