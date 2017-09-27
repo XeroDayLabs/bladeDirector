@@ -17,9 +17,11 @@ namespace tests
         public string servicesURL { get; private set; }
         public string servicesDebugURL { get; private set; }
 
+        private static int portNum = 90;
+
         public services()
         {
-            string baseURL = "http://127.0.0.1/" + Guid.NewGuid().ToString();
+            string baseURL = "http://127.0.0.1:" + (portNum++) +"/" + Guid.NewGuid().ToString();
             servicesURL = baseURL + "/bladeDirector";
             servicesDebugURL = baseURL + "/bladeDirectorDebug";
 

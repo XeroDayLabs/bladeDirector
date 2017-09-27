@@ -1,4 +1,0 @@
-#!ipxe
-
-set 210 boot\x86\local\esxi\/
-chain tftp://172.17.191.254/\boot\x86\local\esxi\pxelinux.0

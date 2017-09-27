@@ -38,12 +38,11 @@ namespace tests
                 resultAndReadBack = writeBIOSAndReadBack(svc, hostip, res.bladeName, testBiosXML);
                 Assert.IsTrue(resultAndReadBack.BIOSConfig.Contains("<Section name=\"NumLock\">On</Section>"));
 
-                string bladeName = res.bladeName;
                 resultAndWaitToken relRes = svc.uutDebug._ReleaseBladeOrVM(hostip, res.bladeName, false);
                 while (relRes.result.code == resultCode.pending)
                 {
                     Thread.Sleep(TimeSpan.FromSeconds(3));
-                    relRes = svc.uutDebug._ReleaseBladeOrVM(hostip, bladeName, false);
+                    relRes = svc.uut.getProgress(relRes.waitToken);
                 }
                 Assert.AreEqual(resultCode.success, relRes.result.code);
             }
