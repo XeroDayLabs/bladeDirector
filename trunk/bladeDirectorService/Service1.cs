@@ -15,6 +15,7 @@ namespace bladeDirectorService
     public partial class Service1 : ServiceBase
     {
         private  ManualResetEvent stopEvent = new ManualResetEvent(false);
+        private Task mainTask;
 
         public Service1()
         {
@@ -27,12 +28,15 @@ namespace bladeDirectorService
             wcfargs.baseURL = Properties.Settings.Default.baseURLAPI;
             wcfargs.webURL = Properties.Settings.Default.baseURLWeb;
             wcfargs.stopEvent = stopEvent;
-            bladeDirectorWCF.Program._Main(wcfargs);
+
+            mainTask = new Task(() => bladeDirectorWCF.Program._Main(wcfargs));
+            mainTask.Start();
         }
 
         protected override void OnStop()
         {
             stopEvent.Set();
+            mainTask.Wait();
         }
     }
 }
