@@ -249,9 +249,15 @@ namespace bladeDirectorWCF
     public class resultAndWaitToken
     {
         public result result;
-        public string waitToken;
+        public waitToken waitToken;
 
-        public resultAndWaitToken(result newResult, string newWaitToken)
+        public resultAndWaitToken(resultCode newResult, waitToken newWaitToken, string msg)
+        {
+            result = new result(newResult, msg);
+            waitToken = newWaitToken;
+        }
+
+        public resultAndWaitToken(result newResult, waitToken newWaitToken)
         {
             result = newResult;
             waitToken = newWaitToken;
@@ -262,16 +268,22 @@ namespace bladeDirectorWCF
             // for xml de/ser
         }
 
-        protected resultAndWaitToken(resultCode resCode, string newWaitToken, string msg)
+        public resultAndWaitToken(resultCode resultCode, waitToken newWaitToken)
         {
-            result = new result(resCode, msg);
+            result = new result(resultCode);
             waitToken = newWaitToken;
         }
 
-        public resultAndWaitToken(resultCode resultCode, string newWaitToken)
+        public resultAndWaitToken(resultCode resultCode)
         {
-            result = new result(resultCode, null);
-            waitToken = newWaitToken;
+            result = new result(resultCode, "none provided @ " + Environment.StackTrace);
+            waitToken = null;
+        }
+
+        public resultAndWaitToken(resultCode resultCode, string msg)
+        {
+            result = new result(resultCode, msg);
+            waitToken = null;
         }
     }
 
@@ -285,12 +297,12 @@ namespace bladeDirectorWCF
             // For XML de/ser
         }
 
-        public resultAndBladeName(resultCode result, string newWaitToken, string msg)
+        public resultAndBladeName(resultCode result, waitToken newWaitToken, string msg)
             : base(result, newWaitToken, msg)
         {
         }
 
-        public resultAndBladeName(result result, string newWaitToken)
+        public resultAndBladeName(result result, waitToken newWaitToken)
             : base(result, newWaitToken)
         {
         }
@@ -311,13 +323,13 @@ namespace bladeDirectorWCF
         {
         }
 
-        public resultAndBIOSConfig(result newState, string newWaitToken)
+        public resultAndBIOSConfig(result newState, waitToken newWaitToken)
             : base(newState, newWaitToken)
         {
             BIOSConfig = null;
         }
 
-        public resultAndBIOSConfig(result newState, string newWaitToken, string newBIOS)
+        public resultAndBIOSConfig(result newState, waitToken newWaitToken, string newBIOS)
             : base(newState, newWaitToken)
         {
             BIOSConfig = newBIOS;

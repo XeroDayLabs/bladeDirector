@@ -9,7 +9,7 @@ using System.Runtime.InteropServices;
 using System.ServiceModel;
 using System.ServiceModel.Channels;
 using System.Threading;
-using bladeDirectorClient.bladeDirector;
+using bladeDirectorClient.bladeDirectorService;
 using hypervisors;
 
 namespace bladeDirectorClient
@@ -18,6 +18,42 @@ namespace bladeDirectorClient
     {
         public VMHardwareSpec hw;
         public VMSoftwareSpec sw;
+    }
+
+    public class servicesWrapper : IDisposable
+    {
+        public ServicesClient underlying { get; private set; }
+
+        public servicesWrapper()
+            :this(machinePools.bladeDirectorURL)
+        {
+            
+        }
+
+        public servicesWrapper(string uri)
+        {
+            Binding thisBind = new WSHttpBinding();
+            thisBind.OpenTimeout = TimeSpan.FromMinutes(5);
+            thisBind.ReceiveTimeout = TimeSpan.FromMinutes(5);
+            thisBind.SendTimeout = TimeSpan.FromMinutes(5);
+            thisBind.CloseTimeout = TimeSpan.FromMinutes(5);
+            EndpointAddress ep = new EndpointAddress(uri);
+            underlying = new ServicesClient(thisBind, ep);
+        }
+
+        public void Dispose()
+        {
+            try
+            {
+                Debug.WriteLine("Log entries from bladeDirector:");
+                foreach (string msg in underlying.getLogEvents())
+                    Debug.WriteLine(msg);
+            }
+            catch (Exception) { }
+
+            // FIXME: why these casts?
+            try { ((IDisposable)underlying).Dispose(); } catch (CommunicationException) { }
+        }
     }
 
     public class iLoHypervisorPool
@@ -33,54 +69,47 @@ namespace bladeDirectorClient
         {
             initialiseIfNeeded();
 
-            Binding thisBind = new BasicHttpBinding("servicesSoap");
-            thisBind.OpenTimeout = TimeSpan.FromMinutes(5);
-            thisBind.ReceiveTimeout = TimeSpan.FromMinutes(5);
-            thisBind.SendTimeout = TimeSpan.FromMinutes(5);
-            thisBind.CloseTimeout = TimeSpan.FromMinutes(5);
-            EndpointAddress ep = new EndpointAddress(machinePools.bladeDirectorURL);
-            using (servicesSoapClient director = new servicesSoapClient(thisBind, ep))
+            using(servicesWrapper director = new servicesWrapper())
             {
-                resultCodeAndBladeName[] results = new resultCodeAndBladeName[specs.Length];
+                resultAndBladeName[] results = new resultAndBladeName[specs.Length];
                 for (int n = 0; n < specs.Length; n++)
                 {
-                    results[n] = director.RequestAnySingleVM(specs[n].hw, specs[n].sw);
-                    if (results[n].code == resultCode.success ||
-                        results[n].code == resultCode.pending)
+                    results[n] = director.underlying.RequestAnySingleVM(specs[n].hw, specs[n].sw);
+                    if (results[n].result.code == resultCode.success ||
+                        results[n].result.code == resultCode.pending)
                     {
                         continue;
                     }
                     else
                     {
-                        throw new bladeAllocationException(results[n].code);
+                        throw new bladeAllocationException(results[n]);
                     }
                 }
 
                 hypervisorCollection<hypSpec_vmware> toRet = new hypervisorCollection<hypSpec_vmware>();
                 try
                 {
-                    int idx = 0;
-                    foreach (resultCodeAndBladeName res in results)
+                    foreach (resultAndBladeName res in results)
                     {
-                        resultCodeAndBladeName progress;
+                        resultAndBladeName progress;
                         while (true)
                         {
-                            progress = director.getProgressOfVMRequest(res.waitToken);
+                            progress = (resultAndBladeName) director.underlying.getProgress(res.waitToken);
 
-                            if (progress.code == resultCode.success)
+                            if (progress.result.code == resultCode.success)
                                 break;
-                            if (progress.code != resultCode.pending && progress.code != resultCode.unknown)
-                                throw new bladeAllocationException(progress.code);
+                            if (progress.result.code != resultCode.pending && 
+                                progress.result.code != resultCode.unknown)
+                                throw new bladeAllocationException(progress);
                         }
 
-                        vmSpec vmSpec = director.getConfigurationOfVM(progress.bladeName);
-                        bladeSpec vmServerSpec = director.getConfigurationOfBladeByID((int) vmSpec.parentBladeID);
-                        string snapshotFriendlyName = director.getCurrentSnapshotForBlade(progress.bladeName);
-                        string snapshotUnfriendlyName = director.getFreeNASSnapshotPath(progress.bladeName);
+                        vmSpec vmSpec = director.underlying.getVMByIP_withoutLocking(progress.bladeName);
+                        vmServerCredentials serverCreds = director.underlying.getCredentialsForVMServerByVMIP(progress.bladeName);
+                        snapshotDetails snapshotDetails = director.underlying.getCurrentSnapshotDetails(progress.bladeName);
 
                         hypSpec_vmware newSpec = new hypSpec_vmware(
-                            vmSpec.displayName, vmServerSpec.bladeIP, vmServerSpec.ESXiUsername, vmServerSpec.ESXiPassword,
-                            vmSpec.username, vmSpec.password, snapshotFriendlyName, snapshotUnfriendlyName,
+                            vmSpec.displayName, vmSpec.parentBladeIP, serverCreds.username, serverCreds.password,
+                            vmSpec.username, vmSpec.password, snapshotDetails.friendlyName, snapshotDetails.path,
                             vmSpec.kernelDebugPort, vmSpec.kernelDebugKey, vmSpec.VMIP);
 
                         ensurePortIsFree(vmSpec.kernelDebugPort);
@@ -94,8 +123,6 @@ namespace bladeDirectorClient
                         newVM.setDisposalCallback(onDestruction);
                         if (!toRet.TryAdd(vmSpec.VMIP, newVM))
                             throw new Exception();
-
-                        idx++;
                     }
                 }
                 catch (Exception)
@@ -103,7 +130,7 @@ namespace bladeDirectorClient
                     foreach (KeyValuePair<string, hypervisorWithSpec<hypSpec_vmware>> allocedBlades in toRet)
                     {
                         if (allocedBlades.Key != null)
-                            director.releaseBladeOrVM(allocedBlades.Key);
+                            director.underlying.ReleaseBladeOrVM(allocedBlades.Key);
                     }
                     throw;
                 }
@@ -132,33 +159,62 @@ namespace bladeDirectorClient
             string iloKernelKey, string snapshotName)
         {
             initialiseIfNeeded();
-            using (servicesSoapClient director = new servicesSoapClient("servicesSoap", machinePools.bladeDirectorURL))
+            using (servicesWrapper director = new servicesWrapper())
             {
-                string[] nodes = director.ListNodes().Split(',');
-
                 hypervisorCollection<hypSpec_iLo> toRet = new hypervisorCollection<hypSpec_iLo>();
                 try
                 {
-                    foreach (string nodeName in nodes)
+                    while (true)
                     {
-                        resultCode res = director.RequestNode(nodeName);
-
-                        bladeSpec bladeConfig = director.getConfigurationOfBlade(nodeName);
-                        res = director.selectSnapshotForBladeOrVM(nodeName, snapshotName);
-                        while (res == resultCode.pending)
+                        resultAndBladeName res = director.underlying.RequestAnySingleNode();
+                        if (res.result.code == resultCode.pending)
                         {
-                            res = director.selectSnapshotForBladeOrVM_getProgress(nodeName);
-                            Thread.Sleep(TimeSpan.FromSeconds(5));
+                            resultAndWaitToken waitRes = director.underlying.getProgress(res.waitToken);
+                            if (waitRes.result.code == resultCode.pending)
+                            {
+                                Thread.Sleep(TimeSpan.FromSeconds(3));
+                                continue;
+                            }
+                            if (waitRes.result.code != resultCode.success)
+                                throw new bladeAllocationException(res);
                         }
-                        if (res != resultCode.success)
-                            throw new Exception("Can't find snapshot " + snapshotName);
-                        string snapshotUnfriendlyName = director.getCurrentSnapshotForBlade(nodeName);
+                        else if (res.result.code == resultCode.bladeQueueFull)
+                        {
+                            break;
+                        }
+                        else if (res.result.code != resultCode.success)
+                        {
+                            throw new bladeAllocationException(res);
+                        }
+
+                        bladeSpec bladeConfig = director.underlying.getBladeByIP_withoutLocking(res.bladeName);
+                        resultAndWaitToken selectRes = director.underlying.selectSnapshotForBladeOrVM(res.bladeName, snapshotName);
+                        if (selectRes.result.code == resultCode.pending)
+                        {
+                            resultAndWaitToken waitRes = director.underlying.getProgress(selectRes.waitToken);
+                            if (waitRes.result.code == resultCode.pending)
+                            {
+                                Thread.Sleep(TimeSpan.FromSeconds(5));
+                                continue;
+                            }
+                            selectRes.result = waitRes.result;
+                        }
+
+                        if (selectRes.result.code != resultCode.success)
+                        {
+                            throw new bladeAllocationException(selectRes);
+                        }
+
+                        if (selectRes.result.code != resultCode.success)
+                            throw new bladeAllocationException(selectRes);
+
+                        snapshotDetails snapshotDetails = director.underlying.getCurrentSnapshotDetails(res.bladeName);
 
                         hypSpec_iLo spec = new hypSpec_iLo(
                             bladeConfig.bladeIP, iloHostUsername, iloHostPassword,
                             bladeConfig.iLOIP, iloUsername, iloPassword,
                             iloISCSIIP, iloISCSIUsername, iloISCSIPassword,
-                            snapshotName, snapshotUnfriendlyName, bladeConfig.iLOPort, iloKernelKey
+                            snapshotDetails.friendlyName, snapshotDetails.path, bladeConfig.iLOPort, iloKernelKey
                             );
 
                         ensurePortIsFree(bladeConfig.iLOPort);
@@ -272,52 +328,54 @@ namespace bladeDirectorClient
             initialiseIfNeeded();
 
             // We request a blade from the blade director, and use them for all our tests, blocking if none are available.
-            using (servicesSoapClient director = new servicesSoapClient("servicesSoap", machinePools.bladeDirectorURL))
+            using (servicesWrapper director = new servicesWrapper())
             {
                 // Request a node. If all queues are full, then wait and retry until we get one.
-                resultCodeAndBladeName allocatedBladeResult;
+                resultAndBladeName allocatedBladeResult;
                 while (true)
                 {
-                    allocatedBladeResult = director.RequestAnySingleNode();
-                    if (allocatedBladeResult.code == resultCode.success || allocatedBladeResult.code == resultCode.pending)
+                    allocatedBladeResult = director.underlying.RequestAnySingleNode();
+                    if (allocatedBladeResult.result.code == resultCode.success ||
+                        allocatedBladeResult.result.code == resultCode.pending)
                         break;
-                    if (allocatedBladeResult.code == resultCode.bladeQueueFull)
+                    if (allocatedBladeResult.result.code == resultCode.bladeQueueFull)
                     {
                         Debug.WriteLine("All blades are fully queued, waiting until one is spare");
                         Thread.Sleep(TimeSpan.FromSeconds(5));
                         continue;
                     }
-                    throw new Exception("Blade director returned unexpected return status '" + allocatedBladeResult.code + "'");
+                    throw new bladeAllocationException(allocatedBladeResult);
                 }
 
                 // Now, wait until our blade is available.
                 try
                 {
-                    bool isMine = director.isBladeMine(allocatedBladeResult.bladeName);
+                    bool isMine = director.underlying.isBladeMine(allocatedBladeResult.bladeName);
                     while (!isMine)
                     {
                         Debug.WriteLine("Blade " + allocatedBladeResult.bladeName + " not released yet, awaiting release..");
                         Thread.Sleep(TimeSpan.FromSeconds(5));
-                        isMine = director.isBladeMine(allocatedBladeResult.bladeName);
+                        isMine = director.underlying.isBladeMine(allocatedBladeResult.bladeName);
                     }
 
                     // Great, now we have ownership of the blade, so we can use it safely.
-                    bladeSpec bladeConfig = director.getConfigurationOfBlade(allocatedBladeResult.bladeName);
-                    resultCode res = director.selectSnapshotForBladeOrVM(allocatedBladeResult.bladeName, snapshotName);
-                    while (res == resultCode.pending)
+                    bladeSpec bladeConfig = director.underlying.getBladeByIP_withoutLocking(allocatedBladeResult.bladeName);
+                    resultAndWaitToken res = director.underlying.selectSnapshotForBladeOrVM(allocatedBladeResult.bladeName, snapshotName);
+                    while (res.result.code == resultCode.pending)
                     {
-                        res = director.selectSnapshotForBladeOrVM_getProgress(allocatedBladeResult.bladeName);
+                        res = director.underlying.getProgress(allocatedBladeResult.waitToken);
                         Thread.Sleep(TimeSpan.FromSeconds(5));
                     }
-                    if (res != resultCode.success)
+                    if (res.result.code != resultCode.success)
                         throw new Exception("Can't find snapshot " + snapshotName);
-                    string unfriendlySnapshotName = director.getFreeNASSnapshotPath(allocatedBladeResult.bladeName);
+
+                    snapshotDetails snapshotDetails = director.underlying.getCurrentSnapshotDetails(allocatedBladeResult.bladeName);
 
                     hypSpec_iLo spec = new hypSpec_iLo(
                         bladeConfig.bladeIP, iloHostUsername, iloHostPassword,
                         bladeConfig.iLOIP, iloUsername, iloPassword,
                         iloISCSIIP, iloISCSIUsername, iloISCSIPassword,
-                        snapshotName, unfriendlySnapshotName, bladeConfig.iLOPort, iloKernelKey
+                        snapshotDetails.friendlyName, snapshotDetails.path, bladeConfig.iLOPort, iloKernelKey
                         );
 
                     ensurePortIsFree(bladeConfig.iLOPort);
@@ -331,7 +389,7 @@ namespace bladeDirectorClient
                 }
                 catch (Exception)
                 {
-                    director.releaseBladeOrVM(allocatedBladeResult.bladeName);
+                    director.underlying.ReleaseBladeOrVM(allocatedBladeResult.bladeName);
                     throw;
                 }
             }
@@ -345,21 +403,30 @@ namespace bladeDirectorClient
                 {
                     if (keepaliveThread == null)
                     {
-                        using (servicesSoapClient director = new servicesSoapClient("servicesSoap", machinePools.bladeDirectorURL))
+                        using (servicesWrapper director = new servicesWrapper())
                         {
-                            string waitToken = director.logIn();
-                            DateTime deadline = DateTime.Now + TimeSpan.FromMinutes(5);
-                            while (true)
+                            resultAndWaitToken logInStatus = director.underlying.logIn();
+                            if (logInStatus.result.code == resultCode.pending)
                             {
-                                resultCode res = director.getLogInProgress(waitToken);
-                                if (res == resultCode.success)
-                                    break;
-                                if (res != resultCode.pending)
-                                    throw new Exception("Can't log in to blade director, recieved status " + res);
-                                if (DateTime.Now > deadline)
-                                    throw new TimeoutException();
+                                DateTime deadline = DateTime.Now + TimeSpan.FromMinutes(5);
+                                while (true)
+                                {
+                                    resultAndWaitToken res = director.underlying.getProgress(logInStatus.waitToken);
+                                    if (res.result.code != resultCode.pending &&
+                                        res.result.code != resultCode.unknown)
+                                    {
+                                        if (res.result.code != resultCode.success)
+                                            throw new bladeAllocationException(res);
+                                        break;
+                                    }
+                                    if (DateTime.Now > deadline)
+                                        throw new TimeoutException();
+                                }
                             }
+                            else if (logInStatus.result.code != resultCode.success)
+                                throw new bladeAllocationException(logInStatus);
                         }
+
                         keepaliveThread = new Thread(keepaliveThreadMain);
                         keepaliveThread.Name = "Blade director keepalive thread";
                         keepaliveThread.Start();
@@ -378,14 +445,14 @@ namespace bladeDirectorClient
 
         private void keepaliveThreadMain()
         {
-            using (servicesSoapClient director = new servicesSoapClient("servicesSoap", machinePools.bladeDirectorURL))
+            using (servicesWrapper director = new servicesWrapper())
             {
                 while (true)
                 {
                     Thread.Sleep(TimeSpan.FromSeconds(3));
                     try
                     {
-                        director.keepAlive();
+                        director.underlying.keepAlive();
                     }
                     catch (TimeoutException)
                     {
@@ -397,17 +464,17 @@ namespace bladeDirectorClient
         private void onDestruction(hypSpec_iLo obj)
         {
             // Notify the director that this blade is no longer in use.
-            using (servicesSoapClient director = new servicesSoapClient("servicesSoap", machinePools.bladeDirectorURL))
+            using (servicesWrapper director = new servicesWrapper())
             {
-                director.releaseBladeOrVM(obj.kernelDebugIPOrHostname);
+                director.underlying.ReleaseBladeOrVM(obj.kernelDebugIPOrHostname);
             }
         }
 
         private void onDestruction(hypSpec_vmware obj)
         {
-            using (servicesSoapClient director = new servicesSoapClient("servicesSoap", machinePools.bladeDirectorURL))
+            using (servicesWrapper director = new servicesWrapper())
             {
-                director.releaseBladeOrVM(obj.kernelDebugIPOrHostname);
+                director.underlying.ReleaseBladeOrVM(obj.kernelDebugIPOrHostname);
             }
         }
     }
@@ -415,15 +482,34 @@ namespace bladeDirectorClient
     public class bladeAllocationException : Exception
     {
         private readonly resultCode _code;
+        private readonly string _msg;
 
         public bladeAllocationException(resultCode code)
         {
             _code = code;
+            _msg = "(none)";
+        }
+
+        public bladeAllocationException(resultAndBladeName res)
+        {
+            _code = res.result.code;
+            _msg = res.result.errMsg;
+        }
+
+        public bladeAllocationException(resultAndWaitToken res)
+        {
+            _code = res.result.code;
+            _msg = res.result.errMsg;
         }
 
         public override string ToString()
         {
-            return "Blade allocation service returned code " + _code;
+            return "Blade allocation service returned code " + _code + " with message '" + _msg + "'";
+        }
+
+        public override string Message
+        {
+            get { return this.ToString(); }
         }
     }
 
@@ -451,21 +537,24 @@ namespace bladeDirectorClient
         public void setBIOSConfig(string newBiosXML)
         {
             hypSpec_iLo spec = getConnectionSpec();
-            using (servicesSoapClient director = new servicesSoapClient("servicesSoap", machinePools.bladeDirectorURL))
+            using (servicesWrapper director = new servicesWrapper())
             {
-                resultCode res = director.rebootAndStartDeployingBIOSToBlade(spec.kernelDebugIPOrHostname, newBiosXML);
-                if (res == resultCode.noNeedLah)
+                resultAndWaitToken res = director.underlying.rebootAndStartDeployingBIOSToBlade(spec.kernelDebugIPOrHostname, newBiosXML);
+                if (res.result.code == resultCode.noNeedLah)
                     return;
 
-                if (res != resultCode.pending)
+                if (res.result.code != resultCode.pending)
                     throw new Exception("Failed to start BIOS write to " + spec.kernelDebugIPOrHostname + ", error " + res);
 
+                waitToken waitOn = res.waitToken;
                 do
                 {
-                    res = director.checkBIOSDeployProgress(spec.kernelDebugIPOrHostname);
-                } while (res == resultCode.pending);
+                    res = director.underlying.getProgress(waitOn);
+                    Thread.Sleep(TimeSpan.FromSeconds(5));
+                } while (res.result.code == resultCode.pending);
 
-                if (res != resultCode.success && res != resultCode.noNeedLah)
+                if (res.result.code != resultCode.success &&
+                    res.result.code != resultCode.noNeedLah)
                     throw new Exception("Failed to write bios to " + spec.kernelDebugIPOrHostname + ", error " + res);
             }
         }

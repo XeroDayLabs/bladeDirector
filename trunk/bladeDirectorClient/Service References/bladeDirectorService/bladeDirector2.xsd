@@ -1,8 +1,8 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <xs:schema xmlns:tns="http://schemas.datacontract.org/2004/07/bladeDirectorWCF" elementFormDefault="qualified" targetNamespace="http://schemas.datacontract.org/2004/07/bladeDirectorWCF" xmlns:xs="http://www.w3.org/2001/XMLSchema">
-  <xs:import namespace="http://schemas.datacontract.org/2004/07/createDisks" />
-  <xs:import namespace="http://schemas.datacontract.org/2004/07/System.Data.SQLite" />
-  <xs:import namespace="http://schemas.microsoft.com/2003/10/Serialization/" />
+  <xs:import schemaLocation="http://127.0.0.1/bladeDirector?xsd=xsd4" namespace="http://schemas.datacontract.org/2004/07/createDisks" />
+  <xs:import schemaLocation="http://127.0.0.1/bladeDirector?xsd=xsd5" namespace="http://schemas.datacontract.org/2004/07/System.Data.SQLite" />
+  <xs:import schemaLocation="http://127.0.0.1/bladeDirector?xsd=xsd0" namespace="http://schemas.microsoft.com/2003/10/Serialization/" />
   <xs:complexType name="resultAndBladeName">
     <xs:complexContent mixed="false">
       <xs:extension base="tns:resultAndWaitToken">
@@ -44,21 +44,10 @@
   <xs:element name="resultCode" nillable="true" type="tns:resultCode" />
   <xs:complexType name="waitToken">
     <xs:sequence>
-      <xs:element minOccurs="0" name="handleType" type="tns:handleTypes" />
       <xs:element minOccurs="0" name="t" nillable="true" type="xs:string" />
     </xs:sequence>
   </xs:complexType>
   <xs:element name="waitToken" nillable="true" type="tns:waitToken" />
-  <xs:simpleType name="handleTypes">
-    <xs:restriction base="xs:string">
-      <xs:enumeration value="LGI" />
-      <xs:enumeration value="REL" />
-      <xs:enumeration value="DEP" />
-      <xs:enumeration value="BOS" />
-      <xs:enumeration value="SHT" />
-    </xs:restriction>
-  </xs:simpleType>
-  <xs:element name="handleTypes" nillable="true" type="tns:handleTypes" />
   <xs:complexType name="resultAndBIOSConfig">
     <xs:complexContent mixed="false">
       <xs:extension base="tns:resultAndWaitToken">

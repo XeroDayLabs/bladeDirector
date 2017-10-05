@@ -20,7 +20,7 @@ namespace bladeDirectorWCF
             return hostStateManager.logIn(sanitizeAddress(requestorIP));
         }
 
-        private static resultAndWaitToken _getProgress(string waitToken)
+        private static resultAndWaitToken _getProgress(waitToken waitToken)
         {
             return hostStateManager.getProgress(waitToken);
         }
@@ -104,13 +104,28 @@ namespace bladeDirectorWCF
         {
             return hostStateManager.getLogEvents().ToArray();
         }
+
+        public vmServerCredentials _getCredentialsForVMServerByVMIP(string VMIP)
+        {
+            return hostStateManager._getCredentialsForVMServerByVMIP(VMIP);
+        }
+
+        public snapshotDetails _getCurrentSnapshotDetails(string VMIP)
+        {
+            return hostStateManager._getCurrentSnapshotDetails(VMIP);
+        }
+
+        public resultAndWaitToken _selectSnapshotForBladeOrVM(string requestorIP, string bladeName, string newShot)
+        {
+            return hostStateManager.selectSnapshotForBladeOrVM(requestorIP, bladeName, newShot);
+        }
         
 #endregion
 
         #region non-static
-        public void keepAlive(string srcIP)
+        public void keepAlive()
         {
-            _keepAlive(sanitizeAddress(srcIP));
+            _keepAlive(getSrcIP());
         }
 
         public resultAndWaitToken logIn()
@@ -118,7 +133,7 @@ namespace bladeDirectorWCF
             return _logIn(getSrcIP());
         }
 
-        public resultAndWaitToken getProgress(string waitToken)
+        public resultAndWaitToken getProgress(waitToken waitToken)
         {
             return _getProgress(waitToken);
         }
@@ -128,7 +143,7 @@ namespace bladeDirectorWCF
             return _getAllBladeIP();
         }
 
-        public resultAndWaitToken RequestAnySingleNode()
+        public resultAndBladeName RequestAnySingleNode()
         {
             return _RequestAnySingleNode(getSrcIP());
         }
@@ -138,9 +153,9 @@ namespace bladeDirectorWCF
             return _GetBladeStatus(getSrcIP(), sanitizeAddress(nodeIP));
         }
 
-        public resultAndWaitToken ReleaseBladeOrVM(string nodeIP, bool force)
+        public resultAndWaitToken ReleaseBladeOrVM(string nodeIP)
         {
-            return _ReleaseBlade(sanitizeAddress(nodeIP), getSrcIP(), force);
+            return _ReleaseBlade(sanitizeAddress(nodeIP), getSrcIP(), false);
         }
 
         public bool isBladeMine(string nodeIP)
@@ -201,6 +216,21 @@ namespace bladeDirectorWCF
         public string[] getLogEvents()
         {
             return _getLogEvents();
+        }
+
+        public vmServerCredentials getCredentialsForVMServerByVMIP(string VMIP)
+        {
+            return _getCredentialsForVMServerByVMIP(VMIP);
+        }
+
+        public snapshotDetails getCurrentSnapshotDetails(string VMIP)
+        {
+            return _getCurrentSnapshotDetails(VMIP);
+        }
+
+        public resultAndWaitToken selectSnapshotForBladeOrVM(string bladeName, string newShot)
+        {
+            return _selectSnapshotForBladeOrVM(getSrcIP(), sanitizeAddress(bladeName), newShot);
         }
 
         public static string getSrcIP()

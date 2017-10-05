@@ -140,8 +140,10 @@
     <Compile Include="vmServerControl.cs" />
     <Compile Include="vmServerControl_ESXi.cs" />
     <Compile Include="vmServerControl_mocked.cs" />
+    <Compile Include="vmServerCredentials.cs" />
     <Compile Include="VMSoftwareSpec.cs" />
     <Compile Include="vmSpec.cs" />
+    <Compile Include="waitToken.cs" />
     <Compile Include="webServices.cs" />
   </ItemGroup>
   <ItemGroup>

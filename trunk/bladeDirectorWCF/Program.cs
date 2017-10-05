@@ -7,6 +7,7 @@ using System.ServiceModel.Description;
 using System.ServiceModel.Dispatcher;
 using System.ServiceModel.Web;
 using System.Text;
+using System.Threading;
 using CommandLine;
 using CommandLine.Text;
 using Binding = System.Web.Services.Description.Binding;
@@ -35,13 +36,14 @@ namespace bladeDirectorWCF
                 _Main(parsedArgs);
         }
 
-        private static void _Main(bladeDirectorArgs parsedArgs)
+        public static void _Main(bladeDirectorArgs parsedArgs)
         {
             AppDomain.CurrentDomain.FirstChanceException += (sender, args) =>
             {
                 try
                 {
-                    services.hostStateManager.addLogEvent("First-chance exception: " + args.Exception.ToString());
+                    if (services.hostStateManager != null)
+                        services.hostStateManager.addLogEvent("First-chance exception: " + args.Exception.ToString());
                 }
                 catch (Exception)
                 {
@@ -54,10 +56,11 @@ namespace bladeDirectorWCF
 
             Uri baseServiceURL = new Uri(new Uri(parsedArgs.baseURL), "bladeDirector");
             Uri debugServiceURL = new Uri(new Uri(parsedArgs.baseURL), "bladeDirectorDebug");
+            Uri webServiceURL = new Uri(new Uri(parsedArgs.webURL), "");
 
             using (WebServiceHost WebSvc = new WebServiceHost(typeof (webServices), baseServiceURL))
             {
-                WebSvc.AddServiceEndpoint(typeof(IWebServices), new WebHttpBinding(), new Uri("http://0.0.0.0:81/foo"));
+                WebSvc.AddServiceEndpoint(typeof(IWebServices), new WebHttpBinding(), webServiceURL);
                 WebSvc.Open();
 
                 using (ServiceHost baseSvc = new ServiceHost(typeof (services), baseServiceURL))
@@ -70,11 +73,19 @@ namespace bladeDirectorWCF
                         configureService(debugSvc, typeof(IDebugServices));
                         debugSvc.Open();
 
-                        Console.WriteLine("BladeDirector ready.");
-                        Console.WriteLine("Listening at main endpoint:  " + baseServiceURL.ToString());
-                        Console.WriteLine("Listening at debug endpoint: " + debugServiceURL.ToString());
-                        Console.WriteLine("Hit [enter] to exit.");
-                        Console.ReadLine();
+                        if (parsedArgs.stopEvent != null)
+                        {
+                            parsedArgs.stopEvent.WaitOne();
+                        }
+                        else
+                        {
+                            Console.WriteLine("BladeDirector ready.");
+                            Console.WriteLine("Listening at main endpoint:  " + baseServiceURL.ToString());
+                            Console.WriteLine("Listening at web endpoint:   " + webServiceURL.ToString());
+                            Console.WriteLine("Listening at debug endpoint: " + debugServiceURL.ToString());
+                            Console.WriteLine("Hit [enter] to exit.");
+                            Console.ReadLine();
+                        }
                     }
                 }
             }
@@ -116,6 +127,14 @@ namespace bladeDirectorWCF
 
         [Option('b', "baseURL", Required = false, DefaultValue = "http://127.0.0.1", HelpText = "Base URL to listen for services on")]
         public string baseURL { get; set; }
+
+        [Option('w', "webURL", Required = false, DefaultValue = "http://0.0.0.0:81/", HelpText = "URL to provide HTTP services to IPXE on")]
+        public string webURL { get; set; }
+        
+        /// <summary>
+        /// Set this to a new ManualResetEvent if you'd like service exit to be controlled remotely.
+        /// </summary>
+        public ManualResetEvent stopEvent = null;
 
         // ReSharper restore UnusedAutoPropertyAccessor.Global
     }

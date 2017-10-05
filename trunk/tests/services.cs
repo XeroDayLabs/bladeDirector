@@ -14,12 +14,16 @@ namespace tests
         public ServicesClient uut;
 
         private Process bladeDirectorProcess;
+        public string servicesURL { get; private set; }
+        public string servicesDebugURL { get; private set; }
+
+        private static int portNum = 90;
 
         public services()
         {
-            string baseURL = "http://127.0.0.1/" + Guid.NewGuid().ToString();
-            string servicesURL = baseURL + "/bladeDirector";
-            string servicesDebugURL = baseURL + "/bladeDirectorDebug";
+            string baseURL = "http://127.0.0.1:" + (portNum++) +"/" + Guid.NewGuid().ToString();
+            servicesURL = baseURL + "/bladeDirector";
+            servicesDebugURL = baseURL + "/bladeDirectorDebug";
 
             string bladeDirectorWCFExe = Path.Combine(Properties.Settings.Default.repoRoot, "trunk\\bladeDirectorWCF\\bin\\x64\\Debug\\bladeDirectorWCF.exe");
             ProcessStartInfo bladeDirectorExeInfo = new ProcessStartInfo(bladeDirectorWCFExe);
