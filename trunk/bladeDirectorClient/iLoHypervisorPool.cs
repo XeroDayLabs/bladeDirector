@@ -9,7 +9,7 @@ using System.Runtime.InteropServices;
 using System.ServiceModel;
 using System.ServiceModel.Channels;
 using System.Threading;
-using bladeDirectorClient.bladeDirector;
+using bladeDirectorClient.bladeDirectorService;
 using hypervisors;
 
 namespace bladeDirectorClient
