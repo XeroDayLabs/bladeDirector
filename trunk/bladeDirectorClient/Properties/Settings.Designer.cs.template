@@ -238,5 +238,29 @@ namespace bladeDirectorClient.Properties {
                 this["iloKernelKey"] = value;
             }
         }
+
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("1")]
+        public string XDLClusterBladeList {
+            get {
+                return ((string)(this["XDLClusterBladeList"]));
+            }
+            set {
+                this["XDLClusterBladeList"] = value;
+            }
+        }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("0")]
+        public int XDLClusterVMsPerBlade {
+            get {
+                return ((int)(this["XDLClusterVMsPerBlade"]));
+            }
+            set {
+                this["XDLClusterVMsPerBlade"] = value;
+            }
+        }	
     }
 }

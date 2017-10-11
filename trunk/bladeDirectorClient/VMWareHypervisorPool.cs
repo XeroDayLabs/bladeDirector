@@ -4,11 +4,18 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 using System.Net.NetworkInformation;
+using System.Text.RegularExpressions;
 using System.Threading;
 using hypervisors;
 
 namespace bladeDirectorClient
 {
+    public enum VMSource
+    {
+        configuredServer,
+        XDLClusterBlades
+    }
+
     public class VMWareHypervisorPool
     {
         private readonly Object hypervisorSpecLock = new Object();
@@ -26,13 +33,13 @@ namespace bladeDirectorClient
             }
         }
 
-        public hypervisorCollection<hypSpec_vmware> createAsManyVMSAsPossible(string snapshotName = "clean", clientExecutionMethod execType = clientExecutionMethod.smb)
+        public hypervisorCollection<hypSpec_vmware> createAsManyVMSAsPossible(string snapshotName = "clean", clientExecutionMethod execType = clientExecutionMethod.smb, VMSource src = VMSource.configuredServer)
         {
             hypervisorCollection<hypSpec_vmware> hyps = new hypervisorCollection<hypSpec_vmware>();
 
             while (true)
             {
-                hypervisor_vmware thisHyp = machinePools.vmware.createHypervisorForNextFreeVMOrNull();
+                hypervisor_vmware thisHyp = machinePools.vmware.createHypervisorForNextFreeVMOrNull(snapshotName, execType, src);
                 if (thisHyp == null)
                     break;
                 hyps.TryAdd(thisHyp.getConnectionSpec().kernelDebugIPOrHostname, thisHyp);
@@ -41,69 +48,13 @@ namespace bladeDirectorClient
             return hyps;
         }
 
-        public hypervisor_vmware createHypervisorForNextFreeVMOrNull(string snapshotName = "clean", clientExecutionMethod execType = clientExecutionMethod.smb)
+        public hypervisor_vmware createHypervisorForNextFreeVMOrNull(string snapshotName = "clean", clientExecutionMethod execType = clientExecutionMethod.smb, VMSource src = VMSource.configuredServer)
         {
             lock (hypervisorSpecLock)
             {
-                if (hypervisorSpecs == null)
-                {
-                    try
-                    {
-                        // time to initialise the collection, marking all as unused.
-                        hypervisorSpecs = new ConcurrentDictionary<hypSpec_vmware, bool>();
+                populateSpecsIfNeeded(snapshotName, src);
 
-                        int kernelVMCount = Properties.Settings.Default.kernelVMCount;
-                        string vmNameBase = Properties.Settings.Default.VMWareVMName;
-                        int kernelVMPortBase = Properties.Settings.Default.VMWareVMPortBase;
-                        string[] kernelVMServerList = Properties.Settings.Default.VMWareVMServer.Split(',');
-                        string kernelVMServerUsername = Properties.Settings.Default.VMWareVMServerUsername;
-                        string kernelVMServerPassword = Properties.Settings.Default.VMWareVMServerPassword;
-                        string kernelVMUsername = Properties.Settings.Default.VMWareVMUsername;
-                        string kernelVMPassword = Properties.Settings.Default.VMWareVMPassword;
-                        string kernelVMDebugKey = Properties.Settings.Default.VMWareVMDebugKey;
-                        int VMsPerVMServer = 10;    // TODO: Move into a setting
-
-                        if (kernelVMCount == 0 || vmNameBase == "" || kernelVMPortBase == 0 || kernelVMServerList.Length == 0 ||
-                            kernelVMServerUsername == "" || kernelVMServerPassword == "" || kernelVMDebugKey == "")
-                        {
-                            throw new Exception("BladeDirectorClient not configured properly");
-                        }
-
-                        hypSpec_vmware[] hyps = new hypSpec_vmware[kernelVMCount];
-
-                        int VMServerIndex = 0;
-                        for (int i = 1; i < kernelVMCount + 1; i++)
-                        {
-                            string vmname = String.Format("{0}-{1}", vmNameBase, i);
-                            ushort vmPort = (ushort) (kernelVMPortBase + i - 1);
-
-                            hyps[i - 1] = new hypSpec_vmware(
-                                vmname, kernelVMServerList[VMServerIndex],
-                                kernelVMServerUsername, kernelVMServerPassword,
-                                kernelVMUsername, kernelVMPassword,
-                                snapshotName, null, vmPort, kernelVMDebugKey, vmname);
-
-                            hypervisorSpecs[hyps[i - 1]] = false;
-
-                            // Check the relevant port isn't already in use
-                            iLoHypervisorPool.ensurePortIsFree(vmPort);
-
-                            // Advance to next server if needed
-                            if (i%10 == 0)
-                            {
-                                vmNameBase = "unitTests-desktop";   // :^)
-                                VMServerIndex++;
-                            }
-                        }
-                    }
-                    catch (Exception)
-                    {
-                        hypervisorSpecs = null;
-                        throw;
-                    }
-                }
-
-                // Atomically find an unused hypervisor, and mark it as in-use
+                // Atomically find an unused VM, and mark it as in-use
                 KeyValuePair<hypSpec_vmware, bool> hypKVP;
                 lock (hypervisorSpecLock)
                 {
@@ -130,6 +81,135 @@ namespace bladeDirectorClient
                         hypervisorSpecs[hypKVP.Key] = false;
                         throw;
                     }
+                }
+            }
+        }
+
+        private void populateSpecsIfNeeded(string snapshotName, VMSource src)
+        {
+            switch (src)
+            {
+                case VMSource.configuredServer:
+                    populateSpecsIfNeeded_VMServer(snapshotName);
+                    break;
+                case VMSource.XDLClusterBlades:
+                    populateSpecsIfNeeded_XDLCluster(snapshotName);
+                    break;
+                default:
+                    throw new ArgumentOutOfRangeException("src", src, null);
+            }
+        }
+
+        private void populateSpecsIfNeeded_VMServer(string snapshotName)
+        {
+            if (hypervisorSpecs == null)
+            {
+                try
+                {
+                    // time to initialise the collection, marking all as unused.
+                    hypervisorSpecs = new ConcurrentDictionary<hypSpec_vmware, bool>();
+
+                    int kernelVMCount = Properties.Settings.Default.kernelVMCount;
+                    string vmNameBase = Properties.Settings.Default.VMWareVMName;
+                    int kernelVMPortBase = Properties.Settings.Default.VMWareVMPortBase;
+                    string kernelVMServer = Properties.Settings.Default.VMWareVMServer;
+                    string kernelVMServerUsername = Properties.Settings.Default.VMWareVMServerUsername;
+                    string kernelVMServerPassword = Properties.Settings.Default.VMWareVMServerPassword;
+                    string kernelVMUsername = Properties.Settings.Default.VMWareVMUsername;
+                    string kernelVMPassword = Properties.Settings.Default.VMWareVMPassword;
+                    string kernelVMDebugKey = Properties.Settings.Default.VMWareVMDebugKey;
+
+                    if (kernelVMCount == 0 || vmNameBase == "" || kernelVMPortBase == 0 || kernelVMServer == "" ||
+                        kernelVMServerUsername == "" || kernelVMServerPassword == "" || kernelVMDebugKey == "")
+                    {
+                        throw new Exception("BladeDirectorClient not configured properly");
+                    }
+
+                    hypSpec_vmware[] hyps = new hypSpec_vmware[kernelVMCount];
+
+                    int VMServerIndex = 0;
+                    for (int i = 1; i < kernelVMCount + 1; i++)
+                    {
+                        string vmname = String.Format("{0}-{1}", vmNameBase, i);
+                        ushort vmPort = (ushort)(kernelVMPortBase + i - 1);
+
+                        hyps[i - 1] = new hypSpec_vmware(
+                            vmname, kernelVMServer,
+                            kernelVMServerUsername, kernelVMServerPassword,
+                            kernelVMUsername, kernelVMPassword,
+                            snapshotName, null, vmPort, kernelVMDebugKey, vmname);
+
+                        hypervisorSpecs[hyps[i - 1]] = false;
+
+                        // Check the relevant port isn't already in use
+                        iLoHypervisorPool.ensurePortIsFree(vmPort);
+                    }
+                }
+                catch (Exception)
+                {
+                    hypervisorSpecs = null;
+                    throw;
+                }
+            }
+        }
+
+        private void populateSpecsIfNeeded_XDLCluster(string snapshotName)
+        {
+            if (hypervisorSpecs == null)
+            {
+                try
+                {
+                    hypervisorSpecs = new ConcurrentDictionary<hypSpec_vmware, bool>();
+
+                    int kernelVMCount = Properties.Settings.Default.XDLClusterVMsPerBlade;
+
+                    string kernelVMServerUsername = Properties.Settings.Default.VMWareVMServerUsername;
+                    string kernelVMServerPassword = Properties.Settings.Default.VMWareVMServerPassword;
+                    string kernelVMUsername = Properties.Settings.Default.VMWareVMUsername;
+                    string kernelVMPassword = Properties.Settings.Default.VMWareVMPassword;
+                    string kernelVMDebugKey = Properties.Settings.Default.VMWareVMDebugKey;
+
+                    if (kernelVMServerUsername == "" || kernelVMServerPassword == "" || kernelVMDebugKey == "")
+                        throw new Exception("BladeDirectorClient not configured properly");
+
+                    List<hypSpec_vmware> hyps = new List<hypSpec_vmware>();
+
+                    // Construct the hostnames of the blades we will be using
+                    string[] bladeIndexesAsString = Properties.Settings.Default.XDLClusterBladeList.Split(',');
+                    int[] bladeIndexes = bladeIndexesAsString.Select(x => Int32.Parse(x)).ToArray();
+                    string[] bladeHostnames = bladeIndexes.Select(x => String.Format("blade{0:D2}.fuzz.xd.lan", x)).ToArray();
+
+                    // Iterate over each blade, constructing VMs.
+                    for (int index = 0; index < bladeHostnames.Length; index++)
+                    {
+                        string bladeHostname = bladeHostnames[index];
+                        int bladeID = bladeIndexes[index];
+
+                        // Get VMs on this blade
+                        string[] vmnames = hypervisor_vmware.getVMNames(bladeHostname, kernelVMServerUsername, kernelVMServerPassword).OrderBy(x => x).ToArray();
+
+                        // Now construct them
+                        for (int vmIndex = 0; vmIndex < kernelVMCount; vmIndex++)
+                        {
+                            string vmname = vmnames[vmIndex];
+                            // VMWare ports are generated according to the blade and VM IDs.
+                            // VM 02 on blade 12 would get '51202'.
+                            ushort vmPort = (ushort) (50000 + (bladeID*100) + (vmIndex) + 1);
+
+                            var newHyp = new hypSpec_vmware(vmname, bladeHostname, kernelVMServerUsername, kernelVMServerPassword, kernelVMUsername, kernelVMPassword, snapshotName, null, vmPort, kernelVMDebugKey, vmname);
+
+                            hyps.Add(newHyp);
+                            hypervisorSpecs[newHyp] = false;
+
+                            // Check the relevant port isn't already in use
+                            iLoHypervisorPool.ensurePortIsFree(vmPort);
+                        }
+                    }
+                }
+                catch (Exception)
+                {
+                    hypervisorSpecs = null;
+                    throw;
                 }
             }
         }
