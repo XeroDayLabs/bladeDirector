@@ -441,7 +441,7 @@ namespace bladeDirectorWCF
 
             // VM IPs are in 172.17.(128+bladeIndex).vmIndex
             newVM.VMIP = "172.17." + (28 + VMServerIPBytes[3]) + "." + newVM.indexOnServer;
-            newVM.iscsiIP = "192.168." + (28 + VMServerIPBytes[3]) + "." + newVM.indexOnServer;
+            newVM.iscsiIP = "10.0." + (28 + VMServerIPBytes[3]) + "." + newVM.indexOnServer;
             newVM.eth0MAC = "00:50:56:00:" + (VMServerIPBytes[3] - 100).ToString("D2") + ":" + newVM.indexOnServer.ToString("D2");
             newVM.eth1MAC = "00:50:56:01:" + (VMServerIPBytes[3] - 100).ToString("D2") + ":" + newVM.indexOnServer.ToString("D2");
             newVM.displayName = "VM_" + (VMServerIPBytes[3] - 100).ToString("D2") + "_" + newVM.indexOnServer.ToString("D2");

@@ -377,7 +377,7 @@ namespace bladeDirectorWCF
                 ownershipToPresent = nextOwner;
             script = script.Replace("{BLADE_OWNER}", ownershipToPresent);
 
-            script = script.Replace("{BLADE_NETMASK_ISCSI}", "255.255.192.0");
+            script = script.Replace("{BLADE_NETMASK_ISCSI}", "255.255.0.0");
             script = script.Replace("{BLADE_SNAPSHOT}", currentSnapshot);
 
             return script;
