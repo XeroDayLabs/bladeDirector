@@ -53,6 +53,52 @@ namespace tests
         }
 
         [TestMethod]
+        public void reportsVMCreationFailureNeatly()
+        {
+            string hostIP = "1.1.1.1";
+
+            using (services uut = new services(new[] { "1.1.1.1", "2.2.2.2", "3.3.3.3" }))
+            {
+                VMHardwareSpec hwSpec = new VMHardwareSpec() {memoryMB = 2344, cpuCount = 2};
+                VMSoftwareSpec swSpec = new VMSoftwareSpec();
+
+                uut.uutDebug.initWithBladesFromIPList(new[] {"172.17.129.131", "172.17.129.130"}, true, NASFaultInjectionPolicy.failSnapshotDeletionOnFirstSnapshot);
+                uut.uutDebug._setExecutionResultsIfMocked(mockedExecutionResponses.successful);
+
+                resultAndBladeName allocRes;
+
+                allocRes = uut.uutDebug._requestAnySingleVM(hostIP, hwSpec, swSpec);
+                Assert.AreEqual(resultCode.pending, allocRes.result.code);
+
+                waitToken waitTok = allocRes.waitToken;
+                while (true)
+                {
+                    Thread.Sleep(TimeSpan.FromSeconds(1));
+
+                    resultAndBladeName progress = (resultAndBladeName)uut.uut.getProgress(waitTok);
+                    waitTok = progress.waitToken;
+
+                    if (progress.result.code == resultCode.pending)
+                        continue;
+                    Assert.AreEqual(resultCode.genericFail, progress.result.code);
+                    Assert.AreEqual("172.17.158.1", progress.bladeName);
+                    break;
+                }
+                // OK, our allocation failed. Try allocating a second VM - this one should succeed.
+
+                allocRes = uut.uutDebug._requestAnySingleVM(hostIP, hwSpec, swSpec);
+                Assert.AreEqual(resultCode.pending, allocRes.result.code);
+                allocRes = (resultAndBladeName)testUtils.waitForSuccess(uut, allocRes, TimeSpan.FromMinutes(11));
+
+                Assert.AreNotEqual("172.17.158.1", allocRes.bladeName);
+                Assert.AreNotEqual("172.17.158.1", allocRes.bladeName);
+                vmSpec VMConfig = uut.uut.getVMByIP_withoutLocking(allocRes.bladeName);
+                Assert.AreNotEqual("00:50:56:00:30:01", VMConfig.eth0MAC);
+                Assert.AreNotEqual("00:50:56:01:30:01", VMConfig.eth1MAC);
+            }
+        }
+
+        [TestMethod]
         public void canAllocateANumberOfVMMocked()
         {
             string hostIP = "1.1.1.1";

@@ -59,11 +59,11 @@ namespace tests
                 bladeSpec spec = svc.uutDebug.createBladeSpec("172.17.129.131", "192.168.129.131", "172.17.2.131", 1234, false, VMDeployStatus.notBeingDeployed, " ... ", bladeLockType.lockAll, bladeLockType.lockAll);
                 svc.uutDebug.initWithBladesFromBladeSpec(new[] { spec }, false, NASFaultInjectionPolicy.retunSuccessful);
 
-                VMSoftwareSpec sw = new VMSoftwareSpec() { debuggerHost = "172.16.10.91", debuggerKey = "a.b.c.d", debuggerPort = 10234};
-                VMHardwareSpec hw = new VMHardwareSpec() { cpuCount =  1, memoryMB = 4096};
+                VMSoftwareSpec sw = new VMSoftwareSpec() { debuggerHost = "172.16.10.91", debuggerKey = "a.b.c.d", debuggerPort = 10234 };
+                VMHardwareSpec hw = new VMHardwareSpec() { cpuCount = 1, memoryMB = 4096 };
                 resultAndBladeName res = svc.uutDebug._requestAnySingleVM(hostip, hw, sw);
                 testUtils.waitForSuccess(svc, res, TimeSpan.FromMinutes(15));
-                
+
                 string VMName = res.bladeName;
 
                 // Okay, we have our blade allocated now. 
@@ -71,6 +71,47 @@ namespace tests
             }
         }
 
+        [TestMethod]
+        public void willProvisionVM_reportsFailure()
+        {
+            using (services svc = new services())
+            {
+                string hostip = "1.2.3.4";
+
+                // We will be using this blade for our tests.
+                bladeSpec spec = svc.uutDebug.createBladeSpec("172.17.129.131", "192.168.129.131", "172.17.2.131", 1234, false, VMDeployStatus.notBeingDeployed, " ... ", bladeLockType.lockAll, bladeLockType.lockAll);
+                svc.uutDebug.initWithBladesFromBladeSpec(new[] { spec }, false, NASFaultInjectionPolicy.failSnapshotDeletionOnFirstSnapshot);
+
+                VMSoftwareSpec sw = new VMSoftwareSpec() { debuggerHost = "172.16.10.91", debuggerKey = "a.b.c.d", debuggerPort = 10234 };
+                VMHardwareSpec hw = new VMHardwareSpec() { cpuCount = 1, memoryMB = 4096 };
+                resultAndBladeName res = svc.uutDebug._requestAnySingleVM(hostip, hw, sw);
+                resultAndWaitToken waitRes = null;
+                while (true)
+                {
+                    waitRes =  svc.uut.getProgress(res.waitToken);
+                    if (waitRes.result.code != resultCode.pending)
+                        break;
+                }
+
+                Assert.AreEqual(resultCode.genericFail, waitRes.result.code);
+
+                res = svc.uutDebug._requestAnySingleVM(hostip, hw, sw);
+                waitRes = null;
+                while (true)
+                {
+                    waitRes = svc.uut.getProgress(res.waitToken);
+                    if (waitRes.result.code != resultCode.pending)
+                        break;
+                }
+
+                Assert.AreEqual(resultCode.success, waitRes.result.code);
+
+                string VMName = res.bladeName;
+
+                // Okay, we have our blade allocated now. 
+                // TODO: check it, power it on, etc.
+            }
+        }
 
         private static resultAndBIOSConfig writeBIOSAndReadBack(services svc, string hostIP, string bladeIP, string testBiosXML)
         {

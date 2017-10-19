@@ -41,6 +41,11 @@ namespace bladeDirectorWCF
                 case NASFaultInjectionPolicy.retunSuccessful:
                     nas = new mockedNAS();
                     break;
+                case NASFaultInjectionPolicy.failSnapshotDeletionOnFirstSnapshot:
+                    nas = new mockedNASWithFailure();
+                    // TODO: add this from the test
+                    nas.addISCSITarget(new iscsiTarget() { id = 0x1337b33f, targetAlias = "dunno", targetName = "172.17.158.1-1.1.1.1-vm" });
+                    break;
                 default:
                     throw new ArgumentOutOfRangeException("newPolicy", newPolicy, null);
             }
@@ -166,6 +171,24 @@ namespace bladeDirectorWCF
         private executionResult callMockedExecutionHandler(hypervisor sender, string command, string args, string workingdir, DateTime deadline)
         {
             return handler.callMockedExecutionHandler(sender, command, args, workingdir, deadline);
+        }
+    }
+
+    public class mockedNASWithFailure : mockedNAS
+    {
+        private int? idToFail = null;
+
+        public override void deleteISCSITarget(iscsiTarget tgt)
+        {
+            if (!idToFail.HasValue)
+                idToFail = tgt.id;
+
+            if (tgt.id == idToFail)
+            {
+                throw new Exception("injected failure from rollbackSnapshot");
+            }
+
+            base.deleteISCSITarget(tgt);
         }
     }
 

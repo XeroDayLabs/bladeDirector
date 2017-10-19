@@ -17,8 +17,8 @@ namespace tests.bladeDirectorServices {
     [System.CodeDom.Compiler.GeneratedCodeAttribute("System.Runtime.Serialization", "4.0.0.0")]
     [System.Runtime.Serialization.DataContractAttribute(Name="resultAndWaitToken", Namespace="http://schemas.datacontract.org/2004/07/bladeDirectorWCF")]
     [System.SerializableAttribute()]
-    [System.Runtime.Serialization.KnownTypeAttribute(typeof(tests.bladeDirectorServices.resultAndBladeName))]
     [System.Runtime.Serialization.KnownTypeAttribute(typeof(tests.bladeDirectorServices.resultAndBIOSConfig))]
+    [System.Runtime.Serialization.KnownTypeAttribute(typeof(tests.bladeDirectorServices.resultAndBladeName))]
     public partial class resultAndWaitToken : object, System.Runtime.Serialization.IExtensibleDataObject, System.ComponentModel.INotifyPropertyChanged {
         
         [System.NonSerializedAttribute()]
@@ -200,29 +200,6 @@ namespace tests.bladeDirectorServices {
     
     [System.Diagnostics.DebuggerStepThroughAttribute()]
     [System.CodeDom.Compiler.GeneratedCodeAttribute("System.Runtime.Serialization", "4.0.0.0")]
-    [System.Runtime.Serialization.DataContractAttribute(Name="resultAndBladeName", Namespace="http://schemas.datacontract.org/2004/07/bladeDirectorWCF")]
-    [System.SerializableAttribute()]
-    public partial class resultAndBladeName : tests.bladeDirectorServices.resultAndWaitToken {
-        
-        [System.Runtime.Serialization.OptionalFieldAttribute()]
-        private string bladeNameField;
-        
-        [System.Runtime.Serialization.DataMemberAttribute()]
-        public string bladeName {
-            get {
-                return this.bladeNameField;
-            }
-            set {
-                if ((object.ReferenceEquals(this.bladeNameField, value) != true)) {
-                    this.bladeNameField = value;
-                    this.RaisePropertyChanged("bladeName");
-                }
-            }
-        }
-    }
-    
-    [System.Diagnostics.DebuggerStepThroughAttribute()]
-    [System.CodeDom.Compiler.GeneratedCodeAttribute("System.Runtime.Serialization", "4.0.0.0")]
     [System.Runtime.Serialization.DataContractAttribute(Name="resultAndBIOSConfig", Namespace="http://schemas.datacontract.org/2004/07/bladeDirectorWCF")]
     [System.SerializableAttribute()]
     public partial class resultAndBIOSConfig : tests.bladeDirectorServices.resultAndWaitToken {
@@ -239,6 +216,29 @@ namespace tests.bladeDirectorServices {
                 if ((object.ReferenceEquals(this.BIOSConfigField, value) != true)) {
                     this.BIOSConfigField = value;
                     this.RaisePropertyChanged("BIOSConfig");
+                }
+            }
+        }
+    }
+    
+    [System.Diagnostics.DebuggerStepThroughAttribute()]
+    [System.CodeDom.Compiler.GeneratedCodeAttribute("System.Runtime.Serialization", "4.0.0.0")]
+    [System.Runtime.Serialization.DataContractAttribute(Name="resultAndBladeName", Namespace="http://schemas.datacontract.org/2004/07/bladeDirectorWCF")]
+    [System.SerializableAttribute()]
+    public partial class resultAndBladeName : tests.bladeDirectorServices.resultAndWaitToken {
+        
+        [System.Runtime.Serialization.OptionalFieldAttribute()]
+        private string bladeNameField;
+        
+        [System.Runtime.Serialization.DataMemberAttribute()]
+        public string bladeName {
+            get {
+                return this.bladeNameField;
+            }
+            set {
+                if ((object.ReferenceEquals(this.bladeNameField, value) != true)) {
+                    this.bladeNameField = value;
+                    this.RaisePropertyChanged("bladeName");
                 }
             }
         }
@@ -1395,6 +1395,9 @@ namespace tests.bladeDirectorServices {
         
         [System.Runtime.Serialization.EnumMemberAttribute()]
         inUse = 3,
+        
+        [System.Runtime.Serialization.EnumMemberAttribute()]
+        unusable = 4,
     }
     
     [System.Diagnostics.DebuggerStepThroughAttribute()]
@@ -1404,13 +1407,13 @@ namespace tests.bladeDirectorServices {
     [System.Runtime.Serialization.KnownTypeAttribute(typeof(tests.bladeDirectorServices.Component))]
     [System.Runtime.Serialization.KnownTypeAttribute(typeof(tests.bladeDirectorServices.DbConnection))]
     [System.Runtime.Serialization.KnownTypeAttribute(typeof(tests.bladeDirectorServices.SQLiteConnection))]
-    [System.Runtime.Serialization.KnownTypeAttribute(typeof(tests.bladeDirectorServices.resultAndBladeName))]
+    [System.Runtime.Serialization.KnownTypeAttribute(typeof(tests.bladeDirectorServices.resultAndBIOSConfig))]
     [System.Runtime.Serialization.KnownTypeAttribute(typeof(tests.bladeDirectorServices.resultAndWaitToken))]
     [System.Runtime.Serialization.KnownTypeAttribute(typeof(tests.bladeDirectorServices.result))]
     [System.Runtime.Serialization.KnownTypeAttribute(typeof(tests.bladeDirectorServices.resultCode))]
     [System.Runtime.Serialization.KnownTypeAttribute(typeof(tests.bladeDirectorServices.waitToken))]
     [System.Runtime.Serialization.KnownTypeAttribute(typeof(tests.bladeDirectorServices.handleTypes))]
-    [System.Runtime.Serialization.KnownTypeAttribute(typeof(tests.bladeDirectorServices.resultAndBIOSConfig))]
+    [System.Runtime.Serialization.KnownTypeAttribute(typeof(tests.bladeDirectorServices.resultAndBladeName))]
     [System.Runtime.Serialization.KnownTypeAttribute(typeof(tests.bladeDirectorServices.GetBladeStatusResult))]
     [System.Runtime.Serialization.KnownTypeAttribute(typeof(tests.bladeDirectorServices.VMHardwareSpec))]
     [System.Runtime.Serialization.KnownTypeAttribute(typeof(tests.bladeDirectorServices.VMSoftwareSpec))]
@@ -1479,13 +1482,13 @@ namespace tests.bladeDirectorServices {
     [System.SerializableAttribute()]
     [System.Runtime.Serialization.KnownTypeAttribute(typeof(tests.bladeDirectorServices.DbConnection))]
     [System.Runtime.Serialization.KnownTypeAttribute(typeof(tests.bladeDirectorServices.SQLiteConnection))]
-    [System.Runtime.Serialization.KnownTypeAttribute(typeof(tests.bladeDirectorServices.resultAndBladeName))]
+    [System.Runtime.Serialization.KnownTypeAttribute(typeof(tests.bladeDirectorServices.resultAndBIOSConfig))]
     [System.Runtime.Serialization.KnownTypeAttribute(typeof(tests.bladeDirectorServices.resultAndWaitToken))]
     [System.Runtime.Serialization.KnownTypeAttribute(typeof(tests.bladeDirectorServices.result))]
     [System.Runtime.Serialization.KnownTypeAttribute(typeof(tests.bladeDirectorServices.resultCode))]
     [System.Runtime.Serialization.KnownTypeAttribute(typeof(tests.bladeDirectorServices.waitToken))]
     [System.Runtime.Serialization.KnownTypeAttribute(typeof(tests.bladeDirectorServices.handleTypes))]
-    [System.Runtime.Serialization.KnownTypeAttribute(typeof(tests.bladeDirectorServices.resultAndBIOSConfig))]
+    [System.Runtime.Serialization.KnownTypeAttribute(typeof(tests.bladeDirectorServices.resultAndBladeName))]
     [System.Runtime.Serialization.KnownTypeAttribute(typeof(tests.bladeDirectorServices.GetBladeStatusResult))]
     [System.Runtime.Serialization.KnownTypeAttribute(typeof(tests.bladeDirectorServices.VMHardwareSpec))]
     [System.Runtime.Serialization.KnownTypeAttribute(typeof(tests.bladeDirectorServices.VMSoftwareSpec))]

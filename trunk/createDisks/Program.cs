@@ -179,11 +179,12 @@ namespace createDisks
             if (toDelete != null)
                 nas.deleteSnapshot(toDelete);
 
-            // And the volume. Use a retry here since freenas will return before the iscsi deletion is complete,
+            // And the volume. Use a retry here since freenas will return before the iscsi deletion is complete.
+            // Just use a small retry, since we will give up and use another file if there's a 'real' problem.
             volume vol = nas.findVolumeByName(volumes, cloneName);
             if (vol != null)
             {
-                DateTime deadline = DateTime.Now + TimeSpan.FromMinutes(4);
+                DateTime deadline = DateTime.Now + TimeSpan.FromMinutes(1);
                 while (true)
                 {
                     try

@@ -151,6 +151,7 @@
       <xs:enumeration value="releaseRequested" />
       <xs:enumeration value="inUseByDirector" />
       <xs:enumeration value="inUse" />
+      <xs:enumeration value="unusable" />
     </xs:restriction>
   </xs:simpleType>
   <xs:element name="bladeStatus" nillable="true" type="tns:bladeStatus" />

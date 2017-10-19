@@ -243,7 +243,8 @@ namespace bladeDirectorWCF
         unused,
         releaseRequested,
         inUseByDirector,
-        inUse
+        inUse,
+        unusable
     }
 
     public class resultAndWaitToken

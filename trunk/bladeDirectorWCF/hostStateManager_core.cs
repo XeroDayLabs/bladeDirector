@@ -801,9 +801,6 @@ namespace bladeDirectorWCF
 bladeLockType.lockvmDeployState,  // <-- TODO/FIXME: write perms shuold imply read perms, but everything breaks if we don't specify a read lockOwnership here!
                     bladeLockType.lockvmDeployState | bladeLockType.lockOwnership, true, true))
                 {
-                    // FIXME: what if only one VM fails to deploy, we shouldn't set this to false
-                    VMServer.spec.currentlyBeingAVMServer = false;
-                    VMServer.spec.vmDeployState = VMDeployStatus.failed;
                 }
                 
                 threadState.currentProgress.result = new result(resultCode.genericFail, msg);
@@ -885,6 +882,7 @@ bladeLockType.lockvmDeployState,  // <-- TODO/FIXME: write perms shuold imply re
                         bladeLockType.lockvmDeployState, bladeLockType.lockvmDeployState, true, true))
                     {
                         VMServer.spec.vmDeployState = VMDeployStatus.failed;
+                        VMServer.spec.currentlyBeingAVMServer = false;
                     }
 
                     throw;
@@ -916,91 +914,114 @@ bladeLockType.lockvmDeployState,  // <-- TODO/FIXME: write perms shuold imply re
                 }
             }
 
-            using (hypervisor hyp = makeHypervisorForBlade_ESXi(vmServerIP))
+            // Anything we do after this point is fatal to the new VM, not to the VM server.
+            try
             {
-                // now SSH to the blade and actually create the VM.
-                string destDir = "/vmfs/volumes/esxivms/" + VMServerBladeID + "_" + childVM_unsafe.vmConfigKey;
-                string destDirDatastoreType = "[esxivms] " + VMServerBladeID + "_" + childVM_unsafe.vmConfigKey;
-                string vmxPath = destDir + "/PXETemplate.vmx";
+                using (hypervisor hyp = makeHypervisorForBlade_ESXi(vmServerIP))
+                {
+                    // now SSH to the blade and actually create the VM.
+                    string destDir = "/vmfs/volumes/esxivms/" + VMServerBladeID + "_" + childVM_unsafe.vmConfigKey;
+                    string destDirDatastoreType = "[esxivms] " + VMServerBladeID + "_" + childVM_unsafe.vmConfigKey;
+                    string vmxPath = destDir + "/PXETemplate.vmx";
+
+                    if (threadState.deployDeadline < DateTime.Now)
+                        throw new TimeoutException();
+
+                    // Remove the VM if it's already there. We don't mind if these commands fail - which they will, if the VM doesn't
+                    // exist. We power off by directory and also by name, just in case a previous provision has left the VM hanging around.
+                    string dstDatastoreDirEscaped = destDirDatastoreType.Replace("[", "\\[").Replace("]", "\\]");
+                    hypervisor.doWithRetryOnSomeExceptions(() =>
+                    {
+                        throwIfTimedOut(threadState.deployDeadline);
+                        hyp.startExecutable("vim-cmd", "vmsvc/power.off `vim-cmd vmsvc/getallvms | grep \"" + dstDatastoreDirEscaped + "\"`");
+                    }, deadline: threadState.deployDeadline);
+                    hypervisor.doWithRetryOnSomeExceptions(() => hyp.startExecutable("vim-cmd", "vmsvc/power.off `vim-cmd vmsvc/getallvms | grep \"" + childVM_unsafe.displayName + "\"`"), deadline: threadState.deployDeadline);
+                    hypervisor.doWithRetryOnSomeExceptions(() => hyp.startExecutable("vim-cmd", "vmsvc/unregister `vim-cmd vmsvc/getallvms | grep \"" + dstDatastoreDirEscaped + "\"`"), deadline: threadState.deployDeadline);
+                    hypervisor.doWithRetryOnSomeExceptions(() => hyp.startExecutable("vim-cmd", "vmsvc/unregister `vim-cmd vmsvc/getallvms | grep \"" + childVM_unsafe.displayName + "\"`"), deadline: threadState.deployDeadline);
+
+                    // copy the template VM into a new directory
+                    doCmdAndCheckSuccess(hyp, "rm", " -rf " + destDir, threadState.deployDeadline);
+                    doCmdAndCheckSuccess(hyp, "cp", " -R /vmfs/volumes/esxivms/PXETemplate " + destDir, threadState.deployDeadline);
+                    // and then customise it.
+                    doCmdAndCheckSuccess(hyp, "sed", " -e 's/ethernet0.address[= ].*/ethernet0.address = \"" + childVM_unsafe.eth0MAC + "\"/g' -i " + vmxPath, threadState.deployDeadline);
+                    doCmdAndCheckSuccess(hyp, "sed", " -e 's/ethernet1.address[= ].*/ethernet1.address = \"" + childVM_unsafe.eth1MAC + "\"/g' -i " + vmxPath, threadState.deployDeadline);
+                    doCmdAndCheckSuccess(hyp, "sed", " -e 's/displayName[= ].*/displayName = \"" + childVM_unsafe.displayName + "\"/g' -i " + vmxPath, threadState.deployDeadline);
+                    doCmdAndCheckSuccess(hyp, "sed", " -e 's/memSize[= ].*/memSize = \"" + childVM_unsafe.memoryMB + "\"/g' -i " + vmxPath, threadState.deployDeadline);
+                    doCmdAndCheckSuccess(hyp, "sed", " -e 's/sched.mem.min[= ].*/sched.mem.min = \"" + childVM_unsafe.memoryMB + "\"/g' -i " + vmxPath, threadState.deployDeadline);
+                    doCmdAndCheckSuccess(hyp, "sed", " -e 's/sched.mem.minSize[= ].*/sched.mem.minSize = \"" + childVM_unsafe.memoryMB + "\"/g' -i " + vmxPath, threadState.deployDeadline);
+                    doCmdAndCheckSuccess(hyp, "sed", " -e 's/numvcpus[= ].*/numvcpus = \"" + childVM_unsafe.cpuCount + "\"/g' -i " + vmxPath, threadState.deployDeadline);
+                    doCmdAndCheckSuccess(hyp, "sed", " -e 's/uuid.bios[= ].*//g' -i " + vmxPath, threadState.deployDeadline);
+                    doCmdAndCheckSuccess(hyp, "sed", " -e 's/uuid.location[= ].*//g' -i " + vmxPath, threadState.deployDeadline);
+                    // doCmdAndCheckSuccess(hyp, "sed", " -e 's/serial0.fileName[= ].*/" + "serial0.fileName = \"telnet://:" + (1000 + threadState.childVM.vmSpecID) + "\"/g' -i " + vmxPath), threadState.deployDeadline);
+
+                    // Now add that VM to ESXi, and the VM is ready to use.
+                    // We do this with a retry, because I'm seeing it fail occasionally >_<
+                    hypervisor.doWithRetryOnSomeExceptions(() => doCmdAndCheckSuccess(hyp, "vim-cmd", " solo/registervm " + vmxPath, threadState.deployDeadline));
+                }
+
+                itemToAdd itm = childVM_unsafe.toItemToAdd(true);
 
                 if (threadState.deployDeadline < DateTime.Now)
                     throw new TimeoutException();
 
-                // Remove the VM if it's already there. We don't mind if these commands fail - which they will, if the VM doesn't
-                // exist. We power off by directory and also by name, just in case a previous provision has left the VM hanging around.
-                string dstDatastoreDirEscaped = destDirDatastoreType.Replace("[", "\\[").Replace("]", "\\]");
-                hypervisor.doWithRetryOnSomeExceptions(() => { throwIfTimedOut(threadState.deployDeadline); hyp.startExecutable("vim-cmd", "vmsvc/power.off `vim-cmd vmsvc/getallvms | grep \"" + dstDatastoreDirEscaped + "\"`"); }, deadline: threadState.deployDeadline);
-                hypervisor.doWithRetryOnSomeExceptions(() => hyp.startExecutable("vim-cmd", "vmsvc/power.off `vim-cmd vmsvc/getallvms | grep \"" + childVM_unsafe.displayName + "\"`"), deadline: threadState.deployDeadline);
-                hypervisor.doWithRetryOnSomeExceptions(() => hyp.startExecutable("vim-cmd", "vmsvc/unregister `vim-cmd vmsvc/getallvms | grep \"" + dstDatastoreDirEscaped + "\"`"), deadline: threadState.deployDeadline);
-                hypervisor.doWithRetryOnSomeExceptions(() => hyp.startExecutable("vim-cmd", "vmsvc/unregister `vim-cmd vmsvc/getallvms | grep \"" + childVM_unsafe.displayName + "\"`"), deadline: threadState.deployDeadline);
+                // Now we can select the new snapshot. We must be very careful and do this quickly, with the appropriate write lock
+                // held, because it will block the ipxe script creation until we unlock.
+                using (lockableVMSpec childVMFromDB = db.getVMByIP(childVM_unsafe.VMIP, bladeLockType.lockSnapshot, bladeLockType.lockSnapshot))
+                {
+                    childVMFromDB.spec.currentSnapshot = itm.snapshotName;
+                }
 
-                // copy the template VM into a new directory
-                doCmdAndCheckSuccess(hyp, "rm", " -rf " + destDir, threadState.deployDeadline);
-                doCmdAndCheckSuccess(hyp, "cp", " -R /vmfs/volumes/esxivms/PXETemplate " + destDir, threadState.deployDeadline);
-                // and then customise it.
-                doCmdAndCheckSuccess(hyp, "sed", " -e 's/ethernet0.address[= ].*/ethernet0.address = \"" + childVM_unsafe.eth0MAC + "\"/g' -i " + vmxPath, threadState.deployDeadline);
-                doCmdAndCheckSuccess(hyp, "sed", " -e 's/ethernet1.address[= ].*/ethernet1.address = \"" + childVM_unsafe.eth1MAC + "\"/g' -i " + vmxPath, threadState.deployDeadline);
-                doCmdAndCheckSuccess(hyp, "sed", " -e 's/displayName[= ].*/displayName = \"" + childVM_unsafe.displayName + "\"/g' -i " + vmxPath, threadState.deployDeadline);
-                doCmdAndCheckSuccess(hyp, "sed", " -e 's/memSize[= ].*/memSize = \"" + childVM_unsafe.memoryMB + "\"/g' -i " + vmxPath, threadState.deployDeadline);
-                doCmdAndCheckSuccess(hyp, "sed", " -e 's/sched.mem.min[= ].*/sched.mem.min = \"" + childVM_unsafe.memoryMB + "\"/g' -i " + vmxPath, threadState.deployDeadline);
-                doCmdAndCheckSuccess(hyp, "sed", " -e 's/sched.mem.minSize[= ].*/sched.mem.minSize = \"" + childVM_unsafe.memoryMB + "\"/g' -i " + vmxPath, threadState.deployDeadline);
-                doCmdAndCheckSuccess(hyp, "sed", " -e 's/numvcpus[= ].*/numvcpus = \"" + childVM_unsafe.cpuCount + "\"/g' -i " + vmxPath, threadState.deployDeadline);
-                doCmdAndCheckSuccess(hyp, "sed", " -e 's/uuid.bios[= ].*//g' -i " + vmxPath, threadState.deployDeadline);
-                doCmdAndCheckSuccess(hyp, "sed", " -e 's/uuid.location[= ].*//g' -i " + vmxPath, threadState.deployDeadline);
-                // doCmdAndCheckSuccess(hyp, "sed", " -e 's/serial0.fileName[= ].*/" + "serial0.fileName = \"telnet://:" + (1000 + threadState.childVM.vmSpecID) + "\"/g' -i " + vmxPath), threadState.deployDeadline);
+                using (lockableBladeSpec bladeSpec = db.getBladeByIP(vmServerIP,
+                    bladeLockType.lockNASOperations,
+                    bladeLockType.lockNone, true, true))
+                {
+                    NASAccess nas = getNasForDevice(bladeSpec.spec);
+                    createDisks.Program.deleteBlade(itm.cloneName, nas);
 
-                // Now add that VM to ESXi, and the VM is ready to use.
-                // We do this with a retry, because I'm seeing it fail occasionally >_<
-                hypervisor.doWithRetryOnSomeExceptions(() => doCmdAndCheckSuccess(hyp, "vim-cmd", " solo/registervm " + vmxPath, threadState.deployDeadline));
-            }
+                    if (threadState.deployDeadline < DateTime.Now)
+                        throw new TimeoutException();
 
-            itemToAdd itm = childVM_unsafe.toItemToAdd(true);
+                    // TODO: handle timeouts in makeHypervisorForVM
 
-            if (threadState.deployDeadline < DateTime.Now)
-                throw new TimeoutException();
-
-            // Now we can select the new snapshot. We must be very careful and do this quickly, with the appropriate write lock
-            // held, because it will block the ipxe script creation until we unlock.
-            using (lockableVMSpec childVMFromDB = db.getVMByIP(childVM_unsafe.VMIP, bladeLockType.lockSnapshot, bladeLockType.lockSnapshot))
-            {
-                childVMFromDB.spec.currentSnapshot = itm.snapshotName;
-            }
-
-            using (lockableBladeSpec bladeSpec = db.getBladeByIP(vmServerIP, 
-                bladeLockType.lockNASOperations,
-                bladeLockType.lockNone, true, true))
-            {
-                NASAccess nas = getNasForDevice(bladeSpec.spec);
-                createDisks.Program.deleteBlade(itm.cloneName, nas);
+                    // Now create the disks, and customise the VM by naming it appropriately.
+                    createDisks.Program.addBlades(nas, new[] {itm}, itm.snapshotName, _basePath, "bladebasestable-esxi", null, null,
+                        (a, b) => {
+                            return (hypervisorWithSpec<hypSpec_vmware>) makeHypervisorForVM(bladeSpec.spec.bladeIP, childVM_unsafe.VMIP, true, true);
+                        }, threadState.deployDeadline);
+                }
+                // TODO: Ability to deploy transportDriver
 
                 if (threadState.deployDeadline < DateTime.Now)
                     throw new TimeoutException();
 
-                // TODO: handle timeouts in makeHypervisorForVM
-
-                // Now create the disks, and customise the VM by naming it appropriately.
-                createDisks.Program.addBlades(nas, new[] { itm }, itm.snapshotName, _basePath, "bladebasestable-esxi", null, null,
-                    (a, b) => {
-                        return (hypervisorWithSpec<hypSpec_vmware>)makeHypervisorForVM(bladeSpec.spec.bladeIP, childVM_unsafe.VMIP, true, true);
-                    }, threadState.deployDeadline);
+                // All done. We can mark the blade as in use. Again, we are careful to hold write locks for as short a time as is
+                // possible, to avoid blocking the PXE-script generation.
+                using (lockableVMSpec childVMFromDB = db.getVMByIP(childVM_unsafe.VMIP,
+                    bladeLockType.lockOwnership | bladeLockType.lockvmDeployState | bladeLockType.lockSnapshot,
+                    bladeLockType.lockOwnership | bladeLockType.lockvmDeployState))
+                {
+                    childVMFromDB.spec.state = bladeStatus.inUse;
+                    childVMFromDB.spec.currentOwner = childVMFromDB.spec.nextOwner;
+                    childVMFromDB.spec.nextOwner = null;
+                    childVMFromDB.spec.lastKeepAlive = DateTime.Now;
+                }
+                return new result(resultCode.success);
             }
-            // TODO: Ability to deploy transportDriver
-
-            if (threadState.deployDeadline < DateTime.Now)
-                throw new TimeoutException();
-
-            // All done. We can mark the blade as in use. Again, we are careful to hold write locks for as short a time as is
-            // possible, to avoid blocking the PXE-script generation.
-            using (lockableVMSpec childVMFromDB = db.getVMByIP(childVM_unsafe.VMIP,
-                bladeLockType.lockOwnership | bladeLockType.lockvmDeployState | bladeLockType.lockSnapshot,
-                bladeLockType.lockOwnership | bladeLockType.lockvmDeployState))
+            catch (Exception e)
             {
-                childVMFromDB.spec.state = bladeStatus.inUse;
-                childVMFromDB.spec.currentOwner = childVMFromDB.spec.nextOwner;
-                childVMFromDB.spec.nextOwner = null;
-                childVMFromDB.spec.lastKeepAlive = DateTime.Now;
+                // A failure during VM deployment! We will keep this VM, but mark it as unusable. The user can try to get another
+                // or something.
+                using (lockableVMSpec childVMFromDB = db.getVMByIP(childVM_unsafe.VMIP,
+                    bladeLockType.lockOwnership | bladeLockType.lockvmDeployState | bladeLockType.lockSnapshot,
+                    bladeLockType.lockOwnership | bladeLockType.lockvmDeployState))
+                {
+                    childVMFromDB.spec.state = bladeStatus.unusable;
+                    childVMFromDB.spec.currentOwner = null;
+                    childVMFromDB.spec.nextOwner = null;
+                    childVMFromDB.spec.lastKeepAlive = DateTime.Now;
+                }
+                return new result(resultCode.genericFail);
             }
-            return new result(resultCode.success);
         }
 
         private static void throwIfTimedOut(DateTime deployDeadline)
