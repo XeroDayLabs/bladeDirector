@@ -163,8 +163,8 @@ namespace bladeDirectorClient
 
                     int kernelVMCount = Properties.Settings.Default.XDLClusterVMsPerBlade;
 
-                    string kernelVMServerUsername = Properties.Settings.Default.VMWareVMServerUsername;
-                    string kernelVMServerPassword = Properties.Settings.Default.VMWareVMServerPassword;
+                    string kernelVMServerUsername = Properties.Settings.Default.XDLVMServerUsername;
+                    string kernelVMServerPassword = Properties.Settings.Default.XDLVMServerPassword;
                     string kernelVMUsername = Properties.Settings.Default.VMWareVMUsername;
                     string kernelVMPassword = Properties.Settings.Default.VMWareVMPassword;
                     string kernelVMDebugKey = Properties.Settings.Default.VMWareVMDebugKey;

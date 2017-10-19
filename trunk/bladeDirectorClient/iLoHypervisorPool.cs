@@ -5,12 +5,14 @@ using System.Diagnostics;
 using System.Linq;
 using System.Net;
 using System.Net.NetworkInformation;
+using System.Reflection;
 using System.Runtime.InteropServices;
 using System.ServiceModel;
 using System.ServiceModel.Channels;
 using System.Threading;
 using bladeDirectorClient.bladeDirectorService;
 using hypervisors;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace bladeDirectorClient
 {
@@ -334,8 +336,37 @@ namespace bladeDirectorClient
             }
         }
 
+        public static bool doesCallStackHasTrait(string traitName)
+        {
+            StackTrace stack = new StackTrace();
+
+            // Find the stack trace that has the TestMethodAttribute set
+            StackFrame[] frames = stack.GetFrames();
+            StackFrame testFrame = frames.SingleOrDefault(x =>
+                x.GetMethod().GetCustomAttributes(typeof(TestMethodAttribute), false).Length > 0);
+
+            // If no [TestMethod] is found, we're probably being called from a different thread than the main one, or from 
+            // non-test code. 
+            if (testFrame == null)
+            {
+                Debug.WriteLine("Cannot ensure this has required trait " + traitName + "; please check it manually if required");
+                return true;
+            }
+
+            // Check it has the correct trait.
+            List<Attribute> attribs = testFrame.GetMethod().GetCustomAttributes(typeof(TestCategoryAttribute)).ToList();
+            if (attribs.SingleOrDefault(x => ((TestCategoryAttribute)x).TestCategories.Contains(traitName)) == null)
+                return false;
+
+            return true;
+        }
+
+
         private void initialiseIfNeeded()
         {
+            if (!doesCallStackHasTrait("requiresBladeDirector"))
+                Assert.Fail("This test uses the blade director; please decorate it with [TestCategory(\"requiresBladeDirector\")] for easier maintenence");
+
             if (keepaliveThread == null)
             {
                 lock (keepaliveThreadLock)
@@ -467,4 +498,5 @@ namespace bladeDirectorClient
             }
         }
     }
+
 }
