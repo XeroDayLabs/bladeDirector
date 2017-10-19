@@ -9,328 +9,297 @@
 //------------------------------------------------------------------------------
 
 namespace bladeDirectorClient.bladeDirectorService {
-    using System.Runtime.Serialization;
-    using System;
     
     
-    [System.Diagnostics.DebuggerStepThroughAttribute()]
-    [System.CodeDom.Compiler.GeneratedCodeAttribute("System.Runtime.Serialization", "4.0.0.0")]
-    [System.Runtime.Serialization.DataContractAttribute(Name="resultAndWaitToken", Namespace="http://schemas.datacontract.org/2004/07/bladeDirectorWCF")]
-    [System.SerializableAttribute()]
-    [System.Runtime.Serialization.KnownTypeAttribute(typeof(bladeDirectorClient.bladeDirectorService.resultAndBladeName))]
-    [System.Runtime.Serialization.KnownTypeAttribute(typeof(bladeDirectorClient.bladeDirectorService.resultAndBIOSConfig))]
-    public partial class resultAndWaitToken : object, System.Runtime.Serialization.IExtensibleDataObject, System.ComponentModel.INotifyPropertyChanged {
+    [System.CodeDom.Compiler.GeneratedCodeAttribute("System.ServiceModel", "4.0.0.0")]
+    [System.ServiceModel.ServiceContractAttribute(ConfigurationName="bladeDirectorService.servicesSoap")]
+    public interface servicesSoap {
         
-        [System.NonSerializedAttribute()]
-        private System.Runtime.Serialization.ExtensionDataObject extensionDataField;
+        [System.ServiceModel.OperationContractAttribute(Action="http://tempuri.org/keepAlive", ReplyAction="*")]
+        [System.ServiceModel.XmlSerializerFormatAttribute(SupportFaults=true)]
+        void keepAlive();
         
-        [System.Runtime.Serialization.OptionalFieldAttribute()]
-        private bladeDirectorClient.bladeDirectorService.result resultField;
+        [System.ServiceModel.OperationContractAttribute(Action="http://tempuri.org/keepAlive", ReplyAction="*")]
+        System.Threading.Tasks.Task keepAliveAsync();
         
-        [System.Runtime.Serialization.OptionalFieldAttribute()]
-        private bladeDirectorClient.bladeDirectorService.waitToken waitTokenField;
+        [System.ServiceModel.OperationContractAttribute(Action="http://tempuri.org/logIn", ReplyAction="*")]
+        [System.ServiceModel.XmlSerializerFormatAttribute(SupportFaults=true)]
+        string logIn();
         
-        [global::System.ComponentModel.BrowsableAttribute(false)]
-        public System.Runtime.Serialization.ExtensionDataObject ExtensionData {
-            get {
-                return this.extensionDataField;
-            }
-            set {
-                this.extensionDataField = value;
-            }
-        }
+        [System.ServiceModel.OperationContractAttribute(Action="http://tempuri.org/logIn", ReplyAction="*")]
+        System.Threading.Tasks.Task<string> logInAsync();
         
-        [System.Runtime.Serialization.DataMemberAttribute()]
-        public bladeDirectorClient.bladeDirectorService.result result {
-            get {
-                return this.resultField;
-            }
-            set {
-                if ((object.ReferenceEquals(this.resultField, value) != true)) {
-                    this.resultField = value;
-                    this.RaisePropertyChanged("result");
-                }
-            }
-        }
+        [System.ServiceModel.OperationContractAttribute(Action="http://tempuri.org/getLogInProgress", ReplyAction="*")]
+        [System.ServiceModel.XmlSerializerFormatAttribute(SupportFaults=true)]
+        bladeDirectorClient.bladeDirectorService.resultCode getLogInProgress(string waitToken);
         
-        [System.Runtime.Serialization.DataMemberAttribute()]
-        public bladeDirectorClient.bladeDirectorService.waitToken waitToken {
-            get {
-                return this.waitTokenField;
-            }
-            set {
-                if ((object.ReferenceEquals(this.waitTokenField, value) != true)) {
-                    this.waitTokenField = value;
-                    this.RaisePropertyChanged("waitToken");
-                }
-            }
-        }
+        [System.ServiceModel.OperationContractAttribute(Action="http://tempuri.org/getLogInProgress", ReplyAction="*")]
+        System.Threading.Tasks.Task<bladeDirectorClient.bladeDirectorService.resultCode> getLogInProgressAsync(string waitToken);
         
-        public event System.ComponentModel.PropertyChangedEventHandler PropertyChanged;
+        [System.ServiceModel.OperationContractAttribute(Action="http://tempuri.org/ListNodes", ReplyAction="*")]
+        [System.ServiceModel.XmlSerializerFormatAttribute(SupportFaults=true)]
+        string ListNodes();
         
-        protected void RaisePropertyChanged(string propertyName) {
-            System.ComponentModel.PropertyChangedEventHandler propertyChanged = this.PropertyChanged;
-            if ((propertyChanged != null)) {
-                propertyChanged(this, new System.ComponentModel.PropertyChangedEventArgs(propertyName));
-            }
-        }
+        [System.ServiceModel.OperationContractAttribute(Action="http://tempuri.org/ListNodes", ReplyAction="*")]
+        System.Threading.Tasks.Task<string> ListNodesAsync();
+        
+        [System.ServiceModel.OperationContractAttribute(Action="http://tempuri.org/getBladesByAllocatedServer", ReplyAction="*")]
+        [System.ServiceModel.XmlSerializerFormatAttribute(SupportFaults=true)]
+        string getBladesByAllocatedServer(string NodeIP);
+        
+        [System.ServiceModel.OperationContractAttribute(Action="http://tempuri.org/getBladesByAllocatedServer", ReplyAction="*")]
+        System.Threading.Tasks.Task<string> getBladesByAllocatedServerAsync(string NodeIP);
+        
+        [System.ServiceModel.OperationContractAttribute(Action="http://tempuri.org/RequestAnySingleNode", ReplyAction="*")]
+        [System.ServiceModel.XmlSerializerFormatAttribute(SupportFaults=true)]
+        [System.ServiceModel.ServiceKnownTypeAttribute(typeof(bladeOwnership))]
+        bladeDirectorClient.bladeDirectorService.resultCodeAndBladeName RequestAnySingleNode();
+        
+        [System.ServiceModel.OperationContractAttribute(Action="http://tempuri.org/RequestAnySingleNode", ReplyAction="*")]
+        System.Threading.Tasks.Task<bladeDirectorClient.bladeDirectorService.resultCodeAndBladeName> RequestAnySingleNodeAsync();
+        
+        [System.ServiceModel.OperationContractAttribute(Action="http://tempuri.org/RequestNode", ReplyAction="*")]
+        [System.ServiceModel.XmlSerializerFormatAttribute(SupportFaults=true)]
+        [System.ServiceModel.ServiceKnownTypeAttribute(typeof(bladeOwnership))]
+        bladeDirectorClient.bladeDirectorService.resultCode RequestNode(string NodeIP);
+        
+        [System.ServiceModel.OperationContractAttribute(Action="http://tempuri.org/RequestNode", ReplyAction="*")]
+        System.Threading.Tasks.Task<bladeDirectorClient.bladeDirectorService.resultCode> RequestNodeAsync(string NodeIP);
+        
+        [System.ServiceModel.OperationContractAttribute(Action="http://tempuri.org/GetBladeStatus", ReplyAction="*")]
+        [System.ServiceModel.XmlSerializerFormatAttribute(SupportFaults=true)]
+        [System.ServiceModel.ServiceKnownTypeAttribute(typeof(bladeOwnership))]
+        bladeDirectorClient.bladeDirectorService.GetBladeStatusResult GetBladeStatus(string NodeIP);
+        
+        [System.ServiceModel.OperationContractAttribute(Action="http://tempuri.org/GetBladeStatus", ReplyAction="*")]
+        System.Threading.Tasks.Task<bladeDirectorClient.bladeDirectorService.GetBladeStatusResult> GetBladeStatusAsync(string NodeIP);
+        
+        [System.ServiceModel.OperationContractAttribute(Action="http://tempuri.org/isBladeMine", ReplyAction="*")]
+        [System.ServiceModel.XmlSerializerFormatAttribute(SupportFaults=true)]
+        [System.ServiceModel.ServiceKnownTypeAttribute(typeof(bladeOwnership))]
+        bool isBladeMine(string NodeIP);
+        
+        [System.ServiceModel.OperationContractAttribute(Action="http://tempuri.org/isBladeMine", ReplyAction="*")]
+        System.Threading.Tasks.Task<bool> isBladeMineAsync(string NodeIP);
+        
+        [System.ServiceModel.OperationContractAttribute(Action="http://tempuri.org/releaseBladeOrVM", ReplyAction="*")]
+        [System.ServiceModel.XmlSerializerFormatAttribute(SupportFaults=true)]
+        [System.ServiceModel.ServiceKnownTypeAttribute(typeof(bladeOwnership))]
+        bladeDirectorClient.bladeDirectorService.resultCode releaseBladeOrVM(string NodeIP);
+        
+        [System.ServiceModel.OperationContractAttribute(Action="http://tempuri.org/releaseBladeOrVM", ReplyAction="*")]
+        System.Threading.Tasks.Task<bladeDirectorClient.bladeDirectorService.resultCode> releaseBladeOrVMAsync(string NodeIP);
+        
+        [System.ServiceModel.OperationContractAttribute(Action="http://tempuri.org/releaseBladeDbg", ReplyAction="*")]
+        [System.ServiceModel.XmlSerializerFormatAttribute(SupportFaults=true)]
+        [System.ServiceModel.ServiceKnownTypeAttribute(typeof(bladeOwnership))]
+        bladeDirectorClient.bladeDirectorService.resultCode releaseBladeDbg(string nodeIP, string requestorIP, bool force);
+        
+        [System.ServiceModel.OperationContractAttribute(Action="http://tempuri.org/releaseBladeDbg", ReplyAction="*")]
+        System.Threading.Tasks.Task<bladeDirectorClient.bladeDirectorService.resultCode> releaseBladeDbgAsync(string nodeIP, string requestorIP, bool force);
+        
+        [System.ServiceModel.OperationContractAttribute(Action="http://tempuri.org/forceBladeAllocation", ReplyAction="*")]
+        [System.ServiceModel.XmlSerializerFormatAttribute(SupportFaults=true)]
+        [System.ServiceModel.ServiceKnownTypeAttribute(typeof(bladeOwnership))]
+        bladeDirectorClient.bladeDirectorService.resultCode forceBladeAllocation(string NodeIP, string newOwner);
+        
+        [System.ServiceModel.OperationContractAttribute(Action="http://tempuri.org/forceBladeAllocation", ReplyAction="*")]
+        System.Threading.Tasks.Task<bladeDirectorClient.bladeDirectorService.resultCode> forceBladeAllocationAsync(string NodeIP, string newOwner);
+        
+        [System.ServiceModel.OperationContractAttribute(Action="http://tempuri.org/getConfigurationOfBlade", ReplyAction="*")]
+        [System.ServiceModel.XmlSerializerFormatAttribute(SupportFaults=true)]
+        [System.ServiceModel.ServiceKnownTypeAttribute(typeof(bladeOwnership))]
+        bladeDirectorClient.bladeDirectorService.bladeSpec getConfigurationOfBlade(string NodeIP);
+        
+        [System.ServiceModel.OperationContractAttribute(Action="http://tempuri.org/getConfigurationOfBlade", ReplyAction="*")]
+        System.Threading.Tasks.Task<bladeDirectorClient.bladeDirectorService.bladeSpec> getConfigurationOfBladeAsync(string NodeIP);
+        
+        [System.ServiceModel.OperationContractAttribute(Action="http://tempuri.org/getConfigurationOfBladeByID", ReplyAction="*")]
+        [System.ServiceModel.XmlSerializerFormatAttribute(SupportFaults=true)]
+        [System.ServiceModel.ServiceKnownTypeAttribute(typeof(bladeOwnership))]
+        bladeDirectorClient.bladeDirectorService.bladeSpec getConfigurationOfBladeByID(int NodeID);
+        
+        [System.ServiceModel.OperationContractAttribute(Action="http://tempuri.org/getConfigurationOfBladeByID", ReplyAction="*")]
+        System.Threading.Tasks.Task<bladeDirectorClient.bladeDirectorService.bladeSpec> getConfigurationOfBladeByIDAsync(int NodeID);
+        
+        [System.ServiceModel.OperationContractAttribute(Action="http://tempuri.org/getCurrentSnapshotForBlade", ReplyAction="*")]
+        [System.ServiceModel.XmlSerializerFormatAttribute(SupportFaults=true)]
+        [System.ServiceModel.ServiceKnownTypeAttribute(typeof(bladeOwnership))]
+        string getCurrentSnapshotForBlade(string NodeIP);
+        
+        [System.ServiceModel.OperationContractAttribute(Action="http://tempuri.org/getCurrentSnapshotForBlade", ReplyAction="*")]
+        System.Threading.Tasks.Task<string> getCurrentSnapshotForBladeAsync(string NodeIP);
+        
+        [System.ServiceModel.OperationContractAttribute(Action="http://tempuri.org/selectSnapshotForBladeOrVM", ReplyAction="*")]
+        [System.ServiceModel.XmlSerializerFormatAttribute(SupportFaults=true)]
+        [System.ServiceModel.ServiceKnownTypeAttribute(typeof(bladeOwnership))]
+        bladeDirectorClient.bladeDirectorService.resultCode selectSnapshotForBladeOrVM(string NodeIP, string snapshotName);
+        
+        [System.ServiceModel.OperationContractAttribute(Action="http://tempuri.org/selectSnapshotForBladeOrVM", ReplyAction="*")]
+        System.Threading.Tasks.Task<bladeDirectorClient.bladeDirectorService.resultCode> selectSnapshotForBladeOrVMAsync(string NodeIP, string snapshotName);
+        
+        [System.ServiceModel.OperationContractAttribute(Action="http://tempuri.org/selectSnapshotForBladeOrVM_getProgress", ReplyAction="*")]
+        [System.ServiceModel.XmlSerializerFormatAttribute(SupportFaults=true)]
+        [System.ServiceModel.ServiceKnownTypeAttribute(typeof(bladeOwnership))]
+        bladeDirectorClient.bladeDirectorService.resultCode selectSnapshotForBladeOrVM_getProgress(string NodeIP);
+        
+        [System.ServiceModel.OperationContractAttribute(Action="http://tempuri.org/selectSnapshotForBladeOrVM_getProgress", ReplyAction="*")]
+        System.Threading.Tasks.Task<bladeDirectorClient.bladeDirectorService.resultCode> selectSnapshotForBladeOrVM_getProgressAsync(string NodeIP);
+        
+        [System.ServiceModel.OperationContractAttribute(Action="http://tempuri.org/getFreeNASSnapshotPath", ReplyAction="*")]
+        [System.ServiceModel.XmlSerializerFormatAttribute(SupportFaults=true)]
+        [System.ServiceModel.ServiceKnownTypeAttribute(typeof(bladeOwnership))]
+        string getFreeNASSnapshotPath(string NodeIP);
+        
+        [System.ServiceModel.OperationContractAttribute(Action="http://tempuri.org/getFreeNASSnapshotPath", ReplyAction="*")]
+        System.Threading.Tasks.Task<string> getFreeNASSnapshotPathAsync(string NodeIP);
+        
+        [System.ServiceModel.OperationContractAttribute(Action="http://tempuri.org/getLastDeployedBIOSForBlade", ReplyAction="*")]
+        [System.ServiceModel.XmlSerializerFormatAttribute(SupportFaults=true)]
+        [System.ServiceModel.ServiceKnownTypeAttribute(typeof(bladeOwnership))]
+        string getLastDeployedBIOSForBlade(string NodeIP);
+        
+        [System.ServiceModel.OperationContractAttribute(Action="http://tempuri.org/getLastDeployedBIOSForBlade", ReplyAction="*")]
+        System.Threading.Tasks.Task<string> getLastDeployedBIOSForBladeAsync(string NodeIP);
+        
+        [System.ServiceModel.OperationContractAttribute(Action="http://tempuri.org/rebootAndStartDeployingBIOSToBlade", ReplyAction="*")]
+        [System.ServiceModel.XmlSerializerFormatAttribute(SupportFaults=true)]
+        [System.ServiceModel.ServiceKnownTypeAttribute(typeof(bladeOwnership))]
+        bladeDirectorClient.bladeDirectorService.resultCode rebootAndStartDeployingBIOSToBlade(string NodeIP, string BIOSXML);
+        
+        [System.ServiceModel.OperationContractAttribute(Action="http://tempuri.org/rebootAndStartDeployingBIOSToBlade", ReplyAction="*")]
+        System.Threading.Tasks.Task<bladeDirectorClient.bladeDirectorService.resultCode> rebootAndStartDeployingBIOSToBladeAsync(string NodeIP, string BIOSXML);
+        
+        [System.ServiceModel.OperationContractAttribute(Action="http://tempuri.org/rebootAndStartReadingBIOSConfiguration", ReplyAction="*")]
+        [System.ServiceModel.XmlSerializerFormatAttribute(SupportFaults=true)]
+        [System.ServiceModel.ServiceKnownTypeAttribute(typeof(bladeOwnership))]
+        bladeDirectorClient.bladeDirectorService.resultCode rebootAndStartReadingBIOSConfiguration(string NodeIP);
+        
+        [System.ServiceModel.OperationContractAttribute(Action="http://tempuri.org/rebootAndStartReadingBIOSConfiguration", ReplyAction="*")]
+        System.Threading.Tasks.Task<bladeDirectorClient.bladeDirectorService.resultCode> rebootAndStartReadingBIOSConfigurationAsync(string NodeIP);
+        
+        [System.ServiceModel.OperationContractAttribute(Action="http://tempuri.org/checkBIOSDeployProgress", ReplyAction="*")]
+        [System.ServiceModel.XmlSerializerFormatAttribute(SupportFaults=true)]
+        [System.ServiceModel.ServiceKnownTypeAttribute(typeof(bladeOwnership))]
+        bladeDirectorClient.bladeDirectorService.resultCode checkBIOSDeployProgress(string NodeIP);
+        
+        [System.ServiceModel.OperationContractAttribute(Action="http://tempuri.org/checkBIOSDeployProgress", ReplyAction="*")]
+        System.Threading.Tasks.Task<bladeDirectorClient.bladeDirectorService.resultCode> checkBIOSDeployProgressAsync(string NodeIP);
+        
+        [System.ServiceModel.OperationContractAttribute(Action="http://tempuri.org/checkBIOSReadProgress", ReplyAction="*")]
+        [System.ServiceModel.XmlSerializerFormatAttribute(SupportFaults=true)]
+        [System.ServiceModel.ServiceKnownTypeAttribute(typeof(bladeOwnership))]
+        bladeDirectorClient.bladeDirectorService.resultCodeAndBIOSConfig checkBIOSReadProgress(string NodeIP);
+        
+        [System.ServiceModel.OperationContractAttribute(Action="http://tempuri.org/checkBIOSReadProgress", ReplyAction="*")]
+        System.Threading.Tasks.Task<bladeDirectorClient.bladeDirectorService.resultCodeAndBIOSConfig> checkBIOSReadProgressAsync(string NodeIP);
+        
+        [System.ServiceModel.OperationContractAttribute(Action="http://tempuri.org/RequestAnySingleVM", ReplyAction="*")]
+        [System.ServiceModel.XmlSerializerFormatAttribute(SupportFaults=true)]
+        [System.ServiceModel.ServiceKnownTypeAttribute(typeof(bladeOwnership))]
+        bladeDirectorClient.bladeDirectorService.resultCodeAndBladeName RequestAnySingleVM(bladeDirectorClient.bladeDirectorService.VMHardwareSpec hwSpec, bladeDirectorClient.bladeDirectorService.VMSoftwareSpec swSpec);
+        
+        [System.ServiceModel.OperationContractAttribute(Action="http://tempuri.org/RequestAnySingleVM", ReplyAction="*")]
+        System.Threading.Tasks.Task<bladeDirectorClient.bladeDirectorService.resultCodeAndBladeName> RequestAnySingleVMAsync(bladeDirectorClient.bladeDirectorService.VMHardwareSpec hwSpec, bladeDirectorClient.bladeDirectorService.VMSoftwareSpec swSpec);
+        
+        [System.ServiceModel.OperationContractAttribute(Action="http://tempuri.org/getProgressOfVMRequest", ReplyAction="*")]
+        [System.ServiceModel.XmlSerializerFormatAttribute(SupportFaults=true)]
+        [System.ServiceModel.ServiceKnownTypeAttribute(typeof(bladeOwnership))]
+        bladeDirectorClient.bladeDirectorService.resultCodeAndBladeName getProgressOfVMRequest(string waitToken);
+        
+        [System.ServiceModel.OperationContractAttribute(Action="http://tempuri.org/getProgressOfVMRequest", ReplyAction="*")]
+        System.Threading.Tasks.Task<bladeDirectorClient.bladeDirectorService.resultCodeAndBladeName> getProgressOfVMRequestAsync(string waitToken);
+        
+        [System.ServiceModel.OperationContractAttribute(Action="http://tempuri.org/getConfigurationOfVM", ReplyAction="*")]
+        [System.ServiceModel.XmlSerializerFormatAttribute(SupportFaults=true)]
+        [System.ServiceModel.ServiceKnownTypeAttribute(typeof(bladeOwnership))]
+        bladeDirectorClient.bladeDirectorService.vmSpec getConfigurationOfVM(string bladeName);
+        
+        [System.ServiceModel.OperationContractAttribute(Action="http://tempuri.org/getConfigurationOfVM", ReplyAction="*")]
+        System.Threading.Tasks.Task<bladeDirectorClient.bladeDirectorService.vmSpec> getConfigurationOfVMAsync(string bladeName);
     }
     
-    [System.Diagnostics.DebuggerStepThroughAttribute()]
-    [System.CodeDom.Compiler.GeneratedCodeAttribute("System.Runtime.Serialization", "4.0.0.0")]
-    [System.Runtime.Serialization.DataContractAttribute(Name="result", Namespace="http://schemas.datacontract.org/2004/07/bladeDirectorWCF")]
+    /// <remarks/>
+    [System.CodeDom.Compiler.GeneratedCodeAttribute("System.Xml", "4.7.2102.0")]
     [System.SerializableAttribute()]
-    public partial class result : object, System.Runtime.Serialization.IExtensibleDataObject, System.ComponentModel.INotifyPropertyChanged {
+    [System.Xml.Serialization.XmlTypeAttribute(Namespace="http://tempuri.org/")]
+    public enum resultCode {
         
-        [System.NonSerializedAttribute()]
-        private System.Runtime.Serialization.ExtensionDataObject extensionDataField;
+        /// <remarks/>
+        success,
         
-        [System.Runtime.Serialization.OptionalFieldAttribute()]
-        private bladeDirectorClient.bladeDirectorService.resultCode codeField;
+        /// <remarks/>
+        bladeNotFound,
         
-        [System.Runtime.Serialization.OptionalFieldAttribute()]
-        private string errMsgField;
+        /// <remarks/>
+        bladeInUse,
         
-        [global::System.ComponentModel.BrowsableAttribute(false)]
-        public System.Runtime.Serialization.ExtensionDataObject ExtensionData {
-            get {
-                return this.extensionDataField;
-            }
-            set {
-                this.extensionDataField = value;
-            }
-        }
+        /// <remarks/>
+        bladeQueueFull,
         
-        [System.Runtime.Serialization.DataMemberAttribute()]
-        public bladeDirectorClient.bladeDirectorService.resultCode code {
+        /// <remarks/>
+        pending,
+        
+        /// <remarks/>
+        alreadyInProgress,
+        
+        /// <remarks/>
+        genericFail,
+        
+        /// <remarks/>
+        noNeedLah,
+        
+        /// <remarks/>
+        unknown,
+    }
+    
+    /// <remarks/>
+    [System.CodeDom.Compiler.GeneratedCodeAttribute("System.Xml", "4.7.2102.0")]
+    [System.SerializableAttribute()]
+    [System.Diagnostics.DebuggerStepThroughAttribute()]
+    [System.ComponentModel.DesignerCategoryAttribute("code")]
+    [System.Xml.Serialization.XmlTypeAttribute(Namespace="http://tempuri.org/")]
+    public partial class resultCodeAndBladeName : object, System.ComponentModel.INotifyPropertyChanged {
+        
+        private resultCode codeField;
+        
+        private string bladeNameField;
+        
+        private string waitTokenField;
+        
+        /// <remarks/>
+        [System.Xml.Serialization.XmlElementAttribute(Order=0)]
+        public resultCode code {
             get {
                 return this.codeField;
             }
             set {
-                if ((this.codeField.Equals(value) != true)) {
-                    this.codeField = value;
-                    this.RaisePropertyChanged("code");
-                }
+                this.codeField = value;
+                this.RaisePropertyChanged("code");
             }
         }
         
-        [System.Runtime.Serialization.DataMemberAttribute()]
-        public string errMsg {
-            get {
-                return this.errMsgField;
-            }
-            set {
-                if ((object.ReferenceEquals(this.errMsgField, value) != true)) {
-                    this.errMsgField = value;
-                    this.RaisePropertyChanged("errMsg");
-                }
-            }
-        }
-        
-        public event System.ComponentModel.PropertyChangedEventHandler PropertyChanged;
-        
-        protected void RaisePropertyChanged(string propertyName) {
-            System.ComponentModel.PropertyChangedEventHandler propertyChanged = this.PropertyChanged;
-            if ((propertyChanged != null)) {
-                propertyChanged(this, new System.ComponentModel.PropertyChangedEventArgs(propertyName));
-            }
-        }
-    }
-    
-    [System.Diagnostics.DebuggerStepThroughAttribute()]
-    [System.CodeDom.Compiler.GeneratedCodeAttribute("System.Runtime.Serialization", "4.0.0.0")]
-    [System.Runtime.Serialization.DataContractAttribute(Name="waitToken", Namespace="http://schemas.datacontract.org/2004/07/bladeDirectorWCF")]
-    [System.SerializableAttribute()]
-    public partial class waitToken : object, System.Runtime.Serialization.IExtensibleDataObject, System.ComponentModel.INotifyPropertyChanged {
-        
-        [System.NonSerializedAttribute()]
-        private System.Runtime.Serialization.ExtensionDataObject extensionDataField;
-        
-        [System.Runtime.Serialization.OptionalFieldAttribute()]
-        private string tField;
-        
-        [global::System.ComponentModel.BrowsableAttribute(false)]
-        public System.Runtime.Serialization.ExtensionDataObject ExtensionData {
-            get {
-                return this.extensionDataField;
-            }
-            set {
-                this.extensionDataField = value;
-            }
-        }
-        
-        [System.Runtime.Serialization.DataMemberAttribute()]
-        public string t {
-            get {
-                return this.tField;
-            }
-            set {
-                if ((object.ReferenceEquals(this.tField, value) != true)) {
-                    this.tField = value;
-                    this.RaisePropertyChanged("t");
-                }
-            }
-        }
-        
-        public event System.ComponentModel.PropertyChangedEventHandler PropertyChanged;
-        
-        protected void RaisePropertyChanged(string propertyName) {
-            System.ComponentModel.PropertyChangedEventHandler propertyChanged = this.PropertyChanged;
-            if ((propertyChanged != null)) {
-                propertyChanged(this, new System.ComponentModel.PropertyChangedEventArgs(propertyName));
-            }
-        }
-    }
-    
-    [System.Diagnostics.DebuggerStepThroughAttribute()]
-    [System.CodeDom.Compiler.GeneratedCodeAttribute("System.Runtime.Serialization", "4.0.0.0")]
-    [System.Runtime.Serialization.DataContractAttribute(Name="resultAndBladeName", Namespace="http://schemas.datacontract.org/2004/07/bladeDirectorWCF")]
-    [System.SerializableAttribute()]
-    public partial class resultAndBladeName : bladeDirectorClient.bladeDirectorService.resultAndWaitToken {
-        
-        [System.Runtime.Serialization.OptionalFieldAttribute()]
-        private string bladeNameField;
-        
-        [System.Runtime.Serialization.DataMemberAttribute()]
+        /// <remarks/>
+        [System.Xml.Serialization.XmlElementAttribute(Order=1)]
         public string bladeName {
             get {
                 return this.bladeNameField;
             }
             set {
-                if ((object.ReferenceEquals(this.bladeNameField, value) != true)) {
-                    this.bladeNameField = value;
-                    this.RaisePropertyChanged("bladeName");
-                }
-            }
-        }
-    }
-    
-    [System.Diagnostics.DebuggerStepThroughAttribute()]
-    [System.CodeDom.Compiler.GeneratedCodeAttribute("System.Runtime.Serialization", "4.0.0.0")]
-    [System.Runtime.Serialization.DataContractAttribute(Name="resultAndBIOSConfig", Namespace="http://schemas.datacontract.org/2004/07/bladeDirectorWCF")]
-    [System.SerializableAttribute()]
-    public partial class resultAndBIOSConfig : bladeDirectorClient.bladeDirectorService.resultAndWaitToken {
-        
-        [System.Runtime.Serialization.OptionalFieldAttribute()]
-        private string BIOSConfigField;
-        
-        [System.Runtime.Serialization.DataMemberAttribute()]
-        public string BIOSConfig {
-            get {
-                return this.BIOSConfigField;
-            }
-            set {
-                if ((object.ReferenceEquals(this.BIOSConfigField, value) != true)) {
-                    this.BIOSConfigField = value;
-                    this.RaisePropertyChanged("BIOSConfig");
-                }
-            }
-        }
-    }
-    
-    [System.CodeDom.Compiler.GeneratedCodeAttribute("System.Runtime.Serialization", "4.0.0.0")]
-    [System.Runtime.Serialization.DataContractAttribute(Name="resultCode", Namespace="http://schemas.datacontract.org/2004/07/bladeDirectorWCF")]
-    public enum resultCode : int {
-        
-        [System.Runtime.Serialization.EnumMemberAttribute()]
-        success = 0,
-        
-        [System.Runtime.Serialization.EnumMemberAttribute()]
-        bladeNotFound = 1,
-        
-        [System.Runtime.Serialization.EnumMemberAttribute()]
-        bladeInUse = 2,
-        
-        [System.Runtime.Serialization.EnumMemberAttribute()]
-        bladeQueueFull = 3,
-        
-        [System.Runtime.Serialization.EnumMemberAttribute()]
-        pending = 4,
-        
-        [System.Runtime.Serialization.EnumMemberAttribute()]
-        alreadyInProgress = 5,
-        
-        [System.Runtime.Serialization.EnumMemberAttribute()]
-        cancelled = 6,
-        
-        [System.Runtime.Serialization.EnumMemberAttribute()]
-        genericFail = 7,
-        
-        [System.Runtime.Serialization.EnumMemberAttribute()]
-        noNeedLah = 8,
-        
-        [System.Runtime.Serialization.EnumMemberAttribute()]
-        unknown = 9,
-    }
-    
-    [System.CodeDom.Compiler.GeneratedCodeAttribute("System.Runtime.Serialization", "4.0.0.0")]
-    [System.Runtime.Serialization.DataContractAttribute(Name="GetBladeStatusResult", Namespace="http://schemas.datacontract.org/2004/07/bladeDirectorWCF")]
-    public enum GetBladeStatusResult : int {
-        
-        [System.Runtime.Serialization.EnumMemberAttribute()]
-        bladeNotFound = 0,
-        
-        [System.Runtime.Serialization.EnumMemberAttribute()]
-        unused = 1,
-        
-        [System.Runtime.Serialization.EnumMemberAttribute()]
-        yours = 2,
-        
-        [System.Runtime.Serialization.EnumMemberAttribute()]
-        releasePending = 3,
-        
-        [System.Runtime.Serialization.EnumMemberAttribute()]
-        notYours = 4,
-    }
-    
-    [System.Diagnostics.DebuggerStepThroughAttribute()]
-    [System.CodeDom.Compiler.GeneratedCodeAttribute("System.Runtime.Serialization", "4.0.0.0")]
-    [System.Runtime.Serialization.DataContractAttribute(Name="VMHardwareSpec", Namespace="http://schemas.datacontract.org/2004/07/bladeDirectorWCF")]
-    [System.SerializableAttribute()]
-    public partial class VMHardwareSpec : object, System.Runtime.Serialization.IExtensibleDataObject, System.ComponentModel.INotifyPropertyChanged {
-        
-        [System.NonSerializedAttribute()]
-        private System.Runtime.Serialization.ExtensionDataObject extensionDataField;
-        
-        [System.Runtime.Serialization.OptionalFieldAttribute()]
-        private int cpuCountField;
-        
-        [System.Runtime.Serialization.OptionalFieldAttribute()]
-        private int memoryMBField;
-        
-        [global::System.ComponentModel.BrowsableAttribute(false)]
-        public System.Runtime.Serialization.ExtensionDataObject ExtensionData {
-            get {
-                return this.extensionDataField;
-            }
-            set {
-                this.extensionDataField = value;
+                this.bladeNameField = value;
+                this.RaisePropertyChanged("bladeName");
             }
         }
         
-        [System.Runtime.Serialization.DataMemberAttribute()]
-        public int cpuCount {
+        /// <remarks/>
+        [System.Xml.Serialization.XmlElementAttribute(Order=2)]
+        public string waitToken {
             get {
-                return this.cpuCountField;
+                return this.waitTokenField;
             }
             set {
-                if ((this.cpuCountField.Equals(value) != true)) {
-                    this.cpuCountField = value;
-                    this.RaisePropertyChanged("cpuCount");
-                }
-            }
-        }
-        
-        [System.Runtime.Serialization.DataMemberAttribute()]
-        public int memoryMB {
-            get {
-                return this.memoryMBField;
-            }
-            set {
-                if ((this.memoryMBField.Equals(value) != true)) {
-                    this.memoryMBField = value;
-                    this.RaisePropertyChanged("memoryMB");
-                }
+                this.waitTokenField = value;
+                this.RaisePropertyChanged("waitToken");
             }
         }
         
@@ -344,163 +313,53 @@ namespace bladeDirectorClient.bladeDirectorService {
         }
     }
     
-    [System.Diagnostics.DebuggerStepThroughAttribute()]
-    [System.CodeDom.Compiler.GeneratedCodeAttribute("System.Runtime.Serialization", "4.0.0.0")]
-    [System.Runtime.Serialization.DataContractAttribute(Name="VMSoftwareSpec", Namespace="http://schemas.datacontract.org/2004/07/bladeDirectorWCF")]
+    /// <remarks/>
+    [System.CodeDom.Compiler.GeneratedCodeAttribute("System.Xml", "4.7.2102.0")]
     [System.SerializableAttribute()]
-    public partial class VMSoftwareSpec : object, System.Runtime.Serialization.IExtensibleDataObject, System.ComponentModel.INotifyPropertyChanged {
-        
-        [System.NonSerializedAttribute()]
-        private System.Runtime.Serialization.ExtensionDataObject extensionDataField;
-        
-        [System.Runtime.Serialization.OptionalFieldAttribute()]
-        private string debuggerHostField;
-        
-        [System.Runtime.Serialization.OptionalFieldAttribute()]
-        private string debuggerKeyField;
-        
-        [System.Runtime.Serialization.OptionalFieldAttribute()]
-        private ushort debuggerPortField;
-        
-        [System.Runtime.Serialization.OptionalFieldAttribute()]
-        private bladeDirectorClient.bladeDirectorService.userAddRequest[] usersToAddField;
-        
-        [global::System.ComponentModel.BrowsableAttribute(false)]
-        public System.Runtime.Serialization.ExtensionDataObject ExtensionData {
-            get {
-                return this.extensionDataField;
-            }
-            set {
-                this.extensionDataField = value;
-            }
-        }
-        
-        [System.Runtime.Serialization.DataMemberAttribute()]
-        public string debuggerHost {
-            get {
-                return this.debuggerHostField;
-            }
-            set {
-                if ((object.ReferenceEquals(this.debuggerHostField, value) != true)) {
-                    this.debuggerHostField = value;
-                    this.RaisePropertyChanged("debuggerHost");
-                }
-            }
-        }
-        
-        [System.Runtime.Serialization.DataMemberAttribute()]
-        public string debuggerKey {
-            get {
-                return this.debuggerKeyField;
-            }
-            set {
-                if ((object.ReferenceEquals(this.debuggerKeyField, value) != true)) {
-                    this.debuggerKeyField = value;
-                    this.RaisePropertyChanged("debuggerKey");
-                }
-            }
-        }
-        
-        [System.Runtime.Serialization.DataMemberAttribute()]
-        public ushort debuggerPort {
-            get {
-                return this.debuggerPortField;
-            }
-            set {
-                if ((this.debuggerPortField.Equals(value) != true)) {
-                    this.debuggerPortField = value;
-                    this.RaisePropertyChanged("debuggerPort");
-                }
-            }
-        }
-        
-        [System.Runtime.Serialization.DataMemberAttribute()]
-        public bladeDirectorClient.bladeDirectorService.userAddRequest[] usersToAdd {
-            get {
-                return this.usersToAddField;
-            }
-            set {
-                if ((object.ReferenceEquals(this.usersToAddField, value) != true)) {
-                    this.usersToAddField = value;
-                    this.RaisePropertyChanged("usersToAdd");
-                }
-            }
-        }
-        
-        public event System.ComponentModel.PropertyChangedEventHandler PropertyChanged;
-        
-        protected void RaisePropertyChanged(string propertyName) {
-            System.ComponentModel.PropertyChangedEventHandler propertyChanged = this.PropertyChanged;
-            if ((propertyChanged != null)) {
-                propertyChanged(this, new System.ComponentModel.PropertyChangedEventArgs(propertyName));
-            }
-        }
-    }
-    
     [System.Diagnostics.DebuggerStepThroughAttribute()]
-    [System.CodeDom.Compiler.GeneratedCodeAttribute("System.Runtime.Serialization", "4.0.0.0")]
-    [System.Runtime.Serialization.DataContractAttribute(Name="userAddRequest", Namespace="http://schemas.datacontract.org/2004/07/createDisks")]
-    [System.SerializableAttribute()]
-    public partial class userAddRequest : object, System.Runtime.Serialization.IExtensibleDataObject, System.ComponentModel.INotifyPropertyChanged {
+    [System.ComponentModel.DesignerCategoryAttribute("code")]
+    [System.Xml.Serialization.XmlTypeAttribute(Namespace="http://tempuri.org/")]
+    public partial class userAddRequest : object, System.ComponentModel.INotifyPropertyChanged {
         
-        [System.NonSerializedAttribute()]
-        private System.Runtime.Serialization.ExtensionDataObject extensionDataField;
-        
-        [System.Runtime.Serialization.OptionalFieldAttribute()]
-        private bool isAdministratorField;
-        
-        [System.Runtime.Serialization.OptionalFieldAttribute()]
-        private string passwordField;
-        
-        [System.Runtime.Serialization.OptionalFieldAttribute()]
         private string usernameField;
         
-        [global::System.ComponentModel.BrowsableAttribute(false)]
-        public System.Runtime.Serialization.ExtensionDataObject ExtensionData {
+        private string passwordField;
+        
+        private bool isAdministratorField;
+        
+        /// <remarks/>
+        [System.Xml.Serialization.XmlElementAttribute(Order=0)]
+        public string username {
             get {
-                return this.extensionDataField;
+                return this.usernameField;
             }
             set {
-                this.extensionDataField = value;
+                this.usernameField = value;
+                this.RaisePropertyChanged("username");
             }
         }
         
-        [System.Runtime.Serialization.DataMemberAttribute()]
+        /// <remarks/>
+        [System.Xml.Serialization.XmlElementAttribute(Order=1)]
+        public string password {
+            get {
+                return this.passwordField;
+            }
+            set {
+                this.passwordField = value;
+                this.RaisePropertyChanged("password");
+            }
+        }
+        
+        /// <remarks/>
+        [System.Xml.Serialization.XmlElementAttribute(Order=2)]
         public bool isAdministrator {
             get {
                 return this.isAdministratorField;
             }
             set {
-                if ((this.isAdministratorField.Equals(value) != true)) {
-                    this.isAdministratorField = value;
-                    this.RaisePropertyChanged("isAdministrator");
-                }
-            }
-        }
-        
-        [System.Runtime.Serialization.DataMemberAttribute()]
-        public string password {
-            get {
-                return this.passwordField;
-            }
-            set {
-                if ((object.ReferenceEquals(this.passwordField, value) != true)) {
-                    this.passwordField = value;
-                    this.RaisePropertyChanged("password");
-                }
-            }
-        }
-        
-        [System.Runtime.Serialization.DataMemberAttribute()]
-        public string username {
-            get {
-                return this.usernameField;
-            }
-            set {
-                if ((object.ReferenceEquals(this.usernameField, value) != true)) {
-                    this.usernameField = value;
-                    this.RaisePropertyChanged("username");
-                }
+                this.isAdministratorField = value;
+                this.RaisePropertyChanged("isAdministrator");
             }
         }
         
@@ -514,168 +373,67 @@ namespace bladeDirectorClient.bladeDirectorService {
         }
     }
     
-    [System.Diagnostics.DebuggerStepThroughAttribute()]
-    [System.CodeDom.Compiler.GeneratedCodeAttribute("System.Runtime.Serialization", "4.0.0.0")]
-    [System.Runtime.Serialization.DataContractAttribute(Name="bladeOwnership", Namespace="http://schemas.datacontract.org/2004/07/bladeDirectorWCF")]
+    /// <remarks/>
+    [System.CodeDom.Compiler.GeneratedCodeAttribute("System.Xml", "4.7.2102.0")]
     [System.SerializableAttribute()]
-    [System.Runtime.Serialization.KnownTypeAttribute(typeof(bladeDirectorClient.bladeDirectorService.bladeSpec))]
-    [System.Runtime.Serialization.KnownTypeAttribute(typeof(bladeDirectorClient.bladeDirectorService.vmSpec))]
-    public partial class bladeOwnership : object, System.Runtime.Serialization.IExtensibleDataObject, System.ComponentModel.INotifyPropertyChanged {
+    [System.Diagnostics.DebuggerStepThroughAttribute()]
+    [System.ComponentModel.DesignerCategoryAttribute("code")]
+    [System.Xml.Serialization.XmlTypeAttribute(Namespace="http://tempuri.org/")]
+    public partial class VMSoftwareSpec : object, System.ComponentModel.INotifyPropertyChanged {
         
-        [System.NonSerializedAttribute()]
-        private System.Runtime.Serialization.ExtensionDataObject extensionDataField;
+        private string debuggerHostField;
         
-        [System.Runtime.Serialization.OptionalFieldAttribute()]
-        private bladeDirectorClient.bladeDirectorService.SQLiteConnection connField;
+        private ushort debuggerPortField;
         
-        [System.Runtime.Serialization.OptionalFieldAttribute()]
-        private string currentOwnerField;
+        private string debuggerKeyField;
         
-        [System.Runtime.Serialization.OptionalFieldAttribute()]
-        private string currentSnapshotField;
+        private userAddRequest[] usersToAddField;
         
-        [System.Runtime.Serialization.OptionalFieldAttribute()]
-        private System.DateTime lastKeepAliveField;
-        
-        [System.Runtime.Serialization.OptionalFieldAttribute()]
-        private string nextOwnerField;
-        
-        [System.Runtime.Serialization.OptionalFieldAttribute()]
-        private System.Nullable<long> ownershipRowIDField;
-        
-        [System.Runtime.Serialization.OptionalFieldAttribute()]
-        private bladeDirectorClient.bladeDirectorService.bladeLockType permittedAccessReadField;
-        
-        [System.Runtime.Serialization.OptionalFieldAttribute()]
-        private bladeDirectorClient.bladeDirectorService.bladeLockType permittedAccessWriteField;
-        
-        [System.Runtime.Serialization.OptionalFieldAttribute()]
-        private bladeDirectorClient.bladeDirectorService.bladeStatus stateField;
-        
-        [global::System.ComponentModel.BrowsableAttribute(false)]
-        public System.Runtime.Serialization.ExtensionDataObject ExtensionData {
+        /// <remarks/>
+        [System.Xml.Serialization.XmlElementAttribute(Order=0)]
+        public string debuggerHost {
             get {
-                return this.extensionDataField;
+                return this.debuggerHostField;
             }
             set {
-                this.extensionDataField = value;
+                this.debuggerHostField = value;
+                this.RaisePropertyChanged("debuggerHost");
             }
         }
         
-        [System.Runtime.Serialization.DataMemberAttribute()]
-        public bladeDirectorClient.bladeDirectorService.SQLiteConnection conn {
+        /// <remarks/>
+        [System.Xml.Serialization.XmlElementAttribute(Order=1)]
+        public ushort debuggerPort {
             get {
-                return this.connField;
+                return this.debuggerPortField;
             }
             set {
-                if ((object.ReferenceEquals(this.connField, value) != true)) {
-                    this.connField = value;
-                    this.RaisePropertyChanged("conn");
-                }
+                this.debuggerPortField = value;
+                this.RaisePropertyChanged("debuggerPort");
             }
         }
         
-        [System.Runtime.Serialization.DataMemberAttribute()]
-        public string currentOwner {
+        /// <remarks/>
+        [System.Xml.Serialization.XmlElementAttribute(Order=2)]
+        public string debuggerKey {
             get {
-                return this.currentOwnerField;
+                return this.debuggerKeyField;
             }
             set {
-                if ((object.ReferenceEquals(this.currentOwnerField, value) != true)) {
-                    this.currentOwnerField = value;
-                    this.RaisePropertyChanged("currentOwner");
-                }
+                this.debuggerKeyField = value;
+                this.RaisePropertyChanged("debuggerKey");
             }
         }
         
-        [System.Runtime.Serialization.DataMemberAttribute()]
-        public string currentSnapshot {
+        /// <remarks/>
+        [System.Xml.Serialization.XmlArrayAttribute(Order=3)]
+        public userAddRequest[] usersToAdd {
             get {
-                return this.currentSnapshotField;
+                return this.usersToAddField;
             }
             set {
-                if ((object.ReferenceEquals(this.currentSnapshotField, value) != true)) {
-                    this.currentSnapshotField = value;
-                    this.RaisePropertyChanged("currentSnapshot");
-                }
-            }
-        }
-        
-        [System.Runtime.Serialization.DataMemberAttribute()]
-        public System.DateTime lastKeepAlive {
-            get {
-                return this.lastKeepAliveField;
-            }
-            set {
-                if ((this.lastKeepAliveField.Equals(value) != true)) {
-                    this.lastKeepAliveField = value;
-                    this.RaisePropertyChanged("lastKeepAlive");
-                }
-            }
-        }
-        
-        [System.Runtime.Serialization.DataMemberAttribute()]
-        public string nextOwner {
-            get {
-                return this.nextOwnerField;
-            }
-            set {
-                if ((object.ReferenceEquals(this.nextOwnerField, value) != true)) {
-                    this.nextOwnerField = value;
-                    this.RaisePropertyChanged("nextOwner");
-                }
-            }
-        }
-        
-        [System.Runtime.Serialization.DataMemberAttribute()]
-        public System.Nullable<long> ownershipRowID {
-            get {
-                return this.ownershipRowIDField;
-            }
-            set {
-                if ((this.ownershipRowIDField.Equals(value) != true)) {
-                    this.ownershipRowIDField = value;
-                    this.RaisePropertyChanged("ownershipRowID");
-                }
-            }
-        }
-        
-        [System.Runtime.Serialization.DataMemberAttribute()]
-        public bladeDirectorClient.bladeDirectorService.bladeLockType permittedAccessRead {
-            get {
-                return this.permittedAccessReadField;
-            }
-            set {
-                if ((this.permittedAccessReadField.Equals(value) != true)) {
-                    this.permittedAccessReadField = value;
-                    this.RaisePropertyChanged("permittedAccessRead");
-                }
-            }
-        }
-        
-        [System.Runtime.Serialization.DataMemberAttribute()]
-        public bladeDirectorClient.bladeDirectorService.bladeLockType permittedAccessWrite {
-            get {
-                return this.permittedAccessWriteField;
-            }
-            set {
-                if ((this.permittedAccessWriteField.Equals(value) != true)) {
-                    this.permittedAccessWriteField = value;
-                    this.RaisePropertyChanged("permittedAccessWrite");
-                }
-            }
-        }
-        
-        [System.Runtime.Serialization.DataMemberAttribute()]
-        public bladeDirectorClient.bladeDirectorService.bladeStatus state {
-            get {
-                return this.stateField;
-            }
-            set {
-                if ((this.stateField.Equals(value) != true)) {
-                    this.stateField = value;
-                    this.RaisePropertyChanged("state");
-                }
+                this.usersToAddField = value;
+                this.RaisePropertyChanged("usersToAdd");
             }
         }
         
@@ -689,1300 +447,635 @@ namespace bladeDirectorClient.bladeDirectorService {
         }
     }
     
-    [System.Diagnostics.DebuggerStepThroughAttribute()]
-    [System.CodeDom.Compiler.GeneratedCodeAttribute("System.Runtime.Serialization", "4.0.0.0")]
-    [System.Runtime.Serialization.DataContractAttribute(Name="SQLiteConnection", Namespace="http://schemas.datacontract.org/2004/07/System.Data.SQLite")]
+    /// <remarks/>
+    [System.CodeDom.Compiler.GeneratedCodeAttribute("System.Xml", "4.7.2102.0")]
     [System.SerializableAttribute()]
-    public partial class SQLiteConnection : bladeDirectorClient.bladeDirectorService.DbConnection {
+    [System.Diagnostics.DebuggerStepThroughAttribute()]
+    [System.ComponentModel.DesignerCategoryAttribute("code")]
+    [System.Xml.Serialization.XmlTypeAttribute(Namespace="http://tempuri.org/")]
+    public partial class resultCodeAndBIOSConfig : object, System.ComponentModel.INotifyPropertyChanged {
         
-        [System.Runtime.Serialization.OptionalFieldAttribute()]
-        private int BusyTimeoutField;
+        private resultCode codeField;
         
-        [System.Runtime.Serialization.OptionalFieldAttribute()]
-        private System.Nullable<bladeDirectorClient.bladeDirectorService.DbType> DefaultDbTypeField;
+        private string bIOSConfigField;
         
-        [System.Runtime.Serialization.OptionalFieldAttribute()]
-        private int DefaultTimeoutField;
-        
-        [System.Runtime.Serialization.OptionalFieldAttribute()]
-        private string DefaultTypeNameField;
-        
-        [System.Runtime.Serialization.OptionalFieldAttribute()]
-        private bladeDirectorClient.bladeDirectorService.SQLiteConnectionFlags FlagsField;
-        
-        [System.Runtime.Serialization.OptionalFieldAttribute()]
-        private bool ParseViaFrameworkField;
-        
-        [System.Runtime.Serialization.OptionalFieldAttribute()]
-        private int PrepareRetriesField;
-        
-        [System.Runtime.Serialization.OptionalFieldAttribute()]
-        private int ProgressOpsField;
-        
-        [System.Runtime.Serialization.OptionalFieldAttribute()]
-        private string VfsNameField;
-        
-        [System.Runtime.Serialization.DataMemberAttribute()]
-        public int BusyTimeout {
+        /// <remarks/>
+        [System.Xml.Serialization.XmlElementAttribute(Order=0)]
+        public resultCode code {
             get {
-                return this.BusyTimeoutField;
+                return this.codeField;
             }
             set {
-                if ((this.BusyTimeoutField.Equals(value) != true)) {
-                    this.BusyTimeoutField = value;
-                    this.RaisePropertyChanged("BusyTimeout");
-                }
+                this.codeField = value;
+                this.RaisePropertyChanged("code");
             }
         }
         
-        [System.Runtime.Serialization.DataMemberAttribute()]
-        public System.Nullable<bladeDirectorClient.bladeDirectorService.DbType> DefaultDbType {
+        /// <remarks/>
+        [System.Xml.Serialization.XmlElementAttribute(Order=1)]
+        public string BIOSConfig {
             get {
-                return this.DefaultDbTypeField;
+                return this.bIOSConfigField;
             }
             set {
-                if ((this.DefaultDbTypeField.Equals(value) != true)) {
-                    this.DefaultDbTypeField = value;
-                    this.RaisePropertyChanged("DefaultDbType");
-                }
+                this.bIOSConfigField = value;
+                this.RaisePropertyChanged("BIOSConfig");
             }
         }
         
-        [System.Runtime.Serialization.DataMemberAttribute()]
-        public int DefaultTimeout {
-            get {
-                return this.DefaultTimeoutField;
-            }
-            set {
-                if ((this.DefaultTimeoutField.Equals(value) != true)) {
-                    this.DefaultTimeoutField = value;
-                    this.RaisePropertyChanged("DefaultTimeout");
-                }
-            }
-        }
+        public event System.ComponentModel.PropertyChangedEventHandler PropertyChanged;
         
-        [System.Runtime.Serialization.DataMemberAttribute()]
-        public string DefaultTypeName {
-            get {
-                return this.DefaultTypeNameField;
-            }
-            set {
-                if ((object.ReferenceEquals(this.DefaultTypeNameField, value) != true)) {
-                    this.DefaultTypeNameField = value;
-                    this.RaisePropertyChanged("DefaultTypeName");
-                }
-            }
-        }
-        
-        [System.Runtime.Serialization.DataMemberAttribute()]
-        public bladeDirectorClient.bladeDirectorService.SQLiteConnectionFlags Flags {
-            get {
-                return this.FlagsField;
-            }
-            set {
-                if ((this.FlagsField.Equals(value) != true)) {
-                    this.FlagsField = value;
-                    this.RaisePropertyChanged("Flags");
-                }
-            }
-        }
-        
-        [System.Runtime.Serialization.DataMemberAttribute()]
-        public bool ParseViaFramework {
-            get {
-                return this.ParseViaFrameworkField;
-            }
-            set {
-                if ((this.ParseViaFrameworkField.Equals(value) != true)) {
-                    this.ParseViaFrameworkField = value;
-                    this.RaisePropertyChanged("ParseViaFramework");
-                }
-            }
-        }
-        
-        [System.Runtime.Serialization.DataMemberAttribute()]
-        public int PrepareRetries {
-            get {
-                return this.PrepareRetriesField;
-            }
-            set {
-                if ((this.PrepareRetriesField.Equals(value) != true)) {
-                    this.PrepareRetriesField = value;
-                    this.RaisePropertyChanged("PrepareRetries");
-                }
-            }
-        }
-        
-        [System.Runtime.Serialization.DataMemberAttribute()]
-        public int ProgressOps {
-            get {
-                return this.ProgressOpsField;
-            }
-            set {
-                if ((this.ProgressOpsField.Equals(value) != true)) {
-                    this.ProgressOpsField = value;
-                    this.RaisePropertyChanged("ProgressOps");
-                }
-            }
-        }
-        
-        [System.Runtime.Serialization.DataMemberAttribute()]
-        public string VfsName {
-            get {
-                return this.VfsNameField;
-            }
-            set {
-                if ((object.ReferenceEquals(this.VfsNameField, value) != true)) {
-                    this.VfsNameField = value;
-                    this.RaisePropertyChanged("VfsName");
-                }
+        protected void RaisePropertyChanged(string propertyName) {
+            System.ComponentModel.PropertyChangedEventHandler propertyChanged = this.PropertyChanged;
+            if ((propertyChanged != null)) {
+                propertyChanged(this, new System.ComponentModel.PropertyChangedEventArgs(propertyName));
             }
         }
     }
     
-    [System.Diagnostics.DebuggerStepThroughAttribute()]
-    [System.CodeDom.Compiler.GeneratedCodeAttribute("System.Runtime.Serialization", "4.0.0.0")]
-    [System.Runtime.Serialization.DataContractAttribute(Name="bladeSpec", Namespace="http://schemas.datacontract.org/2004/07/bladeDirectorWCF")]
+    /// <remarks/>
+    [System.CodeDom.Compiler.GeneratedCodeAttribute("System.Xml", "4.7.2102.0")]
     [System.SerializableAttribute()]
-    public partial class bladeSpec : bladeDirectorClient.bladeDirectorService.bladeOwnership {
-        
-        [System.Runtime.Serialization.OptionalFieldAttribute()]
-        private string ESXiPasswordField;
-        
-        [System.Runtime.Serialization.OptionalFieldAttribute()]
-        private string ESXiUsernameField;
-        
-        [System.Runtime.Serialization.OptionalFieldAttribute()]
-        private System.Nullable<long> bladeIDField;
-        
-        [System.Runtime.Serialization.OptionalFieldAttribute()]
-        private string bladeIPField;
-        
-        [System.Runtime.Serialization.OptionalFieldAttribute()]
-        private bool currentlyBeingAVMServerField;
-        
-        [System.Runtime.Serialization.OptionalFieldAttribute()]
-        private bool currentlyHavingBIOSDeployedField;
-        
-        [System.Runtime.Serialization.OptionalFieldAttribute()]
-        private string iLOIPField;
-        
-        [System.Runtime.Serialization.OptionalFieldAttribute()]
-        private ushort iLOPortField;
-        
-        [System.Runtime.Serialization.OptionalFieldAttribute()]
-        private string iLoPasswordField;
-        
-        [System.Runtime.Serialization.OptionalFieldAttribute()]
-        private string iLoUsernameField;
-        
-        [System.Runtime.Serialization.OptionalFieldAttribute()]
-        private string iscsiIPField;
-        
-        [System.Runtime.Serialization.OptionalFieldAttribute()]
-        private string lastDeployedBIOSField;
-        
-        [System.Runtime.Serialization.OptionalFieldAttribute()]
-        private bladeDirectorClient.bladeDirectorService.VMDeployStatus vmDeployStateField;
-        
-        [System.Runtime.Serialization.DataMemberAttribute()]
-        public string ESXiPassword {
-            get {
-                return this.ESXiPasswordField;
-            }
-            set {
-                if ((object.ReferenceEquals(this.ESXiPasswordField, value) != true)) {
-                    this.ESXiPasswordField = value;
-                    this.RaisePropertyChanged("ESXiPassword");
-                }
-            }
-        }
-        
-        [System.Runtime.Serialization.DataMemberAttribute()]
-        public string ESXiUsername {
-            get {
-                return this.ESXiUsernameField;
-            }
-            set {
-                if ((object.ReferenceEquals(this.ESXiUsernameField, value) != true)) {
-                    this.ESXiUsernameField = value;
-                    this.RaisePropertyChanged("ESXiUsername");
-                }
-            }
-        }
-        
-        [System.Runtime.Serialization.DataMemberAttribute()]
-        public System.Nullable<long> bladeID {
-            get {
-                return this.bladeIDField;
-            }
-            set {
-                if ((this.bladeIDField.Equals(value) != true)) {
-                    this.bladeIDField = value;
-                    this.RaisePropertyChanged("bladeID");
-                }
-            }
-        }
-        
-        [System.Runtime.Serialization.DataMemberAttribute()]
-        public string bladeIP {
-            get {
-                return this.bladeIPField;
-            }
-            set {
-                if ((object.ReferenceEquals(this.bladeIPField, value) != true)) {
-                    this.bladeIPField = value;
-                    this.RaisePropertyChanged("bladeIP");
-                }
-            }
-        }
-        
-        [System.Runtime.Serialization.DataMemberAttribute()]
-        public bool currentlyBeingAVMServer {
-            get {
-                return this.currentlyBeingAVMServerField;
-            }
-            set {
-                if ((this.currentlyBeingAVMServerField.Equals(value) != true)) {
-                    this.currentlyBeingAVMServerField = value;
-                    this.RaisePropertyChanged("currentlyBeingAVMServer");
-                }
-            }
-        }
-        
-        [System.Runtime.Serialization.DataMemberAttribute()]
-        public bool currentlyHavingBIOSDeployed {
-            get {
-                return this.currentlyHavingBIOSDeployedField;
-            }
-            set {
-                if ((this.currentlyHavingBIOSDeployedField.Equals(value) != true)) {
-                    this.currentlyHavingBIOSDeployedField = value;
-                    this.RaisePropertyChanged("currentlyHavingBIOSDeployed");
-                }
-            }
-        }
-        
-        [System.Runtime.Serialization.DataMemberAttribute()]
-        public string iLOIP {
-            get {
-                return this.iLOIPField;
-            }
-            set {
-                if ((object.ReferenceEquals(this.iLOIPField, value) != true)) {
-                    this.iLOIPField = value;
-                    this.RaisePropertyChanged("iLOIP");
-                }
-            }
-        }
-        
-        [System.Runtime.Serialization.DataMemberAttribute()]
-        public ushort iLOPort {
-            get {
-                return this.iLOPortField;
-            }
-            set {
-                if ((this.iLOPortField.Equals(value) != true)) {
-                    this.iLOPortField = value;
-                    this.RaisePropertyChanged("iLOPort");
-                }
-            }
-        }
-        
-        [System.Runtime.Serialization.DataMemberAttribute()]
-        public string iLoPassword {
-            get {
-                return this.iLoPasswordField;
-            }
-            set {
-                if ((object.ReferenceEquals(this.iLoPasswordField, value) != true)) {
-                    this.iLoPasswordField = value;
-                    this.RaisePropertyChanged("iLoPassword");
-                }
-            }
-        }
-        
-        [System.Runtime.Serialization.DataMemberAttribute()]
-        public string iLoUsername {
-            get {
-                return this.iLoUsernameField;
-            }
-            set {
-                if ((object.ReferenceEquals(this.iLoUsernameField, value) != true)) {
-                    this.iLoUsernameField = value;
-                    this.RaisePropertyChanged("iLoUsername");
-                }
-            }
-        }
-        
-        [System.Runtime.Serialization.DataMemberAttribute()]
-        public string iscsiIP {
-            get {
-                return this.iscsiIPField;
-            }
-            set {
-                if ((object.ReferenceEquals(this.iscsiIPField, value) != true)) {
-                    this.iscsiIPField = value;
-                    this.RaisePropertyChanged("iscsiIP");
-                }
-            }
-        }
-        
-        [System.Runtime.Serialization.DataMemberAttribute()]
-        public string lastDeployedBIOS {
-            get {
-                return this.lastDeployedBIOSField;
-            }
-            set {
-                if ((object.ReferenceEquals(this.lastDeployedBIOSField, value) != true)) {
-                    this.lastDeployedBIOSField = value;
-                    this.RaisePropertyChanged("lastDeployedBIOS");
-                }
-            }
-        }
-        
-        [System.Runtime.Serialization.DataMemberAttribute()]
-        public bladeDirectorClient.bladeDirectorService.VMDeployStatus vmDeployState {
-            get {
-                return this.vmDeployStateField;
-            }
-            set {
-                if ((this.vmDeployStateField.Equals(value) != true)) {
-                    this.vmDeployStateField = value;
-                    this.RaisePropertyChanged("vmDeployState");
-                }
-            }
-        }
-    }
-    
     [System.Diagnostics.DebuggerStepThroughAttribute()]
-    [System.CodeDom.Compiler.GeneratedCodeAttribute("System.Runtime.Serialization", "4.0.0.0")]
-    [System.Runtime.Serialization.DataContractAttribute(Name="vmSpec", Namespace="http://schemas.datacontract.org/2004/07/bladeDirectorWCF")]
-    [System.SerializableAttribute()]
-    public partial class vmSpec : bladeDirectorClient.bladeDirectorService.bladeOwnership {
+    [System.ComponentModel.DesignerCategoryAttribute("code")]
+    [System.Xml.Serialization.XmlTypeAttribute(Namespace="http://tempuri.org/")]
+    public partial class VMHardwareSpec : object, System.ComponentModel.INotifyPropertyChanged {
         
-        [System.Runtime.Serialization.OptionalFieldAttribute()]
-        private string VMIPField;
-        
-        [System.Runtime.Serialization.OptionalFieldAttribute()]
-        private int cpuCountField;
-        
-        [System.Runtime.Serialization.OptionalFieldAttribute()]
-        private string displayNameField;
-        
-        [System.Runtime.Serialization.OptionalFieldAttribute()]
-        private string eth0MACField;
-        
-        [System.Runtime.Serialization.OptionalFieldAttribute()]
-        private string eth1MACField;
-        
-        [System.Runtime.Serialization.OptionalFieldAttribute()]
-        private int indexOnServerField;
-        
-        [System.Runtime.Serialization.OptionalFieldAttribute()]
-        private string iscsiIPField;
-        
-        [System.Runtime.Serialization.OptionalFieldAttribute()]
-        private string kernelDebugKeyField;
-        
-        [System.Runtime.Serialization.OptionalFieldAttribute()]
-        private ushort kernelDebugPortField;
-        
-        [System.Runtime.Serialization.OptionalFieldAttribute()]
         private int memoryMBField;
         
-        [System.Runtime.Serialization.OptionalFieldAttribute()]
-        private long parentBladeIDField;
+        private int cpuCountField;
         
-        [System.Runtime.Serialization.OptionalFieldAttribute()]
-        private string parentBladeIPField;
-        
-        [System.Runtime.Serialization.OptionalFieldAttribute()]
-        private string passwordField;
-        
-        [System.Runtime.Serialization.OptionalFieldAttribute()]
-        private string usernameField;
-        
-        [System.Runtime.Serialization.OptionalFieldAttribute()]
-        private System.Nullable<long> vmConfigKeyField;
-        
-        [System.Runtime.Serialization.DataMemberAttribute()]
-        public string VMIP {
-            get {
-                return this.VMIPField;
-            }
-            set {
-                if ((object.ReferenceEquals(this.VMIPField, value) != true)) {
-                    this.VMIPField = value;
-                    this.RaisePropertyChanged("VMIP");
-                }
-            }
-        }
-        
-        [System.Runtime.Serialization.DataMemberAttribute()]
-        public int cpuCount {
-            get {
-                return this.cpuCountField;
-            }
-            set {
-                if ((this.cpuCountField.Equals(value) != true)) {
-                    this.cpuCountField = value;
-                    this.RaisePropertyChanged("cpuCount");
-                }
-            }
-        }
-        
-        [System.Runtime.Serialization.DataMemberAttribute()]
-        public string displayName {
-            get {
-                return this.displayNameField;
-            }
-            set {
-                if ((object.ReferenceEquals(this.displayNameField, value) != true)) {
-                    this.displayNameField = value;
-                    this.RaisePropertyChanged("displayName");
-                }
-            }
-        }
-        
-        [System.Runtime.Serialization.DataMemberAttribute()]
-        public string eth0MAC {
-            get {
-                return this.eth0MACField;
-            }
-            set {
-                if ((object.ReferenceEquals(this.eth0MACField, value) != true)) {
-                    this.eth0MACField = value;
-                    this.RaisePropertyChanged("eth0MAC");
-                }
-            }
-        }
-        
-        [System.Runtime.Serialization.DataMemberAttribute()]
-        public string eth1MAC {
-            get {
-                return this.eth1MACField;
-            }
-            set {
-                if ((object.ReferenceEquals(this.eth1MACField, value) != true)) {
-                    this.eth1MACField = value;
-                    this.RaisePropertyChanged("eth1MAC");
-                }
-            }
-        }
-        
-        [System.Runtime.Serialization.DataMemberAttribute()]
-        public int indexOnServer {
-            get {
-                return this.indexOnServerField;
-            }
-            set {
-                if ((this.indexOnServerField.Equals(value) != true)) {
-                    this.indexOnServerField = value;
-                    this.RaisePropertyChanged("indexOnServer");
-                }
-            }
-        }
-        
-        [System.Runtime.Serialization.DataMemberAttribute()]
-        public string iscsiIP {
-            get {
-                return this.iscsiIPField;
-            }
-            set {
-                if ((object.ReferenceEquals(this.iscsiIPField, value) != true)) {
-                    this.iscsiIPField = value;
-                    this.RaisePropertyChanged("iscsiIP");
-                }
-            }
-        }
-        
-        [System.Runtime.Serialization.DataMemberAttribute()]
-        public string kernelDebugKey {
-            get {
-                return this.kernelDebugKeyField;
-            }
-            set {
-                if ((object.ReferenceEquals(this.kernelDebugKeyField, value) != true)) {
-                    this.kernelDebugKeyField = value;
-                    this.RaisePropertyChanged("kernelDebugKey");
-                }
-            }
-        }
-        
-        [System.Runtime.Serialization.DataMemberAttribute()]
-        public ushort kernelDebugPort {
-            get {
-                return this.kernelDebugPortField;
-            }
-            set {
-                if ((this.kernelDebugPortField.Equals(value) != true)) {
-                    this.kernelDebugPortField = value;
-                    this.RaisePropertyChanged("kernelDebugPort");
-                }
-            }
-        }
-        
-        [System.Runtime.Serialization.DataMemberAttribute()]
+        /// <remarks/>
+        [System.Xml.Serialization.XmlElementAttribute(Order=0)]
         public int memoryMB {
             get {
                 return this.memoryMBField;
             }
             set {
-                if ((this.memoryMBField.Equals(value) != true)) {
-                    this.memoryMBField = value;
-                    this.RaisePropertyChanged("memoryMB");
-                }
+                this.memoryMBField = value;
+                this.RaisePropertyChanged("memoryMB");
             }
         }
         
-        [System.Runtime.Serialization.DataMemberAttribute()]
+        /// <remarks/>
+        [System.Xml.Serialization.XmlElementAttribute(Order=1)]
+        public int cpuCount {
+            get {
+                return this.cpuCountField;
+            }
+            set {
+                this.cpuCountField = value;
+                this.RaisePropertyChanged("cpuCount");
+            }
+        }
+        
+        public event System.ComponentModel.PropertyChangedEventHandler PropertyChanged;
+        
+        protected void RaisePropertyChanged(string propertyName) {
+            System.ComponentModel.PropertyChangedEventHandler propertyChanged = this.PropertyChanged;
+            if ((propertyChanged != null)) {
+                propertyChanged(this, new System.ComponentModel.PropertyChangedEventArgs(propertyName));
+            }
+        }
+    }
+    
+    /// <remarks/>
+    [System.Xml.Serialization.XmlIncludeAttribute(typeof(vmSpec))]
+    [System.Xml.Serialization.XmlIncludeAttribute(typeof(bladeSpec))]
+    [System.CodeDom.Compiler.GeneratedCodeAttribute("System.Xml", "4.7.2102.0")]
+    [System.SerializableAttribute()]
+    [System.Diagnostics.DebuggerStepThroughAttribute()]
+    [System.ComponentModel.DesignerCategoryAttribute("code")]
+    [System.Xml.Serialization.XmlTypeAttribute(Namespace="http://tempuri.org/")]
+    public partial class bladeOwnership : object, System.ComponentModel.INotifyPropertyChanged {
+        
+        private bladeStatus stateField;
+        
+        private string currentOwnerField;
+        
+        private string nextOwnerField;
+        
+        private System.DateTime lastKeepAliveField;
+        
+        private System.Nullable<long> ownershipRowIDField;
+        
+        private string currentSnapshotField;
+        
+        /// <remarks/>
+        [System.Xml.Serialization.XmlElementAttribute(Order=0)]
+        public bladeStatus state {
+            get {
+                return this.stateField;
+            }
+            set {
+                this.stateField = value;
+                this.RaisePropertyChanged("state");
+            }
+        }
+        
+        /// <remarks/>
+        [System.Xml.Serialization.XmlElementAttribute(Order=1)]
+        public string currentOwner {
+            get {
+                return this.currentOwnerField;
+            }
+            set {
+                this.currentOwnerField = value;
+                this.RaisePropertyChanged("currentOwner");
+            }
+        }
+        
+        /// <remarks/>
+        [System.Xml.Serialization.XmlElementAttribute(Order=2)]
+        public string nextOwner {
+            get {
+                return this.nextOwnerField;
+            }
+            set {
+                this.nextOwnerField = value;
+                this.RaisePropertyChanged("nextOwner");
+            }
+        }
+        
+        /// <remarks/>
+        [System.Xml.Serialization.XmlElementAttribute(Order=3)]
+        public System.DateTime lastKeepAlive {
+            get {
+                return this.lastKeepAliveField;
+            }
+            set {
+                this.lastKeepAliveField = value;
+                this.RaisePropertyChanged("lastKeepAlive");
+            }
+        }
+        
+        /// <remarks/>
+        [System.Xml.Serialization.XmlElementAttribute(IsNullable=true, Order=4)]
+        public System.Nullable<long> ownershipRowID {
+            get {
+                return this.ownershipRowIDField;
+            }
+            set {
+                this.ownershipRowIDField = value;
+                this.RaisePropertyChanged("ownershipRowID");
+            }
+        }
+        
+        /// <remarks/>
+        [System.Xml.Serialization.XmlElementAttribute(Order=5)]
+        public string currentSnapshot {
+            get {
+                return this.currentSnapshotField;
+            }
+            set {
+                this.currentSnapshotField = value;
+                this.RaisePropertyChanged("currentSnapshot");
+            }
+        }
+        
+        public event System.ComponentModel.PropertyChangedEventHandler PropertyChanged;
+        
+        protected void RaisePropertyChanged(string propertyName) {
+            System.ComponentModel.PropertyChangedEventHandler propertyChanged = this.PropertyChanged;
+            if ((propertyChanged != null)) {
+                propertyChanged(this, new System.ComponentModel.PropertyChangedEventArgs(propertyName));
+            }
+        }
+    }
+    
+    /// <remarks/>
+    [System.CodeDom.Compiler.GeneratedCodeAttribute("System.Xml", "4.7.2102.0")]
+    [System.SerializableAttribute()]
+    [System.Xml.Serialization.XmlTypeAttribute(Namespace="http://tempuri.org/")]
+    public enum bladeStatus {
+        
+        /// <remarks/>
+        unused,
+        
+        /// <remarks/>
+        releaseRequested,
+        
+        /// <remarks/>
+        inUseByDirector,
+        
+        /// <remarks/>
+        inUse,
+    }
+    
+    /// <remarks/>
+    [System.CodeDom.Compiler.GeneratedCodeAttribute("System.Xml", "4.7.2102.0")]
+    [System.SerializableAttribute()]
+    [System.Diagnostics.DebuggerStepThroughAttribute()]
+    [System.ComponentModel.DesignerCategoryAttribute("code")]
+    [System.Xml.Serialization.XmlTypeAttribute(Namespace="http://tempuri.org/")]
+    public partial class vmSpec : bladeOwnership {
+        
+        private long parentBladeIDField;
+        
+        private string iscsiIPField;
+        
+        private string vMIPField;
+        
+        private int vmSpecIDField;
+        
+        private string eth0MACField;
+        
+        private string eth1MACField;
+        
+        private string displayNameField;
+        
+        private int indexOnServerField;
+        
+        private ushort kernelDebugPortField;
+        
+        private string kernelDebugKeyField;
+        
+        private string usernameField;
+        
+        private string passwordField;
+        
+        private VMHardwareSpec hwSpecField;
+        
+        /// <remarks/>
+        [System.Xml.Serialization.XmlElementAttribute(Order=0)]
         public long parentBladeID {
             get {
                 return this.parentBladeIDField;
             }
             set {
-                if ((this.parentBladeIDField.Equals(value) != true)) {
-                    this.parentBladeIDField = value;
-                    this.RaisePropertyChanged("parentBladeID");
-                }
+                this.parentBladeIDField = value;
+                this.RaisePropertyChanged("parentBladeID");
             }
         }
         
-        [System.Runtime.Serialization.DataMemberAttribute()]
-        public string parentBladeIP {
+        /// <remarks/>
+        [System.Xml.Serialization.XmlElementAttribute(Order=1)]
+        public string iscsiIP {
             get {
-                return this.parentBladeIPField;
+                return this.iscsiIPField;
             }
             set {
-                if ((object.ReferenceEquals(this.parentBladeIPField, value) != true)) {
-                    this.parentBladeIPField = value;
-                    this.RaisePropertyChanged("parentBladeIP");
-                }
+                this.iscsiIPField = value;
+                this.RaisePropertyChanged("iscsiIP");
             }
         }
         
-        [System.Runtime.Serialization.DataMemberAttribute()]
-        public string password {
+        /// <remarks/>
+        [System.Xml.Serialization.XmlElementAttribute(Order=2)]
+        public string VMIP {
             get {
-                return this.passwordField;
+                return this.vMIPField;
             }
             set {
-                if ((object.ReferenceEquals(this.passwordField, value) != true)) {
-                    this.passwordField = value;
-                    this.RaisePropertyChanged("password");
-                }
+                this.vMIPField = value;
+                this.RaisePropertyChanged("VMIP");
             }
         }
         
-        [System.Runtime.Serialization.DataMemberAttribute()]
+        /// <remarks/>
+        [System.Xml.Serialization.XmlElementAttribute(Order=3)]
+        public int vmSpecID {
+            get {
+                return this.vmSpecIDField;
+            }
+            set {
+                this.vmSpecIDField = value;
+                this.RaisePropertyChanged("vmSpecID");
+            }
+        }
+        
+        /// <remarks/>
+        [System.Xml.Serialization.XmlElementAttribute(Order=4)]
+        public string eth0MAC {
+            get {
+                return this.eth0MACField;
+            }
+            set {
+                this.eth0MACField = value;
+                this.RaisePropertyChanged("eth0MAC");
+            }
+        }
+        
+        /// <remarks/>
+        [System.Xml.Serialization.XmlElementAttribute(Order=5)]
+        public string eth1MAC {
+            get {
+                return this.eth1MACField;
+            }
+            set {
+                this.eth1MACField = value;
+                this.RaisePropertyChanged("eth1MAC");
+            }
+        }
+        
+        /// <remarks/>
+        [System.Xml.Serialization.XmlElementAttribute(Order=6)]
+        public string displayName {
+            get {
+                return this.displayNameField;
+            }
+            set {
+                this.displayNameField = value;
+                this.RaisePropertyChanged("displayName");
+            }
+        }
+        
+        /// <remarks/>
+        [System.Xml.Serialization.XmlElementAttribute(Order=7)]
+        public int indexOnServer {
+            get {
+                return this.indexOnServerField;
+            }
+            set {
+                this.indexOnServerField = value;
+                this.RaisePropertyChanged("indexOnServer");
+            }
+        }
+        
+        /// <remarks/>
+        [System.Xml.Serialization.XmlElementAttribute(Order=8)]
+        public ushort kernelDebugPort {
+            get {
+                return this.kernelDebugPortField;
+            }
+            set {
+                this.kernelDebugPortField = value;
+                this.RaisePropertyChanged("kernelDebugPort");
+            }
+        }
+        
+        /// <remarks/>
+        [System.Xml.Serialization.XmlElementAttribute(Order=9)]
+        public string kernelDebugKey {
+            get {
+                return this.kernelDebugKeyField;
+            }
+            set {
+                this.kernelDebugKeyField = value;
+                this.RaisePropertyChanged("kernelDebugKey");
+            }
+        }
+        
+        /// <remarks/>
+        [System.Xml.Serialization.XmlElementAttribute(Order=10)]
         public string username {
             get {
                 return this.usernameField;
             }
             set {
-                if ((object.ReferenceEquals(this.usernameField, value) != true)) {
-                    this.usernameField = value;
-                    this.RaisePropertyChanged("username");
-                }
+                this.usernameField = value;
+                this.RaisePropertyChanged("username");
             }
         }
         
-        [System.Runtime.Serialization.DataMemberAttribute()]
-        public System.Nullable<long> vmConfigKey {
-            get {
-                return this.vmConfigKeyField;
-            }
-            set {
-                if ((this.vmConfigKeyField.Equals(value) != true)) {
-                    this.vmConfigKeyField = value;
-                    this.RaisePropertyChanged("vmConfigKey");
-                }
-            }
-        }
-    }
-    
-    [System.CodeDom.Compiler.GeneratedCodeAttribute("System.Runtime.Serialization", "4.0.0.0")]
-    [System.FlagsAttribute()]
-    [System.Runtime.Serialization.DataContractAttribute(Name="bladeLockType", Namespace="http://schemas.datacontract.org/2004/07/bladeDirectorWCF")]
-    public enum bladeLockType : int {
-        
-        [System.Runtime.Serialization.EnumMemberAttribute()]
-        lockAll = 65535,
-        
-        [System.Runtime.Serialization.EnumMemberAttribute()]
-        lockVMCreation = 1,
-        
-        [System.Runtime.Serialization.EnumMemberAttribute()]
-        lockBIOS = 2,
-        
-        [System.Runtime.Serialization.EnumMemberAttribute()]
-        lockSnapshot = 4,
-        
-        [System.Runtime.Serialization.EnumMemberAttribute()]
-        lockNASOperations = 8,
-        
-        [System.Runtime.Serialization.EnumMemberAttribute()]
-        lockOwnership = 16,
-        
-        [System.Runtime.Serialization.EnumMemberAttribute()]
-        lockvmDeployState = 32,
-        
-        [System.Runtime.Serialization.EnumMemberAttribute()]
-        lockIPAddresses = 64,
-        
-        [System.Runtime.Serialization.EnumMemberAttribute()]
-        lockVirtualHW = 128,
-        
-        [System.Runtime.Serialization.EnumMemberAttribute()]
-        lockLongRunningBIOS = 4096,
-        
-        [System.Runtime.Serialization.EnumMemberAttribute()]
-        lockLongRunningVM = 8192,
-        
-        [System.Runtime.Serialization.EnumMemberAttribute()]
-        lockNone = 0,
-    }
-    
-    [System.CodeDom.Compiler.GeneratedCodeAttribute("System.Runtime.Serialization", "4.0.0.0")]
-    [System.Runtime.Serialization.DataContractAttribute(Name="bladeStatus", Namespace="http://schemas.datacontract.org/2004/07/bladeDirectorWCF")]
-    public enum bladeStatus : int {
-        
-        [System.Runtime.Serialization.EnumMemberAttribute()]
-        unused = 0,
-        
-        [System.Runtime.Serialization.EnumMemberAttribute()]
-        releaseRequested = 1,
-        
-        [System.Runtime.Serialization.EnumMemberAttribute()]
-        inUseByDirector = 2,
-        
-        [System.Runtime.Serialization.EnumMemberAttribute()]
-        inUse = 3,
-    }
-    
-    [System.Diagnostics.DebuggerStepThroughAttribute()]
-    [System.CodeDom.Compiler.GeneratedCodeAttribute("System.Runtime.Serialization", "4.0.0.0")]
-    [System.Runtime.Serialization.DataContractAttribute(Name="MarshalByRefObject", Namespace="http://schemas.datacontract.org/2004/07/System")]
-    [System.SerializableAttribute()]
-    [System.Runtime.Serialization.KnownTypeAttribute(typeof(bladeDirectorClient.bladeDirectorService.Component))]
-    [System.Runtime.Serialization.KnownTypeAttribute(typeof(bladeDirectorClient.bladeDirectorService.DbConnection))]
-    [System.Runtime.Serialization.KnownTypeAttribute(typeof(bladeDirectorClient.bladeDirectorService.SQLiteConnection))]
-    [System.Runtime.Serialization.KnownTypeAttribute(typeof(string[]))]
-    [System.Runtime.Serialization.KnownTypeAttribute(typeof(bladeDirectorClient.bladeDirectorService.resultAndBladeName))]
-    [System.Runtime.Serialization.KnownTypeAttribute(typeof(bladeDirectorClient.bladeDirectorService.resultAndWaitToken))]
-    [System.Runtime.Serialization.KnownTypeAttribute(typeof(bladeDirectorClient.bladeDirectorService.result))]
-    [System.Runtime.Serialization.KnownTypeAttribute(typeof(bladeDirectorClient.bladeDirectorService.resultCode))]
-    [System.Runtime.Serialization.KnownTypeAttribute(typeof(bladeDirectorClient.bladeDirectorService.waitToken))]
-    [System.Runtime.Serialization.KnownTypeAttribute(typeof(bladeDirectorClient.bladeDirectorService.resultAndBIOSConfig))]
-    [System.Runtime.Serialization.KnownTypeAttribute(typeof(bladeDirectorClient.bladeDirectorService.GetBladeStatusResult))]
-    [System.Runtime.Serialization.KnownTypeAttribute(typeof(bladeDirectorClient.bladeDirectorService.VMHardwareSpec))]
-    [System.Runtime.Serialization.KnownTypeAttribute(typeof(bladeDirectorClient.bladeDirectorService.VMSoftwareSpec))]
-    [System.Runtime.Serialization.KnownTypeAttribute(typeof(bladeDirectorClient.bladeDirectorService.vmSpec))]
-    [System.Runtime.Serialization.KnownTypeAttribute(typeof(bladeDirectorClient.bladeDirectorService.bladeOwnership))]
-    [System.Runtime.Serialization.KnownTypeAttribute(typeof(bladeDirectorClient.bladeDirectorService.bladeLockType))]
-    [System.Runtime.Serialization.KnownTypeAttribute(typeof(bladeDirectorClient.bladeDirectorService.bladeStatus))]
-    [System.Runtime.Serialization.KnownTypeAttribute(typeof(bladeDirectorClient.bladeDirectorService.bladeSpec))]
-    [System.Runtime.Serialization.KnownTypeAttribute(typeof(bladeDirectorClient.bladeDirectorService.VMDeployStatus))]
-    [System.Runtime.Serialization.KnownTypeAttribute(typeof(bladeDirectorClient.bladeDirectorService.vmSpec[]))]
-    [System.Runtime.Serialization.KnownTypeAttribute(typeof(bladeDirectorClient.bladeDirectorService.vmServerCredentials))]
-    [System.Runtime.Serialization.KnownTypeAttribute(typeof(bladeDirectorClient.bladeDirectorService.snapshotDetails))]
-    [System.Runtime.Serialization.KnownTypeAttribute(typeof(bladeDirectorClient.bladeDirectorService.userAddRequest[]))]
-    [System.Runtime.Serialization.KnownTypeAttribute(typeof(bladeDirectorClient.bladeDirectorService.userAddRequest))]
-    [System.Runtime.Serialization.KnownTypeAttribute(typeof(bladeDirectorClient.bladeDirectorService.DbType))]
-    [System.Runtime.Serialization.KnownTypeAttribute(typeof(bladeDirectorClient.bladeDirectorService.SQLiteConnectionFlags))]
-    public partial class MarshalByRefObject : object, System.Runtime.Serialization.IExtensibleDataObject, System.ComponentModel.INotifyPropertyChanged {
-        
-        [System.NonSerializedAttribute()]
-        private System.Runtime.Serialization.ExtensionDataObject extensionDataField;
-        
-        private object @__identityField;
-        
-        [global::System.ComponentModel.BrowsableAttribute(false)]
-        public System.Runtime.Serialization.ExtensionDataObject ExtensionData {
-            get {
-                return this.extensionDataField;
-            }
-            set {
-                this.extensionDataField = value;
-            }
-        }
-        
-        [System.Runtime.Serialization.DataMemberAttribute(IsRequired=true)]
-        public object @__identity {
-            get {
-                return this.@__identityField;
-            }
-            set {
-                if ((object.ReferenceEquals(this.@__identityField, value) != true)) {
-                    this.@__identityField = value;
-                    this.RaisePropertyChanged("__identity");
-                }
-            }
-        }
-        
-        public event System.ComponentModel.PropertyChangedEventHandler PropertyChanged;
-        
-        protected void RaisePropertyChanged(string propertyName) {
-            System.ComponentModel.PropertyChangedEventHandler propertyChanged = this.PropertyChanged;
-            if ((propertyChanged != null)) {
-                propertyChanged(this, new System.ComponentModel.PropertyChangedEventArgs(propertyName));
-            }
-        }
-    }
-    
-    [System.Diagnostics.DebuggerStepThroughAttribute()]
-    [System.CodeDom.Compiler.GeneratedCodeAttribute("System.Runtime.Serialization", "4.0.0.0")]
-    [System.Runtime.Serialization.DataContractAttribute(Name="Component", Namespace="http://schemas.datacontract.org/2004/07/System.ComponentModel")]
-    [System.SerializableAttribute()]
-    [System.Runtime.Serialization.KnownTypeAttribute(typeof(bladeDirectorClient.bladeDirectorService.DbConnection))]
-    [System.Runtime.Serialization.KnownTypeAttribute(typeof(bladeDirectorClient.bladeDirectorService.SQLiteConnection))]
-    [System.Runtime.Serialization.KnownTypeAttribute(typeof(string[]))]
-    [System.Runtime.Serialization.KnownTypeAttribute(typeof(bladeDirectorClient.bladeDirectorService.MarshalByRefObject))]
-    [System.Runtime.Serialization.KnownTypeAttribute(typeof(bladeDirectorClient.bladeDirectorService.resultAndBladeName))]
-    [System.Runtime.Serialization.KnownTypeAttribute(typeof(bladeDirectorClient.bladeDirectorService.resultAndWaitToken))]
-    [System.Runtime.Serialization.KnownTypeAttribute(typeof(bladeDirectorClient.bladeDirectorService.result))]
-    [System.Runtime.Serialization.KnownTypeAttribute(typeof(bladeDirectorClient.bladeDirectorService.resultCode))]
-    [System.Runtime.Serialization.KnownTypeAttribute(typeof(bladeDirectorClient.bladeDirectorService.waitToken))]
-    [System.Runtime.Serialization.KnownTypeAttribute(typeof(bladeDirectorClient.bladeDirectorService.resultAndBIOSConfig))]
-    [System.Runtime.Serialization.KnownTypeAttribute(typeof(bladeDirectorClient.bladeDirectorService.GetBladeStatusResult))]
-    [System.Runtime.Serialization.KnownTypeAttribute(typeof(bladeDirectorClient.bladeDirectorService.VMHardwareSpec))]
-    [System.Runtime.Serialization.KnownTypeAttribute(typeof(bladeDirectorClient.bladeDirectorService.VMSoftwareSpec))]
-    [System.Runtime.Serialization.KnownTypeAttribute(typeof(bladeDirectorClient.bladeDirectorService.vmSpec))]
-    [System.Runtime.Serialization.KnownTypeAttribute(typeof(bladeDirectorClient.bladeDirectorService.bladeOwnership))]
-    [System.Runtime.Serialization.KnownTypeAttribute(typeof(bladeDirectorClient.bladeDirectorService.bladeLockType))]
-    [System.Runtime.Serialization.KnownTypeAttribute(typeof(bladeDirectorClient.bladeDirectorService.bladeStatus))]
-    [System.Runtime.Serialization.KnownTypeAttribute(typeof(bladeDirectorClient.bladeDirectorService.bladeSpec))]
-    [System.Runtime.Serialization.KnownTypeAttribute(typeof(bladeDirectorClient.bladeDirectorService.VMDeployStatus))]
-    [System.Runtime.Serialization.KnownTypeAttribute(typeof(bladeDirectorClient.bladeDirectorService.vmSpec[]))]
-    [System.Runtime.Serialization.KnownTypeAttribute(typeof(bladeDirectorClient.bladeDirectorService.vmServerCredentials))]
-    [System.Runtime.Serialization.KnownTypeAttribute(typeof(bladeDirectorClient.bladeDirectorService.snapshotDetails))]
-    [System.Runtime.Serialization.KnownTypeAttribute(typeof(bladeDirectorClient.bladeDirectorService.userAddRequest[]))]
-    [System.Runtime.Serialization.KnownTypeAttribute(typeof(bladeDirectorClient.bladeDirectorService.userAddRequest))]
-    [System.Runtime.Serialization.KnownTypeAttribute(typeof(bladeDirectorClient.bladeDirectorService.DbType))]
-    [System.Runtime.Serialization.KnownTypeAttribute(typeof(bladeDirectorClient.bladeDirectorService.SQLiteConnectionFlags))]
-    public partial class Component : bladeDirectorClient.bladeDirectorService.MarshalByRefObject {
-        
-        [System.Runtime.Serialization.OptionalFieldAttribute()]
-        private object SiteField;
-        
-        [System.Runtime.Serialization.DataMemberAttribute()]
-        public object Site {
-            get {
-                return this.SiteField;
-            }
-            set {
-                if ((object.ReferenceEquals(this.SiteField, value) != true)) {
-                    this.SiteField = value;
-                    this.RaisePropertyChanged("Site");
-                }
-            }
-        }
-    }
-    
-    [System.Diagnostics.DebuggerStepThroughAttribute()]
-    [System.CodeDom.Compiler.GeneratedCodeAttribute("System.Runtime.Serialization", "4.0.0.0")]
-    [System.Runtime.Serialization.DataContractAttribute(Name="DbConnection", Namespace="http://schemas.datacontract.org/2004/07/System.Data.Common")]
-    [System.SerializableAttribute()]
-    [System.Runtime.Serialization.KnownTypeAttribute(typeof(bladeDirectorClient.bladeDirectorService.SQLiteConnection))]
-    public partial class DbConnection : bladeDirectorClient.bladeDirectorService.Component {
-        
-        [System.Runtime.Serialization.OptionalFieldAttribute()]
-        private string ConnectionStringField;
-        
-        [System.Runtime.Serialization.DataMemberAttribute()]
-        public string ConnectionString {
-            get {
-                return this.ConnectionStringField;
-            }
-            set {
-                if ((object.ReferenceEquals(this.ConnectionStringField, value) != true)) {
-                    this.ConnectionStringField = value;
-                    this.RaisePropertyChanged("ConnectionString");
-                }
-            }
-        }
-    }
-    
-    [System.CodeDom.Compiler.GeneratedCodeAttribute("System.Runtime.Serialization", "4.0.0.0")]
-    [System.Runtime.Serialization.DataContractAttribute(Name="VMDeployStatus", Namespace="http://schemas.datacontract.org/2004/07/bladeDirectorWCF")]
-    public enum VMDeployStatus : int {
-        
-        [System.Runtime.Serialization.EnumMemberAttribute()]
-        notBeingDeployed = 0,
-        
-        [System.Runtime.Serialization.EnumMemberAttribute()]
-        needsPowerCycle = 1,
-        
-        [System.Runtime.Serialization.EnumMemberAttribute()]
-        waitingForPowerUp = 2,
-        
-        [System.Runtime.Serialization.EnumMemberAttribute()]
-        readyForDeployment = 3,
-        
-        [System.Runtime.Serialization.EnumMemberAttribute()]
-        failed = 4,
-    }
-    
-    [System.Diagnostics.DebuggerStepThroughAttribute()]
-    [System.CodeDom.Compiler.GeneratedCodeAttribute("System.Runtime.Serialization", "4.0.0.0")]
-    [System.Runtime.Serialization.DataContractAttribute(Name="vmServerCredentials", Namespace="http://schemas.datacontract.org/2004/07/bladeDirectorWCF")]
-    [System.SerializableAttribute()]
-    public partial class vmServerCredentials : object, System.Runtime.Serialization.IExtensibleDataObject, System.ComponentModel.INotifyPropertyChanged {
-        
-        [System.NonSerializedAttribute()]
-        private System.Runtime.Serialization.ExtensionDataObject extensionDataField;
-        
-        [System.Runtime.Serialization.OptionalFieldAttribute()]
-        private string passwordField;
-        
-        [System.Runtime.Serialization.OptionalFieldAttribute()]
-        private string usernameField;
-        
-        [global::System.ComponentModel.BrowsableAttribute(false)]
-        public System.Runtime.Serialization.ExtensionDataObject ExtensionData {
-            get {
-                return this.extensionDataField;
-            }
-            set {
-                this.extensionDataField = value;
-            }
-        }
-        
-        [System.Runtime.Serialization.DataMemberAttribute()]
+        /// <remarks/>
+        [System.Xml.Serialization.XmlElementAttribute(Order=11)]
         public string password {
             get {
                 return this.passwordField;
             }
             set {
-                if ((object.ReferenceEquals(this.passwordField, value) != true)) {
-                    this.passwordField = value;
-                    this.RaisePropertyChanged("password");
-                }
+                this.passwordField = value;
+                this.RaisePropertyChanged("password");
             }
         }
         
-        [System.Runtime.Serialization.DataMemberAttribute()]
-        public string username {
+        /// <remarks/>
+        [System.Xml.Serialization.XmlElementAttribute(Order=12)]
+        public VMHardwareSpec hwSpec {
             get {
-                return this.usernameField;
+                return this.hwSpecField;
             }
             set {
-                if ((object.ReferenceEquals(this.usernameField, value) != true)) {
-                    this.usernameField = value;
-                    this.RaisePropertyChanged("username");
-                }
-            }
-        }
-        
-        public event System.ComponentModel.PropertyChangedEventHandler PropertyChanged;
-        
-        protected void RaisePropertyChanged(string propertyName) {
-            System.ComponentModel.PropertyChangedEventHandler propertyChanged = this.PropertyChanged;
-            if ((propertyChanged != null)) {
-                propertyChanged(this, new System.ComponentModel.PropertyChangedEventArgs(propertyName));
+                this.hwSpecField = value;
+                this.RaisePropertyChanged("hwSpec");
             }
         }
     }
     
-    [System.Diagnostics.DebuggerStepThroughAttribute()]
-    [System.CodeDom.Compiler.GeneratedCodeAttribute("System.Runtime.Serialization", "4.0.0.0")]
-    [System.Runtime.Serialization.DataContractAttribute(Name="snapshotDetails", Namespace="http://schemas.datacontract.org/2004/07/bladeDirectorWCF")]
+    /// <remarks/>
+    [System.CodeDom.Compiler.GeneratedCodeAttribute("System.Xml", "4.7.2102.0")]
     [System.SerializableAttribute()]
-    public partial class snapshotDetails : object, System.Runtime.Serialization.IExtensibleDataObject, System.ComponentModel.INotifyPropertyChanged {
+    [System.Diagnostics.DebuggerStepThroughAttribute()]
+    [System.ComponentModel.DesignerCategoryAttribute("code")]
+    [System.Xml.Serialization.XmlTypeAttribute(Namespace="http://tempuri.org/")]
+    public partial class bladeSpec : bladeOwnership {
         
-        [System.NonSerializedAttribute()]
-        private System.Runtime.Serialization.ExtensionDataObject extensionDataField;
+        private string iscsiIPField;
         
-        [System.Runtime.Serialization.OptionalFieldAttribute()]
-        private string friendlyNameField;
+        private string bladeIPField;
         
-        [System.Runtime.Serialization.OptionalFieldAttribute()]
-        private string pathField;
+        private string iLOIPField;
         
-        [global::System.ComponentModel.BrowsableAttribute(false)]
-        public System.Runtime.Serialization.ExtensionDataObject ExtensionData {
+        private ushort iLOPortField;
+        
+        private string iLoUsernameField;
+        
+        private string iLoPasswordField;
+        
+        private bool currentlyHavingBIOSDeployedField;
+        
+        private bool currentlyBeingAVMServerField;
+        
+        private string lastDeployedBIOSField;
+        
+        private long bladeIDField;
+        
+        private string eSXiUsernameField;
+        
+        private string eSXiPasswordField;
+        
+        /// <remarks/>
+        [System.Xml.Serialization.XmlElementAttribute(Order=0)]
+        public string iscsiIP {
             get {
-                return this.extensionDataField;
+                return this.iscsiIPField;
             }
             set {
-                this.extensionDataField = value;
+                this.iscsiIPField = value;
+                this.RaisePropertyChanged("iscsiIP");
             }
         }
         
-        [System.Runtime.Serialization.DataMemberAttribute()]
-        public string friendlyName {
+        /// <remarks/>
+        [System.Xml.Serialization.XmlElementAttribute(Order=1)]
+        public string bladeIP {
             get {
-                return this.friendlyNameField;
+                return this.bladeIPField;
             }
             set {
-                if ((object.ReferenceEquals(this.friendlyNameField, value) != true)) {
-                    this.friendlyNameField = value;
-                    this.RaisePropertyChanged("friendlyName");
-                }
+                this.bladeIPField = value;
+                this.RaisePropertyChanged("bladeIP");
             }
         }
         
-        [System.Runtime.Serialization.DataMemberAttribute()]
-        public string path {
+        /// <remarks/>
+        [System.Xml.Serialization.XmlElementAttribute(Order=2)]
+        public string iLOIP {
             get {
-                return this.pathField;
+                return this.iLOIPField;
             }
             set {
-                if ((object.ReferenceEquals(this.pathField, value) != true)) {
-                    this.pathField = value;
-                    this.RaisePropertyChanged("path");
-                }
+                this.iLOIPField = value;
+                this.RaisePropertyChanged("iLOIP");
             }
         }
         
-        public event System.ComponentModel.PropertyChangedEventHandler PropertyChanged;
+        /// <remarks/>
+        [System.Xml.Serialization.XmlElementAttribute(Order=3)]
+        public ushort iLOPort {
+            get {
+                return this.iLOPortField;
+            }
+            set {
+                this.iLOPortField = value;
+                this.RaisePropertyChanged("iLOPort");
+            }
+        }
         
-        protected void RaisePropertyChanged(string propertyName) {
-            System.ComponentModel.PropertyChangedEventHandler propertyChanged = this.PropertyChanged;
-            if ((propertyChanged != null)) {
-                propertyChanged(this, new System.ComponentModel.PropertyChangedEventArgs(propertyName));
+        /// <remarks/>
+        [System.Xml.Serialization.XmlElementAttribute(Order=4)]
+        public string iLoUsername {
+            get {
+                return this.iLoUsernameField;
+            }
+            set {
+                this.iLoUsernameField = value;
+                this.RaisePropertyChanged("iLoUsername");
+            }
+        }
+        
+        /// <remarks/>
+        [System.Xml.Serialization.XmlElementAttribute(Order=5)]
+        public string iLoPassword {
+            get {
+                return this.iLoPasswordField;
+            }
+            set {
+                this.iLoPasswordField = value;
+                this.RaisePropertyChanged("iLoPassword");
+            }
+        }
+        
+        /// <remarks/>
+        [System.Xml.Serialization.XmlElementAttribute(Order=6)]
+        public bool currentlyHavingBIOSDeployed {
+            get {
+                return this.currentlyHavingBIOSDeployedField;
+            }
+            set {
+                this.currentlyHavingBIOSDeployedField = value;
+                this.RaisePropertyChanged("currentlyHavingBIOSDeployed");
+            }
+        }
+        
+        /// <remarks/>
+        [System.Xml.Serialization.XmlElementAttribute(Order=7)]
+        public bool currentlyBeingAVMServer {
+            get {
+                return this.currentlyBeingAVMServerField;
+            }
+            set {
+                this.currentlyBeingAVMServerField = value;
+                this.RaisePropertyChanged("currentlyBeingAVMServer");
+            }
+        }
+        
+        /// <remarks/>
+        [System.Xml.Serialization.XmlElementAttribute(Order=8)]
+        public string lastDeployedBIOS {
+            get {
+                return this.lastDeployedBIOSField;
+            }
+            set {
+                this.lastDeployedBIOSField = value;
+                this.RaisePropertyChanged("lastDeployedBIOS");
+            }
+        }
+        
+        /// <remarks/>
+        [System.Xml.Serialization.XmlElementAttribute(Order=9)]
+        public long bladeID {
+            get {
+                return this.bladeIDField;
+            }
+            set {
+                this.bladeIDField = value;
+                this.RaisePropertyChanged("bladeID");
+            }
+        }
+        
+        /// <remarks/>
+        [System.Xml.Serialization.XmlElementAttribute(Order=10)]
+        public string ESXiUsername {
+            get {
+                return this.eSXiUsernameField;
+            }
+            set {
+                this.eSXiUsernameField = value;
+                this.RaisePropertyChanged("ESXiUsername");
+            }
+        }
+        
+        /// <remarks/>
+        [System.Xml.Serialization.XmlElementAttribute(Order=11)]
+        public string ESXiPassword {
+            get {
+                return this.eSXiPasswordField;
+            }
+            set {
+                this.eSXiPasswordField = value;
+                this.RaisePropertyChanged("ESXiPassword");
             }
         }
     }
     
-    [System.CodeDom.Compiler.GeneratedCodeAttribute("System.Runtime.Serialization", "4.0.0.0")]
-    [System.Runtime.Serialization.DataContractAttribute(Name="DbType", Namespace="http://schemas.datacontract.org/2004/07/System.Data")]
-    public enum DbType : int {
+    /// <remarks/>
+    [System.CodeDom.Compiler.GeneratedCodeAttribute("System.Xml", "4.7.2102.0")]
+    [System.SerializableAttribute()]
+    [System.Xml.Serialization.XmlTypeAttribute(Namespace="http://tempuri.org/")]
+    public enum GetBladeStatusResult {
         
-        [System.Runtime.Serialization.EnumMemberAttribute()]
-        AnsiString = 0,
+        /// <remarks/>
+        bladeNotFound,
         
-        [System.Runtime.Serialization.EnumMemberAttribute()]
-        Binary = 1,
+        /// <remarks/>
+        unused,
         
-        [System.Runtime.Serialization.EnumMemberAttribute()]
-        Byte = 2,
+        /// <remarks/>
+        yours,
         
-        [System.Runtime.Serialization.EnumMemberAttribute()]
-        Boolean = 3,
+        /// <remarks/>
+        releasePending,
         
-        [System.Runtime.Serialization.EnumMemberAttribute()]
-        Currency = 4,
-        
-        [System.Runtime.Serialization.EnumMemberAttribute()]
-        Date = 5,
-        
-        [System.Runtime.Serialization.EnumMemberAttribute()]
-        DateTime = 6,
-        
-        [System.Runtime.Serialization.EnumMemberAttribute()]
-        Decimal = 7,
-        
-        [System.Runtime.Serialization.EnumMemberAttribute()]
-        Double = 8,
-        
-        [System.Runtime.Serialization.EnumMemberAttribute()]
-        Guid = 9,
-        
-        [System.Runtime.Serialization.EnumMemberAttribute()]
-        Int16 = 10,
-        
-        [System.Runtime.Serialization.EnumMemberAttribute()]
-        Int32 = 11,
-        
-        [System.Runtime.Serialization.EnumMemberAttribute()]
-        Int64 = 12,
-        
-        [System.Runtime.Serialization.EnumMemberAttribute()]
-        Object = 13,
-        
-        [System.Runtime.Serialization.EnumMemberAttribute()]
-        SByte = 14,
-        
-        [System.Runtime.Serialization.EnumMemberAttribute()]
-        Single = 15,
-        
-        [System.Runtime.Serialization.EnumMemberAttribute()]
-        String = 16,
-        
-        [System.Runtime.Serialization.EnumMemberAttribute()]
-        Time = 17,
-        
-        [System.Runtime.Serialization.EnumMemberAttribute()]
-        UInt16 = 18,
-        
-        [System.Runtime.Serialization.EnumMemberAttribute()]
-        UInt32 = 19,
-        
-        [System.Runtime.Serialization.EnumMemberAttribute()]
-        UInt64 = 20,
-        
-        [System.Runtime.Serialization.EnumMemberAttribute()]
-        VarNumeric = 21,
-        
-        [System.Runtime.Serialization.EnumMemberAttribute()]
-        AnsiStringFixedLength = 22,
-        
-        [System.Runtime.Serialization.EnumMemberAttribute()]
-        StringFixedLength = 23,
-        
-        [System.Runtime.Serialization.EnumMemberAttribute()]
-        Xml = 25,
-        
-        [System.Runtime.Serialization.EnumMemberAttribute()]
-        DateTime2 = 26,
-        
-        [System.Runtime.Serialization.EnumMemberAttribute()]
-        DateTimeOffset = 27,
-    }
-    
-    [System.CodeDom.Compiler.GeneratedCodeAttribute("System.Runtime.Serialization", "4.0.0.0")]
-    [System.FlagsAttribute()]
-    [System.Runtime.Serialization.DataContractAttribute(Name="SQLiteConnectionFlags", Namespace="http://schemas.datacontract.org/2004/07/System.Data.SQLite")]
-    public enum SQLiteConnectionFlags : long {
-        
-        [System.Runtime.Serialization.EnumMemberAttribute()]
-        None = 0,
-        
-        [System.Runtime.Serialization.EnumMemberAttribute()]
-        LogPrepare = 1,
-        
-        [System.Runtime.Serialization.EnumMemberAttribute()]
-        LogPreBind = 2,
-        
-        [System.Runtime.Serialization.EnumMemberAttribute()]
-        LogBind = 4,
-        
-        [System.Runtime.Serialization.EnumMemberAttribute()]
-        LogCallbackException = 8,
-        
-        [System.Runtime.Serialization.EnumMemberAttribute()]
-        LogBackup = 16,
-        
-        [System.Runtime.Serialization.EnumMemberAttribute()]
-        NoExtensionFunctions = 32,
-        
-        [System.Runtime.Serialization.EnumMemberAttribute()]
-        BindUInt32AsInt64 = 64,
-        
-        [System.Runtime.Serialization.EnumMemberAttribute()]
-        BindAllAsText = 128,
-        
-        [System.Runtime.Serialization.EnumMemberAttribute()]
-        GetAllAsText = 256,
-        
-        [System.Runtime.Serialization.EnumMemberAttribute()]
-        NoLoadExtension = 512,
-        
-        [System.Runtime.Serialization.EnumMemberAttribute()]
-        NoCreateModule = 1024,
-        
-        [System.Runtime.Serialization.EnumMemberAttribute()]
-        NoBindFunctions = 2048,
-        
-        [System.Runtime.Serialization.EnumMemberAttribute()]
-        NoLogModule = 4096,
-        
-        [System.Runtime.Serialization.EnumMemberAttribute()]
-        LogModuleError = 8192,
-        
-        [System.Runtime.Serialization.EnumMemberAttribute()]
-        LogModuleException = 16384,
-        
-        [System.Runtime.Serialization.EnumMemberAttribute()]
-        TraceWarning = 32768,
-        
-        [System.Runtime.Serialization.EnumMemberAttribute()]
-        ConvertInvariantText = 65536,
-        
-        [System.Runtime.Serialization.EnumMemberAttribute()]
-        BindInvariantText = 131072,
-        
-        [System.Runtime.Serialization.EnumMemberAttribute()]
-        NoConnectionPool = 262144,
-        
-        [System.Runtime.Serialization.EnumMemberAttribute()]
-        UseConnectionPool = 524288,
-        
-        [System.Runtime.Serialization.EnumMemberAttribute()]
-        UseConnectionTypes = 1048576,
-        
-        [System.Runtime.Serialization.EnumMemberAttribute()]
-        NoGlobalTypes = 2097152,
-        
-        [System.Runtime.Serialization.EnumMemberAttribute()]
-        StickyHasRows = 4194304,
-        
-        [System.Runtime.Serialization.EnumMemberAttribute()]
-        StrictEnlistment = 8388608,
-        
-        [System.Runtime.Serialization.EnumMemberAttribute()]
-        MapIsolationLevels = 16777216,
-        
-        [System.Runtime.Serialization.EnumMemberAttribute()]
-        DetectTextAffinity = 33554432,
-        
-        [System.Runtime.Serialization.EnumMemberAttribute()]
-        DetectStringType = 67108864,
-        
-        [System.Runtime.Serialization.EnumMemberAttribute()]
-        NoConvertSettings = 134217728,
-        
-        [System.Runtime.Serialization.EnumMemberAttribute()]
-        BindDateTimeWithKind = 268435456,
-        
-        [System.Runtime.Serialization.EnumMemberAttribute()]
-        RollbackOnException = 536870912,
-        
-        [System.Runtime.Serialization.EnumMemberAttribute()]
-        DenyOnException = 1073741824,
-        
-        [System.Runtime.Serialization.EnumMemberAttribute()]
-        InterruptOnException = 2147483648,
-        
-        [System.Runtime.Serialization.EnumMemberAttribute()]
-        UnbindFunctionsOnClose = 4294967296,
-        
-        [System.Runtime.Serialization.EnumMemberAttribute()]
-        NoVerifyTextAffinity = 8589934592,
-        
-        [System.Runtime.Serialization.EnumMemberAttribute()]
-        UseConnectionBindValueCallbacks = 17179869184,
-        
-        [System.Runtime.Serialization.EnumMemberAttribute()]
-        UseConnectionReadValueCallbacks = 34359738368,
-        
-        [System.Runtime.Serialization.EnumMemberAttribute()]
-        UseParameterNameForTypeName = 68719476736,
-        
-        [System.Runtime.Serialization.EnumMemberAttribute()]
-        UseParameterDbTypeForTypeName = 137438953472,
-        
-        [System.Runtime.Serialization.EnumMemberAttribute()]
-        NoVerifyTypeAffinity = 274877906944,
-        
-        [System.Runtime.Serialization.EnumMemberAttribute()]
-        AllowNestedTransactions = 549755813888,
-        
-        [System.Runtime.Serialization.EnumMemberAttribute()]
-        BindAndGetAllAsText = 384,
-        
-        [System.Runtime.Serialization.EnumMemberAttribute()]
-        ConvertAndBindInvariantText = 196608,
-        
-        [System.Runtime.Serialization.EnumMemberAttribute()]
-        BindAndGetAllAsInvariantText = 131456,
-        
-        [System.Runtime.Serialization.EnumMemberAttribute()]
-        ConvertAndBindAndGetAllAsInvariantText = 196992,
-        
-        [System.Runtime.Serialization.EnumMemberAttribute()]
-        UseConnectionAllValueCallbacks = 51539607552,
-        
-        [System.Runtime.Serialization.EnumMemberAttribute()]
-        UseParameterAnythingForTypeName = 206158430208,
-        
-        [System.Runtime.Serialization.EnumMemberAttribute()]
-        LogAll = 24607,
-        
-        [System.Runtime.Serialization.EnumMemberAttribute()]
-        Default = 16392,
-        
-        [System.Runtime.Serialization.EnumMemberAttribute()]
-        DefaultAndLogAll = 24607,
+        /// <remarks/>
+        notYours,
     }
     
     [System.CodeDom.Compiler.GeneratedCodeAttribute("System.ServiceModel", "4.0.0.0")]
-    [System.ServiceModel.ServiceContractAttribute(ConfigurationName="bladeDirectorService.IServices")]
-    public interface IServices {
-        
-        [System.ServiceModel.OperationContractAttribute(Action="http://tempuri.org/IServices/keepAlive", ReplyAction="http://tempuri.org/IServices/keepAliveResponse")]
-        void keepAlive();
-        
-        [System.ServiceModel.OperationContractAttribute(Action="http://tempuri.org/IServices/logIn", ReplyAction="http://tempuri.org/IServices/logInResponse")]
-        bladeDirectorClient.bladeDirectorService.resultAndWaitToken logIn();
-        
-        [System.ServiceModel.OperationContractAttribute(Action="http://tempuri.org/IServices/getProgress", ReplyAction="http://tempuri.org/IServices/getProgressResponse")]
-        bladeDirectorClient.bladeDirectorService.resultAndWaitToken getProgress(bladeDirectorClient.bladeDirectorService.waitToken waitToken);
-        
-        [System.ServiceModel.OperationContractAttribute(Action="http://tempuri.org/IServices/getAllBladeIP", ReplyAction="http://tempuri.org/IServices/getAllBladeIPResponse")]
-        string[] getAllBladeIP();
-        
-        [System.ServiceModel.OperationContractAttribute(Action="http://tempuri.org/IServices/RequestAnySingleNode", ReplyAction="http://tempuri.org/IServices/RequestAnySingleNodeResponse")]
-        bladeDirectorClient.bladeDirectorService.resultAndBladeName RequestAnySingleNode();
-        
-        [System.ServiceModel.OperationContractAttribute(Action="http://tempuri.org/IServices/GetBladeStatus", ReplyAction="http://tempuri.org/IServices/GetBladeStatusResponse")]
-        bladeDirectorClient.bladeDirectorService.GetBladeStatusResult GetBladeStatus(string nodeIP);
-        
-        [System.ServiceModel.OperationContractAttribute(Action="http://tempuri.org/IServices/ReleaseBladeOrVM", ReplyAction="http://tempuri.org/IServices/ReleaseBladeOrVMResponse")]
-        bladeDirectorClient.bladeDirectorService.resultAndWaitToken ReleaseBladeOrVM(string nodeIP);
-        
-        [System.ServiceModel.OperationContractAttribute(Action="http://tempuri.org/IServices/isBladeMine", ReplyAction="http://tempuri.org/IServices/isBladeMineResponse")]
-        bool isBladeMine(string nodeIP);
-        
-        [System.ServiceModel.OperationContractAttribute(Action="http://tempuri.org/IServices/rebootAndStartDeployingBIOSToBlade", ReplyAction="http://tempuri.org/IServices/rebootAndStartDeployingBIOSToBladeResponse")]
-        bladeDirectorClient.bladeDirectorService.resultAndWaitToken rebootAndStartDeployingBIOSToBlade(string NodeIP, string BIOSXML);
-        
-        [System.ServiceModel.OperationContractAttribute(Action="http://tempuri.org/IServices/rebootAndStartReadingBIOSConfiguration", ReplyAction="http://tempuri.org/IServices/rebootAndStartReadingBIOSConfigurationResponse")]
-        bladeDirectorClient.bladeDirectorService.resultAndWaitToken rebootAndStartReadingBIOSConfiguration(string NodeIP);
-        
-        [System.ServiceModel.OperationContractAttribute(Action="http://tempuri.org/IServices/RequestAnySingleVM", ReplyAction="http://tempuri.org/IServices/RequestAnySingleVMResponse")]
-        bladeDirectorClient.bladeDirectorService.resultAndBladeName RequestAnySingleVM(bladeDirectorClient.bladeDirectorService.VMHardwareSpec hwSpec, bladeDirectorClient.bladeDirectorService.VMSoftwareSpec swSpec);
-        
-        [System.ServiceModel.OperationContractAttribute(Action="http://tempuri.org/IServices/generateIPXEScript", ReplyAction="http://tempuri.org/IServices/generateIPXEScriptResponse")]
-        string generateIPXEScript();
-        
-        [System.ServiceModel.OperationContractAttribute(Action="http://tempuri.org/IServices/getKeepAliveTimeout", ReplyAction="http://tempuri.org/IServices/getKeepAliveTimeoutResponse")]
-        System.TimeSpan getKeepAliveTimeout();
-        
-        [System.ServiceModel.OperationContractAttribute(Action="http://tempuri.org/IServices/addNode", ReplyAction="http://tempuri.org/IServices/addNodeResponse")]
-        bladeDirectorClient.bladeDirectorService.resultCode addNode(string nodeIP, string iSCSIIP, string iLoIP, ushort debugPort);
-        
-        [System.ServiceModel.OperationContractAttribute(Action="http://tempuri.org/IServices/getVMByIP_withoutLocking", ReplyAction="http://tempuri.org/IServices/getVMByIP_withoutLockingResponse")]
-        bladeDirectorClient.bladeDirectorService.vmSpec getVMByIP_withoutLocking(string VMIP);
-        
-        [System.ServiceModel.OperationContractAttribute(Action="http://tempuri.org/IServices/getBladeByIP_withoutLocking", ReplyAction="http://tempuri.org/IServices/getBladeByIP_withoutLockingResponse")]
-        bladeDirectorClient.bladeDirectorService.bladeSpec getBladeByIP_withoutLocking(string bladeIP);
-        
-        [System.ServiceModel.OperationContractAttribute(Action="http://tempuri.org/IServices/getBladesByAllocatedServer", ReplyAction="http://tempuri.org/IServices/getBladesByAllocatedServerResponse")]
-        string[] getBladesByAllocatedServer(string serverIP);
-        
-        [System.ServiceModel.OperationContractAttribute(Action="http://tempuri.org/IServices/getVMByVMServerIP_nolocking", ReplyAction="http://tempuri.org/IServices/getVMByVMServerIP_nolockingResponse")]
-        bladeDirectorClient.bladeDirectorService.vmSpec[] getVMByVMServerIP_nolocking(string bladeIP);
-        
-        [System.ServiceModel.OperationContractAttribute(Action="http://tempuri.org/IServices/getLogEvents", ReplyAction="http://tempuri.org/IServices/getLogEventsResponse")]
-        string[] getLogEvents();
-        
-        [System.ServiceModel.OperationContractAttribute(Action="http://tempuri.org/IServices/getCredentialsForVMServerByVMIP", ReplyAction="http://tempuri.org/IServices/getCredentialsForVMServerByVMIPResponse")]
-        bladeDirectorClient.bladeDirectorService.vmServerCredentials getCredentialsForVMServerByVMIP(string VMIP);
-        
-        [System.ServiceModel.OperationContractAttribute(Action="http://tempuri.org/IServices/getCurrentSnapshotDetails", ReplyAction="http://tempuri.org/IServices/getCurrentSnapshotDetailsResponse")]
-        bladeDirectorClient.bladeDirectorService.snapshotDetails getCurrentSnapshotDetails(string nodeIP);
-        
-        [System.ServiceModel.OperationContractAttribute(Action="http://tempuri.org/IServices/selectSnapshotForBladeOrVM", ReplyAction="http://tempuri.org/IServices/selectSnapshotForBladeOrVMResponse")]
-        bladeDirectorClient.bladeDirectorService.resultAndWaitToken selectSnapshotForBladeOrVM(string bladeName, string newShot);
-    }
-    
-    [System.CodeDom.Compiler.GeneratedCodeAttribute("System.ServiceModel", "4.0.0.0")]
-    public interface IServicesChannel : bladeDirectorClient.bladeDirectorService.IServices, System.ServiceModel.IClientChannel {
+    public interface servicesSoapChannel : bladeDirectorClient.bladeDirectorService.servicesSoap, System.ServiceModel.IClientChannel {
     }
     
     [System.Diagnostics.DebuggerStepThroughAttribute()]
     [System.CodeDom.Compiler.GeneratedCodeAttribute("System.ServiceModel", "4.0.0.0")]
-    public partial class ServicesClient : System.ServiceModel.ClientBase<bladeDirectorClient.bladeDirectorService.IServices>, bladeDirectorClient.bladeDirectorService.IServices {
+    public partial class servicesSoapClient : System.ServiceModel.ClientBase<bladeDirectorClient.bladeDirectorService.servicesSoap>, bladeDirectorClient.bladeDirectorService.servicesSoap {
         
-        public ServicesClient() {
+        public servicesSoapClient() {
         }
         
-        public ServicesClient(string endpointConfigurationName) : 
+        public servicesSoapClient(string endpointConfigurationName) : 
                 base(endpointConfigurationName) {
         }
         
-        public ServicesClient(string endpointConfigurationName, string remoteAddress) : 
+        public servicesSoapClient(string endpointConfigurationName, string remoteAddress) : 
                 base(endpointConfigurationName, remoteAddress) {
         }
         
-        public ServicesClient(string endpointConfigurationName, System.ServiceModel.EndpointAddress remoteAddress) : 
+        public servicesSoapClient(string endpointConfigurationName, System.ServiceModel.EndpointAddress remoteAddress) : 
                 base(endpointConfigurationName, remoteAddress) {
         }
         
-        public ServicesClient(System.ServiceModel.Channels.Binding binding, System.ServiceModel.EndpointAddress remoteAddress) : 
+        public servicesSoapClient(System.ServiceModel.Channels.Binding binding, System.ServiceModel.EndpointAddress remoteAddress) : 
                 base(binding, remoteAddress) {
         }
         
@@ -1990,88 +1083,208 @@ namespace bladeDirectorClient.bladeDirectorService {
             base.Channel.keepAlive();
         }
         
-        public bladeDirectorClient.bladeDirectorService.resultAndWaitToken logIn() {
+        public System.Threading.Tasks.Task keepAliveAsync() {
+            return base.Channel.keepAliveAsync();
+        }
+        
+        public string logIn() {
             return base.Channel.logIn();
         }
         
-        public bladeDirectorClient.bladeDirectorService.resultAndWaitToken getProgress(bladeDirectorClient.bladeDirectorService.waitToken waitToken) {
-            return base.Channel.getProgress(waitToken);
+        public System.Threading.Tasks.Task<string> logInAsync() {
+            return base.Channel.logInAsync();
         }
         
-        public string[] getAllBladeIP() {
-            return base.Channel.getAllBladeIP();
+        public bladeDirectorClient.bladeDirectorService.resultCode getLogInProgress(string waitToken) {
+            return base.Channel.getLogInProgress(waitToken);
         }
         
-        public bladeDirectorClient.bladeDirectorService.resultAndBladeName RequestAnySingleNode() {
+        public System.Threading.Tasks.Task<bladeDirectorClient.bladeDirectorService.resultCode> getLogInProgressAsync(string waitToken) {
+            return base.Channel.getLogInProgressAsync(waitToken);
+        }
+        
+        public string ListNodes() {
+            return base.Channel.ListNodes();
+        }
+        
+        public System.Threading.Tasks.Task<string> ListNodesAsync() {
+            return base.Channel.ListNodesAsync();
+        }
+        
+        public string getBladesByAllocatedServer(string NodeIP) {
+            return base.Channel.getBladesByAllocatedServer(NodeIP);
+        }
+        
+        public System.Threading.Tasks.Task<string> getBladesByAllocatedServerAsync(string NodeIP) {
+            return base.Channel.getBladesByAllocatedServerAsync(NodeIP);
+        }
+        
+        public bladeDirectorClient.bladeDirectorService.resultCodeAndBladeName RequestAnySingleNode() {
             return base.Channel.RequestAnySingleNode();
         }
         
-        public bladeDirectorClient.bladeDirectorService.GetBladeStatusResult GetBladeStatus(string nodeIP) {
-            return base.Channel.GetBladeStatus(nodeIP);
+        public System.Threading.Tasks.Task<bladeDirectorClient.bladeDirectorService.resultCodeAndBladeName> RequestAnySingleNodeAsync() {
+            return base.Channel.RequestAnySingleNodeAsync();
         }
         
-        public bladeDirectorClient.bladeDirectorService.resultAndWaitToken ReleaseBladeOrVM(string nodeIP) {
-            return base.Channel.ReleaseBladeOrVM(nodeIP);
+        public bladeDirectorClient.bladeDirectorService.resultCode RequestNode(string NodeIP) {
+            return base.Channel.RequestNode(NodeIP);
         }
         
-        public bool isBladeMine(string nodeIP) {
-            return base.Channel.isBladeMine(nodeIP);
+        public System.Threading.Tasks.Task<bladeDirectorClient.bladeDirectorService.resultCode> RequestNodeAsync(string NodeIP) {
+            return base.Channel.RequestNodeAsync(NodeIP);
         }
         
-        public bladeDirectorClient.bladeDirectorService.resultAndWaitToken rebootAndStartDeployingBIOSToBlade(string NodeIP, string BIOSXML) {
+        public bladeDirectorClient.bladeDirectorService.GetBladeStatusResult GetBladeStatus(string NodeIP) {
+            return base.Channel.GetBladeStatus(NodeIP);
+        }
+        
+        public System.Threading.Tasks.Task<bladeDirectorClient.bladeDirectorService.GetBladeStatusResult> GetBladeStatusAsync(string NodeIP) {
+            return base.Channel.GetBladeStatusAsync(NodeIP);
+        }
+        
+        public bool isBladeMine(string NodeIP) {
+            return base.Channel.isBladeMine(NodeIP);
+        }
+        
+        public System.Threading.Tasks.Task<bool> isBladeMineAsync(string NodeIP) {
+            return base.Channel.isBladeMineAsync(NodeIP);
+        }
+        
+        public bladeDirectorClient.bladeDirectorService.resultCode releaseBladeOrVM(string NodeIP) {
+            return base.Channel.releaseBladeOrVM(NodeIP);
+        }
+        
+        public System.Threading.Tasks.Task<bladeDirectorClient.bladeDirectorService.resultCode> releaseBladeOrVMAsync(string NodeIP) {
+            return base.Channel.releaseBladeOrVMAsync(NodeIP);
+        }
+        
+        public bladeDirectorClient.bladeDirectorService.resultCode releaseBladeDbg(string nodeIP, string requestorIP, bool force) {
+            return base.Channel.releaseBladeDbg(nodeIP, requestorIP, force);
+        }
+        
+        public System.Threading.Tasks.Task<bladeDirectorClient.bladeDirectorService.resultCode> releaseBladeDbgAsync(string nodeIP, string requestorIP, bool force) {
+            return base.Channel.releaseBladeDbgAsync(nodeIP, requestorIP, force);
+        }
+        
+        public bladeDirectorClient.bladeDirectorService.resultCode forceBladeAllocation(string NodeIP, string newOwner) {
+            return base.Channel.forceBladeAllocation(NodeIP, newOwner);
+        }
+        
+        public System.Threading.Tasks.Task<bladeDirectorClient.bladeDirectorService.resultCode> forceBladeAllocationAsync(string NodeIP, string newOwner) {
+            return base.Channel.forceBladeAllocationAsync(NodeIP, newOwner);
+        }
+        
+        public bladeDirectorClient.bladeDirectorService.bladeSpec getConfigurationOfBlade(string NodeIP) {
+            return base.Channel.getConfigurationOfBlade(NodeIP);
+        }
+        
+        public System.Threading.Tasks.Task<bladeDirectorClient.bladeDirectorService.bladeSpec> getConfigurationOfBladeAsync(string NodeIP) {
+            return base.Channel.getConfigurationOfBladeAsync(NodeIP);
+        }
+        
+        public bladeDirectorClient.bladeDirectorService.bladeSpec getConfigurationOfBladeByID(int NodeID) {
+            return base.Channel.getConfigurationOfBladeByID(NodeID);
+        }
+        
+        public System.Threading.Tasks.Task<bladeDirectorClient.bladeDirectorService.bladeSpec> getConfigurationOfBladeByIDAsync(int NodeID) {
+            return base.Channel.getConfigurationOfBladeByIDAsync(NodeID);
+        }
+        
+        public string getCurrentSnapshotForBlade(string NodeIP) {
+            return base.Channel.getCurrentSnapshotForBlade(NodeIP);
+        }
+        
+        public System.Threading.Tasks.Task<string> getCurrentSnapshotForBladeAsync(string NodeIP) {
+            return base.Channel.getCurrentSnapshotForBladeAsync(NodeIP);
+        }
+        
+        public bladeDirectorClient.bladeDirectorService.resultCode selectSnapshotForBladeOrVM(string NodeIP, string snapshotName) {
+            return base.Channel.selectSnapshotForBladeOrVM(NodeIP, snapshotName);
+        }
+        
+        public System.Threading.Tasks.Task<bladeDirectorClient.bladeDirectorService.resultCode> selectSnapshotForBladeOrVMAsync(string NodeIP, string snapshotName) {
+            return base.Channel.selectSnapshotForBladeOrVMAsync(NodeIP, snapshotName);
+        }
+        
+        public bladeDirectorClient.bladeDirectorService.resultCode selectSnapshotForBladeOrVM_getProgress(string NodeIP) {
+            return base.Channel.selectSnapshotForBladeOrVM_getProgress(NodeIP);
+        }
+        
+        public System.Threading.Tasks.Task<bladeDirectorClient.bladeDirectorService.resultCode> selectSnapshotForBladeOrVM_getProgressAsync(string NodeIP) {
+            return base.Channel.selectSnapshotForBladeOrVM_getProgressAsync(NodeIP);
+        }
+        
+        public string getFreeNASSnapshotPath(string NodeIP) {
+            return base.Channel.getFreeNASSnapshotPath(NodeIP);
+        }
+        
+        public System.Threading.Tasks.Task<string> getFreeNASSnapshotPathAsync(string NodeIP) {
+            return base.Channel.getFreeNASSnapshotPathAsync(NodeIP);
+        }
+        
+        public string getLastDeployedBIOSForBlade(string NodeIP) {
+            return base.Channel.getLastDeployedBIOSForBlade(NodeIP);
+        }
+        
+        public System.Threading.Tasks.Task<string> getLastDeployedBIOSForBladeAsync(string NodeIP) {
+            return base.Channel.getLastDeployedBIOSForBladeAsync(NodeIP);
+        }
+        
+        public bladeDirectorClient.bladeDirectorService.resultCode rebootAndStartDeployingBIOSToBlade(string NodeIP, string BIOSXML) {
             return base.Channel.rebootAndStartDeployingBIOSToBlade(NodeIP, BIOSXML);
         }
         
-        public bladeDirectorClient.bladeDirectorService.resultAndWaitToken rebootAndStartReadingBIOSConfiguration(string NodeIP) {
+        public System.Threading.Tasks.Task<bladeDirectorClient.bladeDirectorService.resultCode> rebootAndStartDeployingBIOSToBladeAsync(string NodeIP, string BIOSXML) {
+            return base.Channel.rebootAndStartDeployingBIOSToBladeAsync(NodeIP, BIOSXML);
+        }
+        
+        public bladeDirectorClient.bladeDirectorService.resultCode rebootAndStartReadingBIOSConfiguration(string NodeIP) {
             return base.Channel.rebootAndStartReadingBIOSConfiguration(NodeIP);
         }
         
-        public bladeDirectorClient.bladeDirectorService.resultAndBladeName RequestAnySingleVM(bladeDirectorClient.bladeDirectorService.VMHardwareSpec hwSpec, bladeDirectorClient.bladeDirectorService.VMSoftwareSpec swSpec) {
+        public System.Threading.Tasks.Task<bladeDirectorClient.bladeDirectorService.resultCode> rebootAndStartReadingBIOSConfigurationAsync(string NodeIP) {
+            return base.Channel.rebootAndStartReadingBIOSConfigurationAsync(NodeIP);
+        }
+        
+        public bladeDirectorClient.bladeDirectorService.resultCode checkBIOSDeployProgress(string NodeIP) {
+            return base.Channel.checkBIOSDeployProgress(NodeIP);
+        }
+        
+        public System.Threading.Tasks.Task<bladeDirectorClient.bladeDirectorService.resultCode> checkBIOSDeployProgressAsync(string NodeIP) {
+            return base.Channel.checkBIOSDeployProgressAsync(NodeIP);
+        }
+        
+        public bladeDirectorClient.bladeDirectorService.resultCodeAndBIOSConfig checkBIOSReadProgress(string NodeIP) {
+            return base.Channel.checkBIOSReadProgress(NodeIP);
+        }
+        
+        public System.Threading.Tasks.Task<bladeDirectorClient.bladeDirectorService.resultCodeAndBIOSConfig> checkBIOSReadProgressAsync(string NodeIP) {
+            return base.Channel.checkBIOSReadProgressAsync(NodeIP);
+        }
+        
+        public bladeDirectorClient.bladeDirectorService.resultCodeAndBladeName RequestAnySingleVM(bladeDirectorClient.bladeDirectorService.VMHardwareSpec hwSpec, bladeDirectorClient.bladeDirectorService.VMSoftwareSpec swSpec) {
             return base.Channel.RequestAnySingleVM(hwSpec, swSpec);
         }
         
-        public string generateIPXEScript() {
-            return base.Channel.generateIPXEScript();
+        public System.Threading.Tasks.Task<bladeDirectorClient.bladeDirectorService.resultCodeAndBladeName> RequestAnySingleVMAsync(bladeDirectorClient.bladeDirectorService.VMHardwareSpec hwSpec, bladeDirectorClient.bladeDirectorService.VMSoftwareSpec swSpec) {
+            return base.Channel.RequestAnySingleVMAsync(hwSpec, swSpec);
         }
         
-        public System.TimeSpan getKeepAliveTimeout() {
-            return base.Channel.getKeepAliveTimeout();
+        public bladeDirectorClient.bladeDirectorService.resultCodeAndBladeName getProgressOfVMRequest(string waitToken) {
+            return base.Channel.getProgressOfVMRequest(waitToken);
         }
         
-        public bladeDirectorClient.bladeDirectorService.resultCode addNode(string nodeIP, string iSCSIIP, string iLoIP, ushort debugPort) {
-            return base.Channel.addNode(nodeIP, iSCSIIP, iLoIP, debugPort);
+        public System.Threading.Tasks.Task<bladeDirectorClient.bladeDirectorService.resultCodeAndBladeName> getProgressOfVMRequestAsync(string waitToken) {
+            return base.Channel.getProgressOfVMRequestAsync(waitToken);
         }
         
-        public bladeDirectorClient.bladeDirectorService.vmSpec getVMByIP_withoutLocking(string VMIP) {
-            return base.Channel.getVMByIP_withoutLocking(VMIP);
+        public bladeDirectorClient.bladeDirectorService.vmSpec getConfigurationOfVM(string bladeName) {
+            return base.Channel.getConfigurationOfVM(bladeName);
         }
         
-        public bladeDirectorClient.bladeDirectorService.bladeSpec getBladeByIP_withoutLocking(string bladeIP) {
-            return base.Channel.getBladeByIP_withoutLocking(bladeIP);
-        }
-        
-        public string[] getBladesByAllocatedServer(string serverIP) {
-            return base.Channel.getBladesByAllocatedServer(serverIP);
-        }
-        
-        public bladeDirectorClient.bladeDirectorService.vmSpec[] getVMByVMServerIP_nolocking(string bladeIP) {
-            return base.Channel.getVMByVMServerIP_nolocking(bladeIP);
-        }
-        
-        public string[] getLogEvents() {
-            return base.Channel.getLogEvents();
-        }
-        
-        public bladeDirectorClient.bladeDirectorService.vmServerCredentials getCredentialsForVMServerByVMIP(string VMIP) {
-            return base.Channel.getCredentialsForVMServerByVMIP(VMIP);
-        }
-        
-        public bladeDirectorClient.bladeDirectorService.snapshotDetails getCurrentSnapshotDetails(string nodeIP) {
-            return base.Channel.getCurrentSnapshotDetails(nodeIP);
-        }
-        
-        public bladeDirectorClient.bladeDirectorService.resultAndWaitToken selectSnapshotForBladeOrVM(string bladeName, string newShot) {
-            return base.Channel.selectSnapshotForBladeOrVM(bladeName, newShot);
+        public System.Threading.Tasks.Task<bladeDirectorClient.bladeDirectorService.vmSpec> getConfigurationOfVMAsync(string bladeName) {
+            return base.Channel.getConfigurationOfVMAsync(bladeName);
         }
     }
 }
