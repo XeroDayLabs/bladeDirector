@@ -11,6 +11,7 @@ namespace tests
     public class testsWithBladeDirector
     {
         [TestMethod]
+        [TestCategory("requiresBladeDirector")]
         public void canAllocateVM()
         {
             using (services svc = new services())
