@@ -4,7 +4,8 @@ using System.Linq;
 using System.Net;
 using System.Threading;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using tests.bladeDirectorServices;
+using bladeDirectorClient;
+using bladeDirectorClient.bladeDirectorService;
 
 namespace tests
 {
@@ -14,23 +15,23 @@ namespace tests
         [TestMethod]
         public void willDeallocateBlade()
         {
-            using (services svc = new services())
+            using (bladeDirectorDebugServices svc = new bladeDirectorDebugServices())
             {
                 string hostIP = "1.1.1.1";
-                svc.uutDebug.initWithBladesFromIPList(new[] { "172.17.129.131" }, true, NASFaultInjectionPolicy.retunSuccessful);
+                svc.svcDebug.initWithBladesFromIPList(new[] { "172.17.129.131" }, true, NASFaultInjectionPolicy.retunSuccessful);
 
                 string ourBlade = testUtils.doBladeAllocationForTest(svc, hostIP);
 
                 // It should be ours..
-                GetBladeStatusResult bladeState = svc.uutDebug._GetBladeStatus(hostIP, ourBlade);
+                GetBladeStatusResult bladeState = svc.svcDebug._GetBladeStatus(hostIP, ourBlade);
                 Assert.AreEqual(bladeState, GetBladeStatusResult.yours);
 
                 // Then free it
-                resultAndWaitToken releaseRes = svc.uutDebug._ReleaseBladeOrVM(hostIP, ourBlade, false);
+                resultAndWaitToken releaseRes = svc.svcDebug._ReleaseBladeOrVM(hostIP, ourBlade, false);
                 testUtils.waitForSuccess(svc, releaseRes, TimeSpan.FromSeconds(10));
 
                 // And it should be unused.
-                bladeState = svc.uutDebug._GetBladeStatus(hostIP, ourBlade);
+                bladeState = svc.svcDebug._GetBladeStatus(hostIP, ourBlade);
                 Assert.AreEqual(bladeState, GetBladeStatusResult.unused);
             }
         }
@@ -38,33 +39,33 @@ namespace tests
         [TestMethod]
         public void willReallocateBladeAfterLogin()
         {
-            using (services svc = new services())
+            using (bladeDirectorDebugServices svc = new bladeDirectorDebugServices())
             {
                 string hostIP = "1.1.1.1";
-                svc.uutDebug.initWithBladesFromIPList(new[] { "172.17.129.131" }, true, NASFaultInjectionPolicy.retunSuccessful);
+                svc.svcDebug.initWithBladesFromIPList(new[] { "172.17.129.131" }, true, NASFaultInjectionPolicy.retunSuccessful);
 
                 string ourBlade = testUtils.doBladeAllocationForTest(svc, hostIP);
 
                 // It should be ours..
-                GetBladeStatusResult bladeState = svc.uutDebug._GetBladeStatus(hostIP, ourBlade);
+                GetBladeStatusResult bladeState = svc.svcDebug._GetBladeStatus(hostIP, ourBlade);
                 Assert.AreEqual(bladeState, GetBladeStatusResult.yours);
 
                 // Then free it 'dirtily', by logging in again.
-                resultAndWaitToken res = svc.uutDebug._logIn(hostIP);
+                resultAndWaitToken res = svc.svcDebug._logIn(hostIP);
                 while (res.result.code == resultCode.pending)
                 {
-                    res = svc.uut.getProgress(res.waitToken);
+                    res = svc.svc.getProgress(res.waitToken);
                     Thread.Sleep(TimeSpan.FromSeconds(3));
                 }
                 Assert.AreEqual(resultCode.success, res.result.code);
 
                 // The blade should now be unused.
-                bladeState = svc.uutDebug._GetBladeStatus(hostIP, ourBlade);
+                bladeState = svc.svcDebug._GetBladeStatus(hostIP, ourBlade);
                 Assert.AreEqual(bladeState, GetBladeStatusResult.unused);
 
                 // And if we allocate again, we should get it OK.
                 ourBlade = testUtils.doBladeAllocationForTest(svc, hostIP);
-                bladeState = svc.uutDebug._GetBladeStatus(hostIP, ourBlade);
+                bladeState = svc.svcDebug._GetBladeStatus(hostIP, ourBlade);
                 Assert.AreEqual(bladeState, GetBladeStatusResult.yours);
             }
         }
@@ -72,22 +73,22 @@ namespace tests
         [TestMethod]
         public void willDeallocateBladeAfterVMDestruction()
         {
-            using (services svc = new services("2.2.2.2"))
+            using (bladeDirectorDebugServices svc = new bladeDirectorDebugServices("2.2.2.2"))
             {
                 string hostIP = "1.1.1.1";
 
                 string ourVM = testUtils.doVMAllocationForTest(svc, hostIP);
 
                 // Our blade should become a VM server
-                GetBladeStatusResult bladeState = svc.uutDebug._GetBladeStatus(hostIP, "2.2.2.2");
+                GetBladeStatusResult bladeState = svc.svcDebug._GetBladeStatus(hostIP, "2.2.2.2");
                 Assert.AreEqual(GetBladeStatusResult.notYours, bladeState);
 
                 // Then free the VM.
-                resultAndWaitToken releaseRes = svc.uutDebug._ReleaseBladeOrVM(hostIP, ourVM, false);
+                resultAndWaitToken releaseRes = svc.svcDebug._ReleaseBladeOrVM(hostIP, ourVM, false);
                 testUtils.waitForSuccess(svc, releaseRes, TimeSpan.FromSeconds(10));
 
                 // The blade itself should become unused.
-                bladeState = svc.uutDebug._GetBladeStatus(hostIP, "2.2.2.2");
+                bladeState = svc.svcDebug._GetBladeStatus(hostIP, "2.2.2.2");
                 Assert.AreEqual(GetBladeStatusResult.unused, bladeState);
             }
         }
@@ -95,28 +96,28 @@ namespace tests
         [TestMethod]
         public void willDeallocateBladeDuringBIOSSetting()
         {
-            using (services svc = new services())
+            using (bladeDirectorDebugServices svc = new bladeDirectorDebugServices())
             {
                 string hostIP = "1.1.1.1";
-                svc.uutDebug.initWithBladesFromIPList(new[] { "172.17.129.131" }, true, NASFaultInjectionPolicy.retunSuccessful);
+                svc.svcDebug.initWithBladesFromIPList(new[] { "172.17.129.131" }, true, NASFaultInjectionPolicy.retunSuccessful);
 
                 string ourBlade = testUtils.doBladeAllocationForTest(svc, hostIP);
 
                 // Start a slowwww BIOS read
-                svc.uutDebug._setBIOSOperationTimeIfMocked(60 * 10);
-                resultAndWaitToken readRes = svc.uutDebug._rebootAndStartReadingBIOSConfiguration(hostIP, ourBlade);
+                svc.svcDebug._setBIOSOperationTimeIfMocked(60 * 10);
+                resultAndWaitToken readRes = svc.svcDebug._rebootAndStartReadingBIOSConfiguration(hostIP, ourBlade);
                 Assert.AreEqual(resultCode.pending, readRes.result.code);
 
                 // Then free the blade. The BIOS operation should be cancelled before it soaks up all the ten minutes of time.
-                resultAndWaitToken releaseRes = svc.uutDebug._ReleaseBladeOrVM(hostIP, ourBlade, false);
+                resultAndWaitToken releaseRes = svc.svcDebug._ReleaseBladeOrVM(hostIP, ourBlade, false);
                 testUtils.waitForSuccess(svc, releaseRes, TimeSpan.FromMinutes(1));
 
                 // And it should be no longer getting.
-                resultAndWaitToken bladeState = svc.uut.getProgress(readRes.waitToken);
+                resultAndWaitToken bladeState = svc.svc.getProgress(readRes.waitToken);
                 Assert.AreNotEqual(resultCode.pending, bladeState.result.code);
 
                 // And should not be allocated
-                GetBladeStatusResult ownershipRes = svc.uut.GetBladeStatus(ourBlade);
+                GetBladeStatusResult ownershipRes = svc.svc.GetBladeStatus(ourBlade);
                 Assert.AreEqual(GetBladeStatusResult.unused, ownershipRes);
             }
         }
@@ -124,10 +125,10 @@ namespace tests
         [TestMethod]
         public void willDeallocateBladeAtLoginDuringVMProvisioning()
         {
-            using (services svc = new services())
+            using (bladeDirectorDebugServices svc = new bladeDirectorDebugServices())
             {
                 string hostIP = "1.1.1.1";
-                svc.uutDebug.initWithBladesFromIPList(new[] { "172.17.129.131" }, true, NASFaultInjectionPolicy.retunSuccessful);
+                svc.svcDebug.initWithBladesFromIPList(new[] { "172.17.129.131" }, true, NASFaultInjectionPolicy.retunSuccessful);
 
                 VMHardwareSpec hwspec = new VMHardwareSpec
                 {
@@ -137,20 +138,20 @@ namespace tests
                 VMSoftwareSpec swspec = new VMSoftwareSpec();
 
                 // Start a slow VM allocation
-                svc.uutDebug._setExecutionResultsIfMocked(mockedExecutionResponses.successfulButSlow);
-                resultAndWaitToken res = svc.uutDebug._requestAnySingleVM(hostIP, hwspec, swspec);
+                svc.svcDebug._setExecutionResultsIfMocked(mockedExecutionResponses.successfulButSlow);
+                resultAndWaitToken res = svc.svcDebug._requestAnySingleVM(hostIP, hwspec, swspec);
                 Assert.AreEqual(resultCode.pending, res.result.code);
 
                 // Then re-login. The VM operation should be cancelled.
-                resultAndWaitToken releaseRes = svc.uutDebug._logIn(hostIP);
+                resultAndWaitToken releaseRes = svc.svcDebug._logIn(hostIP);
                 testUtils.waitForSuccess(svc, releaseRes, TimeSpan.FromMinutes(1));
 
                 // And it should be no longer provisioning the VM.
-                resultAndWaitToken bladeState = svc.uut.getProgress(res.waitToken);
+                resultAndWaitToken bladeState = svc.svc.getProgress(res.waitToken);
                 Assert.AreNotEqual(resultCode.pending, bladeState.result.code);
 
                 // And should not be allocated.
-                GetBladeStatusResult ownershipRes = svc.uut.GetBladeStatus("172.17.129.131");
+                GetBladeStatusResult ownershipRes = svc.svc.GetBladeStatus("172.17.129.131");
                 Assert.AreEqual(GetBladeStatusResult.unused, ownershipRes);
             }
         }
@@ -158,17 +159,17 @@ namespace tests
         [TestMethod]
         public void willDeallocateOldBladesOnLogon()
         {
-            using (services svc = new services())
+            using (bladeDirectorDebugServices svc = new bladeDirectorDebugServices())
             {
                 string hostIP = "1.1.1.1";
-                svc.uutDebug.initWithBladesFromIPList(new[] { "172.17.129.131" }, true, NASFaultInjectionPolicy.retunSuccessful);
+                svc.svcDebug.initWithBladesFromIPList(new[] { "172.17.129.131" }, true, NASFaultInjectionPolicy.retunSuccessful);
 
                 // Allocate a blade, then login again. The allocated blade should no longer be allocated.
                 string ourBlade = testUtils.doBladeAllocationForTest(svc, hostIP);
 
                 testUtils.doLogin(svc, hostIP);
 
-                GetBladeStatusResult bladeState = svc.uutDebug._GetBladeStatus(hostIP, ourBlade);
+                GetBladeStatusResult bladeState = svc.svcDebug._GetBladeStatus(hostIP, ourBlade);
                 Assert.AreEqual(bladeState, GetBladeStatusResult.unused);
             }
         }

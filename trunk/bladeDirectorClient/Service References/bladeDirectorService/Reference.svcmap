@@ -1,8 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
-<ReferenceGroup xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema" ID="f8a86df8-a2ce-431a-a7ef-aeb7261edb47" xmlns="urn:schemas-microsoft-com:xml-wcfservicemap">
+<ReferenceGroup xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema" ID="6dabf5e3-4715-4b9a-a68e-8b0810cb4f11" xmlns="urn:schemas-microsoft-com:xml-wcfservicemap">
   <ClientOptions>
     <GenerateAsynchronousMethods>false</GenerateAsynchronousMethods>
-    <GenerateTaskBasedAsynchronousMethod>true</GenerateTaskBasedAsynchronousMethod>
     <EnableDataBinding>true</EnableDataBinding>
     <ExcludedTypes />
     <ImportXmlTypes>false</ImportXmlTypes>
@@ -13,17 +12,41 @@
     <GenerateSerializableTypes>true</GenerateSerializableTypes>
     <Serializer>Auto</Serializer>
     <UseSerializerForFaults>true</UseSerializerForFaults>
-    <ReferenceAllAssemblies>true</ReferenceAllAssemblies>
+    <ReferenceAllAssemblies>false</ReferenceAllAssemblies>
     <ReferencedAssemblies />
     <ReferencedDataContractTypes />
     <ServiceContractMappings />
   </ClientOptions>
   <MetadataSources>
-    <MetadataSource Address="http://localhost/bladedirector/services.asmx" Protocol="http" SourceId="1" />
+    <MetadataSource Address="http://127.0.0.1/bladeDirector" Protocol="http" SourceId="1" />
+    <MetadataSource Address="http://127.0.0.1/bladeDirectorDebug" Protocol="http" SourceId="1" />
   </MetadataSources>
   <Metadata>
-    <MetadataFile FileName="services1.wsdl" MetadataType="Wsdl" ID="a1f40e82-c2f1-499a-90f0-d6dcfbff43f1" SourceId="1" SourceUrl="http://localhost/bladedirector/services.asmx?wsdl" />
-    <MetadataFile FileName="services1.disco" MetadataType="Disco" ID="7a695ecc-adfa-4a28-8e17-f009d0c08900" SourceId="1" SourceUrl="http://localhost/bladedirector/services.asmx?disco" />
+    <MetadataFile FileName="bladeDirector.xsd" MetadataType="Schema" ID="60dfb27e-27ab-49a8-86ad-0640ecd349ab" SourceId="1" SourceUrl="http://127.0.0.1/bladeDirector?xsd=xsd3" />
+    <MetadataFile FileName="bladeDirector1.xsd" MetadataType="Schema" ID="f88f2c4a-dd09-4c5d-9416-f1c8dd4a0c9c" SourceId="1" SourceUrl="http://127.0.0.1/bladeDirector?xsd=xsd8" />
+    <MetadataFile FileName="bladeDirector2.xsd" MetadataType="Schema" ID="5a7762c3-da36-43a6-994d-8afecdc996f4" SourceId="1" SourceUrl="http://127.0.0.1/bladeDirector?xsd=xsd1" />
+    <MetadataFile FileName="bladeDirector.disco" MetadataType="Disco" ID="f1c1adc4-b653-4f9d-b9d8-d3945c222a77" SourceId="1" SourceUrl="http://127.0.0.1/bladeDirector?disco" />
+    <MetadataFile FileName="bladeDirector3.xsd" MetadataType="Schema" ID="9d040131-054c-49b7-8ce9-e9c4c328457e" SourceId="1" SourceUrl="http://127.0.0.1/bladeDirector?xsd=xsd4" />
+    <MetadataFile FileName="bladeDirector4.xsd" MetadataType="Schema" ID="0a379364-f8c5-46aa-885d-bcffffa696f4" SourceId="1" SourceUrl="http://127.0.0.1/bladeDirector?xsd=xsd2" />
+    <MetadataFile FileName="bladeDirector5.xsd" MetadataType="Schema" ID="e06bf2d9-2395-488d-bb29-37977defb3ce" SourceId="1" SourceUrl="http://127.0.0.1/bladeDirector?xsd=xsd6" />
+    <MetadataFile FileName="bladeDirector6.xsd" MetadataType="Schema" ID="51e6281f-27fd-47ae-bfcd-07ce135914a9" SourceId="1" SourceUrl="http://127.0.0.1/bladeDirector?xsd=xsd0" />
+    <MetadataFile FileName="bladeDirector7.xsd" MetadataType="Schema" ID="0fe1e172-fd91-475a-95dd-df1a9a55332f" SourceId="1" SourceUrl="http://127.0.0.1/bladeDirector?xsd=xsd9" />
+    <MetadataFile FileName="bladeDirector8.xsd" MetadataType="Schema" ID="c5e23215-07c7-420b-9d6a-2050b39b3d55" SourceId="1" SourceUrl="http://127.0.0.1/bladeDirector?xsd=xsd7" />
+    <MetadataFile FileName="services.wsdl" MetadataType="Wsdl" ID="b99448b0-d342-4cbe-b8f1-79bc21c3f89f" SourceId="1" SourceUrl="http://127.0.0.1/bladeDirector?wsdl" />
+    <MetadataFile FileName="bladeDirector9.xsd" MetadataType="Schema" ID="41868ec1-4c5e-413f-b8c7-bb25f7a89a5a" SourceId="1" SourceUrl="http://127.0.0.1/bladeDirector?xsd=xsd5" />
+    <MetadataFile FileName="bladeDirectorDebug.xsd" MetadataType="Schema" ID="4fec3b78-f666-4479-8ae6-fa41c1c49404" SourceId="1" SourceUrl="http://127.0.0.1/bladeDirectorDebug?xsd=xsd3" />
+    <MetadataFile FileName="debugServices.wsdl" MetadataType="Wsdl" ID="eccfebee-4f21-4c8b-9143-f307021ffb06" SourceId="1" SourceUrl="http://127.0.0.1/bladeDirectorDebug?wsdl" />
+    <MetadataFile FileName="bladeDirectorDebug1.xsd" MetadataType="Schema" ID="71a70173-84bf-482d-bf32-44727fb7132f" SourceId="1" SourceUrl="http://127.0.0.1/bladeDirectorDebug?xsd=xsd8" />
+    <MetadataFile FileName="bladeDirectorDebug2.xsd" MetadataType="Schema" ID="6a92ef19-dcb6-4364-aee3-a3b4fa0affe2" SourceId="1" SourceUrl="http://127.0.0.1/bladeDirectorDebug?xsd=xsd4" />
+    <MetadataFile FileName="bladeDirectorDebug3.xsd" MetadataType="Schema" ID="5241f9f8-0434-47fa-94e2-88b50d27a7bc" SourceId="1" SourceUrl="http://127.0.0.1/bladeDirectorDebug?xsd=xsd6" />
+    <MetadataFile FileName="bladeDirectorDebug4.xsd" MetadataType="Schema" ID="d99da5e4-3d34-404b-972b-120a3def043c" SourceId="1" SourceUrl="http://127.0.0.1/bladeDirectorDebug?xsd=xsd0" />
+    <MetadataFile FileName="bladeDirectorDebug5.xsd" MetadataType="Schema" ID="d3b50916-709b-4ae4-b933-22e485f17341" SourceId="1" SourceUrl="http://127.0.0.1/bladeDirectorDebug?xsd=xsd2" />
+    <MetadataFile FileName="bladeDirectorDebug6.xsd" MetadataType="Schema" ID="a56d8063-5c66-4aab-a5f1-776a7a5cf786" SourceId="1" SourceUrl="http://127.0.0.1/bladeDirectorDebug?xsd=xsd9" />
+    <MetadataFile FileName="bladeDirectorDebug7.xsd" MetadataType="Schema" ID="b51a914c-ca2b-4ddd-815b-a7d1d43b38f4" SourceId="1" SourceUrl="http://127.0.0.1/bladeDirectorDebug?xsd=xsd10" />
+    <MetadataFile FileName="bladeDirectorDebug8.xsd" MetadataType="Schema" ID="7288905b-1d7f-4f46-a154-479f00a88aa7" SourceId="1" SourceUrl="http://127.0.0.1/bladeDirectorDebug?xsd=xsd5" />
+    <MetadataFile FileName="bladeDirectorDebug.disco" MetadataType="Disco" ID="7cac6858-d6a3-4fb0-8c37-9ef43bcd3816" SourceId="1" SourceUrl="http://127.0.0.1/bladeDirectorDebug?disco" />
+    <MetadataFile FileName="bladeDirectorDebug9.xsd" MetadataType="Schema" ID="a32ecd57-ce71-488c-90e5-e198533de88c" SourceId="1" SourceUrl="http://127.0.0.1/bladeDirectorDebug?xsd=xsd7" />
+    <MetadataFile FileName="bladeDirectorDebug10.xsd" MetadataType="Schema" ID="dec79c39-cc4d-49e3-a36f-37335ce25801" SourceId="1" SourceUrl="http://127.0.0.1/bladeDirectorDebug?xsd=xsd1" />
   </Metadata>
   <Extensions>
     <ExtensionFile FileName="configuration91.svcinfo" Name="configuration91.svcinfo" />

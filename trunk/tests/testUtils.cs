@@ -1,37 +1,40 @@
 using System;
-using System.Collections.Generic;
-using System.Text;
 using System.Threading;
+using bladeDirectorClient.bladeDirectorService;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using tests.bladeDirectorServices;
+using resultAndBladeName = bladeDirectorClient.bladeDirectorService.resultAndBladeName;
+using resultAndWaitToken = bladeDirectorClient.bladeDirectorService.resultAndWaitToken;
+using resultCode = bladeDirectorClient.bladeDirectorService.resultCode;
+using VMHardwareSpec = bladeDirectorClient.bladeDirectorService.VMHardwareSpec;
+using VMSoftwareSpec = bladeDirectorClient.bladeDirectorService.VMSoftwareSpec;
 
 namespace tests
 {
     public static class testUtils
     {
-        public static void doLogin(services uut, string hostIP, TimeSpan permissibleDelay = default(TimeSpan))
+        public static void doLogin(bladeDirectorDebugServices uut, string hostIP, TimeSpan permissibleDelay = default(TimeSpan))
         {
             if (permissibleDelay == default(TimeSpan))
                 permissibleDelay = TimeSpan.FromSeconds(30);
 
-            resultAndWaitToken res = uut.uutDebug._logIn(hostIP);
+            resultAndWaitToken res = uut.svcDebug._logIn(hostIP);
             res = waitForSuccess(uut, res, permissibleDelay);
         }
 
-        public static string doBladeAllocationForTest(services uut, string hostIP)
+        public static string doBladeAllocationForTest(bladeDirectorDebugServices uut, string hostIP)
         {
-            uut.uutDebug._setExecutionResultsIfMocked(mockedExecutionResponses.successful);
+            uut.svcDebug._setExecutionResultsIfMocked(mockedExecutionResponses.successful);
 
-            resultAndWaitToken allocRes = uut.uutDebug._RequestAnySingleNode(hostIP);
+            resultAndWaitToken allocRes = uut.svcDebug._RequestAnySingleNode(hostIP);
             Assert.AreEqual(resultCode.success, allocRes.result.code);
 
 
             return ((resultAndBladeName)allocRes).bladeName;
         }
 
-        public static string doVMAllocationForTest(services uut, string hostIP)
+        public static string doVMAllocationForTest(bladeDirectorDebugServices uut, string hostIP)
         {
-            uut.uutDebug._setExecutionResultsIfMocked(mockedExecutionResponses.successful);
+            uut.svcDebug._setExecutionResultsIfMocked(mockedExecutionResponses.successful);
 
             VMHardwareSpec hwspec = new VMHardwareSpec
             {
@@ -40,12 +43,12 @@ namespace tests
             };
             VMSoftwareSpec swspec = new VMSoftwareSpec();
 
-            resultAndWaitToken res = uut.uutDebug._requestAnySingleVM(hostIP, hwspec, swspec);
+            resultAndWaitToken res = uut.svcDebug._requestAnySingleVM(hostIP, hwspec, swspec);
             res = waitForSuccess(uut, res, TimeSpan.FromSeconds(30));
             return ((resultAndBladeName)res).bladeName;
         }
 
-        public static resultAndWaitToken waitForSuccess(services uut, resultAndWaitToken res, TimeSpan timeout)
+        public static resultAndWaitToken waitForSuccess(bladeDirectorDebugServices uut, resultAndWaitToken res, TimeSpan timeout)
         {
             DateTime deadline = DateTime.Now + timeout;
             while (res.result.code != resultCode.success)
@@ -59,7 +62,7 @@ namespace tests
                     case resultCode.pending:
                         if (DateTime.Now > deadline)
                             throw new TimeoutException();
-                        res = uut.uut.getProgress(res.waitToken);
+                        res = uut.svc.getProgress(res.waitToken);
                         continue;
 
                     default:
@@ -71,9 +74,9 @@ namespace tests
             return res;
         }
 
-        public static resultAndBladeName startAsyncVMAllocationForTest(services uut, string hostIP)
+        public static resultAndBladeName startAsyncVMAllocationForTest(bladeDirectorDebugServices uut, string hostIP)
         {
-            uut.uutDebug._setExecutionResultsIfMocked(mockedExecutionResponses.successful);
+            uut.svcDebug._setExecutionResultsIfMocked(mockedExecutionResponses.successful);
 
             VMHardwareSpec hwspec = new VMHardwareSpec
             {
@@ -82,7 +85,7 @@ namespace tests
             };
             VMSoftwareSpec swspec = new VMSoftwareSpec();
 
-            resultAndBladeName allocRes = uut.uutDebug._requestAnySingleVM(hostIP, hwspec, swspec);
+            resultAndBladeName allocRes = uut.svcDebug._requestAnySingleVM(hostIP, hwspec, swspec);
             if (allocRes.result.code != resultCode.pending && allocRes.result.code != resultCode.success)
                 Assert.Fail("unexpected status: " + allocRes.result.code.ToString());
 

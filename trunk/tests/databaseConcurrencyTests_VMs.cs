@@ -1,8 +1,10 @@
 using System;
 using System.Diagnostics;
 using System.Threading;
-using bladeDirectorWCF;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using bladeLockType = bladeDirectorWCF.bladeLockType;
+using lockableVMSpec = bladeDirectorWCF.lockableVMSpec;
+using hostDB = bladeDirectorWCF.hostDB;
 
 namespace tests
 {
@@ -14,7 +16,7 @@ namespace tests
         {
             using (hostDB db = new hostDB())
             {
-                vmSpec toDB = new vmSpec(db.conn, "1.1.1.2", bladeLockType.lockAll, bladeLockType.lockAll);
+                bladeDirectorWCF.vmSpec toDB = new bladeDirectorWCF.vmSpec(db.conn, "1.1.1.2", bladeLockType.lockAll, bladeLockType.lockAll);
                 db.addNode(toDB);
 
                 using (lockableVMSpec refB = db.getVMByIP("1.1.1.2", bladeLockType.lockNone, bladeLockType.lockNone))
@@ -43,7 +45,7 @@ namespace tests
         {
             using (hostDB db = new hostDB())
             {
-                vmSpec toDB = new vmSpec(db.conn, "1.1.1.3", bladeLockType.lockAll, bladeLockType.lockAll);
+                bladeDirectorWCF.vmSpec toDB = new bladeDirectorWCF.vmSpec(db.conn, "1.1.1.3", bladeLockType.lockAll, bladeLockType.lockAll);
                 db.addNode(toDB);
 
                 // Lock with write access to a field, and then downgrade to no access. Then, access the field we originally
@@ -69,7 +71,7 @@ namespace tests
         {
             using (hostDB db = new hostDB())
             {
-                vmSpec toDB = new vmSpec(db.conn, "1.1.1.4", bladeLockType.lockAll, bladeLockType.lockAll);
+                bladeDirectorWCF.vmSpec toDB = new bladeDirectorWCF.vmSpec(db.conn, "1.1.1.4", bladeLockType.lockAll, bladeLockType.lockAll);
                 db.addNode(toDB);
 
                 // Lock with write access to a field, and then downgrade to read-only access. Then, try to write to the field we 
@@ -100,7 +102,7 @@ namespace tests
         {
             using (hostDB db = new hostDB())
             {
-                vmSpec toDB = new vmSpec(db.conn, "1.1.1.5", bladeLockType.lockAll, bladeLockType.lockAll);
+                bladeDirectorWCF.vmSpec toDB = new bladeDirectorWCF.vmSpec(db.conn, "1.1.1.5", bladeLockType.lockAll, bladeLockType.lockAll);
                 db.addNode(toDB);
 
                 using (lockableVMSpec refA = db.getVMByIP("1.1.1.5", bladeLockType.lockNone, bladeLockType.lockNone))
@@ -125,7 +127,7 @@ namespace tests
         {
             using (hostDB db = new hostDB())
             {
-                vmSpec toDB = new vmSpec(db.conn, "1.1.1.6", bladeLockType.lockAll, bladeLockType.lockAll);
+                bladeDirectorWCF.vmSpec toDB = new bladeDirectorWCF.vmSpec(db.conn, "1.1.1.6", bladeLockType.lockAll, bladeLockType.lockAll);
                 db.addNode(toDB);
 
                 using (lockableVMSpec refA = db.getVMByIP("1.1.1.6", bladeLockType.lockNone, bladeLockType.lockNone))
@@ -169,7 +171,7 @@ namespace tests
         {
             using (hostDB db = new hostDB())
             {
-                vmSpec toDB = new vmSpec(db.conn, "1.1.1.7", bladeLockType.lockAll, bladeLockType.lockAll);
+                bladeDirectorWCF.vmSpec toDB = new bladeDirectorWCF.vmSpec(db.conn, "1.1.1.7", bladeLockType.lockAll, bladeLockType.lockAll);
                 db.addNode(toDB);
 
                 ManualResetEvent canCheckRefB = new ManualResetEvent(false);

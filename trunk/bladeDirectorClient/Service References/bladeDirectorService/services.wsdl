@@ -1424,7 +1424,7 @@
       <wsa10:EndpointReference>
         <wsa10:Address>http://127.0.0.1/bladeDirector</wsa10:Address>
         <Identity xmlns="http://schemas.xmlsoap.org/ws/2006/02/addressingidentity">
-          <Upn>ALIZANALYSIS\ACH</Upn>
+          <Upn>ALIZANALYSIS\aliz</Upn>
         </Identity>
       </wsa10:EndpointReference>
     </wsdl:port>

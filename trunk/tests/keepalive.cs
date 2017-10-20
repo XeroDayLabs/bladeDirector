@@ -1,7 +1,7 @@
 using System;
 using System.Threading;
 using bladeDirectorClient;
-using tests.bladeDirectorServices;
+using bladeDirectorClient;
 
 namespace tests
 {/*

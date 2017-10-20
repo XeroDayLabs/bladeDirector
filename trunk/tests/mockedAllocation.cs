@@ -6,8 +6,9 @@ using System.Threading;
 using hypervisors;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Microsoft.Win32;
-using tests.bladeDirectorServices;
-using mockedCall = tests.bladeDirectorServices.mockedCall;
+using bladeDirectorClient;
+using bladeDirectorClient.bladeDirectorService;
+using mockedCall = bladeDirectorClient.bladeDirectorService.mockedCall;
 
 namespace tests
 {
@@ -19,7 +20,7 @@ namespace tests
         {
             string hostIP = "1.1.1.1";
 
-            using (services svc = new services(new[] { "1.1.1.1", "2.2.2.2", "3.3.3.3" }))
+            using (bladeDirectorDebugServices svc = new bladeDirectorDebugServices(new[] { "1.1.1.1", "2.2.2.2", "3.3.3.3" }))
             {
                 VMHardwareSpec hwSpec = new VMHardwareSpec() { memoryMB = 2344, cpuCount = 2 };
                 VMSoftwareSpec swSpec = new VMSoftwareSpec();
@@ -29,18 +30,18 @@ namespace tests
                 resultAndBladeName allocatedBlade = allocRes[0];
 
                 // TODO: check nas events
-                mockedCall[] nasEvents = svc.uutDebug._getNASEventsIfMocked();
+                mockedCall[] nasEvents = svc.svcDebug._getNASEventsIfMocked();
                 foreach (mockedCall call in nasEvents)
                     Debug.WriteLine(call.functionName + " " + call.message);
                 // TODO: check executions all happened okay
 
                 // This blade should become a VM server
-                GetBladeStatusResult allocated1 = svc.uutDebug._GetBladeStatus(hostIP, "172.17.129.130");
+                GetBladeStatusResult allocated1 = svc.svcDebug._GetBladeStatus(hostIP, "172.17.129.130");
                 Assert.AreEqual(allocated1, GetBladeStatusResult.notYours);
 
                 // And there should now be one VM allocated to us at present.
                 Assert.AreEqual("172.17.158.1", allocatedBlade.bladeName);
-                vmSpec VMConfig = svc.uut.getVMByIP_withoutLocking(allocatedBlade.bladeName);
+                vmSpec VMConfig = svc.svc.getVMByIP_withoutLocking(allocatedBlade.bladeName);
                 Assert.AreEqual("VM_30_01", VMConfig.displayName);
                 Assert.AreEqual("172.17.158.1", VMConfig.VMIP);
                 Assert.AreEqual("192.168.158.1", VMConfig.iscsiIP);
@@ -57,17 +58,17 @@ namespace tests
         {
             string hostIP = "1.1.1.1";
 
-            using (services uut = new services(new[] { "1.1.1.1", "2.2.2.2", "3.3.3.3" }))
+            using (bladeDirectorDebugServices uut = new bladeDirectorDebugServices(new[] { "1.1.1.1", "2.2.2.2", "3.3.3.3" }))
             {
                 VMHardwareSpec hwSpec = new VMHardwareSpec() {memoryMB = 2344, cpuCount = 2};
                 VMSoftwareSpec swSpec = new VMSoftwareSpec();
 
-                uut.uutDebug.initWithBladesFromIPList(new[] {"172.17.129.131", "172.17.129.130"}, true, NASFaultInjectionPolicy.failSnapshotDeletionOnFirstSnapshot);
-                uut.uutDebug._setExecutionResultsIfMocked(mockedExecutionResponses.successful);
+                uut.svcDebug.initWithBladesFromIPList(new[] {"172.17.129.131", "172.17.129.130"}, true, NASFaultInjectionPolicy.failSnapshotDeletionOnFirstSnapshot);
+                uut.svcDebug._setExecutionResultsIfMocked(mockedExecutionResponses.successful);
 
                 resultAndBladeName allocRes;
 
-                allocRes = uut.uutDebug._requestAnySingleVM(hostIP, hwSpec, swSpec);
+                allocRes = uut.svcDebug._requestAnySingleVM(hostIP, hwSpec, swSpec);
                 Assert.AreEqual(resultCode.pending, allocRes.result.code);
 
                 waitToken waitTok = allocRes.waitToken;
@@ -75,7 +76,7 @@ namespace tests
                 {
                     Thread.Sleep(TimeSpan.FromSeconds(1));
 
-                    resultAndBladeName progress = (resultAndBladeName)uut.uut.getProgress(waitTok);
+                    resultAndBladeName progress = (resultAndBladeName)uut.svc.getProgress(waitTok);
                     waitTok = progress.waitToken;
 
                     if (progress.result.code == resultCode.pending)
@@ -86,13 +87,13 @@ namespace tests
                 }
                 // OK, our allocation failed. Try allocating a second VM - this one should succeed.
 
-                allocRes = uut.uutDebug._requestAnySingleVM(hostIP, hwSpec, swSpec);
+                allocRes = uut.svcDebug._requestAnySingleVM(hostIP, hwSpec, swSpec);
                 Assert.AreEqual(resultCode.pending, allocRes.result.code);
                 allocRes = (resultAndBladeName)testUtils.waitForSuccess(uut, allocRes, TimeSpan.FromMinutes(11));
 
                 Assert.AreNotEqual("172.17.158.1", allocRes.bladeName);
                 Assert.AreNotEqual("172.17.158.1", allocRes.bladeName);
-                vmSpec VMConfig = uut.uut.getVMByIP_withoutLocking(allocRes.bladeName);
+                vmSpec VMConfig = uut.svc.getVMByIP_withoutLocking(allocRes.bladeName);
                 Assert.AreNotEqual("00:50:56:00:30:01", VMConfig.eth0MAC);
                 Assert.AreNotEqual("00:50:56:01:30:01", VMConfig.eth1MAC);
             }
@@ -103,7 +104,7 @@ namespace tests
         {
             string hostIP = "1.1.1.1";
 
-            using (services svc = new services(new[] {"1.1.1.1", "2.2.2.2", "3.3.3.3"}))
+            using (bladeDirectorDebugServices svc = new bladeDirectorDebugServices(new[] {"1.1.1.1", "2.2.2.2", "3.3.3.3"}))
             {
                 vmHWAndSWSpec[] toAlloc = new vmHWAndSWSpec[8];
                 for (int i = 0; i < toAlloc.Length; i++)
@@ -117,7 +118,7 @@ namespace tests
                 Assert.AreEqual(toAlloc.Length, allocRes.Length);
 
                 // Group blades by their parent blade's IP
-                IGrouping<string, resultAndBladeName>[] bladesByParent = allocRes.GroupBy(x => svc.uut.getVMByIP_withoutLocking(x.bladeName).parentBladeIP).ToArray();
+                IGrouping<string, resultAndBladeName>[] bladesByParent = allocRes.GroupBy(x => svc.svc.getVMByIP_withoutLocking(x.bladeName).parentBladeIP).ToArray();
 
                 // We should have two VM servers in use.
                 Assert.AreEqual(2, bladesByParent.Length);
@@ -136,31 +137,31 @@ namespace tests
                     foreach (resultAndBladeName res in bladeAndParent)
                     {
                         // The VM server should still be allocated before release..
-                        Assert.AreEqual(svc.uutDebug._GetBladeStatus(hostIP, bladeAndParent.Key), GetBladeStatusResult.notYours);
-                        svc.uutDebug._ReleaseBladeOrVM(hostIP, res.bladeName, false);
+                        Assert.AreEqual(svc.svcDebug._GetBladeStatus(hostIP, bladeAndParent.Key), GetBladeStatusResult.notYours);
+                        svc.svcDebug._ReleaseBladeOrVM(hostIP, res.bladeName, false);
                     }
 
                     // This VM server should now be unused.
-                    Assert.AreEqual(svc.uutDebug._GetBladeStatus(hostIP, bladeAndParent.Key), GetBladeStatusResult.unused);
+                    Assert.AreEqual(svc.svcDebug._GetBladeStatus(hostIP, bladeAndParent.Key), GetBladeStatusResult.unused);
                 }
             }
         }
 
-        public static resultAndBladeName[] doVMAllocationsForTest(services uut, string hostIP, vmHWAndSWSpec[] specs, NASFaultInjectionPolicy NASFaultInjection = NASFaultInjectionPolicy.retunSuccessful)
+        public static resultAndBladeName[] doVMAllocationsForTest(bladeDirectorDebugServices uut, string hostIP, vmHWAndSWSpec[] specs, NASFaultInjectionPolicy NASFaultInjection = NASFaultInjectionPolicy.retunSuccessful)
         {
-            uut.uutDebug.initWithBladesFromIPList(new[] { "172.17.129.131", "172.17.129.130" }, true, NASFaultInjection);
-            uut.uutDebug._setExecutionResultsIfMocked(mockedExecutionResponses.successful);
+            uut.svcDebug.initWithBladesFromIPList(new[] { "172.17.129.131", "172.17.129.130" }, true, NASFaultInjection);
+            uut.svcDebug._setExecutionResultsIfMocked(mockedExecutionResponses.successful);
 
             return doAllocation(uut, hostIP, specs);
         }
 
-        private static resultAndBladeName[] doAllocation(services uut, string hostIP, vmHWAndSWSpec[] specs)
+        private static resultAndBladeName[] doAllocation(bladeDirectorDebugServices uut, string hostIP, vmHWAndSWSpec[] specs)
         {
             resultAndBladeName[] allocRes = new resultAndBladeName[specs.Length];
 
             for (int i = 0; i < specs.Length; i++)
             {
-                allocRes[i] = uut.uutDebug._requestAnySingleVM(hostIP, specs[i].hw, specs[i].sw);
+                allocRes[i] = uut.svcDebug._requestAnySingleVM(hostIP, specs[i].hw, specs[i].sw);
                 Assert.AreEqual(resultCode.pending, allocRes[i].result.code);
             }
 

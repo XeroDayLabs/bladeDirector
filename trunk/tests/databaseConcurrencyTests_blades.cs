@@ -2,8 +2,11 @@ using System;
 using System.Diagnostics;
 using System.Threading;
 using System.Threading.Tasks;
-using bladeDirectorWCF;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using bladeLockType = bladeDirectorWCF.bladeLockType;
+using lockableBladeSpec = bladeDirectorWCF.lockableBladeSpec;
+using bladeSpec = bladeDirectorWCF.bladeSpec;
+using hostDB = bladeDirectorWCF.hostDB;
 
 namespace tests
 {

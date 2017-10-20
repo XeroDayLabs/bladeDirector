@@ -879,7 +879,8 @@ bladeLockType.lockvmDeployState,  // <-- TODO/FIXME: write perms shuold imply re
                 catch (Exception)
                 {
                     using (lockableBladeSpec VMServer = db.getBladeByIP(vmServerIP,
-                        bladeLockType.lockvmDeployState, bladeLockType.lockvmDeployState, true, true))
+                        bladeLockType.lockvmDeployState | bladeLockType.lockOwnership,
+                        bladeLockType.lockvmDeployState | bladeLockType.lockOwnership, true, true))
                     {
                         VMServer.spec.vmDeployState = VMDeployStatus.failed;
                         VMServer.spec.currentlyBeingAVMServer = false;
