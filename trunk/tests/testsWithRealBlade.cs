@@ -15,7 +15,7 @@ namespace tests
         {
             string testBiosXML = Properties.Resources.testBIOS;
 
-            using (bladeDirectorDebugServices svc = new bladeDirectorDebugServices(basicBladeTests.WCFPath))
+            using (bladeDirectorDebugServices svc = new bladeDirectorDebugServices(basicBladeTests.WCFPath, true))
             {
                 string hostip = "1.2.3.4";
 
@@ -49,7 +49,7 @@ namespace tests
         [TestMethod]
         public void willProvisionVM()
         {
-            using (bladeDirectorDebugServices svc = new bladeDirectorDebugServices(basicBladeTests.WCFPath))
+            using (bladeDirectorDebugServices svc = new bladeDirectorDebugServices(basicBladeTests.WCFPath, true))
             {
                 string hostip = "1.2.3.4";
                 string debuggerHost = testUtils.getBestRouteTo(IPAddress.Parse("172.17.129.131")).ToString();
@@ -73,7 +73,7 @@ namespace tests
         [TestMethod]
         public void willProvisionVM_reportsFailure()
         {
-            using (bladeDirectorDebugServices svc = new bladeDirectorDebugServices(basicBladeTests.WCFPath))
+            using (bladeDirectorDebugServices svc = new bladeDirectorDebugServices(basicBladeTests.WCFPath, true))
             {
                 string hostip = "1.2.3.4";
                 string debuggerHost = testUtils.getBestRouteTo(IPAddress.Parse("172.17.129.131")).ToString();

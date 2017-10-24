@@ -13,6 +13,7 @@ namespace bladeDirectorClient
         public readonly ServicesClient svc;
 
         private Process _bladeDirectorProcess;
+
         public string servicesURL { get; private set; }
 
         protected string baseURL { get; private set; }
@@ -22,12 +23,13 @@ namespace bladeDirectorClient
         /// </summary>
         /// <param name="bladeDirectorWCFExe"></param>
         /// <param name="port"></param>
-        public BladeDirectorServices(string bladeDirectorWCFExe, int port)
+        /// <param name="withWeb"></param>
+        public BladeDirectorServices(string bladeDirectorWCFExe, int port, bool withWeb)
         {
             baseURL = string.Format("http://127.0.0.1:{0}/{1}", port, Guid.NewGuid().ToString());
             servicesURL = baseURL + "/bladeDirector";
 
-            connectWithArgs(bladeDirectorWCFExe, "--baseURL " + baseURL);
+            connectWithArgs(bladeDirectorWCFExe, "--baseURL " + baseURL + (withWeb ? "" : " --no-web "));
 
             WSHttpBinding baseBinding = new WSHttpBinding
             {
@@ -70,7 +72,6 @@ namespace bladeDirectorClient
             }
 
             Thread.Sleep(TimeSpan.FromSeconds(3));
-
         }
 
         public resultAndBladeName waitForSuccess(resultAndBladeName res, TimeSpan timeout)

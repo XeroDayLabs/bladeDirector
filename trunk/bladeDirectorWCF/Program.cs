@@ -62,7 +62,8 @@ namespace bladeDirectorWCF
             using (WebServiceHost WebSvc = new WebServiceHost(typeof (webServices), baseServiceURL))
             {
                 WebSvc.AddServiceEndpoint(typeof(IWebServices), new WebHttpBinding(), webServiceURL);
-                WebSvc.Open();
+                if (!parsedArgs.disableWebPort)
+                    WebSvc.Open();
 
                 using (ServiceHost baseSvc = new ServiceHost(typeof (services), baseServiceURL))
                 {
@@ -97,7 +98,8 @@ namespace bladeDirectorWCF
                             }
                             Console.WriteLine("BladeDirector ready.");
                             Console.WriteLine("Listening at main endpoint:  " + baseServiceURL.ToString());
-                            Console.WriteLine("Listening at web endpoint:   " + webServiceURL.ToString());
+                            if (!parsedArgs.disableWebPort)
+                                Console.WriteLine("Listening at web endpoint:   " + webServiceURL.ToString());
                             Console.WriteLine("Listening at debug endpoint: " + debugServiceURL.ToString());
                             Console.WriteLine("Hit [enter] to exit.");
                             Console.ReadLine();
@@ -149,7 +151,10 @@ namespace bladeDirectorWCF
 
         [Option('l', "bladeList", Required = false, DefaultValue = "28,29,30,31", HelpText = "A list of comma-seperated blade IDs in the XDL cluster to use (eg, '1,2,3,7,9')")]
         public string bladeList { get; set; }
-        
+
+        [Option("no-web", Required = false, DefaultValue = false, HelpText = "Do not listen on port 81 (PXE boot will not function)")]
+        public bool disableWebPort { get; set; }
+
         /// <summary>
         /// Set this to a new ManualResetEvent if you'd like service exit to be controlled remotely.
         /// </summary>

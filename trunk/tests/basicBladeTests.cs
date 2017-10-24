@@ -32,7 +32,7 @@ namespace tests
         [TestMethod]
         public void canGetBladeSpec()
         {
-            using (bladeDirectorDebugServices svc = new bladeDirectorDebugServices(WCFPath))
+            using (bladeDirectorDebugServices svc = new bladeDirectorDebugServices(WCFPath, false))
             {
                 bladeSpec spec1Expected = svc.svcDebug.createBladeSpec("blade1ip", "blade1iscsiIP", "blade1ILOIP", 111, false, VMDeployStatus.notBeingDeployed, null, bladeLockType.lockAll, bladeLockType.lockAll );
                 bladeSpec spec2Expected = svc.svcDebug.createBladeSpec("blade2ip", "blade2iscsiIP", "blade2ILOIP", 222, false, VMDeployStatus.notBeingDeployed, null, bladeLockType.lockAll, bladeLockType.lockAll);

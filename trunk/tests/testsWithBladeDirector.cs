@@ -18,7 +18,7 @@ namespace tests
         [TestCategory("requiresBladeDirector")]
         public void canAllocateVM()
         {
-            using (bladeDirectorDebugServices svc = new bladeDirectorDebugServices(basicBladeTests.WCFPath))
+            using (bladeDirectorDebugServices svc = new bladeDirectorDebugServices(basicBladeTests.WCFPath, true))
             {
                 string hostip = testUtils.getBestRouteTo(IPAddress.Parse("172.17.129.131")).ToString();
 

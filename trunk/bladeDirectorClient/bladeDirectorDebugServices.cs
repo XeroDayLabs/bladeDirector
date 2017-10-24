@@ -13,8 +13,8 @@ namespace bladeDirectorClient
 
         private static int _portNum = 90;
 
-        public bladeDirectorDebugServices(string executablePath)
-            : base(executablePath, (_portNum++))
+        public bladeDirectorDebugServices(string executablePath, bool withWeb)
+            : base(executablePath, (_portNum++), withWeb)
         {
             servicesDebugURL = baseURL + "/bladeDirectorDebug";
 
@@ -38,20 +38,13 @@ namespace bladeDirectorClient
             };
             svcDebug = new DebugServicesClient(debugBinding, new EndpointAddress(servicesDebugURL));
         }
-        public bladeDirectorDebugServices(string executablePath, string[] IPAddresses, bool isMocked = true)
-            : this(executablePath)
+        public bladeDirectorDebugServices(string executablePath, string[] IPAddresses, bool isMocked = true, bool withWeb = false)
+            : this(executablePath, withWeb)
         {
             svcDebug.initWithBladesFromIPList(IPAddresses, isMocked, NASFaultInjectionPolicy.retunSuccessful);
         }
-
-        public bladeDirectorDebugServices(string executablePath, bladeSpec[] bladeSpecs, bool isMocked = true)
-            : this(executablePath)
-        {
-            svcDebug.initWithBladesFromBladeSpec(bladeSpecs, isMocked, NASFaultInjectionPolicy.retunSuccessful);
-        }
-
-        public bladeDirectorDebugServices(string executablePath, string ipAddress, bool isMocked = true)
-            : this(executablePath, new string[] { ipAddress }, isMocked)
+        public bladeDirectorDebugServices(string executablePath, string ipAddress, bool isMocked, bool withWeb )
+            : this(executablePath, new string[] { ipAddress }, isMocked, withWeb)
         {
         }
 
