@@ -119,7 +119,6 @@
       <DesignTimeSharedInput>True</DesignTimeSharedInput>
       <DependentUpon>Settings.settings</DependentUpon>
     </Compile>
-    <Compile Include="bladeDirectorDebugServices.cs" />
     <Compile Include="Settings.cs" />
     <Compile Include="testBladeLockCollection.cs" />
     <Compile Include="testSMBExecutor.cs" />
