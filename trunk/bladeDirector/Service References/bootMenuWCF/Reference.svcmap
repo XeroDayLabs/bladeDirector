@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ReferenceGroup xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema" ID="7b7acc69-c0d8-401a-bcf9-125cabe0163e" xmlns="urn:schemas-microsoft-com:xml-wcfservicemap">
+  <ClientOptions>
+    <GenerateAsynchronousMethods>false</GenerateAsynchronousMethods>
+    <GenerateTaskBasedAsynchronousMethod>true</GenerateTaskBasedAsynchronousMethod>
+    <EnableDataBinding>true</EnableDataBinding>
+    <ExcludedTypes />
+    <ImportXmlTypes>false</ImportXmlTypes>
+    <GenerateInternalTypes>false</GenerateInternalTypes>
+    <GenerateMessageContracts>false</GenerateMessageContracts>
+    <NamespaceMappings />
+    <CollectionMappings />
+    <GenerateSerializableTypes>true</GenerateSerializableTypes>
+    <Serializer>Auto</Serializer>
+    <UseSerializerForFaults>true</UseSerializerForFaults>
+    <ReferenceAllAssemblies>true</ReferenceAllAssemblies>
+    <ReferencedAssemblies />
+    <ReferencedDataContractTypes />
+    <ServiceContractMappings />
+  </ClientOptions>
+  <MetadataSources>
+    <MetadataSource Address="http://localhost/bootMenuController" Protocol="http" SourceId="1" />
+  </MetadataSources>
+  <Metadata>
+    <MetadataFile FileName="bootMenuController.xsd" MetadataType="Schema" ID="9424cefe-4b04-4c25-93dd-9de8eb75c6b7" SourceId="1" SourceUrl="http://localhost/bootMenuController?xsd=xsd0" />
+    <MetadataFile FileName="bootMenuController2.xsd" MetadataType="Schema" ID="15178dd9-a229-48bd-8b32-073249be1931" SourceId="1" SourceUrl="http://localhost/bootMenuController?xsd=xsd2" />
+    <MetadataFile FileName="bootMenuWCF.wsdl" MetadataType="Wsdl" ID="d039c1dd-d185-4190-9e66-5632b1f489af" SourceId="1" SourceUrl="http://localhost/bootMenuController?wsdl" />
+    <MetadataFile FileName="bootMenuController1.xsd" MetadataType="Schema" ID="69c4ab8d-3fcc-4d06-9c51-0883484ca697" SourceId="1" SourceUrl="http://localhost/bootMenuController?xsd=xsd1" />
+    <MetadataFile FileName="bootMenuController.disco" MetadataType="Disco" ID="f1ad6fdb-41bc-45ec-bb0d-723cd34135d2" SourceId="1" SourceUrl="http://localhost/bootMenuController?disco" />
+  </Metadata>
+  <Extensions>
+    <ExtensionFile FileName="configuration91.svcinfo" Name="configuration91.svcinfo" />
+    <ExtensionFile FileName="configuration.svcinfo" Name="configuration.svcinfo" />
+  </Extensions>
+</ReferenceGroup>

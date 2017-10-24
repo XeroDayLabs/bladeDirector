@@ -1,0 +1,319 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="12.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+    <ProductVersion>
+    </ProductVersion>
+    <SchemaVersion>2.0</SchemaVersion>
+    <ProjectGuid>{2F67CD72-58AA-423B-8D9A-4E438686B132}</ProjectGuid>
+    <ProjectTypeGuids>{349c5851-65df-11da-9384-00065b846f21};{fae04ec0-301f-11d3-bf4b-00c04f79efbc}</ProjectTypeGuids>
+    <OutputType>Library</OutputType>
+    <AppDesignerFolder>Properties</AppDesignerFolder>
+    <RootNamespace>bladeDirector</RootNamespace>
+    <AssemblyName>bladeDirector</AssemblyName>
+    <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
+    <UseIISExpress>true</UseIISExpress>
+    <IISExpressSSLPort />
+    <IISExpressAnonymousAuthentication />
+    <IISExpressWindowsAuthentication />
+    <IISExpressUseClassicPipelineMode />
+    <TargetFrameworkProfile />
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="Microsoft.CSharp" />
+    <Reference Include="Renci.SshNet">
+      <HintPath>..\..\thirdparty\sshnet\Renci.SshNet.dll</HintPath>
+    </Reference>
+    <Reference Include="System.Data.DataSetExtensions" />
+    <Reference Include="System.Runtime.Serialization" />
+    <Reference Include="System.ServiceModel" />
+    <Reference Include="System.ServiceModel.Web" />
+    <Reference Include="System.Web.DynamicData" />
+    <Reference Include="System.Web.Entity" />
+    <Reference Include="System.Web.ApplicationServices" />
+    <Reference Include="System.ComponentModel.DataAnnotations" />
+    <Reference Include="System" />
+    <Reference Include="System.Data" />
+    <Reference Include="System.Drawing" />
+    <Reference Include="System.Web" />
+    <Reference Include="System.Web.Extensions" />
+    <Reference Include="System.Xml" />
+    <Reference Include="System.Configuration" />
+    <Reference Include="System.Web.Services" />
+    <Reference Include="System.EnterpriseServices" />
+    <Reference Include="System.Xml.Linq" />
+  </ItemGroup>
+  <ItemGroup>
+    <Content Include="$(Solutiondir)\..\thirdparty\sqlite\SQLite.Interop.dll">
+      <Link>SQLite.Interop.dll</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="deploy\conrep.xml" />
+    <Content Include="Global.asax" />
+    <Content Include="jquery.js">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Resources\DBCreation.sql" />
+    <Content Include="deploy\applyBIOS.sh" />
+    <Content Include="deploy\conrep" />
+    <None Include="deploy\getBIOS.sh" />
+    <None Include="Resources\ipxeTemplateForBIOS.txt" />
+    <None Include="Service References\bladeDirectorDebugSvc\Arrays1.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="Service References\bladeDirectorDebugSvc\bladeDirectorWCF1.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="Service References\bladeDirectorDebugSvc\createDisks1.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="Service References\bladeDirectorDebugSvc\hypervisors1.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="Service References\bladeDirectorDebugSvc\service1.wsdl" />
+    <None Include="Service References\bladeDirectorDebugSvc\service2.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="Service References\bladeDirectorDebugSvc\service21.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="Service References\bladeDirectorDebugSvc\System.ComponentModel1.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="Service References\bladeDirectorDebugSvc\System.Data.Common1.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="Service References\bladeDirectorDebugSvc\System.Data.SQLite1.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="Service References\bladeDirectorDebugSvc\System.Data1.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="Service References\bladeDirectorDebugSvc\System1.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <Content Include="Service References\bladeDirectorSvc\bladeDirector.bladeDirectorSvc.bladeSpec.datasource">
+      <DependentUpon>Reference.svcmap</DependentUpon>
+    </Content>
+    <Content Include="Service References\bladeDirectorSvc\bladeDirector.bladeDirectorSvc.GetBladeStatusResult.datasource">
+      <DependentUpon>Reference.svcmap</DependentUpon>
+    </Content>
+    <Content Include="Service References\bladeDirectorSvc\bladeDirector.bladeDirectorSvc.resultAndBladeName.datasource">
+      <DependentUpon>Reference.svcmap</DependentUpon>
+    </Content>
+    <Content Include="Service References\bladeDirectorSvc\bladeDirector.bladeDirectorSvc.resultAndWaitToken.datasource">
+      <DependentUpon>Reference.svcmap</DependentUpon>
+    </Content>
+    <Content Include="Service References\bladeDirectorSvc\bladeDirector.bladeDirectorSvc.resultCode.datasource">
+      <DependentUpon>Reference.svcmap</DependentUpon>
+    </Content>
+    <Content Include="Service References\bladeDirectorSvc\bladeDirector.bladeDirectorSvc.snapshotDetails.datasource">
+      <DependentUpon>Reference.svcmap</DependentUpon>
+    </Content>
+    <Content Include="Service References\bladeDirectorSvc\bladeDirector.bladeDirectorSvc.vmServerCredentials.datasource">
+      <DependentUpon>Reference.svcmap</DependentUpon>
+    </Content>
+    <Content Include="Service References\bladeDirectorSvc\bladeDirector.bladeDirectorSvc.vmSpec.datasource">
+      <DependentUpon>Reference.svcmap</DependentUpon>
+    </Content>
+    <None Include="Service References\bladeDirectorSvc\bladeDirector.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="Service References\bladeDirectorSvc\bladeDirector1.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="Service References\bladeDirectorSvc\bladeDirector2.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="Service References\bladeDirectorSvc\bladeDirector3.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="Service References\bladeDirectorSvc\bladeDirector4.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="Service References\bladeDirectorSvc\bladeDirector5.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="Service References\bladeDirectorSvc\bladeDirector6.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="Service References\bladeDirectorSvc\bladeDirector7.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="Service References\bladeDirectorSvc\bladeDirector8.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="Service References\bladeDirectorSvc\bladeDirector9.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="Service References\bladeDirectorSvc\services.wsdl" />
+    <None Include="Service References\bootMenuWCF\bootMenuController.disco" />
+    <None Include="Service References\bootMenuWCF\configuration91.svcinfo" />
+    <None Include="Service References\bootMenuWCF\configuration.svcinfo" />
+    <None Include="Service References\bootMenuWCF\Reference.svcmap">
+      <Generator>WCF Proxy Generator</Generator>
+      <LastGenOutput>Reference.cs</LastGenOutput>
+    </None>
+    <Content Include="Resources\ipxeTemplateForESXi.txt" />
+    <None Include="Resources\VMServerBIOS.xml">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="Service References\bladeDirectorSvc\bladeDirector.disco" />
+    <None Include="Service References\bladeDirectorSvc\configuration91.svcinfo" />
+    <None Include="Service References\bladeDirectorSvc\configuration.svcinfo" />
+    <None Include="Service References\bladeDirectorSvc\Reference.svcmap">
+      <Generator>WCF Proxy Generator</Generator>
+      <LastGenOutput>Reference.cs</LastGenOutput>
+    </None>
+    <None Include="Resources\ipxeTemplate.txt" />
+    <Content Include="status.aspx" />
+    <Content Include="Web.config" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="Global.asax.cs">
+      <DependentUpon>Global.asax</DependentUpon>
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="Properties\Resources.Designer.cs">
+      <AutoGen>True</AutoGen>
+      <DesignTime>True</DesignTime>
+      <DependentUpon>Resources.resx</DependentUpon>
+    </Compile>
+    <Compile Include="Properties\Settings.Designer.cs">
+      <AutoGen>True</AutoGen>
+      <DesignTimeSharedInput>True</DesignTimeSharedInput>
+      <DependentUpon>Settings.settings</DependentUpon>
+    </Compile>
+    <Compile Include="Service References\bladeDirectorSvc\Reference.cs">
+      <AutoGen>True</AutoGen>
+      <DesignTime>True</DesignTime>
+      <DependentUpon>Reference.svcmap</DependentUpon>
+    </Compile>
+    <Compile Include="Service References\bootMenuWCF\Reference.cs">
+      <AutoGen>True</AutoGen>
+      <DesignTime>True</DesignTime>
+      <DependentUpon>Reference.svcmap</DependentUpon>
+    </Compile>
+    <Compile Include="status.aspx.cs">
+      <DependentUpon>status.aspx</DependentUpon>
+      <SubType>ASPXCodeBehind</SubType>
+    </Compile>
+    <Compile Include="status.aspx.designer.cs">
+      <DependentUpon>status.aspx</DependentUpon>
+    </Compile>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Properties\Settings.settings">
+      <Generator>SettingsSingleFileGenerator</Generator>
+      <LastGenOutput>Settings.Designer.cs</LastGenOutput>
+    </None>
+    <None Include="Service References\bootMenuWCF\bootMenuController.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="Service References\bootMenuWCF\bootMenuController1.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="Service References\bootMenuWCF\bootMenuWCF.wsdl" />
+    <None Include="Web.Debug.config">
+      <DependentUpon>Web.config</DependentUpon>
+    </None>
+    <None Include="Web.Release.config">
+      <DependentUpon>Web.config</DependentUpon>
+    </None>
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="Properties\Resources.resx">
+      <Generator>ResXFileCodeGenerator</Generator>
+      <LastGenOutput>Resources.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\thirdparty\hypervisors\trunk\hypervisors\hypervisors.csproj">
+      <Project>{47995DD9-9F78-4313-809D-55C515EAF89E}</Project>
+      <Name>hypervisors</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\bladeDirectorClient\bladeDirectorClient.csproj">
+      <Project>{4abb1cc9-0c59-48f3-be95-0fa21c420055}</Project>
+      <Name>bladeDirectorClient</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\createDisks\createDisks.csproj">
+      <Project>{40dadae3-e73b-4b87-90a8-ec315d0aed76}</Project>
+      <Name>createDisks</Name>
+    </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <Folder Include="images\" />
+  </ItemGroup>
+  <ItemGroup>
+    <WCFMetadata Include="Service References\" />
+  </ItemGroup>
+  <ItemGroup>
+    <WCFMetadataStorage Include="Service References\bladeDirectorSvc\" />
+    <WCFMetadataStorage Include="Service References\bootMenuWCF\" />
+  </ItemGroup>
+  <PropertyGroup>
+    <VisualStudioVersion Condition="'$(VisualStudioVersion)' == ''">10.0</VisualStudioVersion>
+    <VSToolsPath Condition="'$(VSToolsPath)' == ''">$(MSBuildExtensionsPath32)\Microsoft\VisualStudio\v$(VisualStudioVersion)</VSToolsPath>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">
+    <DebugSymbols>true</DebugSymbols>
+    <OutputPath>bin\</OutputPath>
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <DebugType>full</DebugType>
+    <PlatformTarget>x64</PlatformTarget>
+    <ErrorReport>prompt</ErrorReport>
+    <CodeAnalysisRuleSet>MinimumRecommendedRules.ruleset</CodeAnalysisRuleSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">
+    <OutputPath>bin\</OutputPath>
+    <DefineConstants>TRACE</DefineConstants>
+    <Optimize>true</Optimize>
+    <DebugType>pdbonly</DebugType>
+    <PlatformTarget>x64</PlatformTarget>
+    <ErrorReport>prompt</ErrorReport>
+    <CodeAnalysisRuleSet>MinimumRecommendedRules.ruleset</CodeAnalysisRuleSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Debug|AnyCPU'">
+    <DebugSymbols>true</DebugSymbols>
+    <OutputPath>bin\</OutputPath>
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <DebugType>full</DebugType>
+    <PlatformTarget>AnyCPU</PlatformTarget>
+    <ErrorReport>prompt</ErrorReport>
+    <CodeAnalysisRuleSet>MinimumRecommendedRules.ruleset</CodeAnalysisRuleSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Release|AnyCPU'">
+    <OutputPath>bin\</OutputPath>
+    <DefineConstants>TRACE</DefineConstants>
+    <Optimize>true</Optimize>
+    <DebugType>pdbonly</DebugType>
+    <PlatformTarget>AnyCPU</PlatformTarget>
+    <ErrorReport>prompt</ErrorReport>
+    <CodeAnalysisRuleSet>MinimumRecommendedRules.ruleset</CodeAnalysisRuleSet>
+  </PropertyGroup>
+  <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
+  <Import Project="$(VSToolsPath)\WebApplications\Microsoft.WebApplication.targets" Condition="'$(VSToolsPath)' != ''" />
+  <Import Project="$(MSBuildExtensionsPath32)\Microsoft\VisualStudio\v10.0\WebApplications\Microsoft.WebApplication.targets" Condition="false" />
+  <ProjectExtensions>
+    <VisualStudio>
+      <FlavorProperties GUID="{349c5851-65df-11da-9384-00065b846f21}">
+        <WebProjectProperties>
+          <SaveServerSettingsInUserFile>True</SaveServerSettingsInUserFile>
+          <servers defaultServer="">
+            <server name="SelfHostServer" exePath="" cmdArgs="" url="http://localhost:53105/" workingDir="" />
+          </servers>
+        </WebProjectProperties>
+      </FlavorProperties>
+    </VisualStudio>
+  </ProjectExtensions>
+  <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
+       Other similar extension points exist, see Microsoft.Common.targets.
+  <Target Name="BeforeBuild">
+  </Target>
+  <Target Name="AfterBuild">
+  </Target>
+  -->
+</Project>

@@ -1,0 +1,11 @@
+#!ipxe
+
+set use-cached 1
+dhcp net0
+set net0/209:string pxelinux.cfg/AC1181
+set net0/210:string tftp://172.17.191.253/ltsp/amd64/
+# These two come from the original (windows) tftpd, hence the slashes
+#imgload boot\x86\pxelinux.0
+#boot boot\x86\pxelinux.0
+imgload tftp://172.17.191.253/ltsp/amd64/pxelinux.0
+boot tftp://172.17.191.253/ltsp/amd64/pxelinux.0
