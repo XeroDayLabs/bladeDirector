@@ -73,7 +73,7 @@ namespace tests
         [TestMethod]
         public void willDeallocateBladeAfterVMDestruction()
         {
-            using (bladeDirectorDebugServices svc = new bladeDirectorDebugServices(basicBladeTests.WCFPath, "2.2.2.2", false, false))
+            using (bladeDirectorDebugServices svc = new bladeDirectorDebugServices(basicBladeTests.WCFPath, "2.2.2.2", true, false))
             {
                 string hostIP = "1.1.1.1";
 
