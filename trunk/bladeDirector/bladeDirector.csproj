@@ -60,40 +60,6 @@
     <Content Include="deploy\conrep" />
     <None Include="deploy\getBIOS.sh" />
     <None Include="Resources\ipxeTemplateForBIOS.txt" />
-    <None Include="Service References\bladeDirectorDebugSvc\Arrays1.xsd">
-      <SubType>Designer</SubType>
-    </None>
-    <None Include="Service References\bladeDirectorDebugSvc\bladeDirectorWCF1.xsd">
-      <SubType>Designer</SubType>
-    </None>
-    <None Include="Service References\bladeDirectorDebugSvc\createDisks1.xsd">
-      <SubType>Designer</SubType>
-    </None>
-    <None Include="Service References\bladeDirectorDebugSvc\hypervisors1.xsd">
-      <SubType>Designer</SubType>
-    </None>
-    <None Include="Service References\bladeDirectorDebugSvc\service1.wsdl" />
-    <None Include="Service References\bladeDirectorDebugSvc\service2.xsd">
-      <SubType>Designer</SubType>
-    </None>
-    <None Include="Service References\bladeDirectorDebugSvc\service21.xsd">
-      <SubType>Designer</SubType>
-    </None>
-    <None Include="Service References\bladeDirectorDebugSvc\System.ComponentModel1.xsd">
-      <SubType>Designer</SubType>
-    </None>
-    <None Include="Service References\bladeDirectorDebugSvc\System.Data.Common1.xsd">
-      <SubType>Designer</SubType>
-    </None>
-    <None Include="Service References\bladeDirectorDebugSvc\System.Data.SQLite1.xsd">
-      <SubType>Designer</SubType>
-    </None>
-    <None Include="Service References\bladeDirectorDebugSvc\System.Data1.xsd">
-      <SubType>Designer</SubType>
-    </None>
-    <None Include="Service References\bladeDirectorDebugSvc\System1.xsd">
-      <SubType>Designer</SubType>
-    </None>
     <Content Include="Service References\bladeDirectorSvc\bladeDirector.bladeDirectorSvc.bladeSpec.datasource">
       <DependentUpon>Reference.svcmap</DependentUpon>
     </Content>
