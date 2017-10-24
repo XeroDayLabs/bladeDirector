@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Net;
 using System.Threading;
 using bladeDirectorClient;
 using bladeDirectorClient.bladeDirectorService;
@@ -51,12 +52,13 @@ namespace tests
             using (bladeDirectorDebugServices svc = new bladeDirectorDebugServices(basicBladeTests.WCFPath))
             {
                 string hostip = "1.2.3.4";
+                string debuggerHost = testUtils.getBestRouteTo(IPAddress.Parse("172.17.129.131")).ToString();
 
                 // We will be using this blade for our tests.
                 bladeSpec spec = svc.svcDebug.createBladeSpec("172.17.129.131", "192.168.129.131", "172.17.2.131", 1234, false, VMDeployStatus.notBeingDeployed, " ... ", bladeLockType.lockAll, bladeLockType.lockAll);
                 svc.svcDebug.initWithBladesFromBladeSpec(new[] { spec }, false, NASFaultInjectionPolicy.retunSuccessful);
 
-                VMSoftwareSpec sw = new VMSoftwareSpec() { debuggerHost = "172.16.10.91", debuggerKey = "a.b.c.d", debuggerPort = 10234 };
+                VMSoftwareSpec sw = new VMSoftwareSpec() { debuggerHost = debuggerHost, debuggerKey = "a.b.c.d", debuggerPort = 10234 };
                 VMHardwareSpec hw = new VMHardwareSpec() { cpuCount = 1, memoryMB = 4096 };
                 resultAndBladeName res = svc.svcDebug._requestAnySingleVM(hostip, hw, sw);
                 testUtils.waitForSuccess(svc, res, TimeSpan.FromMinutes(15));
@@ -74,12 +76,13 @@ namespace tests
             using (bladeDirectorDebugServices svc = new bladeDirectorDebugServices(basicBladeTests.WCFPath))
             {
                 string hostip = "1.2.3.4";
+                string debuggerHost = testUtils.getBestRouteTo(IPAddress.Parse("172.17.129.131")).ToString();
 
                 // We will be using this blade for our tests.
                 bladeSpec spec = svc.svcDebug.createBladeSpec("172.17.129.131", "192.168.129.131", "172.17.2.131", 1234, false, VMDeployStatus.notBeingDeployed, " ... ", bladeLockType.lockAll, bladeLockType.lockAll);
                 svc.svcDebug.initWithBladesFromBladeSpec(new[] { spec }, false, NASFaultInjectionPolicy.failSnapshotDeletionOnFirstSnapshot);
 
-                VMSoftwareSpec sw = new VMSoftwareSpec() { debuggerHost = "172.16.10.91", debuggerKey = "a.b.c.d", debuggerPort = 10234 };
+                VMSoftwareSpec sw = new VMSoftwareSpec() { debuggerHost = debuggerHost, debuggerKey = "a.b.c.d", debuggerPort = 10234 };
                 VMHardwareSpec hw = new VMHardwareSpec() { cpuCount = 1, memoryMB = 4096 };
                 resultAndBladeName res = svc.svcDebug._requestAnySingleVM(hostip, hw, sw);
                 resultAndWaitToken waitRes = null;
