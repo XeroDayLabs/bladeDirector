@@ -14,7 +14,7 @@ namespace tests
         [TestCategory("requiresBladeDirector")]
         public void canAllocateVM()
         {
-            using (bladeDirectorDebugServices svc = new bladeDirectorDebugServices())
+            using (bladeDirectorDebugServices svc = new bladeDirectorDebugServices(basicBladeTests.WCFPath))
             {
                 string hostip = "172.16.10.91";
 

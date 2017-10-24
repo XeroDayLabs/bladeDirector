@@ -68,6 +68,11 @@ namespace bladeDirectorWCF
             return toRet;
         }
 
+        public void downgradeLocks(bladeLocks locks)
+        {
+            downgradeLocks(locks.read, locks.write);
+        }
+
         public void downgradeLocks(bladeLockType readToRelease, bladeLockType writeToRelease)
         {
             spec.notifyOfDowngradedLocks(readToRelease, writeToRelease);

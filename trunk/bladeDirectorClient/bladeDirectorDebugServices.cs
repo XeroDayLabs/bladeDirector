@@ -13,11 +13,8 @@ namespace bladeDirectorClient
 
         private static int _portNum = 90;
 
-        //private static readonly string WCFPath = Path.Combine(Properties.Settings.Default.repoRoot, "trunk\\bladeDirectorWCF\\bin\\x64\\Debug\\bladeDirectorWCF.exe");
-
-        // TODO: init with path to bladeDirectorWCF.exe
-        public bladeDirectorDebugServices()
-            : base("idk", (_portNum++))
+        public bladeDirectorDebugServices(string executablePath)
+            : base(executablePath, (_portNum++))
         {
             servicesDebugURL = baseURL + "/bladeDirectorDebug";
 
@@ -41,20 +38,20 @@ namespace bladeDirectorClient
             };
             svcDebug = new DebugServicesClient(debugBinding, new EndpointAddress(servicesDebugURL));
         }
-        public bladeDirectorDebugServices(string[] IPAddresses, bool isMocked = true)
-            : this()
+        public bladeDirectorDebugServices(string executablePath, string[] IPAddresses, bool isMocked = true)
+            : this(executablePath)
         {
             svcDebug.initWithBladesFromIPList(IPAddresses, isMocked, NASFaultInjectionPolicy.retunSuccessful);
         }
 
-        public bladeDirectorDebugServices(bladeSpec[] bladeSpecs, bool isMocked = true)
-            : this()
+        public bladeDirectorDebugServices(string executablePath, bladeSpec[] bladeSpecs, bool isMocked = true)
+            : this(executablePath)
         {
             svcDebug.initWithBladesFromBladeSpec(bladeSpecs, isMocked, NASFaultInjectionPolicy.retunSuccessful);
         }
 
-        public bladeDirectorDebugServices(string ipAddress, bool isMocked = true)
-            : this(new string[] { ipAddress }, isMocked)
+        public bladeDirectorDebugServices(string executablePath, string ipAddress, bool isMocked = true)
+            : this(executablePath, new string[] { ipAddress }, isMocked)
         {
         }
 

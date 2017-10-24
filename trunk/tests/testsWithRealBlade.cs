@@ -14,7 +14,7 @@ namespace tests
         {
             string testBiosXML = Properties.Resources.testBIOS;
 
-            using (bladeDirectorDebugServices svc = new bladeDirectorDebugServices())
+            using (bladeDirectorDebugServices svc = new bladeDirectorDebugServices(basicBladeTests.WCFPath))
             {
                 string hostip = "1.2.3.4";
 
@@ -48,7 +48,7 @@ namespace tests
         [TestMethod]
         public void willProvisionVM()
         {
-            using (bladeDirectorDebugServices svc = new bladeDirectorDebugServices())
+            using (bladeDirectorDebugServices svc = new bladeDirectorDebugServices(basicBladeTests.WCFPath))
             {
                 string hostip = "1.2.3.4";
 
@@ -71,7 +71,7 @@ namespace tests
         [TestMethod]
         public void willProvisionVM_reportsFailure()
         {
-            using (bladeDirectorDebugServices svc = new bladeDirectorDebugServices())
+            using (bladeDirectorDebugServices svc = new bladeDirectorDebugServices(basicBladeTests.WCFPath))
             {
                 string hostip = "1.2.3.4";
 

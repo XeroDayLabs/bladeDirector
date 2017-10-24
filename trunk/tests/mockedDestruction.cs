@@ -15,7 +15,7 @@ namespace tests
         [TestMethod]
         public void willDeallocateBlade()
         {
-            using (bladeDirectorDebugServices svc = new bladeDirectorDebugServices())
+            using (bladeDirectorDebugServices svc = new bladeDirectorDebugServices(basicBladeTests.WCFPath))
             {
                 string hostIP = "1.1.1.1";
                 svc.svcDebug.initWithBladesFromIPList(new[] { "172.17.129.131" }, true, NASFaultInjectionPolicy.retunSuccessful);
@@ -39,7 +39,7 @@ namespace tests
         [TestMethod]
         public void willReallocateBladeAfterLogin()
         {
-            using (bladeDirectorDebugServices svc = new bladeDirectorDebugServices())
+            using (bladeDirectorDebugServices svc = new bladeDirectorDebugServices(basicBladeTests.WCFPath))
             {
                 string hostIP = "1.1.1.1";
                 svc.svcDebug.initWithBladesFromIPList(new[] { "172.17.129.131" }, true, NASFaultInjectionPolicy.retunSuccessful);
@@ -96,7 +96,7 @@ namespace tests
         [TestMethod]
         public void willDeallocateBladeDuringBIOSSetting()
         {
-            using (bladeDirectorDebugServices svc = new bladeDirectorDebugServices())
+            using (bladeDirectorDebugServices svc = new bladeDirectorDebugServices(basicBladeTests.WCFPath))
             {
                 string hostIP = "1.1.1.1";
                 svc.svcDebug.initWithBladesFromIPList(new[] { "172.17.129.131" }, true, NASFaultInjectionPolicy.retunSuccessful);
@@ -125,7 +125,7 @@ namespace tests
         [TestMethod]
         public void willDeallocateBladeAtLoginDuringVMProvisioning()
         {
-            using (bladeDirectorDebugServices svc = new bladeDirectorDebugServices())
+            using (bladeDirectorDebugServices svc = new bladeDirectorDebugServices(basicBladeTests.WCFPath))
             {
                 string hostIP = "1.1.1.1";
                 svc.svcDebug.initWithBladesFromIPList(new[] { "172.17.129.131" }, true, NASFaultInjectionPolicy.retunSuccessful);
@@ -159,7 +159,7 @@ namespace tests
         [TestMethod]
         public void willDeallocateOldBladesOnLogon()
         {
-            using (bladeDirectorDebugServices svc = new bladeDirectorDebugServices())
+            using (bladeDirectorDebugServices svc = new bladeDirectorDebugServices(basicBladeTests.WCFPath))
             {
                 string hostIP = "1.1.1.1";
                 svc.svcDebug.initWithBladesFromIPList(new[] { "172.17.129.131" }, true, NASFaultInjectionPolicy.retunSuccessful);

@@ -297,21 +297,24 @@ namespace bladeDirectorWCF
                     // released. We release each lock and then lock/re-check on each individually.
                     foreach (lockableVMSpec allocated in bootingVMs)
                     {
-                        allocated.downgradeLocks(~bladeLockType.lockIPAddresses, bladeLockType.lockAll);
+                        // Release everything we hold, except read of IP address, since we need that one internally.
+                        bladeLocks toRelease = allocated.getCurrentLocks();
+                        toRelease.read &= ~bladeLockType.lockIPAddresses;
+                        allocated.downgradeLocks(toRelease);
                     }
 
                     foreach (lockableVMSpec allocated in bootingVMs)
                     {
                         allocated.upgradeLocks(
-                            bladeLockType.lockVMCreation | bladeLockType.lockBIOS | bladeLockType.lockSnapshot | bladeLockType.lockNASOperations | bladeLockType.lockvmDeployState | bladeLockType.lockVirtualHW,
+                            bladeLockType.lockVMCreation | bladeLockType.lockBIOS | bladeLockType.lockSnapshot | bladeLockType.lockNASOperations | bladeLockType.lockvmDeployState | bladeLockType.lockVirtualHW | bladeLockType.lockOwnership,
                             bladeLockType.lockVMCreation | bladeLockType.lockBIOS | bladeLockType.lockSnapshot | bladeLockType.lockNASOperations | bladeLockType.lockvmDeployState);
 
                         // Check out double locking before we release.
                         if (allocated.spec.currentOwner == "vmserver" && 
                             allocated.spec.nextOwner == login.hostIP)
                         { 
-                            releaseVM(allocated, 
-                                bladeLockType.lockVMCreation | bladeLockType.lockBIOS | bladeLockType.lockSnapshot | bladeLockType.lockNASOperations | bladeLockType.lockvmDeployState | bladeLockType.lockVirtualHW,
+                            releaseVM(allocated,
+                                bladeLockType.lockVMCreation | bladeLockType.lockBIOS | bladeLockType.lockSnapshot | bladeLockType.lockNASOperations | bladeLockType.lockvmDeployState | bladeLockType.lockVirtualHW | bladeLockType.lockOwnership,
                                 bladeLockType.lockVMCreation | bladeLockType.lockBIOS | bladeLockType.lockSnapshot | bladeLockType.lockNASOperations | bladeLockType.lockvmDeployState);
                         }
                     }
@@ -557,10 +560,12 @@ namespace bladeDirectorWCF
                         addLogEvent("Waiting for VM deploy on " + lockedVM.spec.VMIP + " to cancel");
 
                         Monitor.Exit(_vmDeployState);
-                        // Drop all locks on the VM while we wait for it to release. This will permit allocation to finish.
-                        bladeLocks locks = lockedVM.getCurrentLocks();
-                        lockedVM.downgradeLocks(~bladeLockType.lockIPAddresses, bladeLockType.lockAll);
                         islocked = false;
+                        // Drop all locks on the VM (except IP address) while we wait for it to release. This will permit 
+                        // allocation to finish.
+                        bladeLocks locks = lockedVM.getCurrentLocks();
+                        locks.read &= ~bladeLockType.lockIPAddresses;
+                        lockedVM.downgradeLocks(locks);
                         Thread.Sleep(TimeSpan.FromSeconds(10));
 
                         lockedVM.upgradeLocks(locks.read, locks.write);

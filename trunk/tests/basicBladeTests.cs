@@ -13,10 +13,12 @@ namespace tests
     [TestClass]
     public class basicBladeTests
     {
+        public static readonly string WCFPath = Path.Combine(Properties.Settings.Default.repoRoot, "trunk\\bladeDirectorWCF\\bin\\x64\\Debug\\bladeDirectorWCF.exe");
+
         [TestMethod]
         public void canInitWithBladesAndGetListBack()
         {
-            using (bladeDirectorDebugServices svc = new bladeDirectorDebugServices(new[] { "1.1.1.1", "2.2.2.2", "3.3.3.3" }))
+            using (bladeDirectorDebugServices svc = new bladeDirectorDebugServices(WCFPath, new[] { "1.1.1.1", "2.2.2.2", "3.3.3.3" }))
             {
                 string[] foundIPs = svc.svc.getAllBladeIP();
 
@@ -30,7 +32,7 @@ namespace tests
         [TestMethod]
         public void canGetBladeSpec()
         {
-            using (bladeDirectorDebugServices svc = new bladeDirectorDebugServices())
+            using (bladeDirectorDebugServices svc = new bladeDirectorDebugServices(WCFPath))
             {
                 bladeSpec spec1Expected = svc.svcDebug.createBladeSpec("blade1ip", "blade1iscsiIP", "blade1ILOIP", 111, false, VMDeployStatus.notBeingDeployed, null, bladeLockType.lockAll, bladeLockType.lockAll );
                 bladeSpec spec2Expected = svc.svcDebug.createBladeSpec("blade2ip", "blade2iscsiIP", "blade2ILOIP", 222, false, VMDeployStatus.notBeingDeployed, null, bladeLockType.lockAll, bladeLockType.lockAll);
@@ -65,7 +67,7 @@ namespace tests
         [TestMethod]
         public void canAllocateBlade()
         {
-            using (bladeDirectorDebugServices uut = new bladeDirectorDebugServices(new[] {"1.1.1.1", "2.2.2.2", "3.3.3.3"}))
+            using (bladeDirectorDebugServices uut = new bladeDirectorDebugServices(WCFPath, new[] { "1.1.1.1", "2.2.2.2", "3.3.3.3" }))
             {
                 resultAndWaitToken requestStatus = uut.svcDebug._RequestAnySingleNode("192.168.1.1");
                 Assert.AreEqual(resultCode.success, requestStatus.result.code);
@@ -78,7 +80,7 @@ namespace tests
         [TestMethod]
         public void willReAllocateNode()
         {
-            using (bladeDirectorDebugServices uut = new bladeDirectorDebugServices(new[] {"1.1.1.1"}))
+            using (bladeDirectorDebugServices uut = new bladeDirectorDebugServices(WCFPath, new[] { "1.1.1.1" }))
             {
                 string hostip = "192.168.1.1";
 
@@ -107,7 +109,7 @@ namespace tests
         [TestMethod]
         public void willReAllocateNodeAfterTimeout()
         {
-            using (bladeDirectorDebugServices uut = new bladeDirectorDebugServices(new[] {"1.1.1.1"}))
+            using (bladeDirectorDebugServices uut = new bladeDirectorDebugServices(WCFPath, new[] { "1.1.1.1" }))
             {
                 uut.svcDebug.setKeepAliveTimeout(10);
 
@@ -134,7 +136,7 @@ namespace tests
         [TestMethod]
         public void willTimeoutOnNoKeepalives()
         {
-            using (bladeDirectorDebugServices uut = new bladeDirectorDebugServices(new[] {"1.1.1.1"}))
+            using (bladeDirectorDebugServices uut = new bladeDirectorDebugServices(WCFPath, new[] { "1.1.1.1" }))
             {
                 uut.svcDebug.setKeepAliveTimeout(10);
                 
@@ -153,7 +155,7 @@ namespace tests
         [TestMethod]
         public void willNotTimeoutWhenWeSendKeepalives()
         {
-            using (bladeDirectorDebugServices uut = new bladeDirectorDebugServices(new[] {"1.1.1.1"}))
+            using (bladeDirectorDebugServices uut = new bladeDirectorDebugServices(WCFPath, new[] { "1.1.1.1" }))
             {
                 uut.svcDebug.setKeepAliveTimeout(10);
                 string hostip = "192.168.1.1";

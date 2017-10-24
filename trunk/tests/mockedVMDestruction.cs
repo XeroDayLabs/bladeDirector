@@ -60,7 +60,7 @@ namespace tests
         [TestMethod]
         public void willReUseOldVMsAfterLogonDuringBIOSOperation()
         {
-            using (bladeDirectorDebugServices svc = new bladeDirectorDebugServices())
+            using (bladeDirectorDebugServices svc = new bladeDirectorDebugServices(basicBladeTests.WCFPath))
             {
                 string hostIP = "1.1.1.1";
                 svc.svcDebug.initWithBladesFromIPList(new[] { "172.17.129.131" }, true, NASFaultInjectionPolicy.retunSuccessful);

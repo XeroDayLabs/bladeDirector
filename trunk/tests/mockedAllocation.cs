@@ -20,7 +20,7 @@ namespace tests
         {
             string hostIP = "1.1.1.1";
 
-            using (bladeDirectorDebugServices svc = new bladeDirectorDebugServices(new[] { "1.1.1.1", "2.2.2.2", "3.3.3.3" }))
+            using (bladeDirectorDebugServices svc = new bladeDirectorDebugServices(basicBladeTests.WCFPath, new[] { "1.1.1.1", "2.2.2.2", "3.3.3.3" }))
             {
                 VMHardwareSpec hwSpec = new VMHardwareSpec() { memoryMB = 2344, cpuCount = 2 };
                 VMSoftwareSpec swSpec = new VMSoftwareSpec();
@@ -44,7 +44,7 @@ namespace tests
                 vmSpec VMConfig = svc.svc.getVMByIP_withoutLocking(allocatedBlade.bladeName);
                 Assert.AreEqual("VM_30_01", VMConfig.displayName);
                 Assert.AreEqual("172.17.158.1", VMConfig.VMIP);
-                Assert.AreEqual("192.168.158.1", VMConfig.iscsiIP);
+                Assert.AreEqual("10.0.158.1", VMConfig.iscsiIP);
                 Assert.AreEqual("00:50:56:00:30:01", VMConfig.eth0MAC);
                 Assert.AreEqual("00:50:56:01:30:01", VMConfig.eth1MAC);
                 Assert.AreEqual(2344, VMConfig.memoryMB);
@@ -58,7 +58,7 @@ namespace tests
         {
             string hostIP = "1.1.1.1";
 
-            using (bladeDirectorDebugServices uut = new bladeDirectorDebugServices(new[] { "1.1.1.1", "2.2.2.2", "3.3.3.3" }))
+            using (bladeDirectorDebugServices uut = new bladeDirectorDebugServices(basicBladeTests.WCFPath, new[] { "1.1.1.1", "2.2.2.2", "3.3.3.3" }))
             {
                 VMHardwareSpec hwSpec = new VMHardwareSpec() {memoryMB = 2344, cpuCount = 2};
                 VMSoftwareSpec swSpec = new VMSoftwareSpec();
@@ -104,7 +104,7 @@ namespace tests
         {
             string hostIP = "1.1.1.1";
 
-            using (bladeDirectorDebugServices svc = new bladeDirectorDebugServices(new[] {"1.1.1.1", "2.2.2.2", "3.3.3.3"}))
+            using (bladeDirectorDebugServices svc = new bladeDirectorDebugServices(basicBladeTests.WCFPath, new[] { "1.1.1.1", "2.2.2.2", "3.3.3.3" }))
             {
                 vmHWAndSWSpec[] toAlloc = new vmHWAndSWSpec[8];
                 for (int i = 0; i < toAlloc.Length; i++)
