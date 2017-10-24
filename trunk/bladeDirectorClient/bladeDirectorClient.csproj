@@ -81,6 +81,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="bladeDirectorDebugServices.cs" />
     <Compile Include="BladeDirectorServices.cs" />
     <Compile Include="hypervisorCollection.cs" />
     <Compile Include="iLoHypervisorPool.cs" />

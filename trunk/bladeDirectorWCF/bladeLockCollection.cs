@@ -250,9 +250,28 @@ namespace bladeDirectorWCF
                             if (info.threadID == Thread.CurrentThread.ManagedThreadId)
                                 continue;
                             msg += " ***  Thread ID " + info.threadID + " allocated at " + info.stackTrace + "\n\n";
+
+                            bool isOK = false;
+                            foreach (var thread in Process.GetCurrentProcess().Threads)
+                            {
+                                Thread managedThread = thread as Thread;
+                                if (managedThread == null)
+                                    continue;
+                                if (managedThread.ManagedThreadId == info.threadID)
+                                {
+                                    isOK = true;
+                                    break;
+                                }
+                            }
+                            if (!isOK)
+                            {
+                                msg += "\n !!! Managed thread ID " + info.threadID + " holds a lock, but is dead! ;_;\n";
+                            }
+                        
                         }
                         if (_writeTakenList[lockTypeName].threadID != -1)
                             msg += "\nWrite lock is currently held by thread ID " + _writeTakenList[lockTypeName].threadID + " allocated at " + _writeTakenList[lockTypeName].stackTrace;
+
                         throw new Exception(msg);
                     }
 

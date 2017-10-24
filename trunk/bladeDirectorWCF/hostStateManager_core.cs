@@ -92,6 +92,7 @@ namespace bladeDirectorWCF
         public void addLogEvent(string newEntry)
         {
             Debug.WriteLine(newEntry);
+            Console.WriteLine(newEntry);
             lock (_logEvents)
             {
                 _logEvents.Add(DateTime.Now + " : " + newEntry);
@@ -283,20 +284,44 @@ namespace bladeDirectorWCF
             // Kill off VMs first, and then physical blades.
             // TODO: lock properly, so that no new VMs can be created before we destroy the physical blades
 
-            // Destroy any VMs currently being deployed
-            using (disposingList<lockableVMSpec> bootingVMs = db.getAllVMInfo(
-                x => (x.currentOwner == "vmserver" && x.nextOwner == login.hostIP), 
-                bladeLockType.lockOwnership, bladeLockType.lockOwnership))
+            // Destroy any VMs currently being deployed. Bear in mind that the deployment process may modify the ownership, and we
+            // should be careful not to hold a write lock on ownership for a long time anyway since it will block PXE-script gen,
+            // so we only do one VM at a time, allowing releaseVM to downgrade locks while it waits.
+            while (true)
             {
-                foreach (lockableVMSpec allocated in bootingVMs)
+                using (disposingList<lockableVMSpec> bootingVMs = db.getAllVMInfo(
+                    x => (x.currentOwner == "vmserver" && x.nextOwner == login.hostIP), 
+                    bladeLockType.lockOwnership, bladeLockType.lockOwnership))
                 {
-                    allocated.upgradeLocks(
-                        bladeLockType.lockVMCreation | bladeLockType.lockBIOS | bladeLockType.lockSnapshot | bladeLockType.lockNASOperations | bladeLockType.lockvmDeployState | bladeLockType.lockVirtualHW,
-                        bladeLockType.lockVMCreation | bladeLockType.lockBIOS | bladeLockType.lockSnapshot | bladeLockType.lockNASOperations | bladeLockType.lockvmDeployState);
+                    // 'Double lock' here, so that we don't hold the lock (on ownership) for other VMs while we wait for one to be 
+                    // released. We release each lock and then lock/re-check on each individually.
+                    foreach (lockableVMSpec allocated in bootingVMs)
+                    {
+                        allocated.downgradeLocks(~bladeLockType.lockIPAddresses, bladeLockType.lockAll);
+                    }
 
-                    releaseVM(allocated, 
-                        bladeLockType.lockVMCreation | bladeLockType.lockBIOS | bladeLockType.lockSnapshot | bladeLockType.lockNASOperations | bladeLockType.lockvmDeployState | bladeLockType.lockVirtualHW,
-                        bladeLockType.lockVMCreation | bladeLockType.lockBIOS | bladeLockType.lockSnapshot | bladeLockType.lockNASOperations | bladeLockType.lockvmDeployState);
+                    foreach (lockableVMSpec allocated in bootingVMs)
+                    {
+                        allocated.upgradeLocks(
+                            bladeLockType.lockVMCreation | bladeLockType.lockBIOS | bladeLockType.lockSnapshot | bladeLockType.lockNASOperations | bladeLockType.lockvmDeployState | bladeLockType.lockVirtualHW,
+                            bladeLockType.lockVMCreation | bladeLockType.lockBIOS | bladeLockType.lockSnapshot | bladeLockType.lockNASOperations | bladeLockType.lockvmDeployState);
+
+                        // Check out double locking before we release.
+                        if (allocated.spec.currentOwner == "vmserver" && 
+                            allocated.spec.nextOwner == login.hostIP)
+                        { 
+                            releaseVM(allocated, 
+                                bladeLockType.lockVMCreation | bladeLockType.lockBIOS | bladeLockType.lockSnapshot | bladeLockType.lockNASOperations | bladeLockType.lockvmDeployState | bladeLockType.lockVirtualHW,
+                                bladeLockType.lockVMCreation | bladeLockType.lockBIOS | bladeLockType.lockSnapshot | bladeLockType.lockNASOperations | bladeLockType.lockvmDeployState);
+                        }
+                    }
+
+                    // If there are no VMs booting, we should move on to those that have finished boot.
+                    // FIXME: there's a race here, what if a new VM is allocated before we break?
+                    if (bootingVMs.Count == 0)
+                    {
+                        break;
+                    }
                 }
             }
 
@@ -529,12 +554,16 @@ namespace bladeDirectorWCF
                     _vmDeployState[waitToken].deployDeadline = DateTime.MinValue;
                     while (_vmDeployState[waitToken].currentProgress.result.code == resultCode.pending)
                     {
-                        _logEvents.Add("Waiting for VM deploy on " + lockedVM.spec.VMIP + " to cancel");
+                        addLogEvent("Waiting for VM deploy on " + lockedVM.spec.VMIP + " to cancel");
 
                         Monitor.Exit(_vmDeployState);
+                        // Drop all locks on the VM while we wait for it to release. This will permit allocation to finish.
+                        bladeLocks locks = lockedVM.getCurrentLocks();
+                        lockedVM.downgradeLocks(~bladeLockType.lockIPAddresses, bladeLockType.lockAll);
                         islocked = false;
                         Thread.Sleep(TimeSpan.FromSeconds(10));
 
+                        lockedVM.upgradeLocks(locks.read, locks.write);
                         Monitor.Enter(_vmDeployState);
                         islocked = true;
                     }
@@ -614,7 +643,7 @@ namespace bladeDirectorWCF
             {
                 // Fun fact: ESXi VM memory size must be a multiple of 4mb.
                 string msg = "Failed VM alloc: memory size " + hwSpec.memoryMB + " is not a multiple of 4MB";
-                _logEvents.Add(msg);
+                addLogEvent(msg);
                 return new resultAndBladeName(resultCode.genericFail, null, msg);
             }
 
@@ -794,7 +823,7 @@ namespace bladeDirectorWCF
             catch (Exception e)
             {
                 string msg = "VMServer boot thread fatal exception: " + formatWithInner(e);
-                _logEvents.Add(msg);
+                addLogEvent(msg);
                 
                 using (lockableBladeSpec VMServer = db.getBladeByIP(threadState.vmServerIP,
 //                    bladeLockType.lockvmDeployState | bladeLockType.lockOwnership,
@@ -823,7 +852,6 @@ bladeLockType.lockvmDeployState,  // <-- TODO/FIXME: write perms shuold imply re
             // long length of time. This is because the .loginblocking/.release code path needs to be able to lock both for write
             // to almost all of the fields. We carefully copy fields we need, and rely on the .getBladeByIP path denying access
             // while .VMDeployStatus is not notBeingDeployed.
-            long VMServerBladeID;
             string VMServerBladeIPAddress;
 
             bool thisThreadWillPowerUp = false;
@@ -835,7 +863,6 @@ bladeLockType.lockvmDeployState,  // <-- TODO/FIXME: write perms shuold imply re
                     thisThreadWillPowerUp = true;
                     VMServer.spec.vmDeployState = VMDeployStatus.waitingForPowerUp;
                 }
-                VMServerBladeID = VMServer.spec.bladeID.Value;
                 VMServerBladeIPAddress = VMServer.spec.bladeIP;
             }
             if (thisThreadWillPowerUp)
@@ -858,6 +885,11 @@ bladeLockType.lockvmDeployState,  // <-- TODO/FIXME: write perms shuold imply re
                         while ( progress.result.code == resultCode.pending || 
                                 progress.result.code == resultCode.unknown   )
                         {
+                            // If we timeout or are cancelled, tell the bios operation we are cancelling
+                            if (threadState.deployDeadline < DateTime.Now)
+                                biosRWEngine.cancelOperationsForBlade(VMServerBladeIPAddress);
+
+                            // Otherwise, poll for operation finish
                             Thread.Sleep(TimeSpan.FromSeconds(3));
                             progress = checkBIOSOperationProgress(res.waitToken);
                         }
@@ -921,8 +953,8 @@ bladeLockType.lockvmDeployState,  // <-- TODO/FIXME: write perms shuold imply re
                 using (hypervisor hyp = makeHypervisorForBlade_ESXi(vmServerIP))
                 {
                     // now SSH to the blade and actually create the VM.
-                    string destDir = "/vmfs/volumes/esxivms/" + VMServerBladeID + "_" + childVM_unsafe.vmConfigKey;
-                    string destDirDatastoreType = "[esxivms] " + VMServerBladeID + "_" + childVM_unsafe.vmConfigKey;
+                    string destDir = "/vmfs/volumes/esxivms/" + VMServerBladeIPAddress + "_" + childVM_unsafe.vmConfigKey;
+                    string destDirDatastoreType = "[esxivms] " + VMServerBladeIPAddress + "_" + childVM_unsafe.vmConfigKey;
                     string vmxPath = destDir + "/PXETemplate.vmx";
 
                     if (threadState.deployDeadline < DateTime.Now)
@@ -1013,7 +1045,7 @@ bladeLockType.lockvmDeployState,  // <-- TODO/FIXME: write perms shuold imply re
                 // A failure during VM deployment! We will keep this VM, but mark it as unusable. The user can try to get another
                 // or something.
                 using (lockableVMSpec childVMFromDB = db.getVMByIP(childVM_unsafe.VMIP,
-                    bladeLockType.lockOwnership | bladeLockType.lockvmDeployState | bladeLockType.lockSnapshot,
+                    bladeLockType.lockOwnership | bladeLockType.lockvmDeployState,
                     bladeLockType.lockOwnership | bladeLockType.lockvmDeployState))
                 {
                     childVMFromDB.spec.state = bladeStatus.unusable;
@@ -1044,7 +1076,7 @@ bladeLockType.lockvmDeployState,  // <-- TODO/FIXME: write perms shuold imply re
             executionResult res = hypervisor.doWithRetryOnSomeExceptions(() => hyp.startExecutable(cmd, args, deadline: deadline));
             if (res.resultCode != 0)
             {
-                _logEvents.Add(string.Format("Command '{0}' with args '{1}' returned failure code {2}; stdout is '{3} and stderr is '{4}'", cmd, args, res.resultCode, res.stdout, res.stderr));
+                addLogEvent(string.Format("Command '{0}' with args '{1}' returned failure code {2}; stdout is '{3} and stderr is '{4}'", cmd, args, res.resultCode, res.stdout, res.stderr));
                 throw new hypervisorExecutionException("failed to execute ssh command");
             }
         }
@@ -1110,7 +1142,7 @@ bladeLockType.lockvmDeployState,  // <-- TODO/FIXME: write perms shuold imply re
                 }
                 catch (EndpointNotFoundException)
                 {
-                    _logEvents.Add("Cannot find bootMenuController endpoint at " + wcfURI);
+                    addLogEvent("Cannot find bootMenuController endpoint at " + wcfURI);
                 }
             }
         }
@@ -1406,7 +1438,7 @@ bladeLockType.lockvmDeployState,  // <-- TODO/FIXME: write perms shuold imply re
 
         public resultCode addNode(string newIP, string newISCSIIP, string newILOIP, ushort newDebugPort)
         {
-            bladeSpec newSpec = new bladeSpec(db.conn, newIP, newISCSIIP, newILOIP, newDebugPort, false, VMDeployStatus.needsPowerCycle, null, bladeLockType.lockAll, bladeLockType.lockAll);
+            bladeSpec newSpec = new bladeSpec(db.conn, newIP, newISCSIIP, newILOIP, newDebugPort, false, VMDeployStatus.notBeingDeployed, null, bladeLockType.lockAll, bladeLockType.lockAll);
             db.addNode(newSpec);
             return resultCode.success;
         }

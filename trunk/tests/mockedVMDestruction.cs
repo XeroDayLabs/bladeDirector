@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using bladeDirectorClient;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using bladeDirectorClient.bladeDirectorService;
 

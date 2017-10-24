@@ -173,6 +173,10 @@
       <Project>{47995dd9-9f78-4313-809d-55c515eaf89e}</Project>
       <Name>hypervisors</Name>
     </ProjectReference>
+    <ProjectReference Include="..\bladeDirectorClient\bladeDirectorClient.csproj">
+      <Project>{4abb1cc9-0c59-48f3-be95-0fa21c420055}</Project>
+      <Name>bladeDirectorClient</Name>
+    </ProjectReference>
     <ProjectReference Include="..\createDisks\createDisks.csproj">
       <Project>{40dadae3-e73b-4b87-90a8-ec315d0aed76}</Project>
       <Name>createDisks</Name>

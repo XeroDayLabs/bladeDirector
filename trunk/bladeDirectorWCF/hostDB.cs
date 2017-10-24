@@ -134,11 +134,30 @@ namespace bladeDirectorWCF
                 disposingList<lockableBladeSpec> toRet = new disposingList<lockableBladeSpec>();
                 foreach (string bladeIP in getAllBladeIP())
                 {
-                    lockableBladeSpec blade = getBladeByIP(bladeIP, lockTypeRead, lockTypeWrite, permitAccessDuringBIOS, permitAccessDuringDeployment);
-                    if (filter(blade.spec))
-                        toRet.Add(blade);
-                    else
+                    lockableBladeSpec blade = getBladeByIP(bladeIP, lockTypeRead, lockTypeWrite, true, true);
+                    // Filter out anything as requested
+                    if (!filter(blade.spec))
+                    {
                         blade.Dispose();
+                        continue;
+                    }
+                    // Filter out anything we don't have access to right now, due to BIOS or VM deployments
+                    if ((!permitAccessDuringDeployment) &&
+                        blade.spec.vmDeployState != VMDeployStatus.notBeingDeployed &&
+                        blade.spec.vmDeployState != VMDeployStatus.failed &&
+                        blade.spec.vmDeployState != VMDeployStatus.readyForDeployment)
+                    {
+                        blade.Dispose();
+                        continue;
+                    }
+                    if ((!permitAccessDuringBIOS) && blade.spec.currentlyHavingBIOSDeployed)
+                    {
+                        blade.Dispose();
+                        continue;
+                    }
+
+                    // Otherwise, okay.
+                    toRet.Add(blade);
                 }
                 return toRet;
             }

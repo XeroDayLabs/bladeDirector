@@ -26,6 +26,8 @@ namespace bladeDirectorWCF
     /// </summary>
     public class biosReadWrite_LTSP_iLo : IBiosReadWrite
     {
+
+
         private ConcurrentDictionary<string, biosThreadState> _currentlyDeployingNodes = new ConcurrentDictionary<string, biosThreadState>();
 
         private hostStateManager_core _hostManager;
@@ -100,7 +102,9 @@ namespace bladeDirectorWCF
         {
             lock (_currentlyDeployingNodes)
             {
-                if (_currentlyDeployingNodes.ContainsKey(bladeIP) && _currentlyDeployingNodes[bladeIP].isStarted)
+                if (_currentlyDeployingNodes.ContainsKey(bladeIP) && 
+                    _currentlyDeployingNodes[bladeIP] != null     &&
+                    _currentlyDeployingNodes[bladeIP].isStarted)
                     return true;
                 return false;
             }

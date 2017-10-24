@@ -10,7 +10,7 @@ namespace bladeDirectorWCF
         public string debuggerHost = null;
 
         /// <summary>
-        /// Set to the UDP port you want the kernel debugger configured to use, or zero for none
+        /// Set to the UDP port you want the kernel debugger configured to use, or zero for auto
         /// </summary>
         public ushort debuggerPort = 0;
 

@@ -8,6 +8,7 @@ using System.ServiceModel.Dispatcher;
 using System.ServiceModel.Web;
 using System.Text;
 using System.Threading;
+using bladeDirectorClient;
 using CommandLine;
 using CommandLine.Text;
 using Binding = System.Web.Services.Description.Binding;
@@ -79,6 +80,21 @@ namespace bladeDirectorWCF
                         }
                         else
                         {
+                            Console.WriteLine("Adding blades...");
+                            using (bladeDirectorDebugServices conn = new bladeDirectorDebugServices(debugServiceURL.ToString(), baseServiceURL.ToString()))
+                            {
+                                string[] bladeIDs = parsedArgs.bladeList.Split(',');
+                                foreach (string idStr in bladeIDs)
+                                {
+                                    int id = Int32.Parse(idStr);
+                                    string bladeIP = "172.17.129." + (100 + id);
+                                    string iloIP = "172.17.2." + (100 + id);
+                                    string iSCSIIP = "10.0.0." + (100 + id);
+                                    ushort debugPort = (ushort) (60000 + id);
+                                    Console.WriteLine("Creating node {0}: IP {1}, ilo {2}, iSCSI IP {3}, debug port {4}", id, bladeIP, iloIP, iSCSIIP, debugPort);
+                                    conn.svc.addNode(bladeIP, iSCSIIP, iloIP, debugPort);
+                                }
+                            }
                             Console.WriteLine("BladeDirector ready.");
                             Console.WriteLine("Listening at main endpoint:  " + baseServiceURL.ToString());
                             Console.WriteLine("Listening at web endpoint:   " + webServiceURL.ToString());
@@ -130,6 +146,9 @@ namespace bladeDirectorWCF
 
         [Option('w', "webURL", Required = false, DefaultValue = "http://0.0.0.0:81/", HelpText = "URL to provide HTTP services to IPXE on")]
         public string webURL { get; set; }
+
+        [Option('l', "bladeList", Required = false, DefaultValue = "28,29,30,31", HelpText = "A list of comma-seperated blade IDs in the XDL cluster to use (eg, '1,2,3,7,9')")]
+        public string bladeList { get; set; }
         
         /// <summary>
         /// Set this to a new ManualResetEvent if you'd like service exit to be controlled remotely.

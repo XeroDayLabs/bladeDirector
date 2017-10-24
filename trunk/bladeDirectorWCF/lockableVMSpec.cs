@@ -60,6 +60,14 @@ namespace bladeDirectorWCF
             spec.notifyOfUpgradedLocks(readToAdd, writeToAdd);
         }
 
+        public bladeLocks getCurrentLocks()
+        {
+            bladeLocks toRet = new bladeLocks();
+            toRet.read = _readLocks;
+            toRet.write= _writeLocks;
+            return toRet;
+        }
+
         public void downgradeLocks(bladeLockType readToRelease, bladeLockType writeToRelease)
         {
             spec.notifyOfDowngradedLocks(readToRelease, writeToRelease);
@@ -109,5 +117,11 @@ namespace bladeDirectorWCF
         {
             disposalInhibition++;
         }
+    }
+
+    public class bladeLocks
+    {
+        public bladeLockType read;
+        public bladeLockType write;
     }
 }
