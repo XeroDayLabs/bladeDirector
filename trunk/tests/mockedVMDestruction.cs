@@ -12,7 +12,7 @@ namespace tests
         [TestMethod]
         public void willDeallocateOldVMsOnLogon()
         {
-            using (bladeDirectorDebugServices svc = new bladeDirectorDebugServices(basicBladeTests.WCFPath, "172.17.129.131"))
+            using (bladeDirectorDebugServices svc = new bladeDirectorDebugServices(basicBladeTests.WCFPath, "172.17.129.131", true))
             {
                 string hostIP = "1.1.1.1";
                 testUtils.doLogin(svc, hostIP);
@@ -43,7 +43,7 @@ namespace tests
         [TestMethod]
         public void willReUseOldVMsAfterLogon()
         {
-            using (bladeDirectorDebugServices svc = new bladeDirectorDebugServices(basicBladeTests.WCFPath, "172.17.129.131"))
+            using (bladeDirectorDebugServices svc = new bladeDirectorDebugServices(basicBladeTests.WCFPath, "172.17.129.131", true))
             {
                 string hostIP = "1.1.1.1";
 
