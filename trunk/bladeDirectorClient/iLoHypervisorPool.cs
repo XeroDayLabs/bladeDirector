@@ -37,7 +37,7 @@ namespace bladeDirectorClient
 
             using (BladeDirectorServices director = new BladeDirectorServices(machinePools.bladeDirectorURL))
             {
-                DateTime deadline = DateTime.Now + TimeSpan.FromMinutes(6);
+                DateTime deadline = DateTime.Now + TimeSpan.FromMinutes(15);
                 resultAndBladeName[] results = new resultAndBladeName[specs.Length];
                 for (int n = 0; n < specs.Length; n++)
                 {
@@ -121,7 +121,7 @@ namespace bladeDirectorClient
                 int nodeCount = director.svc.getAllBladeIP().Length;
 
                 hypervisorCollection<hypSpec_iLo> toRet = new hypervisorCollection<hypSpec_iLo>();
-                DateTime deadline = DateTime.Now + TimeSpan.FromMinutes(6);
+                DateTime deadline = DateTime.Now + TimeSpan.FromMinutes(60);
                 try
                 {
                     for(int i = 0; i < nodeCount; i++)
@@ -131,7 +131,7 @@ namespace bladeDirectorClient
 
                         bladeSpec bladeConfig = director.svc.getBladeByIP_withoutLocking(progress.bladeName);
                         resultAndWaitToken snapRes =  director.svc.selectSnapshotForBladeOrVM(progress.bladeName, snapshotName);
-                        director.waitForSuccess(snapRes, TimeSpan.FromMinutes(1));
+                        director.waitForSuccess(snapRes, TimeSpan.FromMinutes(3));
 
                         snapshotDetails snapshot = director.svc.getCurrentSnapshotDetails(progress.bladeName);
 
@@ -286,7 +286,7 @@ namespace bladeDirectorClient
                     // Great, now we have ownership of the blade, so we can use it safely.
                     //bladeSpec bladeConfig = director.svc.getConfigurationOfBlade(allocatedBladeResult.bladeName);
                     resultAndWaitToken res = director.svc.selectSnapshotForBladeOrVM(allocatedBladeResult.bladeName, snapshotName);
-                    director.waitForSuccess(res, TimeSpan.FromMinutes(2));
+                    director.waitForSuccess(res, TimeSpan.FromMinutes(5));
 
                     snapshotDetails currentShot = director.svc.getCurrentSnapshotDetails(allocatedBladeResult.bladeName);
 
