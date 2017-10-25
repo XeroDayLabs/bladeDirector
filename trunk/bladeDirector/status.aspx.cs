@@ -14,11 +14,58 @@ namespace bladeDirector
     {
         protected void Page_Load(object sender, EventArgs e)
         {
+            if (getCurrentServerURL() != null)
+            {
+                logInPrompt.Visible = false;
+                try
+                {
+                    doLoggedInData();
+                }
+                catch (Exception)
+                {
+                    Session.Remove("serverURL");
+                    throw;
+                }
+            }
+            else
+            {
+                loggedInData.Visible = false;
+                doServerSelectionDialog();
+            }
+        }
+
+        private void doServerSelectionDialog()
+        {
+            if (ddlSelectServer.Items.Count != 0)
+                return;
+
+            // Populate the list of servers
+            string[] allServerRaw = Properties.Settings.Default.servers.Split('\n');
+            foreach (string serverRaw in allServerRaw)
+            {
+                string serverRawTrimmed = serverRaw.Trim();
+                if (!serverRawTrimmed.Contains('#'))
+                    continue;
+
+                string serverDesc = serverRawTrimmed.Split('#')[0];
+                string serverURL = serverRawTrimmed.Split('#')[1];
+
+                ListItem newItem = new ListItem(serverDesc + " (" + serverURL + ")", serverURL);
+
+                ddlSelectServer.Items.Add(newItem);
+            }            
+        }
+
+        private void doLoggedInData()
+        {
+            // Populate the main page data.
+            lblServerURL.Text = getCurrentServerURL();
+            lblClientIP.Text = Request.UserHostAddress;
             TableRow headerRow = new TableRow();
             headerRow.Cells.Add(new TableHeaderCell() { Text = "" });
             headerRow.Cells.Add(new TableHeaderCell() { Text = "State" });
             headerRow.Cells.Add(new TableHeaderCell() { Text = "Blade IP" });
-            headerRow.Cells.Add(new TableHeaderCell() { Text = "Time since last keepalive"});
+            headerRow.Cells.Add(new TableHeaderCell() { Text = "Time since last keepalive" });
             headerRow.Cells.Add(new TableHeaderCell() { Text = "Currently-selected snapshot" });
             headerRow.Cells.Add(new TableHeaderCell() { Text = "Current owner" });
             headerRow.Cells.Add(new TableHeaderCell() { Text = "Next owner" });
@@ -28,7 +75,7 @@ namespace bladeDirector
             tblBladeStatus.Rows.Add(headerRow);
 
             using (BladeDirectorServices services = new BladeDirectorServices(getCurrentServerURL()))
-            { 
+            {
                 string[] allBladeIPs = services.svc.getAllBladeIP();
 
                 foreach (string bladeIP in allBladeIPs)
@@ -40,16 +87,17 @@ namespace bladeDirector
                     // Assemble the always-visible status row
                     TableRow newRow = new TableRow();
 
-                    newRow.Cells.Add(makeTableCell(new ImageButton() {
-                            ImageUrl = "images/collapsed.png",
-                            AlternateText = "Details",
-                            OnClientClick = "javascript:toggleDetail($(this), " + bladeInfo.bladeID + "); return false;" 
+                    newRow.Cells.Add(makeTableCell(new ImageButton()
+                    {
+                        ImageUrl = "images/collapsed.png",
+                        AlternateText = "Details",
+                        OnClientClick = "javascript:toggleDetail($(this), " + bladeInfo.bladeID + "); return false;"
                     }));
-                    newRow.Cells.Add(new TableCell() {Text = bladeInfo.state.ToString()});
-                    newRow.Cells.Add(new TableCell() {Text = bladeInfo.bladeIP});
+                    newRow.Cells.Add(new TableCell() { Text = bladeInfo.state.ToString() });
+                    newRow.Cells.Add(new TableCell() { Text = bladeInfo.bladeIP });
                     if (bladeInfo.lastKeepAlive == DateTime.MinValue)
                     {
-                        newRow.Cells.Add(new TableCell() {Text = "(none)"});
+                        newRow.Cells.Add(new TableCell() { Text = "(none)" });
                     }
                     else
                     {
@@ -63,16 +111,16 @@ namespace bladeDirector
                         };
                         newRow.Cells.Add(cell);
                     }
-                    newRow.Cells.Add(new TableCell() { Text = bladeInfo.currentSnapshot});
+                    newRow.Cells.Add(new TableCell() { Text = bladeInfo.currentSnapshot });
                     newRow.Cells.Add(new TableCell() { Text = bladeInfo.currentOwner ?? "none" });
                     newRow.Cells.Add(new TableCell() { Text = bladeInfo.nextOwner ?? "none" });
 
                     string iloURL = String.Format("https://ilo-blade{0}.management.xd.lan/", Int32.Parse(bladeInfo.bladeIP.Split('.')[3]) - 100);
-                    HyperLink link = new HyperLink() {NavigateUrl = iloURL, Text = "iLo"};
+                    HyperLink link = new HyperLink() { NavigateUrl = iloURL, Text = "iLo" };
                     TableCell iloURLtableCell = new TableCell();
                     iloURLtableCell.Controls.Add(link);
                     newRow.Cells.Add(iloURLtableCell);
-            
+
                     Button btnRelease = new Button
                     {
                         Text = "Force release",
@@ -91,12 +139,14 @@ namespace bladeDirector
                 string[] logEvents = services.svc.getLogEvents();
                 foreach (string logEvent in logEvents)
                     lstLog.Items.Add(logEvent);
-            }
+            }            
         }
 
         private string getCurrentServerURL()
         {
-            return "http://172.16.10.91/bladeDirector";
+            if (Session["serverURL"] == null)
+                return null;
+            return Session["serverURL"].ToString();
         }
 
         private string formatDateTimeForWeb(TimeSpan toshow)
@@ -234,6 +284,19 @@ namespace bladeDirector
             {
                 services.svc.addNode(txtNewNodeIP.Text, txtNewISCSI.Text, txtNewIloIP.Text, UInt16.Parse(txtNewPort.Text));
             }
+            Response.Redirect(Request.RawUrl);
+        }
+
+        protected void cmdLogin_Click(object sender, EventArgs e)
+        {
+            Session.Add("serverURL", ddlSelectServer.SelectedValue);
+            Response.Redirect(Request.RawUrl);
+        }
+
+        protected void cmdLogout_Click(object sender, EventArgs e)
+        {
+            Session.Remove("serverURL");
+            Response.Redirect(Request.RawUrl);
         }
     }
 }
