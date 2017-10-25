@@ -64,6 +64,7 @@ namespace bladeDirectorClient
             ProcessStartInfo bladeDirectorExeInfo = new ProcessStartInfo(bladeDirectorWCFExe);
             bladeDirectorExeInfo.WorkingDirectory = Path.GetDirectoryName(bladeDirectorWCFExe);
             bladeDirectorExeInfo.Arguments = args;
+            Debug.WriteLine("Spawning bladeDirectorWCF with args '" + args + "'");
             _bladeDirectorProcess = Process.Start(bladeDirectorExeInfo);
 
             // Wait until the service is ready
