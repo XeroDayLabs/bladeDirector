@@ -9,9 +9,8 @@ namespace bladeDirectorWCF
 {
     public class hostDB : IDisposable
     {
-        private Object connLock = new object();
         public SQLiteConnection conn;
-        private string dbFilename;
+        private readonly string dbFilename;
 
         public hostDB(string basePath)
         {
@@ -20,81 +19,69 @@ namespace bladeDirectorWCF
             if (!sqliteOpts.Contains("THREADSAFE=1"))
                 throw new Exception("This build of SQLite is not threadsafe");
 
-            //lock (connLock)
-            {
-                dbFilename = Path.Combine(basePath, "hoststate.sqlite");
+            dbFilename = Path.Combine(basePath, "hoststate.sqlite");
 
-                // If we're making a new file, remember that, since we'll have to create a new schema.
-                bool needToCreateSchema = !File.Exists(dbFilename);
-                conn = new SQLiteConnection("Data Source=" + dbFilename);
-                conn.Open();
+            // If we're making a new file, remember that, since we'll have to create a new schema.
+            bool needToCreateSchema = !File.Exists(dbFilename);
+            conn = new SQLiteConnection("Data Source=" + dbFilename);
+            conn.Open();
 
-                if (needToCreateSchema)
-                    createTables();
-            }
+            if (needToCreateSchema)
+                createTables();
         }
 
         public hostDB()
         {
-            //lock (connLock)
-            {
-                dbFilename = ":memory:";
+            dbFilename = ":memory:";
 
-                conn = new SQLiteConnection("Data Source=" + dbFilename);
-                conn.Open();
+            conn = new SQLiteConnection("Data Source=" + dbFilename);
+            conn.Open();
 
-                createTables();
-            }
+            createTables();
         }
 
         private void createTables()
         {
-            //lock (connLock)
-            {
-                string[] sqlCommands = Resources.DBCreation.Split(';');
+            string[] sqlCommands = Resources.DBCreation.Split(';');
 
-                foreach (string sqlCommand in sqlCommands)
+            foreach (string sqlCommand in sqlCommands)
+            {
+                using (SQLiteCommand cmd = new SQLiteCommand(sqlCommand, conn))
                 {
-                    using (SQLiteCommand cmd = new SQLiteCommand(sqlCommand, conn))
-                    {
-                        cmd.ExecuteNonQuery();
-                    }
+                    cmd.ExecuteNonQuery();
                 }
             }
         }
 
         private void dropDB()
         {
-            //lock (connLock)
+            if (conn != null)
             {
-                if (conn != null)
-                {
-                    conn.Close();
-                    conn.Dispose();
-                }
+                conn.Close();
+                conn.Dispose();
+            }
 
-                if (dbFilename != ":memory:")
+            if (dbFilename != ":memory:")
+            {
+                DateTime deadline = DateTime.Now + TimeSpan.FromMinutes(1);
+                while (true)
                 {
-                    DateTime deadline = DateTime.Now + TimeSpan.FromMinutes(1);
-                    while (true)
+                    try
                     {
-                        try
-                        {
-                            File.Delete(dbFilename);
-                            break;
-                        }
-                        catch (UnauthorizedAccessException)
-                        {
-                            if (deadline < DateTime.Now)
-                                throw;
-                            Thread.Sleep(TimeSpan.FromSeconds(2));
-                        }
+                        File.Delete(dbFilename);
+                        break;
+                    }
+                    catch (UnauthorizedAccessException)
+                    {
+                        if (deadline < DateTime.Now)
+                            throw;
+                        Thread.Sleep(TimeSpan.FromSeconds(2));
                     }
                 }
-
-                conn = new SQLiteConnection("Data Source=" + dbFilename);
-                conn.Open();
             }
+
+            conn = new SQLiteConnection("Data Source=" + dbFilename);
+            conn.Open();
         }
 
         public string[] getAllBladeIP()
@@ -129,55 +116,49 @@ namespace bladeDirectorWCF
 
         public disposingList<lockableBladeSpec> getAllBladeInfo(Func<bladeSpec, bool> filter, bladeLockType lockTypeRead, bladeLockType lockTypeWrite, bool permitAccessDuringBIOS = false, bool permitAccessDuringDeployment = false, int max = Int32.MaxValue)
         {
-            //lock (connLock)
+            disposingList<lockableBladeSpec> toRet = new disposingList<lockableBladeSpec>();
+            foreach (string bladeIP in getAllBladeIP())
             {
-                disposingList<lockableBladeSpec> toRet = new disposingList<lockableBladeSpec>();
-                foreach (string bladeIP in getAllBladeIP())
+                lockableBladeSpec blade = getBladeByIP(bladeIP, lockTypeRead, lockTypeWrite, true, true);
+                // Filter out anything as requested
+                if (!filter(blade.spec))
                 {
-                    lockableBladeSpec blade = getBladeByIP(bladeIP, lockTypeRead, lockTypeWrite, true, true);
-                    // Filter out anything as requested
-                    if (!filter(blade.spec))
-                    {
-                        blade.Dispose();
-                        continue;
-                    }
-                    // Filter out anything we don't have access to right now, due to BIOS or VM deployments
-                    if ((!permitAccessDuringDeployment) &&
-                        blade.spec.vmDeployState != VMDeployStatus.notBeingDeployed &&
-                        blade.spec.vmDeployState != VMDeployStatus.failed &&
-                        blade.spec.vmDeployState != VMDeployStatus.readyForDeployment)
-                    {
-                        blade.Dispose();
-                        continue;
-                    }
-                    if ((!permitAccessDuringBIOS) && blade.spec.currentlyHavingBIOSDeployed)
-                    {
-                        blade.Dispose();
-                        continue;
-                    }
-
-                    // Otherwise, okay.
-                    toRet.Add(blade);
+                    blade.Dispose();
+                    continue;
                 }
-                return toRet;
+                // Filter out anything we don't have access to right now, due to BIOS or VM deployments
+                if ((!permitAccessDuringDeployment) &&
+                    blade.spec.vmDeployState != VMDeployStatus.notBeingDeployed &&
+                    blade.spec.vmDeployState != VMDeployStatus.failed &&
+                    blade.spec.vmDeployState != VMDeployStatus.readyForDeployment)
+                {
+                    blade.Dispose();
+                    continue;
+                }
+                if ((!permitAccessDuringBIOS) && blade.spec.currentlyHavingBIOSDeployed)
+                {
+                    blade.Dispose();
+                    continue;
+                }
+
+                // Otherwise, okay.
+                toRet.Add(blade);
             }
+            return toRet;
         }
 
         public disposingList<lockableVMSpec> getAllVMInfo(Func<vmSpec, bool> filter, bladeLockType lockTypeRead, bladeLockType lockTypeWrite)
         {
-            //lock (connLock)
+            disposingList<lockableVMSpec> toRet = new disposingList<lockableVMSpec>();
+            foreach (string bladeIP in getAllVMIP())
             {
-                disposingList<lockableVMSpec> toRet = new disposingList<lockableVMSpec>();
-                foreach (string bladeIP in getAllVMIP())
-                {
-                    lockableVMSpec VM = getVMByIP(bladeIP, lockTypeRead, lockTypeWrite);
-                    if (filter(VM.spec))
-                        toRet.Add(VM);
-                    else
-                        VM.Dispose();
-                }
-                return toRet;
+                lockableVMSpec VM = getVMByIP(bladeIP, lockTypeRead, lockTypeWrite);
+                if (filter(VM.spec))
+                    toRet.Add(VM);
+                else
+                    VM.Dispose();
             }
+            return toRet;
         }
 
         // FIXME: code duplication
@@ -241,163 +222,140 @@ namespace bladeDirectorWCF
         // FIXME: code duplication ^^
         public bladeSpec getBladeByIP_withoutLocking(string IP)
         {
-            //lock (connLock)
+            string sqlCommand = "select * from bladeOwnership " +
+                                "join bladeConfiguration on ownershipKey = bladeConfiguration.ownershipID " +
+                                "where bladeIP = $bladeIP";
+            using (SQLiteCommand cmd = new SQLiteCommand(sqlCommand, conn))
             {
-                string sqlCommand = "select * from bladeOwnership " +
-                                    "join bladeConfiguration on ownershipKey = bladeConfiguration.ownershipID " +
-                                    "where bladeIP = $bladeIP";
-                using (SQLiteCommand cmd = new SQLiteCommand(sqlCommand, conn))
+                cmd.Parameters.AddWithValue("$bladeIP", IP);
+                using (SQLiteDataReader reader = cmd.ExecuteReader())
                 {
-                    cmd.Parameters.AddWithValue("$bladeIP", IP);
-                    using (SQLiteDataReader reader = cmd.ExecuteReader())
+                    if (reader.Read())
                     {
-                        if (reader.Read())
-                        {
-                            return new bladeSpec(conn, reader, bladeLockType.lockAll, bladeLockType.lockAll);
-                        }
-                        // No records returned.
-                        throw new bladeNotFoundException();
+                        return new bladeSpec(conn, reader, bladeLockType.lockAll, bladeLockType.lockAll);
                     }
+                    // No records returned.
+                    throw new bladeNotFoundException();
                 }
             }
         }
 
         public lockableVMSpec getVMByIP(string bladeName, bladeLockType readLock, bladeLockType writeLock)
         {
-            //lock (connLock)
-            {
-                // We need to lock IP addressess, since we're searching by them.
-                readLock = readLock | bladeLockType.lockIPAddresses;
+            // We need to lock IP addressess, since we're searching by them.
+            readLock = readLock | bladeLockType.lockIPAddresses;
 
-                string sqlCommand = "select * from bladeOwnership " +
-                                    "join VMConfiguration on ownershipKey = VMConfiguration.ownershipID " +
-                                    "where VMConfiguration.VMIP = $VMIP";
-                using (SQLiteCommand cmd = new SQLiteCommand(sqlCommand, conn))
+            string sqlCommand = "select * from bladeOwnership " +
+                                "join VMConfiguration on ownershipKey = VMConfiguration.ownershipID " +
+                                "where VMConfiguration.VMIP = $VMIP";
+            using (SQLiteCommand cmd = new SQLiteCommand(sqlCommand, conn))
+            {
+                cmd.Parameters.AddWithValue("$VMIP", bladeName);
+                using (SQLiteDataReader reader = cmd.ExecuteReader())
                 {
-                    cmd.Parameters.AddWithValue("$VMIP", bladeName);
-                    using (SQLiteDataReader reader = cmd.ExecuteReader())
+                    if (reader.Read())
                     {
-                        if (reader.Read())
-                        {
-                            return new lockableVMSpec(conn, reader, readLock, writeLock);
-                        }
-                        // No records returned.
-                        return null;
+                        return new lockableVMSpec(conn, reader, readLock, writeLock);
                     }
+                    // No records returned.
+                    return null;
                 }
             }
         }
+
         // Fixme: code duplication ^^
         public vmSpec getVMByIP_withoutLocking(string bladeName)
         {
-            //lock (connLock)
+            string sqlCommand = "select * from bladeOwnership " +
+                                "join VMConfiguration on ownershipKey = VMConfiguration.ownershipID " +
+                                "where VMConfiguration.VMIP = $VMIP";
+            using (SQLiteCommand cmd = new SQLiteCommand(sqlCommand, conn))
             {
-                string sqlCommand = "select * from bladeOwnership " +
-                                    "join VMConfiguration on ownershipKey = VMConfiguration.ownershipID " +
-                                    "where VMConfiguration.VMIP = $VMIP";
-                using (SQLiteCommand cmd = new SQLiteCommand(sqlCommand, conn))
+                cmd.Parameters.AddWithValue("$VMIP", bladeName);
+                using (SQLiteDataReader reader = cmd.ExecuteReader())
                 {
-                    cmd.Parameters.AddWithValue("$VMIP", bladeName);
-                    using (SQLiteDataReader reader = cmd.ExecuteReader())
+                    if (reader.Read())
                     {
-                        if (reader.Read())
-                        {
-                            return new vmSpec(conn, reader, bladeLockType.lockAll, bladeLockType.lockAll);
-                        }
-                        // No records returned.
-                        return null;
+                        return new vmSpec(conn, reader, bladeLockType.lockAll, bladeLockType.lockAll);
                     }
+                    // No records returned.
+                    return null;
                 }
             }
         }
 
         public lockableVMSpec getVMByDBID(long VMID)
         {
-            //lock (connLock)
-            {
-                return new lockableVMSpec(conn, getVMByDBID_nolocking(VMID));
-            }
+            return new lockableVMSpec(conn, getVMByDBID_nolocking(VMID));
         }
 
         public vmSpec getVMByDBID_nolocking(long VMID)
         {
-            //lock (connLock)
+            string sqlCommand = "select * from bladeOwnership " +
+                                "join VMConfiguration on ownershipKey = VMConfiguration.ownershipID " +
+                                "where vmConfigKey = $VMID";
+            using (SQLiteCommand cmd = new SQLiteCommand(sqlCommand, conn))
             {
-                string sqlCommand = "select * from bladeOwnership " +
-                                    "join VMConfiguration on ownershipKey = VMConfiguration.ownershipID " +
-                                    "where vmConfigKey = $VMID";
-                using (SQLiteCommand cmd = new SQLiteCommand(sqlCommand, conn))
+                cmd.Parameters.AddWithValue("$VMID", VMID);
+                using (SQLiteDataReader reader = cmd.ExecuteReader())
                 {
-                    cmd.Parameters.AddWithValue("$VMID", VMID);
-                    using (SQLiteDataReader reader = cmd.ExecuteReader())
+                    if (reader.Read())
                     {
-                        if (reader.Read())
-                        {
-                            return new vmSpec(conn, reader, bladeLockType.lockAll, bladeLockType.lockAll);
-                        }
-                        // No records returned.
-                        return null;
+                        return new vmSpec(conn, reader, bladeLockType.lockAll, bladeLockType.lockAll);
                     }
+                    // No records returned.
+                    return null;
                 }
             }
         }
 
         public disposingList<lockableVMSpec> getVMByVMServerIP(string vmServerIP)
         {
-            //lock (connLock)
-            {
-                List<vmSpec> VMs = getVMByVMServerIP_nolocking(vmServerIP);
-                disposingList<lockableVMSpec> toRet = new disposingList<lockableVMSpec>();
-                foreach (vmSpec vmSpec in VMs)
-                    toRet.Add(new lockableVMSpec(conn, vmSpec));
-                return toRet;
-            }
+            List<vmSpec> VMs = getVMByVMServerIP_nolocking(vmServerIP);
+            disposingList<lockableVMSpec> toRet = new disposingList<lockableVMSpec>();
+            foreach (vmSpec vmSpec in VMs)
+                toRet.Add(new lockableVMSpec(conn, vmSpec));
+            return toRet;
         }
 
         public List<vmSpec> getVMByVMServerIP_nolocking(string vmServerIP)
         {
-            //lock (connLock)
-            {
-                List<long> VMIDs = new List<long>();
-                string sqlCommand = "select vmConfigKey from vmConfiguration " +
-                                    "join bladeConfiguration on parentbladeID = bladeConfigKey " +
+            List<long> VMIDs = new List<long>();
+            string sqlCommand = "select vmConfigKey from vmConfiguration " +
+                                "join bladeConfiguration on parentbladeID = bladeConfigKey " +
 //                                    "join bladeownership on bladeownership.ownershipKey = vmConfiguration.ownershipID " +
-                                    "where bladeIP = $vmServerIP";
-                using (SQLiteCommand cmd = new SQLiteCommand(sqlCommand, conn))
+                                "where bladeIP = $vmServerIP";
+            using (SQLiteCommand cmd = new SQLiteCommand(sqlCommand, conn))
+            {
+                cmd.Parameters.AddWithValue("$vmServerIP", vmServerIP);
+                using (SQLiteDataReader reader = cmd.ExecuteReader())
                 {
-                    cmd.Parameters.AddWithValue("$vmServerIP", vmServerIP);
-                    using (SQLiteDataReader reader = cmd.ExecuteReader())
-                    {
-                        while (reader.Read())
-                            VMIDs.Add((long)reader["vmConfigKey"]);
-                    }
+                    while (reader.Read())
+                        VMIDs.Add((long)reader["vmConfigKey"]);
                 }
-
-                List<vmSpec> toRet = new List<vmSpec>();
-                foreach (int vmID in VMIDs)
-                    toRet.Add(getVMByDBID_nolocking(vmID));
-
-                return toRet;
             }
+
+            List<vmSpec> toRet = new List<vmSpec>();
+            foreach (int vmID in VMIDs)
+                toRet.Add(getVMByDBID_nolocking(vmID));
+
+            return toRet;
         }
 
         public string[] getBladesByAllocatedServer(string NodeIP)
         {
-            //lock (connLock)
+            string sqlCommand = "select bladeIP from bladeOwnership " +
+                                "join bladeConfiguration on ownershipKey = bladeConfiguration.ownershipID " +
+                                "where bladeOwnership.currentOwner = $bladeOwner";
+            using (SQLiteCommand cmd = new SQLiteCommand(sqlCommand, conn))
             {
-                string sqlCommand = "select bladeIP from bladeOwnership " +
-                                    "join bladeConfiguration on ownershipKey = bladeConfiguration.ownershipID " +
-                                    "where bladeOwnership.currentOwner = $bladeOwner";
-                using (SQLiteCommand cmd = new SQLiteCommand(sqlCommand, conn))
+                cmd.Parameters.AddWithValue("$bladeOwner", NodeIP);
+                using (SQLiteDataReader reader = cmd.ExecuteReader())
                 {
-                    cmd.Parameters.AddWithValue("$bladeOwner", NodeIP);
-                    using (SQLiteDataReader reader = cmd.ExecuteReader())
-                    {
-                        List<string> toRet = new List<string>(10);
-                        while (reader.Read())
-                            toRet.Add((string)reader["bladeIP"]);
-                        return toRet.ToArray();
-                    }
+                    List<string> toRet = new List<string>(10);
+                    while (reader.Read())
+                        toRet.Add((string)reader["bladeIP"]);
+                    return toRet.ToArray();
                 }
             }
         }
@@ -405,60 +363,52 @@ namespace bladeDirectorWCF
         public disposingListOfBladesAndVMs getBladesAndVMs(Func<bladeSpec, bool> BladeFilter, Func<vmSpec, bool> VMFilter, bladeLockType lockTypeRead, bladeLockType lockTypeWrite, bool permitAccessDuringBIOS = false, bool permitAccessDuringDeployment = false)
         {
             disposingListOfBladesAndVMs toRet = new disposingListOfBladesAndVMs();
-            //lock (connLock)
-            {
-                toRet.blades = getAllBladeInfo(BladeFilter, lockTypeRead, lockTypeWrite, permitAccessDuringBIOS, permitAccessDuringDeployment);
-                toRet.VMs = getAllVMInfo(VMFilter, lockTypeRead, lockTypeWrite);
-            }
+            toRet.blades = getAllBladeInfo(BladeFilter, lockTypeRead, lockTypeWrite, permitAccessDuringBIOS, permitAccessDuringDeployment);
+            toRet.VMs = getAllVMInfo(VMFilter, lockTypeRead, lockTypeWrite);
+
             return toRet;
         }
 
         public GetBladeStatusResult getBladeStatus(string nodeIp, string requestorIp)
         {
-            //lock (connLock)
+            using (lockableBladeSpec blade = getBladeByIP(nodeIp, bladeLockType.lockOwnership, bladeLockType.lockNone, 
+                permitAccessDuringBIOS: true, permitAccessDuringDeployment: true))
             {
-                using (lockableBladeSpec blade = getBladeByIP(nodeIp, bladeLockType.lockOwnership, bladeLockType.lockNone, 
-                    permitAccessDuringBIOS: true, permitAccessDuringDeployment: true))
+                switch (blade.spec.state)
                 {
-                    switch (blade.spec.state)
-                    {
-                        case bladeStatus.unused:
-                            return GetBladeStatusResult.unused;
-                        case bladeStatus.releaseRequested:
-                            return GetBladeStatusResult.releasePending;
-                        case bladeStatus.inUse:
-                            if (blade.spec.currentOwner == requestorIp)
-                                return GetBladeStatusResult.yours;
-                            return GetBladeStatusResult.notYours;
-                        case bladeStatus.inUseByDirector:
-                            return GetBladeStatusResult.notYours;
-                        default:
-                            throw new ArgumentOutOfRangeException();
-                    }
+                    case bladeStatus.unused:
+                        return GetBladeStatusResult.unused;
+                    case bladeStatus.releaseRequested:
+                        return GetBladeStatusResult.releasePending;
+                    case bladeStatus.inUse:
+                        if (blade.spec.currentOwner == requestorIp)
+                            return GetBladeStatusResult.yours;
+                        return GetBladeStatusResult.notYours;
+                    case bladeStatus.inUseByDirector:
+                        return GetBladeStatusResult.notYours;
+                    default:
+                        throw new ArgumentOutOfRangeException();
                 }
             }
         }
 
         public void initWithBlades(bladeSpec[] bladeSpecs)
         {
-            //lock (connLock)
+            dropDB();
+            createTables();
+
+            // Since we disposed and recreated the DBConnection, we'll need to update each bladeSpec with the new one, and
+            // blow away any DB IDs.
+            foreach (bladeSpec spec in bladeSpecs)
             {
-                dropDB();
-                createTables();
+                spec.conn = conn;
+                spec.ownershipRowID = null;
+                spec.bladeID = null;
+            }
 
-                // Since we disposed and recreated the DBConnection, we'll need to update each bladeSpec with the new one, and
-                // blow away any DB IDs.
-                foreach (bladeSpec spec in bladeSpecs)
-                {
-                    spec.conn = conn;
-                    spec.ownershipRowID = null;
-                    spec.bladeID = null;
-                }
-
-                foreach (bladeSpec spec in bladeSpecs)
-                    addNode(spec);
-            }            
-        }
+            foreach (bladeSpec spec in bladeSpecs)
+                addNode(spec);
+        }            
 
         public void addNode(bladeOwnership spec)
         {
@@ -467,39 +417,36 @@ namespace bladeDirectorWCF
 
         public void makeIntoAVMServer(lockableBladeSpec toConvert)
         {
-            //lock (connLock)
+            // Delete any VM configurations that have been left lying around.
+            string sql = "select bladeConfigKey from VMConfiguration " +
+                            " join BladeConfiguration on  BladeConfigKey = ownershipKey " +
+                            "join bladeOwnership on VMConfiguration.parentBladeID = ownershipKey " +
+                            " where bladeConfigKey = $bladeIP";
+            List<long> toDel = new List<long>();
+            using (SQLiteCommand cmd = new SQLiteCommand(sql, conn))
             {
-                // Delete any VM configurations that have been left lying around.
-                string sql = "select bladeConfigKey from VMConfiguration " +
-                             " join BladeConfiguration on  BladeConfigKey = ownershipKey " +
-                             "join bladeOwnership on VMConfiguration.parentBladeID = ownershipKey " +
-                             " where bladeConfigKey = $bladeIP";
-                List<long> toDel = new List<long>();
-                using (SQLiteCommand cmd = new SQLiteCommand(sql, conn))
+                cmd.Parameters.AddWithValue("$bladeIP", toConvert.spec.bladeIP);
+                using (SQLiteDataReader reader = cmd.ExecuteReader())
                 {
-                    cmd.Parameters.AddWithValue("$bladeIP", toConvert.spec.bladeIP);
-                    using (SQLiteDataReader reader = cmd.ExecuteReader())
+                    while (reader.Read())
                     {
-                        while (reader.Read())
-                        {
-                            toDel.Add((long) reader[0]);
-                        }
+                        toDel.Add((long) reader[0]);
                     }
                 }
-
-                string deleteSQL = "delete from VMConfiguration where id in (" + String.Join(",", toDel) + ")";
-                using (SQLiteCommand cmd = new SQLiteCommand(deleteSQL, conn))
-                {
-                    cmd.ExecuteNonQuery();
-                }
-
-                // And then mark this blade as being a VM server.
-                toConvert.spec.currentlyBeingAVMServer = true;
-                toConvert.spec.state = bladeStatus.inUseByDirector;
-                // Since we don't know if the blade has been left in a good state (or even if it was a VM server previously) we 
-                // force a power cycle before we use it.
-                toConvert.spec.vmDeployState = VMDeployStatus.needsPowerCycle;
             }
+
+            string deleteSQL = "delete from VMConfiguration where id in (" + String.Join(",", toDel) + ")";
+            using (SQLiteCommand cmd = new SQLiteCommand(deleteSQL, conn))
+            {
+                cmd.ExecuteNonQuery();
+            }
+
+            // And then mark this blade as being a VM server.
+            toConvert.spec.currentlyBeingAVMServer = true;
+            toConvert.spec.state = bladeStatus.inUseByDirector;
+            // Since we don't know if the blade has been left in a good state (or even if it was a VM server previously) we 
+            // force a power cycle before we use it.
+            toConvert.spec.vmDeployState = VMDeployStatus.needsPowerCycle;
         }
 
         public void refreshKeepAliveForRequestor(string requestorIP)
@@ -519,22 +466,19 @@ namespace bladeDirectorWCF
             // You should hold a lock on the VM server before calling this, to ensure the result doesn't change before you get
             // a chance to use it.
 
-            //lock (connLock)
+            string sqlCommand = "select sum(cpucount) as cpus, sum(memoryMB) as ram, count(*) as VMs " +
+                                " from vmConfiguration " +
+                                "join bladeConfiguration on parentbladeID = bladeConfigKey " +
+                                "where bladeIP = $vmServerIP";
+            using (SQLiteCommand cmd = new SQLiteCommand(sqlCommand, conn))
             {
-                string sqlCommand = "select sum(cpucount) as cpus, sum(memoryMB) as ram, count(*) as VMs " +
-                                    " from vmConfiguration " +
-                                    "join bladeConfiguration on parentbladeID = bladeConfigKey " +
-                                    "where bladeIP = $vmServerIP";
-                using (SQLiteCommand cmd = new SQLiteCommand(sqlCommand, conn))
+                cmd.Parameters.AddWithValue("$vmServerIP", vmServerIP);
+                using (SQLiteDataReader reader = cmd.ExecuteReader())
                 {
-                    cmd.Parameters.AddWithValue("$vmServerIP", vmServerIP);
-                    using (SQLiteDataReader reader = cmd.ExecuteReader())
-                    {
-                        if (!reader.Read())
-                            throw new Exception();
-                        return new vmserverTotals(reader);
-                    }                    
-                }
+                    if (!reader.Read())
+                        throw new Exception();
+                    return new vmserverTotals(reader);
+                }                    
             }
         }
 
