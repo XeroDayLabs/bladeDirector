@@ -53,7 +53,7 @@ namespace bladeDirectorWCF
                         if (dumpDir == "")
                             return;
 
-                        miniDumpUtils.dumpSelf(Path.Combine(dumpDir, "FaultException" + Guid.NewGuid().ToString() + ".dmp"));
+                        miniDumpUtils.dumpSelf(Path.Combine(dumpDir, "_FaultException" + Guid.NewGuid().ToString() + ".dmp"));
                     }
                 }
                 catch (Exception)
@@ -159,7 +159,7 @@ namespace bladeDirectorWCF
         [Option('w', "webURL", Required = false, DefaultValue = "http://0.0.0.0:81/", HelpText = "URL to provide HTTP services to IPXE on")]
         public string webURL { get; set; }
 
-        [Option('l', "bladeList", Required = false, DefaultValue = "28,29,30,31", HelpText = "A list of comma-seperated blade IDs in the XDL cluster to use (eg, '1,2,3,7,9')")]
+        [Option('l', "bladeList", Required = false, DefaultValue = "", HelpText = "A list of comma-seperated blade IDs in the XDL cluster to use (eg, '1,2,3,7,9')")]
         public string bladeList { get; set; }
 
         [Option("no-web", Required = false, DefaultValue = false, HelpText = "Do not listen on port 81 (PXE boot will not function)")]
