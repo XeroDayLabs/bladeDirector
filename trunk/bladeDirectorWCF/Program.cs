@@ -44,16 +44,23 @@ namespace bladeDirectorWCF
                 {
                     if (services.hostStateManager != null)
                         services.hostStateManager.addLogEvent("First-chance exception: " + args.Exception.ToString());
-                    // If this is a 'System.ServiceModel.FaultException', then it is destined to get to the caller via WCF. This is pretty bad, so we dump on these
-                    // to aid debugging.
-                    // We just use text matching here since perf shouldn't be critical (not many exceptions should happen).
-                    if (args.Exception.GetType().ToString().StartsWith("System.ServiceModel.FaultException"))
-                    {
-                        string dumpDir = Properties.Settings.Default.internalErrorDumpPath.Trim();
-                        if (dumpDir == "")
-                            return;
 
-                        miniDumpUtils.dumpSelf(Path.Combine(dumpDir, "_FaultException" + Guid.NewGuid().ToString() + ".dmp"));
+                    string dumpDir = Properties.Settings.Default.internalErrorDumpPath.Trim();
+                    if (dumpDir != "")
+                    {
+                        // If this is a 'System.ServiceModel.FaultException', then it is destined to get to the caller via WCF. This is pretty bad, so we dump on these
+                        // to aid debugging.
+                        // We just use text matching here since perf shouldn't be critical (not many exceptions should happen).
+                        if (args.Exception.GetType().ToString().StartsWith("System.ServiceModel.FaultException"))
+                        {
+                            miniDumpUtils.dumpSelf(Path.Combine(dumpDir, "FaultException_" + Guid.NewGuid().ToString() + ".dmp"));
+                        }
+                        // A CommunicationObjectAbortedException will occur when we spend too long processing a WCF method, and again
+                        // indicates a bug.
+                        else if (args.Exception is CommunicationObjectAbortedException)
+                        {
+                            miniDumpUtils.dumpSelf(Path.Combine(dumpDir, "slowResponse_" + Guid.NewGuid().ToString() + ".dmp"));
+                        }
                     }
                 }
                 catch (Exception)
@@ -91,19 +98,22 @@ namespace bladeDirectorWCF
                         }
                         else
                         {
-                            Console.WriteLine("Adding blades...");
-                            using (bladeDirectorDebugServices conn = new bladeDirectorDebugServices(debugServiceURL.ToString(), baseServiceURL.ToString()))
-                            {
-                                string[] bladeIDs = parsedArgs.bladeList.Split(',');
-                                foreach (string idStr in bladeIDs)
+                            string[] bladeIDs = parsedArgs.bladeList.Split(new [] {","}, StringSplitOptions.RemoveEmptyEntries);
+                            if (bladeIDs.Length > 0)
+                            { 
+                                Console.WriteLine("Adding blades...");
+                                using (bladeDirectorDebugServices conn = new bladeDirectorDebugServices(debugServiceURL.ToString(), baseServiceURL.ToString()))
                                 {
-                                    int id = Int32.Parse(idStr);
-                                    string bladeIP = "172.17.129." + (100 + id);
-                                    string iloIP = "172.17.2." + (100 + id);
-                                    string iSCSIIP = "10.0.0." + (100 + id);
-                                    ushort debugPort = (ushort) (60000 + id);
-                                    Console.WriteLine("Creating node {0}: IP {1}, ilo {2}, iSCSI IP {3}, debug port {4}", id, bladeIP, iloIP, iSCSIIP, debugPort);
-                                    conn.svc.addNode(bladeIP, iSCSIIP, iloIP, debugPort);
+                                    foreach (string idStr in bladeIDs)
+                                    {
+                                        int id = Int32.Parse(idStr.Trim());
+                                        string bladeIP = "172.17.129." + (100 + id);
+                                        string iloIP = "172.17.2." + (100 + id);
+                                        string iSCSIIP = "10.0.0." + (100 + id);
+                                        ushort debugPort = (ushort) (60000 + id);
+                                        Console.WriteLine("Creating node {0}: IP {1}, ilo {2}, iSCSI IP {3}, debug port {4}", id, bladeIP, iloIP, iSCSIIP, debugPort);
+                                        conn.svc.addNode(bladeIP, iSCSIIP, iloIP, debugPort);
+                                    }
                                 }
                             }
                             Console.WriteLine("BladeDirector ready.");
@@ -132,7 +142,11 @@ namespace bladeDirectorWCF
             WSHttpBinding baseBinding = new WSHttpBinding
             {
                 MaxReceivedMessageSize = Int32.MaxValue,
-                ReaderQuotas = { MaxStringContentLength = Int32.MaxValue }
+                ReaderQuotas = { MaxStringContentLength = Int32.MaxValue },
+                OpenTimeout = TimeSpan.FromSeconds(55),
+                CloseTimeout = TimeSpan.FromSeconds(55),
+                SendTimeout = TimeSpan.FromSeconds(55),
+                ReceiveTimeout = TimeSpan.FromSeconds(55)
             };
             svc.AddServiceEndpoint(contractInterfaceType, baseBinding, "");
             
