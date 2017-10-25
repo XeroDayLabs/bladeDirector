@@ -55,12 +55,6 @@ namespace bladeDirectorWCF
                         {
                             miniDumpUtils.dumpSelf(Path.Combine(dumpDir, "FaultException_" + Guid.NewGuid().ToString() + ".dmp"));
                         }
-                        // A CommunicationObjectAbortedException will occur when we spend too long processing a WCF method, and again
-                        // indicates a bug.
-                        else if (args.Exception is CommunicationObjectAbortedException)
-                        {
-                            miniDumpUtils.dumpSelf(Path.Combine(dumpDir, "slowResponse_" + Guid.NewGuid().ToString() + ".dmp"));
-                        }
                         // Lock violations are a pain to debug, even with all our debug output, so also drop a dump for those.
                         else if (args.Exception is ApplicationException)
                         {
