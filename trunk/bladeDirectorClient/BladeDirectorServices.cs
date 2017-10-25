@@ -146,6 +146,7 @@ namespace bladeDirectorClient
             // FIXME: why these casts?
             try { ((IDisposable)svc).Dispose(); }
             catch (CommunicationException) { }
+            catch (TimeoutException) { }
 
             if (_bladeDirectorProcess != null)
             {

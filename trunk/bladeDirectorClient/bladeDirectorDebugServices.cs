@@ -53,6 +53,7 @@ namespace bladeDirectorClient
             // FIXME: why this cast?
             try { ((IDisposable)svcDebug).Dispose(); }
             catch (CommunicationException) { }
+            catch (TimeoutException) { }
 
             base.Dispose();
         }
