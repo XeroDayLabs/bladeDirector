@@ -46,8 +46,7 @@
             }
         }
         
-        function doShow(url, ctrl)
-        {
+        function doShow(url, ctrl) {
             $(ctrl).slideUp();
 
             $.ajax({
@@ -61,6 +60,23 @@
                     $(ctrl).slideDown();
                 }
             });
+        }
+
+        function recalcNewBlade()  {
+            var IPregex = new RegExp('^([0-9]+)\\.([0-9]+)\\.([0-9]+)\\.([0-9]+)$');
+
+            mainIP = $('#txtNewNodeIP')[0].value;
+            matches = IPregex.exec(mainIP);
+            if (matches != null) {
+                lastOctet = matches[4];
+                if ($('#txtNewIloIP')[0].value.startsWith('172.17.2.')) {
+                    $('#txtNewIloIP')[0].value = '172.17.2.' + lastOctet;
+                }
+                if ($('#txtNewISCSI')[0].value.startsWith('10.0.129.')) {
+                    $('#txtNewISCSI')[0].value = '10.0.129.' + lastOctet;
+                }
+                $('#txtNewPort')[0].value = 60000 + parseInt(lastOctet);
+            }
         }
 
     </script>
@@ -126,7 +142,7 @@
                     </th>
                     <tr>
                         <td>Node IP</td>
-                        <td style="width: 25%" ><asp:TextBox ID="txtNewNodeIP" style="width: 100%" runat="server">172.17.129.</asp:TextBox></td>
+                        <td style="width: 25%" ><asp:TextBox ID="txtNewNodeIP" style="width: 100%" runat="server" onkeyup="recalcNewBlade()">172.17.129.</asp:TextBox></td>
                     </tr>
                     <tr>
                         <td>iLo IP</td>
@@ -134,11 +150,11 @@
                     </tr>
                     <tr>
                         <td style="left: 25%">Kenerl debug port</td>
-                        <td style="width: 25%" ><asp:TextBox ID="txtNewPort" style="width: 100%" runat="server">599xx</asp:TextBox></td>
+                        <td style="width: 25%" ><asp:TextBox ID="txtNewPort" style="width: 100%" runat="server">4</asp:TextBox></td>
                     </tr>
                     <tr>
                         <td style="width: 25%">iSCSI IP</td>
-                        <td style="width: 25%" ><asp:TextBox ID="txtNewISCSI" style="width: 100%" runat="server">192.168.129.</asp:TextBox></td>
+                        <td style="width: 25%" ><asp:TextBox ID="txtNewISCSI" style="width: 100%" runat="server">10.0.129.</asp:TextBox></td>
                     </tr>
                     <th colspan="4">
                         <asp:Button ID="cmdAddNode" runat="server" Text="Add node" OnClick="cmdAddNode_Click" />
