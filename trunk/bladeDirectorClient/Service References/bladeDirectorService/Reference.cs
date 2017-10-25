@@ -2045,6 +2045,12 @@ namespace bladeDirectorClient.bladeDirectorService {
         [System.ServiceModel.OperationContractAttribute(Action="http://tempuri.org/IServices/logIn", ReplyAction="http://tempuri.org/IServices/logInResponse")]
         bladeDirectorClient.bladeDirectorService.resultAndWaitToken logIn();
         
+        [System.ServiceModel.OperationContractAttribute(Action="http://tempuri.org/IServices/setWebSvcURL", ReplyAction="http://tempuri.org/IServices/setWebSvcURLResponse")]
+        void setWebSvcURL(string newURL);
+        
+        [System.ServiceModel.OperationContractAttribute(Action="http://tempuri.org/IServices/getWebSvcURL", ReplyAction="http://tempuri.org/IServices/getWebSvcURLResponse")]
+        string getWebSvcURL();
+        
         [System.ServiceModel.OperationContractAttribute(Action="http://tempuri.org/IServices/getProgress", ReplyAction="http://tempuri.org/IServices/getProgressResponse")]
         bladeDirectorClient.bladeDirectorService.resultAndWaitToken getProgress(bladeDirectorClient.bladeDirectorService.waitToken waitToken);
         
@@ -2139,6 +2145,14 @@ namespace bladeDirectorClient.bladeDirectorService {
         
         public bladeDirectorClient.bladeDirectorService.resultAndWaitToken logIn() {
             return base.Channel.logIn();
+        }
+        
+        public void setWebSvcURL(string newURL) {
+            base.Channel.setWebSvcURL(newURL);
+        }
+        
+        public string getWebSvcURL() {
+            return base.Channel.getWebSvcURL();
         }
         
         public bladeDirectorClient.bladeDirectorService.resultAndWaitToken getProgress(bladeDirectorClient.bladeDirectorService.waitToken waitToken) {

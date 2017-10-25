@@ -112,6 +112,7 @@
     <Compile Include="IBiosReadWrite.cs" />
     <Compile Include="IDebugServices.cs" />
     <Compile Include="inProgressOperation.cs" />
+    <Compile Include="ipUtils.cs" />
     <Compile Include="IServices.cs" />
     <Compile Include="lockableBladeSpec.cs" />
     <Compile Include="lockableVMSpec.cs" />

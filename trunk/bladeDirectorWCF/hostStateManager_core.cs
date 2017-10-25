@@ -59,6 +59,7 @@ namespace bladeDirectorWCF
 
         private readonly string _basePath;
         private vmServerControl _vmServerControl;
+        private string _ipxeUrl;
 
         protected hostStateManager_core(string basePath, vmServerControl newVmServerControl, IBiosReadWrite newBiosReadWrite)
         {
@@ -1471,6 +1472,23 @@ bladeLockType.lockvmDeployState,  // <-- TODO/FIXME: write perms shuold imply re
                 path = getFreeNASSnapshotPath(hostIP)
             };
         }
-    }
 
+        public string getWebSvcURL(string srcIP)
+        {
+            string toRet = _ipxeUrl;
+
+            if (toRet.Contains("0.0.0.0"))
+            {
+                string clientIP = ipUtils.getBestRouteTo(IPAddress.Parse(srcIP)).ToString();
+                toRet = toRet.Replace("0.0.0.0", clientIP);
+            }
+
+            return toRet;
+        }
+
+        public void setWebSvcURL(string newURL)
+        {
+            _ipxeUrl = newURL;
+        }
+    }
 }

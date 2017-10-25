@@ -86,6 +86,13 @@ namespace bladeDirectorWCF
                     configureService(baseSvc, typeof(IServices));
                     baseSvc.Open();
 
+                    if (!parsedArgs.disableWebPort)
+                    {
+                        using (bladeDirectorDebugServices conn = new bladeDirectorDebugServices(debugServiceURL.ToString(), baseServiceURL.ToString()))
+                        {
+                            conn.svc.setWebSvcURL(webServiceURL.ToString());
+                        }
+                    }
                     using (ServiceHost debugSvc = new ServiceHost(typeof (debugServices), debugServiceURL))
                     {
                         configureService(debugSvc, typeof(IDebugServices));

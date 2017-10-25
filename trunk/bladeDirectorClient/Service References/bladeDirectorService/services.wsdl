@@ -176,6 +176,82 @@
       </wsp:All>
     </wsp:ExactlyOne>
   </wsp:Policy>
+  <wsp:Policy wsu:Id="WSHttpBinding_IServices_setWebSvcURL_Input_policy">
+    <wsp:ExactlyOne>
+      <wsp:All>
+        <sp:SignedParts xmlns:sp="http://schemas.xmlsoap.org/ws/2005/07/securitypolicy">
+          <sp:Body />
+          <sp:Header Name="To" Namespace="http://www.w3.org/2005/08/addressing" />
+          <sp:Header Name="From" Namespace="http://www.w3.org/2005/08/addressing" />
+          <sp:Header Name="FaultTo" Namespace="http://www.w3.org/2005/08/addressing" />
+          <sp:Header Name="ReplyTo" Namespace="http://www.w3.org/2005/08/addressing" />
+          <sp:Header Name="MessageID" Namespace="http://www.w3.org/2005/08/addressing" />
+          <sp:Header Name="RelatesTo" Namespace="http://www.w3.org/2005/08/addressing" />
+          <sp:Header Name="Action" Namespace="http://www.w3.org/2005/08/addressing" />
+        </sp:SignedParts>
+        <sp:EncryptedParts xmlns:sp="http://schemas.xmlsoap.org/ws/2005/07/securitypolicy">
+          <sp:Body />
+        </sp:EncryptedParts>
+      </wsp:All>
+    </wsp:ExactlyOne>
+  </wsp:Policy>
+  <wsp:Policy wsu:Id="WSHttpBinding_IServices_setWebSvcURL_output_policy">
+    <wsp:ExactlyOne>
+      <wsp:All>
+        <sp:SignedParts xmlns:sp="http://schemas.xmlsoap.org/ws/2005/07/securitypolicy">
+          <sp:Body />
+          <sp:Header Name="To" Namespace="http://www.w3.org/2005/08/addressing" />
+          <sp:Header Name="From" Namespace="http://www.w3.org/2005/08/addressing" />
+          <sp:Header Name="FaultTo" Namespace="http://www.w3.org/2005/08/addressing" />
+          <sp:Header Name="ReplyTo" Namespace="http://www.w3.org/2005/08/addressing" />
+          <sp:Header Name="MessageID" Namespace="http://www.w3.org/2005/08/addressing" />
+          <sp:Header Name="RelatesTo" Namespace="http://www.w3.org/2005/08/addressing" />
+          <sp:Header Name="Action" Namespace="http://www.w3.org/2005/08/addressing" />
+        </sp:SignedParts>
+        <sp:EncryptedParts xmlns:sp="http://schemas.xmlsoap.org/ws/2005/07/securitypolicy">
+          <sp:Body />
+        </sp:EncryptedParts>
+      </wsp:All>
+    </wsp:ExactlyOne>
+  </wsp:Policy>
+  <wsp:Policy wsu:Id="WSHttpBinding_IServices_getWebSvcURL_Input_policy">
+    <wsp:ExactlyOne>
+      <wsp:All>
+        <sp:SignedParts xmlns:sp="http://schemas.xmlsoap.org/ws/2005/07/securitypolicy">
+          <sp:Body />
+          <sp:Header Name="To" Namespace="http://www.w3.org/2005/08/addressing" />
+          <sp:Header Name="From" Namespace="http://www.w3.org/2005/08/addressing" />
+          <sp:Header Name="FaultTo" Namespace="http://www.w3.org/2005/08/addressing" />
+          <sp:Header Name="ReplyTo" Namespace="http://www.w3.org/2005/08/addressing" />
+          <sp:Header Name="MessageID" Namespace="http://www.w3.org/2005/08/addressing" />
+          <sp:Header Name="RelatesTo" Namespace="http://www.w3.org/2005/08/addressing" />
+          <sp:Header Name="Action" Namespace="http://www.w3.org/2005/08/addressing" />
+        </sp:SignedParts>
+        <sp:EncryptedParts xmlns:sp="http://schemas.xmlsoap.org/ws/2005/07/securitypolicy">
+          <sp:Body />
+        </sp:EncryptedParts>
+      </wsp:All>
+    </wsp:ExactlyOne>
+  </wsp:Policy>
+  <wsp:Policy wsu:Id="WSHttpBinding_IServices_getWebSvcURL_output_policy">
+    <wsp:ExactlyOne>
+      <wsp:All>
+        <sp:SignedParts xmlns:sp="http://schemas.xmlsoap.org/ws/2005/07/securitypolicy">
+          <sp:Body />
+          <sp:Header Name="To" Namespace="http://www.w3.org/2005/08/addressing" />
+          <sp:Header Name="From" Namespace="http://www.w3.org/2005/08/addressing" />
+          <sp:Header Name="FaultTo" Namespace="http://www.w3.org/2005/08/addressing" />
+          <sp:Header Name="ReplyTo" Namespace="http://www.w3.org/2005/08/addressing" />
+          <sp:Header Name="MessageID" Namespace="http://www.w3.org/2005/08/addressing" />
+          <sp:Header Name="RelatesTo" Namespace="http://www.w3.org/2005/08/addressing" />
+          <sp:Header Name="Action" Namespace="http://www.w3.org/2005/08/addressing" />
+        </sp:SignedParts>
+        <sp:EncryptedParts xmlns:sp="http://schemas.xmlsoap.org/ws/2005/07/securitypolicy">
+          <sp:Body />
+        </sp:EncryptedParts>
+      </wsp:All>
+    </wsp:ExactlyOne>
+  </wsp:Policy>
   <wsp:Policy wsu:Id="WSHttpBinding_IServices_getProgress_Input_policy">
     <wsp:ExactlyOne>
       <wsp:All>
@@ -962,6 +1038,18 @@
   <wsdl:message name="IServices_logIn_OutputMessage">
     <wsdl:part name="parameters" element="tns:logInResponse" />
   </wsdl:message>
+  <wsdl:message name="IServices_setWebSvcURL_InputMessage">
+    <wsdl:part name="parameters" element="tns:setWebSvcURL" />
+  </wsdl:message>
+  <wsdl:message name="IServices_setWebSvcURL_OutputMessage">
+    <wsdl:part name="parameters" element="tns:setWebSvcURLResponse" />
+  </wsdl:message>
+  <wsdl:message name="IServices_getWebSvcURL_InputMessage">
+    <wsdl:part name="parameters" element="tns:getWebSvcURL" />
+  </wsdl:message>
+  <wsdl:message name="IServices_getWebSvcURL_OutputMessage">
+    <wsdl:part name="parameters" element="tns:getWebSvcURLResponse" />
+  </wsdl:message>
   <wsdl:message name="IServices_getProgress_InputMessage">
     <wsdl:part name="parameters" element="tns:getProgress" />
   </wsdl:message>
@@ -1091,6 +1179,14 @@
       <wsdl:input wsam:Action="http://tempuri.org/IServices/logIn" message="tns:IServices_logIn_InputMessage" />
       <wsdl:output wsam:Action="http://tempuri.org/IServices/logInResponse" message="tns:IServices_logIn_OutputMessage" />
     </wsdl:operation>
+    <wsdl:operation name="setWebSvcURL">
+      <wsdl:input wsam:Action="http://tempuri.org/IServices/setWebSvcURL" message="tns:IServices_setWebSvcURL_InputMessage" />
+      <wsdl:output wsam:Action="http://tempuri.org/IServices/setWebSvcURLResponse" message="tns:IServices_setWebSvcURL_OutputMessage" />
+    </wsdl:operation>
+    <wsdl:operation name="getWebSvcURL">
+      <wsdl:input wsam:Action="http://tempuri.org/IServices/getWebSvcURL" message="tns:IServices_getWebSvcURL_InputMessage" />
+      <wsdl:output wsam:Action="http://tempuri.org/IServices/getWebSvcURLResponse" message="tns:IServices_getWebSvcURL_OutputMessage" />
+    </wsdl:operation>
     <wsdl:operation name="getProgress">
       <wsdl:input wsam:Action="http://tempuri.org/IServices/getProgress" message="tns:IServices_getProgress_InputMessage" />
       <wsdl:output wsam:Action="http://tempuri.org/IServices/getProgressResponse" message="tns:IServices_getProgress_OutputMessage" />
@@ -1194,6 +1290,28 @@
       </wsdl:input>
       <wsdl:output>
         <wsp:PolicyReference URI="#WSHttpBinding_IServices_logIn_output_policy" />
+        <soap12:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="setWebSvcURL">
+      <soap12:operation soapAction="http://tempuri.org/IServices/setWebSvcURL" style="document" />
+      <wsdl:input>
+        <wsp:PolicyReference URI="#WSHttpBinding_IServices_setWebSvcURL_Input_policy" />
+        <soap12:body use="literal" />
+      </wsdl:input>
+      <wsdl:output>
+        <wsp:PolicyReference URI="#WSHttpBinding_IServices_setWebSvcURL_output_policy" />
+        <soap12:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="getWebSvcURL">
+      <soap12:operation soapAction="http://tempuri.org/IServices/getWebSvcURL" style="document" />
+      <wsdl:input>
+        <wsp:PolicyReference URI="#WSHttpBinding_IServices_getWebSvcURL_Input_policy" />
+        <soap12:body use="literal" />
+      </wsdl:input>
+      <wsdl:output>
+        <wsp:PolicyReference URI="#WSHttpBinding_IServices_getWebSvcURL_output_policy" />
         <soap12:body use="literal" />
       </wsdl:output>
     </wsdl:operation>

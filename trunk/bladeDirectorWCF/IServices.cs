@@ -27,6 +27,12 @@ namespace bladeDirectorWCF
         resultAndWaitToken logIn();
 
         [OperationContract]
+        void setWebSvcURL(string newURL);
+
+        [OperationContract]
+        string getWebSvcURL();
+
+        [OperationContract]
         resultAndWaitToken getProgress(waitToken waitToken);
 
         [OperationContract]

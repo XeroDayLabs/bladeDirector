@@ -165,7 +165,7 @@
             <br/><br/>
 
             <div>
-                <table style="margin-left: 35%; margin-right: 35%; width: 30%;" class="settingGroup">
+                <table style="margin-left: 30%; margin-right: 30%; width: 40%;" class="settingGroup">
                     <tr>
                         <th colspan="2">Session info</th>
                     </tr>
@@ -174,7 +174,11 @@
                         <td style="width: 50%"><asp:Label runat="server" id="lblServerURL"></asp:Label></td>
                     </tr>
                     <tr style="width: 100%">
-                        <td style="width: 50%">Requesting IP</td>
+                        <td style="width: 50%">Server web base URL</td>
+                        <td style="width: 50%"><asp:Label runat="server" id="lblServerBaseWebURL"></asp:Label></td>
+                    </tr>
+                    <tr style="width: 100%">
+                        <td style="width: 50%">Requesting (your) IP</td>
                         <td style="width: 50%"><asp:Label runat="server" id="lblClientIP"></asp:Label></td>
                     </tr>
                     <th colspan="2">

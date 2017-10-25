@@ -76,6 +76,8 @@ namespace bladeDirector
 
             using (BladeDirectorServices services = new BladeDirectorServices(getCurrentServerURL()))
             {
+                lblServerBaseWebURL.Text = services.svc.getWebSvcURL();
+
                 string[] allBladeIPs = services.svc.getAllBladeIP();
 
                 foreach (string bladeIP in allBladeIPs)
@@ -177,19 +179,11 @@ namespace bladeDirector
 
             TableRow pxeScriptRow = new TableRow();
             pxeScriptRow.Cells.Add(makeTableCell(
-                makeImageButton("show", "images/collapsed.png", string.Format(@"javascript:toggleConfigBox($(this), ""getIPXEScript.aspx?hostip={0}""); return false;", bladeInfo.bladeIP)),
+                makeImageButton("show", "images/collapsed.png", string.Format(@"javascript:toggleConfigBox($(this), ""{1}/generateIPXEScript?hostip={0}""); return false;", bladeInfo.bladeIP, svc.svc.getWebSvcURL())),
                 new Label() { Text = "Current PXE script" },
                 makeInvisibleDiv()
                 ));
             detailTable.Rows.Add(pxeScriptRow);
-
-            TableRow biosConfigRow = new TableRow();
-            biosConfigRow.Cells.Add(makeTableCell(
-                makeImageButton("show", "images/collapsed.png", string.Format(@"javascript:toggleConfigBox($(this), ""getBIOSConfig.ashx?hostip={0}""); return false;", bladeInfo.bladeIP)),
-                new Label() { Text = "Current BIOS configuration" },
-                makeInvisibleDiv()
-                ));
-            detailTable.Rows.Add(biosConfigRow);
 
             // And add rows for any VMs.
             vmSpec[] VMs = svc.svc.getVMByVMServerIP_nolocking(bladeInfo.bladeIP);

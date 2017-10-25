@@ -20,6 +20,16 @@ namespace bladeDirectorWCF
             return hostStateManager.logIn(sanitizeAddress(requestorIP));
         }
 
+        public static void _setWebSvcURL(string newURL)
+        {
+            hostStateManager.setWebSvcURL(newURL);
+        }
+
+        public static string _getWebSvcURL(string srcIP)
+        {
+            return hostStateManager.getWebSvcURL(srcIP);
+        }
+
         private static resultAndWaitToken _getProgress(waitToken waitToken)
         {
             return hostStateManager.getProgress(waitToken);
@@ -133,6 +143,16 @@ namespace bladeDirectorWCF
             return _logIn(getSrcIP());
         }
 
+        public string getWebSvcURL()
+        {
+            return _getWebSvcURL(getSrcIP());
+        }
+
+        public void setWebSvcURL(string newURL)
+        {
+            _setWebSvcURL(newURL);
+        }
+
         public resultAndWaitToken getProgress(waitToken waitToken)
         {
             return _getProgress(waitToken);
@@ -243,7 +263,7 @@ namespace bladeDirectorWCF
             return sanitizeAddress(IP);
         }
 
-        private static string sanitizeAddress(string toSanitize)
+        public static string sanitizeAddress(string toSanitize)
         {
             // The ipv6 loopback, ::1, gets used sometimes during VM provisioning. Because of that, we escape the colons into
             // something that can be present in clone/target/extent names.

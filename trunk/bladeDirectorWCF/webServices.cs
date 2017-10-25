@@ -11,8 +11,17 @@ namespace bladeDirectorWCF
     {
         public Stream generateIPXEScript()
         {
+            WebOperationContext.Current.OutgoingResponse.Headers.Add("Access-Control-Allow-Origin", "*");
+
+            string srcIP = services.getSrcIP();
+
+            if (WebOperationContext.Current.IncomingRequest.UriTemplateMatch.QueryParameters["hostip"] != null)
+            {
+                srcIP = services.sanitizeAddress(WebOperationContext.Current.IncomingRequest.UriTemplateMatch.QueryParameters["hostip"]);
+            }
+
             WebOperationContext.Current.OutgoingResponse.ContentType = "text/plain";
-            string toRet = services._generateIPXEScript(services.getSrcIP());
+            string toRet = services._generateIPXEScript(srcIP);
             return new MemoryStream(Encoding.ASCII.GetBytes(toRet));
         }
     }
