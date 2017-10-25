@@ -61,6 +61,11 @@ namespace bladeDirectorWCF
                         {
                             miniDumpUtils.dumpSelf(Path.Combine(dumpDir, "slowResponse_" + Guid.NewGuid().ToString() + ".dmp"));
                         }
+                        // Lock violations are a pain to debug, even with all our debug output, so also drop a dump for those.
+                        else if (args.Exception is ApplicationException)
+                        {
+                            miniDumpUtils.dumpSelf(Path.Combine(dumpDir, "lockViolation_" + Guid.NewGuid().ToString() + ".dmp"));
+                        }
                     }
                 }
                 catch (Exception)
