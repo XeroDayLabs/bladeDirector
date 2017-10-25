@@ -26,10 +26,14 @@ namespace bladeDirectorClient
         /// <param name="bladeDirectorWCFExe"></param>
         /// <param name="port"></param>
         /// <param name="withWeb"></param>
-        public BladeDirectorServices(string bladeDirectorWCFExe, int port, bool withWeb)
+        public BladeDirectorServices(string bladeDirectorWCFExe, ushort port, bool withWeb)
         {
             baseURL = string.Format("http://127.0.0.1:{0}/{1}", port, Guid.NewGuid().ToString());
             servicesURL = baseURL + "/bladeDirector";
+
+            iLoHypervisorPool.ensurePortIsFree(port);
+            if (withWeb)
+                iLoHypervisorPool.ensurePortIsFree(81);
 
             baseBinding = new WSHttpBinding
             {
@@ -63,7 +67,6 @@ namespace bladeDirectorClient
             _bladeDirectorProcess = Process.Start(bladeDirectorExeInfo);
 
             // Wait until the service is ready
-
             DateTime deadline = DateTime.Now + TimeSpan.FromMinutes(1);
             while (true)
             {

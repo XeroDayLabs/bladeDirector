@@ -11,7 +11,7 @@ namespace bladeDirectorClient
 
         public string servicesDebugURL { get; private set; }
 
-        private static int _portNum = 90;
+        private static ushort _portNum = 90;
 
         public bladeDirectorDebugServices(string executablePath, bool withWeb)
             : base(executablePath, (_portNum++), withWeb)
