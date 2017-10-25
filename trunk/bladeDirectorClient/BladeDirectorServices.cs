@@ -10,9 +10,11 @@ namespace bladeDirectorClient
 {
     public class BladeDirectorServices : IDisposable
     {
-        public readonly ServicesClient svc;
+        public ServicesClient svc;
 
         private Process _bladeDirectorProcess;
+
+        private WSHttpBinding baseBinding;
 
         public string servicesURL { get; private set; }
 
@@ -29,14 +31,14 @@ namespace bladeDirectorClient
             baseURL = string.Format("http://127.0.0.1:{0}/{1}", port, Guid.NewGuid().ToString());
             servicesURL = baseURL + "/bladeDirector";
 
-            connectWithArgs(bladeDirectorWCFExe, "--baseURL " + baseURL + (withWeb ? "" : " --no-web "));
-
-            WSHttpBinding baseBinding = new WSHttpBinding
+            baseBinding = new WSHttpBinding
             {
                 MaxReceivedMessageSize = Int32.MaxValue,
                 ReaderQuotas = { MaxStringContentLength = Int32.MaxValue }
             };
             svc = new ServicesClient(baseBinding, new EndpointAddress(servicesURL));
+
+            connectWithArgs(bladeDirectorWCFExe, "--baseURL " + baseURL + (withWeb ? "" : " --no-web "));
         }
 
         /// <summary>
@@ -58,20 +60,28 @@ namespace bladeDirectorClient
             ProcessStartInfo bladeDirectorExeInfo = new ProcessStartInfo(bladeDirectorWCFExe);
             bladeDirectorExeInfo.WorkingDirectory = Path.GetDirectoryName(bladeDirectorWCFExe);
             bladeDirectorExeInfo.Arguments = args;
-            bladeDirectorExeInfo.UseShellExecute = false;
-            bladeDirectorExeInfo.RedirectStandardOutput = true;
             _bladeDirectorProcess = Process.Start(bladeDirectorExeInfo);
 
+            // Wait until the service is ready
+
+            DateTime deadline = DateTime.Now + TimeSpan.FromMinutes(1);
             while (true)
             {
-                string line = _bladeDirectorProcess.StandardOutput.ReadLine();
-                if (line == null)
-                    Assert.Fail("bladedirectorWCF did not start, perhaps there is another running?");
-                if (line.Contains("to exit"))
-                    break;
+                try
+                {
+                    svc.getAllBladeIP();
+                }
+                catch (Exception e)
+                {
+                    if (DateTime.Now > deadline)
+                        throw new Exception("BladeDirectorWCF did not start, perhaps another instance is running?", e);
+                    svc = new ServicesClient(baseBinding, new EndpointAddress(servicesURL));
+                    Thread.Sleep(TimeSpan.FromSeconds(1));
+                    continue;
+                }
+                break;
             }
 
-            Thread.Sleep(TimeSpan.FromSeconds(3));
         }
 
         public resultAndBladeName waitForSuccess(resultAndBladeName res, TimeSpan timeout)
