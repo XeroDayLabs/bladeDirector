@@ -1,5 +1,5 @@
 ﻿using System;
-using System.Diagnostics;
+using System.IO;
 using System.ServiceModel;
 using System.ServiceModel.Channels;
 using System.ServiceModel.Configuration;
@@ -11,7 +11,6 @@ using System.Threading;
 using bladeDirectorClient;
 using CommandLine;
 using CommandLine.Text;
-using Binding = System.Web.Services.Description.Binding;
 
 namespace bladeDirectorWCF
 {
@@ -45,6 +44,17 @@ namespace bladeDirectorWCF
                 {
                     if (services.hostStateManager != null)
                         services.hostStateManager.addLogEvent("First-chance exception: " + args.Exception.ToString());
+                    // If this is a 'System.ServiceModel.FaultException', then it is destined to get to the caller via WCF. This is pretty bad, so we dump on these
+                    // to aid debugging.
+                    // We just use text matching here since perf shouldn't be critical (not many exceptions should happen).
+                    if (args.Exception.GetType().ToString().StartsWith("System.ServiceModel.FaultException"))
+                    {
+                        string dumpDir = Properties.Settings.Default.internalErrorDumpPath.Trim();
+                        if (dumpDir == "")
+                            return;
+
+                        miniDumpUtils.dumpSelf(Path.Combine(dumpDir, "FaultException" + Guid.NewGuid().ToString() + ".dmp"));
+                    }
                 }
                 catch (Exception)
                 {

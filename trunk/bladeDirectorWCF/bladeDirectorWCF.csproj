@@ -115,6 +115,7 @@
     <Compile Include="IServices.cs" />
     <Compile Include="lockableBladeSpec.cs" />
     <Compile Include="lockableVMSpec.cs" />
+    <Compile Include="miniDumpUtils.cs" />
     <Compile Include="mockedExecutionHandler.cs" />
     <Compile Include="mockedExecutionHandler_successful.cs" />
     <Compile Include="mockedExecutionResponses.cs" />
