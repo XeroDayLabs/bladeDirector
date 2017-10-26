@@ -235,7 +235,7 @@ namespace bladeDirectorWCF
 
         public bool isUnlocked()
         {
-            return _writeTakenList.Count == 0 && _readTakenList.Count == 0;
+            return _writeTakenList.Count(x => x.Value.threadID != -1) == 0 && _readTakenList.Count(x => x.Value.Count > 0) == 0;
         }
 
         public bool assertLocks(bladeLockType read, bladeLockType write)
