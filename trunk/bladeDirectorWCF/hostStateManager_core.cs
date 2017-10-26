@@ -22,10 +22,12 @@ namespace bladeDirectorWCF
         SHT, // Setting a blade snapshot
     }
 
-    public class objectDictionary<TKey, TValue> : Dictionary<TKey, TValue>
+    public enum resourceSharingMode
     {
-        
+        FirstComeFirstServed,
+        Proportional
     }
+
 
     /// <summary>
     /// Almost all main program logic. Note that the inheritor is expected to define the type of hypervisor we'll be working on.
@@ -39,12 +41,14 @@ namespace bladeDirectorWCF
 
         public readonly hostDB db;
 
-        private objectDictionary<waitToken, VMThreadState> _vmDeployState = new objectDictionary<waitToken, VMThreadState>();
+        public readonly resourceSharingMode shareMode;
 
-        private objectDictionary<waitToken, inProgressOperation> _currentlyRunningLogIns = new objectDictionary<waitToken, inProgressOperation>();
-        private objectDictionary<waitToken, inProgressOperation> _currentlyRunningReleases = new objectDictionary<waitToken, inProgressOperation>();
-        private objectDictionary<waitToken, inProgressOperation> _currentBIOSOperations = new objectDictionary<waitToken, inProgressOperation>();
-        private objectDictionary<waitToken, inProgressOperation> _currentlyRunningSnapshotSets = new objectDictionary<waitToken, inProgressOperation>();
+        private Dictionary<waitToken, VMThreadState> _vmDeployState = new Dictionary<waitToken, VMThreadState>();
+
+        private Dictionary<waitToken, inProgressOperation> _currentlyRunningLogIns = new Dictionary<waitToken, inProgressOperation>();
+        private Dictionary<waitToken, inProgressOperation> _currentlyRunningReleases = new Dictionary<waitToken, inProgressOperation>();
+        private Dictionary<waitToken, inProgressOperation> _currentBIOSOperations = new Dictionary<waitToken, inProgressOperation>();
+        private Dictionary<waitToken, inProgressOperation> _currentlyRunningSnapshotSets = new Dictionary<waitToken, inProgressOperation>();
 
         public abstract hypervisor makeHypervisorForVM(lockableVMSpec VM, lockableBladeSpec parentBladeSpec);
         public abstract hypervisor makeHypervisorForBlade_windows(lockableBladeSpec bladeSpec);
@@ -61,11 +65,12 @@ namespace bladeDirectorWCF
         private vmServerControl _vmServerControl;
         private string _ipxeUrl;
 
-        protected hostStateManager_core(string basePath, vmServerControl newVmServerControl, IBiosReadWrite newBiosReadWrite)
+        protected hostStateManager_core(string basePath, vmServerControl newVmServerControl, IBiosReadWrite newBiosReadWrite, resourceSharingMode newShareMode = resourceSharingMode.FirstComeFirstServed)
         {
             _basePath = basePath;
             _vmServerControl = newVmServerControl;
             biosRWEngine = newBiosReadWrite;
+            shareMode = newShareMode;
 
             db = new hostDB(basePath);
         }
@@ -73,10 +78,11 @@ namespace bladeDirectorWCF
         /// <summary>
         /// Init the hoststateDB with an in-memory database
         /// </summary>
-        protected hostStateManager_core(vmServerControl newVmServerControl, IBiosReadWrite newBiosReadWrite)
+        protected hostStateManager_core(vmServerControl newVmServerControl, IBiosReadWrite newBiosReadWrite, resourceSharingMode newShareMode = resourceSharingMode.FirstComeFirstServed)
         {
             _vmServerControl = newVmServerControl;
             biosRWEngine = newBiosReadWrite;
+            shareMode = newShareMode;
             db = new hostDB();
         }
        
@@ -197,7 +203,7 @@ namespace bladeDirectorWCF
             return doAsync(_currentlyRunningReleases, NodeIP, handleTypes.REL, (e) => { releaseBladeOrVMBlocking(e, NodeIP, requestorIP, force); });
         }
 
-        private resultAndWaitToken doAsync(objectDictionary<waitToken, inProgressOperation> currentlyRunning, string hostIP, handleTypes tokenPrefix, Action<inProgressOperation> taskCreator, Action<inProgressOperation> taskAfterStart = null)
+        private resultAndWaitToken doAsync(Dictionary<waitToken, inProgressOperation> currentlyRunning, string hostIP, handleTypes tokenPrefix, Action<inProgressOperation> taskCreator, Action<inProgressOperation> taskAfterStart = null)
         {
             lock (currentlyRunning)
             {
@@ -234,7 +240,7 @@ namespace bladeDirectorWCF
 
         public resultAndWaitToken getProgress(waitToken waitToken)
         {
-            objectDictionary<waitToken, inProgressOperation> toOperateOn;
+            Dictionary<waitToken, inProgressOperation> toOperateOn;
             switch (waitToken.handleType)
             {
                 case handleTypes.LGI:
@@ -711,17 +717,20 @@ namespace bladeDirectorWCF
                 bladeLockType.lockNone, true, true))
             {
                 lockableBladeSpec[] freeVMServerList = serverList.Where(x => 
-                    x.spec.currentlyBeingAVMServer && x.spec.canAccommodate(db, hwSpec)).ToArray();
+                    x.spec.currentlyBeingAVMServer &&       // must be a VM server
+                    x.spec.canAccommodate(db, hwSpec)       // the blade must not be full
+                    ).ToArray();
 
                 if (freeVMServerList.Length != 0)
                 {
+                    // Great, the cluster is not full, and we cound at least one server which can accomodate our new VM.
                     // Just use the one we found. Again, we return this freeVMServer locked, so don't 'use (..' it here.
                     freeVMServer = freeVMServerList.First();
                     freeVMServer.inhibitNextDisposal();
                 }
                 else
                 {
-                    // Nope, no free VM server. Maybe we can make a new one.
+                    // Nope, no free VM server. Maybe we have free blades, and can can make a new one.
                     foreach (lockableBladeSpec spec in serverList)
                     {
                         spec.upgradeLocks(bladeLockType.lockvmDeployState | bladeLockType.lockBIOS, bladeLockType.lockNone);
@@ -757,14 +766,19 @@ namespace bladeDirectorWCF
 
                     if (freeVMServer == null)
                     {
-                        // No blades were found - the cluster is full.
+                        // No free blades and no free VMs. The cluster cannot accomodate the VM we're being asked for, but maybe we
+                        // can destroy some existing VMs to make room for it, if the sharing mode allows us to do so.
+                        if (shareMode == resourceSharingMode.Proportional)
+                        {
+                            //db.
+                        }
                         return null;
                     }
                 }
             }
             return freeVMServer;
         }
-        
+
         public resultAndWaitToken rebootAndStartDeployingBIOSToBlade(string requestorIp, string nodeIp, string biosxml, bool ignoreOwnership = false)
         {
             using (lockableBladeSpec reqBlade = db.getBladeByIP(nodeIp, bladeLockType.lockOwnership, bladeLockType.lockNone, false, true))
