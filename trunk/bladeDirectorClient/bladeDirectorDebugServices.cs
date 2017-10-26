@@ -7,7 +7,7 @@ namespace bladeDirectorClient
 {
     public class bladeDirectorDebugServices : BladeDirectorServices, IDisposable
     {
-        public readonly DebugServicesClient svcDebug;
+        public DebugServicesClient svcDebug;
 
         public string servicesDebugURL { get; private set; }
 
@@ -23,8 +23,11 @@ namespace bladeDirectorClient
                 MaxReceivedMessageSize = Int32.MaxValue,
                 ReaderQuotas = { MaxStringContentLength = Int32.MaxValue }
             };
-            svcDebug = new DebugServicesClient(debugBinding, new EndpointAddress(servicesDebugURL));
-            waitUntilReady(() => svcDebug.ping());
+            waitUntilReady(() =>
+            {
+                svcDebug = new DebugServicesClient(debugBinding, new EndpointAddress(servicesDebugURL));
+                svcDebug.ping();
+            });
         }
 
         public bladeDirectorDebugServices(string debugURL, string serviceURL)
@@ -37,8 +40,11 @@ namespace bladeDirectorClient
                 MaxReceivedMessageSize = Int32.MaxValue,
                 ReaderQuotas = { MaxStringContentLength = Int32.MaxValue }
             };
-            svcDebug = new DebugServicesClient(debugBinding, new EndpointAddress(servicesDebugURL));
-            waitUntilReady(() => svcDebug.ping());
+            waitUntilReady(() =>
+            {
+                svcDebug = new DebugServicesClient(debugBinding, new EndpointAddress(servicesDebugURL));
+                svcDebug.ping();
+            });
         }
         public bladeDirectorDebugServices(string executablePath, string[] IPAddresses, bool isMocked = true, bool withWeb = false)
             : this(executablePath, withWeb)

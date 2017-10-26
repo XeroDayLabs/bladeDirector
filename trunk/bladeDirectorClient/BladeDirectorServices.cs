@@ -40,11 +40,14 @@ namespace bladeDirectorClient
                 MaxReceivedMessageSize = Int32.MaxValue,
                 ReaderQuotas = { MaxStringContentLength = Int32.MaxValue }
             };
-            svc = new ServicesClient(baseBinding, new EndpointAddress(servicesURL));
 
             connectWithArgs(bladeDirectorWCFExe, "--baseURL " + baseURL + (withWeb ? "" : " --no-web "));
 
-            waitUntilReady(() => svc.getAllBladeIP());
+            waitUntilReady(() =>
+            {
+                svc = new ServicesClient(baseBinding, new EndpointAddress(servicesURL));
+                svc.getAllBladeIP();
+            });
         }
 
         protected void waitUntilReady(Action func)
@@ -61,7 +64,6 @@ namespace bladeDirectorClient
                 {
                     if (DateTime.Now > deadline)
                         throw new Exception("BladeDirectorWCF did not start, perhaps another instance is running?", e);
-                    svc = new ServicesClient(baseBinding, new EndpointAddress(servicesURL));
                     Thread.Sleep(TimeSpan.FromSeconds(1));
                     continue;
                 }
