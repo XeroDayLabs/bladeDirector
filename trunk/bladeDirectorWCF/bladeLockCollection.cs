@@ -18,7 +18,7 @@ namespace bladeDirectorWCF
     {
         private readonly string _name;
         private Dictionary<string, ReaderWriterLock> locksForThisBlade = new Dictionary<string, ReaderWriterLock>();
-        private Dictionary<string, LockCookie> lockCookiesForThisBlade = new Dictionary<string, LockCookie>();
+        private ConcurrentDictionary<string, LockCookie> lockCookiesForThisBlade = new ConcurrentDictionary<string, LockCookie>();
         private Dictionary<string, List<takenLockInfo>> _readTakenList = new Dictionary<string, List<takenLockInfo>>();
         private Dictionary<string, takenLockInfo> _writeTakenList = new Dictionary<string, takenLockInfo>();
 
@@ -84,13 +84,7 @@ namespace bladeDirectorWCF
                         // We are releasing the whole lock.
 
                         LockCookie lockCookie;
-                        lock (lockCookiesForThisBlade)
-                        {
-                            if (!lockCookiesForThisBlade.ContainsKey(lockTypeName))
-                                throw new Exception("Lock cookie not found; are you releasing something not yet acquired?");
-                            lockCookie = lockCookiesForThisBlade[lockTypeName];
-                            lockCookiesForThisBlade.Remove(lockTypeName);
-                        }
+                        lockCookiesForThisBlade.TryRemove(lockTypeName, out lockCookie);
                         Debug.WriteLine(Thread.CurrentThread.ManagedThreadId + " bladeLockCollection release for blade " + _name + lockTypeName + " downgrading");
                         locksForThisBlade[lockTypeName].DowngradeFromWriterLock(ref lockCookie);
                         Debug.WriteLine(Thread.CurrentThread.ManagedThreadId + " bladeLockCollection release for blade " + _name + lockTypeName + " releasing reader lock");
@@ -109,14 +103,7 @@ namespace bladeDirectorWCF
                     else
                     {
                         LockCookie lockCookie;
-                        lock (lockCookiesForThisBlade)
-                        {
-                            if (!lockCookiesForThisBlade.ContainsKey(lockTypeName))
-                                throw new Exception("Lock cookie not found; are you releasing something not yet acquired?");
-
-                            lockCookie = lockCookiesForThisBlade[lockTypeName];
-                            lockCookiesForThisBlade.Remove(lockTypeName);
-                        }
+                        lockCookiesForThisBlade.TryRemove(lockTypeName, out lockCookie);
                         Debug.WriteLine(Thread.CurrentThread.ManagedThreadId + " bladeLockCollection release for blade " + _name + lockTypeName + " downgrading (!willReleaseReaderLock)");
                         locksForThisBlade[lockTypeName].DowngradeFromWriterLock(ref lockCookie);
 
@@ -236,11 +223,8 @@ namespace bladeDirectorWCF
                 {
                     try
                     {
-                        lock (lockCookiesForThisBlade)
-                        {
-                            Debug.WriteLine(Thread.CurrentThread.ManagedThreadId + " bladeLockCollection for blade " + _name + lockTypeName + " UpgradeToWriterLock");
-                            lockCookiesForThisBlade[lockTypeName] = locksForThisBlade[lockTypeName].UpgradeToWriterLock(TimeSpan.FromSeconds(10));
-                        }
+                        Debug.WriteLine(Thread.CurrentThread.ManagedThreadId + " bladeLockCollection for blade " + _name + lockTypeName + " UpgradeToWriterLock");
+                        lockCookiesForThisBlade[lockTypeName] = locksForThisBlade[lockTypeName].UpgradeToWriterLock(TimeSpan.FromSeconds(10));
                     }
                     catch (ApplicationException)
                     {

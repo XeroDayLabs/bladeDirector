@@ -43,9 +43,16 @@
             <setting name="iscsiServerPassword" serializeAs="String">
                 <value>...</value>
             </setting>
+            <setting name="internalErrorDumpPath" serializeAs="String">
+                <value>c:\code</value>
+            </setting>
         </bladeDirectorWCF.Properties.Settings>
     </userSettings>
     <system.serviceModel>
+        <diagnostics>
+            <messageLogging logMalformedMessages="true" logMessagesAtServiceLevel="true"
+                logMessagesAtTransportLevel="true" />
+        </diagnostics>
         <bindings>
           <basicHttpBinding>
             <binding name="BasicHttpBinding_IBootMenuWCF" />
