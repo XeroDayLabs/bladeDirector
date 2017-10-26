@@ -17,16 +17,12 @@ namespace bladeDirectorWCF
     public class bladeLockCollection
     {
         private readonly string _name;
-        private Dictionary<string, ReaderWriterLock> locksForThisBlade = new Dictionary<string, ReaderWriterLock>();
+        private ConcurrentDictionary<string, ReaderWriterLock> locksForThisBlade = new ConcurrentDictionary<string, ReaderWriterLock>();
         private ConcurrentDictionary<string, LockCookie> lockCookiesForThisBlade = new ConcurrentDictionary<string, LockCookie>();
-        private Dictionary<string, List<takenLockInfo>> _readTakenList = new Dictionary<string, List<takenLockInfo>>();
-        private Dictionary<string, takenLockInfo> _writeTakenList = new Dictionary<string, takenLockInfo>();
+        private ConcurrentDictionary<string, List<takenLockInfo>> _readTakenList = new ConcurrentDictionary<string, List<takenLockInfo>>();
+        private ConcurrentDictionary<string, takenLockInfo> _writeTakenList = new ConcurrentDictionary<string, takenLockInfo>();
 
-        private object _readLockPadlock = new object();
-        private object _writeLockPadlock = new object();
-        private bladeLockType _readLock;
-        private bladeLockType _writeLock;
-        private TimeSpan lockTimeout = TimeSpan.FromSeconds(30);
+        private readonly TimeSpan lockTimeout = TimeSpan.FromSeconds(30);
 
         public bladeLockCollection(bladeLockType readLocks, bladeLockType writeLocks)
             : this("idk", readLocks, writeLocks)
@@ -38,9 +34,9 @@ namespace bladeDirectorWCF
             _name = name;
             foreach (string lockTypeName in getLockNames())
             {
-                locksForThisBlade.Add(lockTypeName, new ReaderWriterLock());
-                _readTakenList.Add(lockTypeName, new List<takenLockInfo>());
-                _writeTakenList.Add(lockTypeName, new takenLockInfo());
+                locksForThisBlade.TryAdd(lockTypeName, new ReaderWriterLock());
+                _readTakenList.TryAdd(lockTypeName, new List<takenLockInfo>());
+                _writeTakenList.TryAdd(lockTypeName, new takenLockInfo());
             }
 
             Debug.WriteLine(Thread.CurrentThread.ManagedThreadId + " bladeLockCollection for blade " + _name + " constructed");
@@ -73,10 +69,6 @@ namespace bladeDirectorWCF
                 if (willReleaseWriteLock)
                 {
                     _writeTakenList[lockTypeName].threadID = -1;
-                    lock (_writeLockPadlock)
-                    {
-                        _writeLock = clearField(_writeLock, lockType);
-                    }
 
                     // We will downgrade the lock if neccessary.
                     if (willReleaseReadLock)
@@ -91,14 +83,7 @@ namespace bladeDirectorWCF
                         locksForThisBlade[lockTypeName].ReleaseReaderLock();
 
                         // The read lock is now not taken.
-                        lock (_readTakenList) // fixme: ugh locking
-                        {
-                            _readTakenList[lockTypeName].RemoveAll(x => x.threadID == Thread.CurrentThread.ManagedThreadId);
-                        }
-                        lock (_readLockPadlock)  // fixme: ugh same
-                        {
-                            _readLock = clearField(_readLock, lockType);
-                        }
+                        _readTakenList[lockTypeName].RemoveAll(x => x.threadID == Thread.CurrentThread.ManagedThreadId);
                     }
                     else
                     {
@@ -107,14 +92,7 @@ namespace bladeDirectorWCF
                         Debug.WriteLine(Thread.CurrentThread.ManagedThreadId + " bladeLockCollection release for blade " + _name + lockTypeName + " downgrading (!willReleaseReaderLock)");
                         locksForThisBlade[lockTypeName].DowngradeFromWriterLock(ref lockCookie);
 
-                        lock (_readTakenList) // fixme: ugh locking
-                        {
-                            _readTakenList[lockTypeName].RemoveAll(x => x.threadID == Thread.CurrentThread.ManagedThreadId);
-                        }
-                        lock (_readLockPadlock)
-                        {
-                            _readLock |= lockType;
-                        }
+                        _readTakenList[lockTypeName].RemoveAll(x => x.threadID == Thread.CurrentThread.ManagedThreadId);
                     }
                 }
                 else
@@ -122,27 +100,14 @@ namespace bladeDirectorWCF
                     // Only release a read lock if we aren't releasing the whole write lock.
                     if (willReleaseReadLock)
                     {
-                        lock (_readTakenList) // fixme: ugh locking
-                        {
-                            _readTakenList[lockTypeName].RemoveAll(x => x.threadID == Thread.CurrentThread.ManagedThreadId);
-                        }
+                        _readTakenList[lockTypeName].RemoveAll(x => x.threadID == Thread.CurrentThread.ManagedThreadId);
 
-                        lock (_readLockPadlock)
-                        {
-                            _readLock = clearField(_readLock, lockType);
-                        }
                         Debug.WriteLine(Thread.CurrentThread.ManagedThreadId + " bladeLockCollection release for blade " + _name + " " + lockTypeName + " releasing reader lock (!willReleaseWriterLock)");
                         locksForThisBlade[lockTypeName].ReleaseReaderLock();
                     }
                 }
             }
-            lock (_readLockPadlock)
-            {
-                lock (_writeLockPadlock)
-                {
-                    Debug.WriteLine(Thread.CurrentThread.ManagedThreadId + " bladeLockCollection release for blade " + _name + " finished, new access " + _readLock + " / " + _writeLock);
-                }
-            }
+            // Debug.WriteLine(Thread.CurrentThread.ManagedThreadId + " bladeLockCollection release for blade " + _name + " finished, new access " + _readLock + " / " + _writeLock);
         }
 
         public void acquire(bladeLockType readTypes, bladeLockType writeTypes)
@@ -209,14 +174,7 @@ namespace bladeDirectorWCF
                     takenLockInfo newInfo = new takenLockInfo();
                     newInfo.threadID = Thread.CurrentThread.ManagedThreadId;
                     newInfo.stackTrace = Environment.StackTrace;
-                    lock (_readTakenList) // fixme: ugh locking
-                    {
-                        _readTakenList[lockTypeName].Add(newInfo);
-                    }
-                    lock (_readLockPadlock)
-                    {
-                        _readLock = _readLock | (bladeLockType) lockBitMask;
-                    }
+                    _readTakenList[lockTypeName].Add(newInfo);
                 }
 
                 if (writeRequested)
@@ -261,19 +219,9 @@ namespace bladeDirectorWCF
 
                     _writeTakenList[lockTypeName].threadID = Thread.CurrentThread.ManagedThreadId;
                     _writeTakenList[lockTypeName].stackTrace = Environment.StackTrace;
-                    lock (_writeLockPadlock)
-                    {
-                        _writeLock = _writeLock | (bladeLockType) lockBitMask;
-                    }
                 }
             }
-            lock (_readLockPadlock)
-            {
-                lock (_writeLockPadlock)
-                {
-                    Debug.WriteLine(Thread.CurrentThread.ManagedThreadId + " bladeLockCollection acquisition for blade " + _name + " finished, new access " + _readLock + " / " + _writeLock);
-                }
-            }
+            // Debug.WriteLine(Thread.CurrentThread.ManagedThreadId + " bladeLockCollection acquisition for blade " + _name + " finished, new access " + _readLock + " / " + _writeLock);
         }
 
         public void downgrade(bladeLockType toDropRead, bladeLockType toDropWrite)
@@ -283,7 +231,7 @@ namespace bladeDirectorWCF
 
         public bool isUnlocked()
         {
-            return _writeLock == bladeLockType.lockNone && _readLock == bladeLockType.lockNone;
+            return _writeTakenList.Count == 0 && _readTakenList.Count == 0;
         }
 
         public bool assertLocks(bladeLockType read, bladeLockType write)
