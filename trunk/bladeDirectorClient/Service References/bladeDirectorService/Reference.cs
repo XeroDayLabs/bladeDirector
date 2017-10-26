@@ -2240,6 +2240,9 @@ namespace bladeDirectorClient.bladeDirectorService {
     [System.ServiceModel.ServiceContractAttribute(ConfigurationName="bladeDirectorService.IDebugServices")]
     public interface IDebugServices {
         
+        [System.ServiceModel.OperationContractAttribute(Action="http://tempuri.org/IDebugServices/ping", ReplyAction="http://tempuri.org/IDebugServices/pingResponse")]
+        string ping();
+        
         [System.ServiceModel.OperationContractAttribute(Action="http://tempuri.org/IDebugServices/initWithBladesFromIPList", ReplyAction="http://tempuri.org/IDebugServices/initWithBladesFromIPListResponse")]
         void initWithBladesFromIPList(string[] bladeIPs, bool useMockedManager, bladeDirectorClient.bladeDirectorService.NASFaultInjectionPolicy faultInjection);
         
@@ -2315,6 +2318,10 @@ namespace bladeDirectorClient.bladeDirectorService {
         
         public DebugServicesClient(System.ServiceModel.Channels.Binding binding, System.ServiceModel.EndpointAddress remoteAddress) : 
                 base(binding, remoteAddress) {
+        }
+        
+        public string ping() {
+            return base.Channel.ping();
         }
         
         public void initWithBladesFromIPList(string[] bladeIPs, bool useMockedManager, bladeDirectorClient.bladeDirectorService.NASFaultInjectionPolicy faultInjection) {

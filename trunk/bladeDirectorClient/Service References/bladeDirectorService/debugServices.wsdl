@@ -100,6 +100,44 @@
       </wsp:All>
     </wsp:ExactlyOne>
   </wsp:Policy>
+  <wsp:Policy wsu:Id="WSHttpBinding_IDebugServices_ping_Input_policy">
+    <wsp:ExactlyOne>
+      <wsp:All>
+        <sp:SignedParts xmlns:sp="http://schemas.xmlsoap.org/ws/2005/07/securitypolicy">
+          <sp:Body />
+          <sp:Header Name="To" Namespace="http://www.w3.org/2005/08/addressing" />
+          <sp:Header Name="From" Namespace="http://www.w3.org/2005/08/addressing" />
+          <sp:Header Name="FaultTo" Namespace="http://www.w3.org/2005/08/addressing" />
+          <sp:Header Name="ReplyTo" Namespace="http://www.w3.org/2005/08/addressing" />
+          <sp:Header Name="MessageID" Namespace="http://www.w3.org/2005/08/addressing" />
+          <sp:Header Name="RelatesTo" Namespace="http://www.w3.org/2005/08/addressing" />
+          <sp:Header Name="Action" Namespace="http://www.w3.org/2005/08/addressing" />
+        </sp:SignedParts>
+        <sp:EncryptedParts xmlns:sp="http://schemas.xmlsoap.org/ws/2005/07/securitypolicy">
+          <sp:Body />
+        </sp:EncryptedParts>
+      </wsp:All>
+    </wsp:ExactlyOne>
+  </wsp:Policy>
+  <wsp:Policy wsu:Id="WSHttpBinding_IDebugServices_ping_output_policy">
+    <wsp:ExactlyOne>
+      <wsp:All>
+        <sp:SignedParts xmlns:sp="http://schemas.xmlsoap.org/ws/2005/07/securitypolicy">
+          <sp:Body />
+          <sp:Header Name="To" Namespace="http://www.w3.org/2005/08/addressing" />
+          <sp:Header Name="From" Namespace="http://www.w3.org/2005/08/addressing" />
+          <sp:Header Name="FaultTo" Namespace="http://www.w3.org/2005/08/addressing" />
+          <sp:Header Name="ReplyTo" Namespace="http://www.w3.org/2005/08/addressing" />
+          <sp:Header Name="MessageID" Namespace="http://www.w3.org/2005/08/addressing" />
+          <sp:Header Name="RelatesTo" Namespace="http://www.w3.org/2005/08/addressing" />
+          <sp:Header Name="Action" Namespace="http://www.w3.org/2005/08/addressing" />
+        </sp:SignedParts>
+        <sp:EncryptedParts xmlns:sp="http://schemas.xmlsoap.org/ws/2005/07/securitypolicy">
+          <sp:Body />
+        </sp:EncryptedParts>
+      </wsp:All>
+    </wsp:ExactlyOne>
+  </wsp:Policy>
   <wsp:Policy wsu:Id="WSHttpBinding_IDebugServices_initWithBladesFromIPList_Input_policy">
     <wsp:ExactlyOne>
       <wsp:All>
@@ -723,6 +761,12 @@
       <xsd:import schemaLocation="http://127.0.0.1/bladeDirectorDebug?xsd=xsd10" namespace="http://schemas.datacontract.org/2004/07/createDisks" />
     </xsd:schema>
   </wsdl:types>
+  <wsdl:message name="IDebugServices_ping_InputMessage">
+    <wsdl:part name="parameters" element="tns:ping" />
+  </wsdl:message>
+  <wsdl:message name="IDebugServices_ping_OutputMessage">
+    <wsdl:part name="parameters" element="tns:pingResponse" />
+  </wsdl:message>
   <wsdl:message name="IDebugServices_initWithBladesFromIPList_InputMessage">
     <wsdl:part name="parameters" element="tns:initWithBladesFromIPList" />
   </wsdl:message>
@@ -820,6 +864,10 @@
     <wsdl:part name="parameters" element="tns:setKeepAliveTimeoutResponse" />
   </wsdl:message>
   <wsdl:portType name="IDebugServices">
+    <wsdl:operation name="ping">
+      <wsdl:input wsam:Action="http://tempuri.org/IDebugServices/ping" message="tns:IDebugServices_ping_InputMessage" />
+      <wsdl:output wsam:Action="http://tempuri.org/IDebugServices/pingResponse" message="tns:IDebugServices_ping_OutputMessage" />
+    </wsdl:operation>
     <wsdl:operation name="initWithBladesFromIPList">
       <wsdl:input wsam:Action="http://tempuri.org/IDebugServices/initWithBladesFromIPList" message="tns:IDebugServices_initWithBladesFromIPList_InputMessage" />
       <wsdl:output wsam:Action="http://tempuri.org/IDebugServices/initWithBladesFromIPListResponse" message="tns:IDebugServices_initWithBladesFromIPList_OutputMessage" />
@@ -888,6 +936,17 @@
   <wsdl:binding name="WSHttpBinding_IDebugServices" type="tns:IDebugServices">
     <wsp:PolicyReference URI="#WSHttpBinding_IDebugServices_policy" />
     <soap12:binding transport="http://schemas.xmlsoap.org/soap/http" />
+    <wsdl:operation name="ping">
+      <soap12:operation soapAction="http://tempuri.org/IDebugServices/ping" style="document" />
+      <wsdl:input>
+        <wsp:PolicyReference URI="#WSHttpBinding_IDebugServices_ping_Input_policy" />
+        <soap12:body use="literal" />
+      </wsdl:input>
+      <wsdl:output>
+        <wsp:PolicyReference URI="#WSHttpBinding_IDebugServices_ping_output_policy" />
+        <soap12:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
     <wsdl:operation name="initWithBladesFromIPList">
       <soap12:operation soapAction="http://tempuri.org/IDebugServices/initWithBladesFromIPList" style="document" />
       <wsdl:input>

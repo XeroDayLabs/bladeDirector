@@ -5,6 +5,11 @@ namespace bladeDirectorWCF
 {
     public class debugServices : IDebugServices
     {
+        public string ping()
+        {
+            return "pong";
+        }
+
         public void initWithBladesFromIPList(string[] bladeIPs, bool useMockedManager, NASFaultInjectionPolicy faultInjection)
         {
             if (useMockedManager)

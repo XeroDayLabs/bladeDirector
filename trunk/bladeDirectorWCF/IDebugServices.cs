@@ -8,6 +8,9 @@ namespace bladeDirectorWCF
     public interface IDebugServices
     {
         [OperationContract]
+        string ping();
+
+        [OperationContract]
         void initWithBladesFromIPList(string[] bladeIPs, bool useMockedManager, NASFaultInjectionPolicy faultInjection);
 
         [OperationContract]

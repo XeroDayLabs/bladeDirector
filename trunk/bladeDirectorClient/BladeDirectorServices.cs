@@ -43,6 +43,30 @@ namespace bladeDirectorClient
             svc = new ServicesClient(baseBinding, new EndpointAddress(servicesURL));
 
             connectWithArgs(bladeDirectorWCFExe, "--baseURL " + baseURL + (withWeb ? "" : " --no-web "));
+
+            waitUntilReady(() => svc.getAllBladeIP());
+        }
+
+        protected void waitUntilReady(Action func)
+        {
+            // Wait until the main service is ready
+            DateTime deadline = DateTime.Now + TimeSpan.FromMinutes(1);
+            while (true)
+            {
+                try
+                {
+                    func();
+                }
+                catch (Exception e)
+                {
+                    if (DateTime.Now > deadline)
+                        throw new Exception("BladeDirectorWCF did not start, perhaps another instance is running?", e);
+                    svc = new ServicesClient(baseBinding, new EndpointAddress(servicesURL));
+                    Thread.Sleep(TimeSpan.FromSeconds(1));
+                    continue;
+                }
+                break;
+            }            
         }
 
         /// <summary>
@@ -66,26 +90,6 @@ namespace bladeDirectorClient
             bladeDirectorExeInfo.Arguments = args;
             Debug.WriteLine("Spawning bladeDirectorWCF with args '" + args + "'");
             _bladeDirectorProcess = Process.Start(bladeDirectorExeInfo);
-
-            // Wait until the service is ready
-            DateTime deadline = DateTime.Now + TimeSpan.FromMinutes(1);
-            while (true)
-            {
-                try
-                {
-                    svc.getAllBladeIP();
-                }
-                catch (Exception e)
-                {
-                    if (DateTime.Now > deadline)
-                        throw new Exception("BladeDirectorWCF did not start, perhaps another instance is running?", e);
-                    svc = new ServicesClient(baseBinding, new EndpointAddress(servicesURL));
-                    Thread.Sleep(TimeSpan.FromSeconds(1));
-                    continue;
-                }
-                break;
-            }
-
         }
 
         public resultAndBladeName waitForSuccess(resultAndBladeName res, TimeSpan timeout)
