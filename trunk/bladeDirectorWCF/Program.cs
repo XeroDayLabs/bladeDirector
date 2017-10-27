@@ -153,7 +153,14 @@ namespace bladeDirectorWCF
                 OpenTimeout = TimeSpan.FromSeconds(55),
                 CloseTimeout = TimeSpan.FromSeconds(55),
                 SendTimeout = TimeSpan.FromSeconds(55),
-                ReceiveTimeout = TimeSpan.FromSeconds(55)
+                //ReceiveTimeout = TimeSpan.FromSeconds(55),
+                ReceiveTimeout = TimeSpan.MaxValue,
+                ReliableSession = new OptionalReliableSession()
+                {
+                    InactivityTimeout = TimeSpan.MaxValue,
+                    Enabled = true,
+                    Ordered = true
+                }
             };
             svc.AddServiceEndpoint(contractInterfaceType, baseBinding, "");
             
