@@ -21,10 +21,18 @@ namespace bladeDirectorClient
             WSHttpBinding debugBinding = new WSHttpBinding
             {
                 MaxReceivedMessageSize = Int32.MaxValue,
-                ReaderQuotas = { MaxStringContentLength = Int32.MaxValue }
+                ReaderQuotas = { MaxStringContentLength = Int32.MaxValue },
+                ReliableSession = new OptionalReliableSession() {  InactivityTimeout = TimeSpan.MaxValue }
             };
             waitUntilReady(() =>
             {
+                if (svcDebug != null)
+                {
+                    try { ((IDisposable) svcDebug).Dispose(); }
+                    catch (CommunicationException) { }
+                    catch (TimeoutException) { }
+                }
+
                 svcDebug = new DebugServicesClient(debugBinding, new EndpointAddress(servicesDebugURL));
                 svcDebug.ping();
             });
@@ -46,11 +54,13 @@ namespace bladeDirectorClient
                 svcDebug.ping();
             });
         }
+
         public bladeDirectorDebugServices(string executablePath, string[] IPAddresses, bool isMocked = true, bool withWeb = false)
             : this(executablePath, withWeb)
         {
             svcDebug.initWithBladesFromIPList(IPAddresses, isMocked, NASFaultInjectionPolicy.retunSuccessful);
         }
+
         public bladeDirectorDebugServices(string executablePath, string ipAddress, bool isMocked, bool withWeb )
             : this(executablePath, new string[] { ipAddress }, isMocked, withWeb)
         {

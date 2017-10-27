@@ -38,13 +38,21 @@ namespace bladeDirectorClient
             baseBinding = new WSHttpBinding
             {
                 MaxReceivedMessageSize = Int32.MaxValue,
-                ReaderQuotas = { MaxStringContentLength = Int32.MaxValue }
+                ReaderQuotas = { MaxStringContentLength = Int32.MaxValue },
+                ReliableSession = new OptionalReliableSession() { InactivityTimeout = TimeSpan.MaxValue }
             };
 
             connectWithArgs(bladeDirectorWCFExe, "--baseURL " + baseURL + (withWeb ? "" : " --no-web "));
 
             waitUntilReady(() =>
             {
+                if (svc != null)
+                {
+                    try { ((IDisposable)svc).Dispose(); }
+                    catch (CommunicationException) { }
+                    catch (TimeoutException) { }
+                }
+                
                 svc = new ServicesClient(baseBinding, new EndpointAddress(servicesURL));
                 svc.getAllBladeIP();
             });
