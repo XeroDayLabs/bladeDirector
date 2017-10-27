@@ -14,7 +14,7 @@ namespace bladeDirectorClient
 
         private Process _bladeDirectorProcess;
 
-        private WSHttpBinding baseBinding;
+        private readonly WSHttpBinding baseBinding = createBinding();
 
         public string servicesURL { get; private set; }
 
@@ -35,16 +35,48 @@ namespace bladeDirectorClient
             if (withWeb)
                 iLoHypervisorPool.ensurePortIsFree(81);
 
-            baseBinding = new WSHttpBinding
-            {
-                MaxReceivedMessageSize = Int32.MaxValue,
-                ReaderQuotas = { MaxStringContentLength = Int32.MaxValue }
-            };
-
             connectWithArgs(bladeDirectorWCFExe, "--baseURL " + baseURL + (withWeb ? "" : " --no-web "));
 
+            connect();
+        }
+
+        /// <summary>
+        /// Connect to a remote blade director as specified.
+        /// </summary>
+        public BladeDirectorServices(string url)
+        {
+            servicesURL = url;
+
+            connect();
+        }
+
+        private static WSHttpBinding createBinding()
+        {
+            return new WSHttpBinding
+            {
+                MaxReceivedMessageSize = Int32.MaxValue,
+                ReaderQuotas = { MaxStringContentLength = Int32.MaxValue },
+                ReceiveTimeout = TimeSpan.MaxValue,
+                ReliableSession = new OptionalReliableSession()
+                {
+                    InactivityTimeout = TimeSpan.MaxValue,
+                    Enabled = true,
+                    Ordered = true
+                }
+            };
+        }
+
+        private void connect()
+        {
             waitUntilReady(() =>
             {
+                if (svc != null)
+                {
+                    try { ((IDisposable)svc).Dispose(); }
+                    catch (CommunicationException) { }
+                    catch (TimeoutException) { }
+                }
+
                 svc = new ServicesClient(baseBinding, new EndpointAddress(servicesURL));
                 svc.getAllBladeIP();
             });
@@ -69,20 +101,6 @@ namespace bladeDirectorClient
                 }
                 break;
             }            
-        }
-
-        /// <summary>
-        /// Connect to a remote blade director as specified.
-        /// </summary>
-        public BladeDirectorServices(string url)
-        {
-            servicesURL = url;
-            WSHttpBinding baseBinding = new WSHttpBinding
-            {
-                MaxReceivedMessageSize = Int32.MaxValue,
-                ReaderQuotas = { MaxStringContentLength = Int32.MaxValue }
-            };
-            svc = new ServicesClient(baseBinding, new EndpointAddress(servicesURL));
         }
 
         protected void connectWithArgs(string bladeDirectorWCFExe, string args)
