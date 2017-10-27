@@ -16,6 +16,7 @@ namespace tests
             string testBiosXML = Properties.Resources.testBIOS;
 
             using (bladeDirectorDebugServices svc = new bladeDirectorDebugServices(basicBladeTests.WCFPath, true))
+            //using (bladeDirectorDebugServices svc = new bladeDirectorDebugServices("http://localhost/bladeDirectorDebug", "http://localhost/bladeDirector"))
             {
                 string hostip = "1.2.3.4";
 

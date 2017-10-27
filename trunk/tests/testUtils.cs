@@ -69,8 +69,7 @@ namespace tests
                         if (DateTime.Now > deadline)
                             throw new TimeoutException();
                         res = uut.svc.getProgress(res.waitToken);
-                        continue;
-
+                        break;
                     default:
                         Assert.Fail("Unexpected status during .getProgress: " + res.result.code + " / " +
                                     res.result.errMsg);
