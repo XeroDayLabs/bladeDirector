@@ -71,6 +71,7 @@ namespace bladeDirectorClient
                     Enabled = true,
                     Ordered = true
                 }
+                Security = new WSHttpSecurity() { Mode = SecurityMode.None }
             };
         }
 

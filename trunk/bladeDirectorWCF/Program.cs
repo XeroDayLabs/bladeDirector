@@ -160,7 +160,8 @@ namespace bladeDirectorWCF
                     InactivityTimeout = TimeSpan.MaxValue,
                     Enabled = true,
                     Ordered = true
-                }
+                },
+                Security = new WSHttpSecurity() { Mode = SecurityMode.None }
             };
             svc.AddServiceEndpoint(contractInterfaceType, baseBinding, "");
             
