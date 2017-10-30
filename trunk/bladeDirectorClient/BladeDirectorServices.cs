@@ -62,7 +62,8 @@ namespace bladeDirectorClient
                     InactivityTimeout = TimeSpan.MaxValue,
                     Enabled = true,
                     Ordered = true
-                }
+                },
+                Security = new WSHttpSecurity() { Mode = SecurityMode.None }
             };
         }
 

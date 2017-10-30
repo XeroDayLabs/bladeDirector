@@ -1491,6 +1491,9 @@ bladeLockType.lockvmDeployState,  // <-- TODO/FIXME: write perms shuold imply re
         {
             string toRet = _ipxeUrl;
 
+            if (toRet == null)
+                return "(none)";
+
             if (toRet.Contains("0.0.0.0"))
             {
                 string clientIP = ipUtils.getBestRouteTo(IPAddress.Parse(srcIP)).ToString();

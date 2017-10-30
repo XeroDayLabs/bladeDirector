@@ -441,13 +441,12 @@ namespace createDisks
 
         private static void copyAndRunScript(string scriptArgs, hypervisor hyp)
         {
-            string deployFileName = Path.GetTempFileName();
-            try
+            using (temporaryFile deployFile = new temporaryFile())
             {
-                File.WriteAllText(deployFileName, Properties.Resources.deployToBlade);
-                hypervisor_iLo.doWithRetryOnSomeExceptions(() =>
+                File.WriteAllText(deployFile.filename, Properties.Resources.deployToBlade);
+                hypervisor.doWithRetryOnSomeExceptions(() =>
                 {
-                    hyp.copyToGuest("C:\\deployed.bat", deployFileName);
+                    hyp.copyToGuest("C:\\deployed.bat", deployFile.filename);
                 });
                 string args = String.Format("/c c:\\deployed.bat {0}", scriptArgs);
                 hyp.mkdir("c:\\deployment");
@@ -455,22 +454,6 @@ namespace createDisks
                 if (res.resultCode != 0)
                 {
                 //    throw new  Exception("deployment batch file returned nonzero: stderr '" + res.stderr + "' stdout '" + res.stdout + "'");
-                }
-            }
-            finally
-            {
-                DateTime deadline = DateTime.Now + TimeSpan.FromSeconds(10);
-                while (File.Exists(deployFileName))
-                {
-                    try
-                    {
-                        File.Delete(deployFileName);
-                    }
-                    catch (Exception)
-                    {
-                        if (DateTime.Now > deadline)
-                            throw;
-                    }
                 }
             }
         }
