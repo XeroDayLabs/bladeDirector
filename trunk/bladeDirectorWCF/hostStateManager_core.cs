@@ -9,8 +9,6 @@ using System.Threading;
 using System.Threading.Tasks;
 using bladeDirectorWCF.Properties;
 using createDisks;
-using Decider.Csp.BaseTypes;
-using Decider.Csp.Integer;
 using hypervisors;
 
 namespace bladeDirectorWCF
@@ -1232,54 +1230,7 @@ bladeLockType.lockvmDeployState,  // <-- TODO/FIXME: write perms shuold imply re
                 }
             }
         }
-        /*
-        private void checkFairness()
-        {
-            int maxScorePossible = getAllBladeIP().Length;
-            currentOwnerStat[] stats = db.getFairnessStats_withoutLocking();
-            string[] owners = stats.Select(x => x.ownerName).ToArray();
-            if (owners.Length == 0)
-                return;
-            string[] blades = db.getAllBladeIP();
-            int fairShare = blades.Length / owners.Length;
 
-            // Make a var for each blade's potential owner
-            var ownerOf = new VariableInteger[blades.Length];
-            for (int index = 0; index < blades.Length; index++)
-                ownerOf[index] = new VariableInteger("ownerOf_" + blades[index], 0, owners.Length );
-            // A var to represent each owner's "in use share"
-            var ownerScore = new VariableInteger[owners.Length];
-            for (int index = 0; index < owners.Length; index++)
-            {
-                ownerScore[index] = new VariableInteger("ownerScore_" + owners[index], 0, maxScorePossible);
-            }
-            // And a constraint to optimise for - the total error.
-            var totErr = new VariableInteger("totErr", 0, maxScorePossible);
-            var totErrCons = new ConstraintInteger(totErr == ownerScore.Sum(x => Math.Abs(x.Value - maxScorePossible)));
-
-            using (disposingList<lockableBladeSpec> bladeInfo = db.getAllBladeInfo(x => true, bladeLockType.lockOwnership, bladeLockType.lockNone))
-            {
-                var constraints = new List<IConstraint>();
-                var variables = new List<VariableInteger>();
-
-                foreach (lockableBladeSpec blade in bladeInfo)
-                {
-
-                }
-                IState<int> state = new StateInteger(variables, constraints);
-                StateOperationResult res;
-                IDictionary<string, IVariable<int>> slns;
-                state.StartSearch(out res, totErr, out slns, 1000);
-                if (res == StateOperationResult.Solved)
-                {
-                    foreach (KeyValuePair<string, IVariable<int>> kvp in slns)
-                    {
-                        Debug.WriteLine(kvp.Key, kvp.Value);
-                    }
-                }
-            }
-        }
-        */
         private void notifyBootDirectorOfNode(bladeSpec blade)
         {
             Uri wcfURI = new Uri("http://localhost/bootMenuController");

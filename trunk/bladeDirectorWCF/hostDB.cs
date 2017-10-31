@@ -406,7 +406,6 @@ namespace bladeDirectorWCF
             List<long> VMIDs = new List<long>();
             string sqlCommand = "select vmConfigKey from vmConfiguration " +
                                 "join bladeConfiguration on parentbladeID = bladeConfigKey " +
-//                                    "join bladeownership on bladeownership.ownershipKey = vmConfiguration.ownershipID " +
                                 "where bladeIP = $vmServerIP";
             using (SQLiteCommand cmd = new SQLiteCommand(sqlCommand, conn))
             {
