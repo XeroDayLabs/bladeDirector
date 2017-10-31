@@ -27,6 +27,7 @@ namespace bladeDirectorClient
             : base(serviceURL)
         {
             servicesDebugURL = debugURL;
+            servicesDebugURL = servicesDebugURL.Replace("0.0.0.0", "127.0.0.1");
 
             connect();
         }
