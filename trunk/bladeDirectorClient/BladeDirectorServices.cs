@@ -35,7 +35,8 @@ namespace bladeDirectorClient
             if (webUri != null)
                 iLoHypervisorPool.ensurePortIsFree((ushort) webUri.Port);
 
-            connectWithArgs(bladeDirectorWCFExe, "--baseURL " + baseURL + (webUri != null ? webUri.AbsoluteUri : " --no-web "));
+            connectWithArgs(bladeDirectorWCFExe, "--baseURL " + baseURL + " " + 
+                (webUri != null ? "--webURL " + webUri.AbsoluteUri : " --no-web "));
 
             connect();
         }
