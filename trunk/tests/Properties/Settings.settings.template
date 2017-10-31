@@ -11,5 +11,8 @@
     <Setting Name="repoRoot" Type="System.String" Scope="User">
       <Value Profile="(Default)">C:\code\bladeDirector</Value>
     </Setting>
+    <Setting Name="webURL" Type="System.String" Scope="User">
+      <Value Profile="(Default)">http://0.0.0.0/bladeDirector-dev</Value>
+    </Setting>
 </Settings>
 </SettingsFile>

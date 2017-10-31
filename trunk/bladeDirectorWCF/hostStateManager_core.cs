@@ -9,6 +9,8 @@ using System.Threading;
 using System.Threading.Tasks;
 using bladeDirectorWCF.Properties;
 using createDisks;
+using Decider.Csp.BaseTypes;
+using Decider.Csp.Integer;
 using hypervisors;
 
 namespace bladeDirectorWCF
@@ -184,8 +186,7 @@ namespace bladeDirectorWCF
                 return new result(resultCode.bladeQueueFull, msg);
             }
 
-            // It's all okay, so request the release.
-            reqBlade.spec.state = bladeStatus.releaseRequested;
+            // It's all okay, so add us to the queue.
             reqBlade.spec.nextOwner = requestorID;
 
             addLogEvent("Blade " + requestorID + " requested blade " + bladeIP + "(success, requestor added to queue)");
@@ -1128,9 +1129,12 @@ bladeLockType.lockvmDeployState,  // <-- TODO/FIXME: write perms shuold imply re
        
         public resultAndBladeName RequestAnySingleNode(string requestorIP)
         {
+            resultAndBladeName toRet = null;
+
             // Put blades in an order of preference. First come unused blades, then used blades with an empty queue.
             using (disposingList<lockableBladeSpec> blades = db.getAllBladeInfo(
-                x => x.currentlyBeingAVMServer == false && x.currentlyHavingBIOSDeployed == false,
+                //x => x.currentlyBeingAVMServer == false && x.currentlyHavingBIOSDeployed == false,
+                x => true,
                 bladeLockType.lockOwnership | bladeLockType.lockvmDeployState | bladeLockType.lockBIOS,
                 bladeLockType.lockOwnership | bladeLockType.lockvmDeployState))
             {
@@ -1142,13 +1146,140 @@ bladeLockType.lockvmDeployState,  // <-- TODO/FIXME: write perms shuold imply re
                 {
                     result res = requestBlade(reqBlade, requestorIP);
                     if (res.code == resultCode.success || res.code == resultCode.pending)
-                        return new resultAndBladeName(res) { bladeName = reqBlade.spec.bladeIP };
+                    {
+                        toRet = new resultAndBladeName(res) {bladeName = reqBlade.spec.bladeIP};
+                        break;
+                    }
                 }
-                // Otherwise, all blades have full queues.
-                return new resultAndBladeName(resultCode.bladeQueueFull, null, "All blades are full");
+
+                if (toRet == null)
+                {
+                    // Otherwise, all blades have full queues.
+                    return new resultAndBladeName(resultCode.bladeQueueFull, null, "All blades are full");
+                }
+            }
+
+            checkFairness();
+            return toRet;
+        }
+        
+        private void checkFairness()
+        {
+            // If a blade owner is under its quota, then promote it in any queues where the current owner is over-quota.
+            currentOwnerStat[] stats = db.getFairnessStats_withoutLocking();
+            string[] owners = stats.Where(x => x.ownerName != "vmserver").Select(x => x.ownerName).ToArray();
+            if (owners.Length == 0)
+                return;
+            int fairShare = db.getAllBladeIP().Length / owners.Length;
+
+            currentOwnerStat[] ownersOverQuota = stats.Where(x => x.allocatedBlades > fairShare).ToArray();
+            List<currentOwnerStat> ownersUnderQuota = stats.Where(x => x.allocatedBlades < fairShare).ToList();
+
+            //foreach (var migrateFrom in ownersOverQuota)
+            {
+                foreach (var migrateTo in ownersUnderQuota)
+                {
+                    using (disposingList<lockableBladeSpec> migratory = db.getAllBladeInfo(x => 
+                            (
+                                // Migrate if the dest is currently owned by someone over-quota
+                                (ownersOverQuota.Count(y => y.ownerName == x.currentOwner) > 0 ) ||
+                                // Or if it is a VM server, and currently holds VMs that are _all_ allocated to over-quota users
+                                ( 
+                                    x.currentOwner == "vmserver" &&
+
+                                    db.getVMByVMServerIP_nolocking(x.bladeIP).All(vm =>
+                                        (ownersOverQuota.Count(overQuotaUser => overQuotaUser.ownerName == vm.currentOwner) > 0)
+                                    )
+                                )
+                            )
+                            &&
+                            x.nextOwner == migrateTo.ownerName &&
+                            (x.state == bladeStatus.inUse || x.state == bladeStatus.inUseByDirector),
+                        bladeLockType.lockOwnership,
+                        bladeLockType.lockOwnership,
+                        true, true,
+                        max: 1))
+                    {
+                        if (migratory.Count == 0)
+                        {
+                            // There is nowhere to migrate this owner from. Try another.
+                            continue;
+                        }
+
+                        if (migratory[0].spec.currentlyBeingAVMServer)
+                        {
+                            // It's a VM server. Migrate all the VMs off it (ie, request them to be destroyed).
+                            migratory[0].spec.nextOwner = migrateTo.ownerName;
+                            using (disposingList<lockableVMSpec> childVMs = db.getVMByVMServerIP(migratory[0].spec.bladeIP))
+                            {
+                                foreach (lockableVMSpec VM in childVMs)
+                                {
+                                    Debug.WriteLine("Requesting release for VM " + VM.spec.VMIP);
+                                    VM.spec.state = bladeStatus.releaseRequested;
+                                }
+                            }
+                            migratory[0].spec.nextOwner = migrateTo.ownerName;
+                            migratory[0].spec.state = bladeStatus.releaseRequested;
+                        }
+                        else
+                        {
+                            // It's a physical server. Just mark it as .releaseRequested.
+                            Debug.WriteLine("Requesting release for blade " + migratory[0].spec.bladeIP);
+                            migratory[0].spec.nextOwner = migrateTo.ownerName;
+                            migratory[0].spec.state = bladeStatus.releaseRequested;
+                        }
+                    }
+                }
             }
         }
+        /*
+        private void checkFairness()
+        {
+            int maxScorePossible = getAllBladeIP().Length;
+            currentOwnerStat[] stats = db.getFairnessStats_withoutLocking();
+            string[] owners = stats.Select(x => x.ownerName).ToArray();
+            if (owners.Length == 0)
+                return;
+            string[] blades = db.getAllBladeIP();
+            int fairShare = blades.Length / owners.Length;
 
+            // Make a var for each blade's potential owner
+            var ownerOf = new VariableInteger[blades.Length];
+            for (int index = 0; index < blades.Length; index++)
+                ownerOf[index] = new VariableInteger("ownerOf_" + blades[index], 0, owners.Length );
+            // A var to represent each owner's "in use share"
+            var ownerScore = new VariableInteger[owners.Length];
+            for (int index = 0; index < owners.Length; index++)
+            {
+                ownerScore[index] = new VariableInteger("ownerScore_" + owners[index], 0, maxScorePossible);
+            }
+            // And a constraint to optimise for - the total error.
+            var totErr = new VariableInteger("totErr", 0, maxScorePossible);
+            var totErrCons = new ConstraintInteger(totErr == ownerScore.Sum(x => Math.Abs(x.Value - maxScorePossible)));
+
+            using (disposingList<lockableBladeSpec> bladeInfo = db.getAllBladeInfo(x => true, bladeLockType.lockOwnership, bladeLockType.lockNone))
+            {
+                var constraints = new List<IConstraint>();
+                var variables = new List<VariableInteger>();
+
+                foreach (lockableBladeSpec blade in bladeInfo)
+                {
+
+                }
+                IState<int> state = new StateInteger(variables, constraints);
+                StateOperationResult res;
+                IDictionary<string, IVariable<int>> slns;
+                state.StartSearch(out res, totErr, out slns, 1000);
+                if (res == StateOperationResult.Solved)
+                {
+                    foreach (KeyValuePair<string, IVariable<int>> kvp in slns)
+                    {
+                        Debug.WriteLine(kvp.Key, kvp.Value);
+                    }
+                }
+            }
+        }
+        */
         private void notifyBootDirectorOfNode(bladeSpec blade)
         {
             Uri wcfURI = new Uri("http://localhost/bootMenuController");
@@ -1401,6 +1532,12 @@ bladeLockType.lockvmDeployState,  // <-- TODO/FIXME: write perms shuold imply re
             return db.getBladeStatus(nodeIp, requestorIp);
         }
 
+        public GetBladeStatusResult getVMStatus(string requestorIp, string nodeIp)
+        {
+            checkKeepAlives(requestorIp);
+            return db.getVMStatus(nodeIp, requestorIp);
+        }
+
         public string generateIPXEScript(string srcIP)
         {
             try
@@ -1506,6 +1643,28 @@ bladeLockType.lockvmDeployState,  // <-- TODO/FIXME: write perms shuold imply re
         public void setWebSvcURL(string newURL)
         {
             _ipxeUrl = newURL;
+        }
+
+        public resultAndBladeName[] requestAsManyVMAsPossible(string requestorIP, VMHardwareSpec hwSpec, VMSoftwareSpec swSpec)
+        {
+            List<resultAndBladeName> toRet = new List<resultAndBladeName>();
+
+            while(true)
+            {
+                resultAndBladeName res = RequestAnySingleVM(requestorIP, hwSpec, swSpec);
+
+                if (res.result.code == resultCode.pending)
+                {
+                    toRet.Add(res);
+                    continue;
+                }
+                else
+                {
+                    break;
+                }
+            }
+
+            return toRet.ToArray();
         }
     }
 }

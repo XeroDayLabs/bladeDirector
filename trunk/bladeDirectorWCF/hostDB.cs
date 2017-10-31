@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Data.SQLite;
 using System.IO;
+using System.Linq;
 using System.Threading;
 using bladeDirectorWCF.Properties;
 
@@ -284,6 +285,88 @@ namespace bladeDirectorWCF
             }
         }
 
+        public currentOwnerStat[] getFairnessStats_withoutLocking()
+        {
+            List<currentOwnerStat> blades = getFairnessStatsForBlades_withoutLocking().ToList();
+            // Now add VM stats. 
+            blades.RemoveAll(x => x.ownerName == "vmserver");
+
+            foreach (string bladeIP in getAllBladeIP())
+            {
+                float totalVMs = 0;
+                Dictionary<string, float> ownershipForThisBlade = new Dictionary<string, float>();
+
+                string sqlCommand = "select bladeOwnership.currentOwner from VMConfiguration " +
+                                    " join bladeOwnership on VMConfiguration.ownershipID = bladeOwnership.ownershipKey " +
+                                    " where parentBladeIP == $bladeIP ";
+                using (SQLiteCommand cmd = new SQLiteCommand(sqlCommand, conn))
+                {
+                    cmd.Parameters.AddWithValue("$bladeIP", bladeIP);
+                    using (SQLiteDataReader reader = cmd.ExecuteReader())
+                    {
+                        while (reader.Read())
+                        {
+                            string owner = reader[0].ToString();
+                            if (!ownershipForThisBlade.ContainsKey(owner))
+                                ownershipForThisBlade.Add(owner, 0);
+
+                            ownershipForThisBlade[owner]++;
+
+                            totalVMs++;
+                        }
+                    }
+                }
+                foreach (KeyValuePair<string, float> kvp in ownershipForThisBlade)
+                {
+                    if (blades.Count(x => x.ownerName == kvp.Key) == 0)
+                        blades.Add(new currentOwnerStat(kvp.Key, 0));
+                    blades.Single(x => x.ownerName == kvp.Key).allocatedBlades += ((1.0f/totalVMs) * kvp.Value);
+                }
+            }
+
+            return blades.ToArray();
+        }
+
+        public currentOwnerStat[] getFairnessStatsForBlades_withoutLocking()
+        {
+            // TODO: check .state
+            List<currentOwnerStat> toRet = new List<currentOwnerStat>();
+
+            string sqlCommand = "select bladeOwnership.currentOwner, count(*) from bladeConfiguration " +
+                                " join bladeOwnership on bladeConfiguration.ownershipID = bladeOwnership.ownershipKey " +
+                                " group by bladeOwnership.currentOwner";
+            using (SQLiteCommand cmd = new SQLiteCommand(sqlCommand, conn))
+            {
+                using (SQLiteDataReader reader = cmd.ExecuteReader())
+                {
+                    while (reader.Read())
+                    {
+                        toRet.Add(new currentOwnerStat(reader[0].ToString(), int.Parse(reader[1].ToString())));
+                    }
+                }
+            }
+
+            // Add any owners in the queue but not actually owning any blades
+            string allOwnersSQL = "select bladeOwnership.currentOwner, bladeOwnership.nextOwner from bladeOwnership ";
+            using (SQLiteCommand cmd = new SQLiteCommand(allOwnersSQL, conn))
+            {
+                using (SQLiteDataReader reader = cmd.ExecuteReader())
+                {
+                    while (reader.Read())
+                    {
+                        if (reader[0].ToString() != "" & toRet.Count(x => x.ownerName == reader[0].ToString()) == 0)
+                            toRet.Add(new currentOwnerStat(reader[0].ToString(), 0));
+
+                        if (reader[1].ToString() != "" & toRet.Count(x => x.ownerName == reader[1].ToString()) == 0)
+                            toRet.Add(new currentOwnerStat(reader[1].ToString(), 0));
+                    }
+                }
+            }
+
+
+            return toRet.ToArray();
+        }
+
         public lockableVMSpec getVMByDBID(long VMID)
         {
             return new lockableVMSpec(conn, getVMByDBID_nolocking(VMID));
@@ -371,8 +454,31 @@ namespace bladeDirectorWCF
 
         public GetBladeStatusResult getBladeStatus(string nodeIp, string requestorIp)
         {
-            using (lockableBladeSpec blade = getBladeByIP(nodeIp, bladeLockType.lockOwnership, bladeLockType.lockNone, 
+            using (lockableBladeSpec blade = getBladeByIP(nodeIp, bladeLockType.lockOwnership, bladeLockType.lockNone,
                 permitAccessDuringBIOS: true, permitAccessDuringDeployment: true))
+            {
+                switch (blade.spec.state)
+                {
+                    case bladeStatus.unused:
+                        return GetBladeStatusResult.unused;
+                    case bladeStatus.releaseRequested:
+                        return GetBladeStatusResult.releasePending;
+                    case bladeStatus.inUse:
+                        if (blade.spec.currentOwner == requestorIp)
+                            return GetBladeStatusResult.yours;
+                        return GetBladeStatusResult.notYours;
+                    case bladeStatus.inUseByDirector:
+                        return GetBladeStatusResult.notYours;
+                    default:
+                        throw new ArgumentOutOfRangeException();
+                }
+            }
+        }
+
+        // TODO: reduce duplication with above
+        public GetBladeStatusResult getVMStatus(string nodeIp, string requestorIp)
+        {
+            using (lockableVMSpec blade = getVMByIP(nodeIp, bladeLockType.lockOwnership, bladeLockType.lockNone))
             {
                 switch (blade.spec.state)
                 {
@@ -485,6 +591,18 @@ namespace bladeDirectorWCF
         public void Dispose()
         {
             conn.Dispose();
+        }
+    }
+
+    public class currentOwnerStat
+    {
+        public string ownerName;
+        public float allocatedBlades;
+
+        public currentOwnerStat(string newOwnerName, int newAllocatedBlades )
+        {
+            ownerName = newOwnerName;
+            allocatedBlades = newAllocatedBlades;
         }
     }
 

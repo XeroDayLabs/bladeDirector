@@ -56,5 +56,17 @@ namespace tests.Properties {
             set {
                 this["repoRoot"] = value;
             }
-        }    }
+        }    
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("http://0.0.0.0/bladeDirector-dev")]
+        public string webURL {
+            get {
+                return ((string)(this["webURL"]));
+            }
+            set {
+                this["webURL"] = value;
+            }
+        }
+  }
 }

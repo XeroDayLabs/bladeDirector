@@ -254,4 +254,10 @@
     </xs:sequence>
   </xs:complexType>
   <xs:element name="VMSoftwareSpec" nillable="true" type="tns:VMSoftwareSpec" />
+  <xs:complexType name="ArrayOfresultAndBladeName">
+    <xs:sequence>
+      <xs:element minOccurs="0" maxOccurs="unbounded" name="resultAndBladeName" nillable="true" type="tns:resultAndBladeName" />
+    </xs:sequence>
+  </xs:complexType>
+  <xs:element name="ArrayOfresultAndBladeName" nillable="true" type="tns:ArrayOfresultAndBladeName" />
 </xs:schema>

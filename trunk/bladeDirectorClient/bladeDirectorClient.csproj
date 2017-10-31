@@ -69,6 +69,18 @@
     <CodeAnalysisRuleSet>MinimumRecommendedRules.ruleset</CodeAnalysisRuleSet>
   </PropertyGroup>
   <ItemGroup>
+    <Reference Include="Decider.Csp.BaseTypes, Version=0.2.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\packages\Decider.0.3.4\lib\net45\Decider.Csp.BaseTypes.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="Decider.Csp.Global.AllDifferentInteger, Version=0.2.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\packages\Decider.0.3.4\lib\net45\Decider.Csp.Global.AllDifferentInteger.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="Decider.Csp.Integer, Version=0.2.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\packages\Decider.0.3.4\lib\net45\Decider.Csp.Integer.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
     <Reference Include="Microsoft.VisualStudio.QualityTools.UnitTestFramework, Version=10.1.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL" />
     <Reference Include="System" />
     <Reference Include="System.Core" />
@@ -110,6 +122,7 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="app.config" />
+    <None Include="packages.config" />
     <None Include="Properties\Settings.settings">
       <Generator>SettingsSingleFileGenerator</Generator>
       <LastGenOutput>Settings.Designer.cs</LastGenOutput>

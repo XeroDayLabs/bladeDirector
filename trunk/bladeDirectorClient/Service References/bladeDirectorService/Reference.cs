@@ -17,8 +17,8 @@ namespace bladeDirectorClient.bladeDirectorService {
     [System.CodeDom.Compiler.GeneratedCodeAttribute("System.Runtime.Serialization", "4.0.0.0")]
     [System.Runtime.Serialization.DataContractAttribute(Name="resultAndWaitToken", Namespace="http://schemas.datacontract.org/2004/07/bladeDirectorWCF")]
     [System.SerializableAttribute()]
-    [System.Runtime.Serialization.KnownTypeAttribute(typeof(bladeDirectorClient.bladeDirectorService.resultAndBIOSConfig))]
     [System.Runtime.Serialization.KnownTypeAttribute(typeof(bladeDirectorClient.bladeDirectorService.resultAndBladeName))]
+    [System.Runtime.Serialization.KnownTypeAttribute(typeof(bladeDirectorClient.bladeDirectorService.resultAndBIOSConfig))]
     public partial class resultAndWaitToken : object, System.Runtime.Serialization.IExtensibleDataObject, System.ComponentModel.INotifyPropertyChanged {
         
         [System.NonSerializedAttribute()]
@@ -200,29 +200,6 @@ namespace bladeDirectorClient.bladeDirectorService {
     
     [System.Diagnostics.DebuggerStepThroughAttribute()]
     [System.CodeDom.Compiler.GeneratedCodeAttribute("System.Runtime.Serialization", "4.0.0.0")]
-    [System.Runtime.Serialization.DataContractAttribute(Name="resultAndBIOSConfig", Namespace="http://schemas.datacontract.org/2004/07/bladeDirectorWCF")]
-    [System.SerializableAttribute()]
-    public partial class resultAndBIOSConfig : bladeDirectorClient.bladeDirectorService.resultAndWaitToken {
-        
-        [System.Runtime.Serialization.OptionalFieldAttribute()]
-        private string BIOSConfigField;
-        
-        [System.Runtime.Serialization.DataMemberAttribute()]
-        public string BIOSConfig {
-            get {
-                return this.BIOSConfigField;
-            }
-            set {
-                if ((object.ReferenceEquals(this.BIOSConfigField, value) != true)) {
-                    this.BIOSConfigField = value;
-                    this.RaisePropertyChanged("BIOSConfig");
-                }
-            }
-        }
-    }
-    
-    [System.Diagnostics.DebuggerStepThroughAttribute()]
-    [System.CodeDom.Compiler.GeneratedCodeAttribute("System.Runtime.Serialization", "4.0.0.0")]
     [System.Runtime.Serialization.DataContractAttribute(Name="resultAndBladeName", Namespace="http://schemas.datacontract.org/2004/07/bladeDirectorWCF")]
     [System.SerializableAttribute()]
     public partial class resultAndBladeName : bladeDirectorClient.bladeDirectorService.resultAndWaitToken {
@@ -239,6 +216,29 @@ namespace bladeDirectorClient.bladeDirectorService {
                 if ((object.ReferenceEquals(this.bladeNameField, value) != true)) {
                     this.bladeNameField = value;
                     this.RaisePropertyChanged("bladeName");
+                }
+            }
+        }
+    }
+    
+    [System.Diagnostics.DebuggerStepThroughAttribute()]
+    [System.CodeDom.Compiler.GeneratedCodeAttribute("System.Runtime.Serialization", "4.0.0.0")]
+    [System.Runtime.Serialization.DataContractAttribute(Name="resultAndBIOSConfig", Namespace="http://schemas.datacontract.org/2004/07/bladeDirectorWCF")]
+    [System.SerializableAttribute()]
+    public partial class resultAndBIOSConfig : bladeDirectorClient.bladeDirectorService.resultAndWaitToken {
+        
+        [System.Runtime.Serialization.OptionalFieldAttribute()]
+        private string BIOSConfigField;
+        
+        [System.Runtime.Serialization.DataMemberAttribute()]
+        public string BIOSConfig {
+            get {
+                return this.BIOSConfigField;
+            }
+            set {
+                if ((object.ReferenceEquals(this.BIOSConfigField, value) != true)) {
+                    this.BIOSConfigField = value;
+                    this.RaisePropertyChanged("BIOSConfig");
                 }
             }
         }
@@ -1408,16 +1408,17 @@ namespace bladeDirectorClient.bladeDirectorService {
     [System.Runtime.Serialization.KnownTypeAttribute(typeof(bladeDirectorClient.bladeDirectorService.DbConnection))]
     [System.Runtime.Serialization.KnownTypeAttribute(typeof(bladeDirectorClient.bladeDirectorService.SQLiteConnection))]
     [System.Runtime.Serialization.KnownTypeAttribute(typeof(string[]))]
-    [System.Runtime.Serialization.KnownTypeAttribute(typeof(bladeDirectorClient.bladeDirectorService.resultAndBIOSConfig))]
+    [System.Runtime.Serialization.KnownTypeAttribute(typeof(bladeDirectorClient.bladeDirectorService.resultAndBladeName))]
     [System.Runtime.Serialization.KnownTypeAttribute(typeof(bladeDirectorClient.bladeDirectorService.resultAndWaitToken))]
     [System.Runtime.Serialization.KnownTypeAttribute(typeof(bladeDirectorClient.bladeDirectorService.result))]
     [System.Runtime.Serialization.KnownTypeAttribute(typeof(bladeDirectorClient.bladeDirectorService.resultCode))]
     [System.Runtime.Serialization.KnownTypeAttribute(typeof(bladeDirectorClient.bladeDirectorService.waitToken))]
     [System.Runtime.Serialization.KnownTypeAttribute(typeof(bladeDirectorClient.bladeDirectorService.handleTypes))]
-    [System.Runtime.Serialization.KnownTypeAttribute(typeof(bladeDirectorClient.bladeDirectorService.resultAndBladeName))]
+    [System.Runtime.Serialization.KnownTypeAttribute(typeof(bladeDirectorClient.bladeDirectorService.resultAndBIOSConfig))]
     [System.Runtime.Serialization.KnownTypeAttribute(typeof(bladeDirectorClient.bladeDirectorService.GetBladeStatusResult))]
     [System.Runtime.Serialization.KnownTypeAttribute(typeof(bladeDirectorClient.bladeDirectorService.VMHardwareSpec))]
     [System.Runtime.Serialization.KnownTypeAttribute(typeof(bladeDirectorClient.bladeDirectorService.VMSoftwareSpec))]
+    [System.Runtime.Serialization.KnownTypeAttribute(typeof(bladeDirectorClient.bladeDirectorService.resultAndBladeName[]))]
     [System.Runtime.Serialization.KnownTypeAttribute(typeof(bladeDirectorClient.bladeDirectorService.vmSpec))]
     [System.Runtime.Serialization.KnownTypeAttribute(typeof(bladeDirectorClient.bladeDirectorService.bladeOwnership))]
     [System.Runtime.Serialization.KnownTypeAttribute(typeof(bladeDirectorClient.bladeDirectorService.bladeLockType))]
@@ -1484,16 +1485,17 @@ namespace bladeDirectorClient.bladeDirectorService {
     [System.Runtime.Serialization.KnownTypeAttribute(typeof(bladeDirectorClient.bladeDirectorService.SQLiteConnection))]
     [System.Runtime.Serialization.KnownTypeAttribute(typeof(string[]))]
     [System.Runtime.Serialization.KnownTypeAttribute(typeof(bladeDirectorClient.bladeDirectorService.MarshalByRefObject))]
-    [System.Runtime.Serialization.KnownTypeAttribute(typeof(bladeDirectorClient.bladeDirectorService.resultAndBIOSConfig))]
+    [System.Runtime.Serialization.KnownTypeAttribute(typeof(bladeDirectorClient.bladeDirectorService.resultAndBladeName))]
     [System.Runtime.Serialization.KnownTypeAttribute(typeof(bladeDirectorClient.bladeDirectorService.resultAndWaitToken))]
     [System.Runtime.Serialization.KnownTypeAttribute(typeof(bladeDirectorClient.bladeDirectorService.result))]
     [System.Runtime.Serialization.KnownTypeAttribute(typeof(bladeDirectorClient.bladeDirectorService.resultCode))]
     [System.Runtime.Serialization.KnownTypeAttribute(typeof(bladeDirectorClient.bladeDirectorService.waitToken))]
     [System.Runtime.Serialization.KnownTypeAttribute(typeof(bladeDirectorClient.bladeDirectorService.handleTypes))]
-    [System.Runtime.Serialization.KnownTypeAttribute(typeof(bladeDirectorClient.bladeDirectorService.resultAndBladeName))]
+    [System.Runtime.Serialization.KnownTypeAttribute(typeof(bladeDirectorClient.bladeDirectorService.resultAndBIOSConfig))]
     [System.Runtime.Serialization.KnownTypeAttribute(typeof(bladeDirectorClient.bladeDirectorService.GetBladeStatusResult))]
     [System.Runtime.Serialization.KnownTypeAttribute(typeof(bladeDirectorClient.bladeDirectorService.VMHardwareSpec))]
     [System.Runtime.Serialization.KnownTypeAttribute(typeof(bladeDirectorClient.bladeDirectorService.VMSoftwareSpec))]
+    [System.Runtime.Serialization.KnownTypeAttribute(typeof(bladeDirectorClient.bladeDirectorService.resultAndBladeName[]))]
     [System.Runtime.Serialization.KnownTypeAttribute(typeof(bladeDirectorClient.bladeDirectorService.vmSpec))]
     [System.Runtime.Serialization.KnownTypeAttribute(typeof(bladeDirectorClient.bladeDirectorService.bladeOwnership))]
     [System.Runtime.Serialization.KnownTypeAttribute(typeof(bladeDirectorClient.bladeDirectorService.bladeLockType))]
@@ -2063,6 +2065,9 @@ namespace bladeDirectorClient.bladeDirectorService {
         [System.ServiceModel.OperationContractAttribute(Action="http://tempuri.org/IServices/GetBladeStatus", ReplyAction="http://tempuri.org/IServices/GetBladeStatusResponse")]
         bladeDirectorClient.bladeDirectorService.GetBladeStatusResult GetBladeStatus(string nodeIP);
         
+        [System.ServiceModel.OperationContractAttribute(Action="http://tempuri.org/IServices/GetVMStatus", ReplyAction="http://tempuri.org/IServices/GetVMStatusResponse")]
+        bladeDirectorClient.bladeDirectorService.GetBladeStatusResult GetVMStatus(string nodeIP);
+        
         [System.ServiceModel.OperationContractAttribute(Action="http://tempuri.org/IServices/ReleaseBladeOrVM", ReplyAction="http://tempuri.org/IServices/ReleaseBladeOrVMResponse")]
         bladeDirectorClient.bladeDirectorService.resultAndWaitToken ReleaseBladeOrVM(string nodeIP);
         
@@ -2077,6 +2082,9 @@ namespace bladeDirectorClient.bladeDirectorService {
         
         [System.ServiceModel.OperationContractAttribute(Action="http://tempuri.org/IServices/RequestAnySingleVM", ReplyAction="http://tempuri.org/IServices/RequestAnySingleVMResponse")]
         bladeDirectorClient.bladeDirectorService.resultAndBladeName RequestAnySingleVM(bladeDirectorClient.bladeDirectorService.VMHardwareSpec hwSpec, bladeDirectorClient.bladeDirectorService.VMSoftwareSpec swSpec);
+        
+        [System.ServiceModel.OperationContractAttribute(Action="http://tempuri.org/IServices/requestAsManyVMAsPossible", ReplyAction="http://tempuri.org/IServices/requestAsManyVMAsPossibleResponse")]
+        bladeDirectorClient.bladeDirectorService.resultAndBladeName[] requestAsManyVMAsPossible(bladeDirectorClient.bladeDirectorService.VMHardwareSpec hwSpec, bladeDirectorClient.bladeDirectorService.VMSoftwareSpec swSpec);
         
         [System.ServiceModel.OperationContractAttribute(Action="http://tempuri.org/IServices/generateIPXEScript", ReplyAction="http://tempuri.org/IServices/generateIPXEScriptResponse")]
         string generateIPXEScript();
@@ -2171,6 +2179,10 @@ namespace bladeDirectorClient.bladeDirectorService {
             return base.Channel.GetBladeStatus(nodeIP);
         }
         
+        public bladeDirectorClient.bladeDirectorService.GetBladeStatusResult GetVMStatus(string nodeIP) {
+            return base.Channel.GetVMStatus(nodeIP);
+        }
+        
         public bladeDirectorClient.bladeDirectorService.resultAndWaitToken ReleaseBladeOrVM(string nodeIP) {
             return base.Channel.ReleaseBladeOrVM(nodeIP);
         }
@@ -2189,6 +2201,10 @@ namespace bladeDirectorClient.bladeDirectorService {
         
         public bladeDirectorClient.bladeDirectorService.resultAndBladeName RequestAnySingleVM(bladeDirectorClient.bladeDirectorService.VMHardwareSpec hwSpec, bladeDirectorClient.bladeDirectorService.VMSoftwareSpec swSpec) {
             return base.Channel.RequestAnySingleVM(hwSpec, swSpec);
+        }
+        
+        public bladeDirectorClient.bladeDirectorService.resultAndBladeName[] requestAsManyVMAsPossible(bladeDirectorClient.bladeDirectorService.VMHardwareSpec hwSpec, bladeDirectorClient.bladeDirectorService.VMSoftwareSpec swSpec) {
+            return base.Channel.requestAsManyVMAsPossible(hwSpec, swSpec);
         }
         
         public string generateIPXEScript() {
@@ -2277,6 +2293,9 @@ namespace bladeDirectorClient.bladeDirectorService {
         [System.ServiceModel.OperationContractAttribute(Action="http://tempuri.org/IDebugServices/_GetBladeStatus", ReplyAction="http://tempuri.org/IDebugServices/_GetBladeStatusResponse")]
         bladeDirectorClient.bladeDirectorService.GetBladeStatusResult _GetBladeStatus(string requestorIP, string nodeIP);
         
+        [System.ServiceModel.OperationContractAttribute(Action="http://tempuri.org/IDebugServices/_GetVMStatus", ReplyAction="http://tempuri.org/IDebugServices/_GetVMStatusResponse")]
+        bladeDirectorClient.bladeDirectorService.GetBladeStatusResult _GetVMStatus(string requestorIP, string VMIP);
+        
         [System.ServiceModel.OperationContractAttribute(Action="http://tempuri.org/IDebugServices/_isBladeMine", ReplyAction="http://tempuri.org/IDebugServices/_isBladeMineResponse")]
         bool _isBladeMine(string requestorIP, string clientIP, bool ignoreDeployments);
         
@@ -2288,6 +2307,9 @@ namespace bladeDirectorClient.bladeDirectorService {
         
         [System.ServiceModel.OperationContractAttribute(Action="http://tempuri.org/IDebugServices/_requestAnySingleVM", ReplyAction="http://tempuri.org/IDebugServices/_requestAnySingleVMResponse")]
         bladeDirectorClient.bladeDirectorService.resultAndBladeName _requestAnySingleVM(string requestorIP, bladeDirectorClient.bladeDirectorService.VMHardwareSpec hwSpec, bladeDirectorClient.bladeDirectorService.VMSoftwareSpec swSpec);
+        
+        [System.ServiceModel.OperationContractAttribute(Action="http://tempuri.org/IDebugServices/_requestAsManyVMAsPossible", ReplyAction="http://tempuri.org/IDebugServices/_requestAsManyVMAsPossibleResponse")]
+        bladeDirectorClient.bladeDirectorService.resultAndBladeName[] _requestAsManyVMAsPossible(string requestorIP, bladeDirectorClient.bladeDirectorService.VMHardwareSpec hwSpec, bladeDirectorClient.bladeDirectorService.VMSoftwareSpec swSpec);
         
         [System.ServiceModel.OperationContractAttribute(Action="http://tempuri.org/IDebugServices/setKeepAliveTimeout", ReplyAction="http://tempuri.org/IDebugServices/setKeepAliveTimeoutResponse")]
         void setKeepAliveTimeout(int newTimeoutSeconds);
@@ -2368,6 +2390,10 @@ namespace bladeDirectorClient.bladeDirectorService {
             return base.Channel._GetBladeStatus(requestorIP, nodeIP);
         }
         
+        public bladeDirectorClient.bladeDirectorService.GetBladeStatusResult _GetVMStatus(string requestorIP, string VMIP) {
+            return base.Channel._GetVMStatus(requestorIP, VMIP);
+        }
+        
         public bool _isBladeMine(string requestorIP, string clientIP, bool ignoreDeployments) {
             return base.Channel._isBladeMine(requestorIP, clientIP, ignoreDeployments);
         }
@@ -2382,6 +2408,10 @@ namespace bladeDirectorClient.bladeDirectorService {
         
         public bladeDirectorClient.bladeDirectorService.resultAndBladeName _requestAnySingleVM(string requestorIP, bladeDirectorClient.bladeDirectorService.VMHardwareSpec hwSpec, bladeDirectorClient.bladeDirectorService.VMSoftwareSpec swSpec) {
             return base.Channel._requestAnySingleVM(requestorIP, hwSpec, swSpec);
+        }
+        
+        public bladeDirectorClient.bladeDirectorService.resultAndBladeName[] _requestAsManyVMAsPossible(string requestorIP, bladeDirectorClient.bladeDirectorService.VMHardwareSpec hwSpec, bladeDirectorClient.bladeDirectorService.VMSoftwareSpec swSpec) {
+            return base.Channel._requestAsManyVMAsPossible(requestorIP, hwSpec, swSpec);
         }
         
         public void setKeepAliveTimeout(int newTimeoutSeconds) {

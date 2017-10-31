@@ -93,7 +93,12 @@ namespace bladeDirectorWCF
         {
             return services.hostStateManager.getBladeStatus(requestorIP, nodeIP);
         }
-        
+
+        public GetBladeStatusResult _GetVMStatus(string requestorIP, string VMIP)
+        {
+            return services.hostStateManager.getVMStatus(requestorIP, VMIP);
+        }
+
         public bool _isBladeMine(string requestorIP, string clientIP, bool ignoreDeployments)
         {
             return services.hostStateManager.isBladeMine(clientIP, requestorIP, ignoreDeployments);
@@ -113,7 +118,12 @@ namespace bladeDirectorWCF
         {
             return services.hostStateManager.RequestAnySingleVM(requestorIP, hwSpec, swSpec);
         }
-        
+
+        public resultAndBladeName[] _requestAsManyVMAsPossible(string requestorIP, VMHardwareSpec hwSpec, VMSoftwareSpec swSpec)
+        {
+            return services.hostStateManager.requestAsManyVMAsPossible(requestorIP, hwSpec, swSpec);
+        }
+
         public void setKeepAliveTimeout(int newTimeoutSeconds)
         {
             services.hostStateManager.setKeepAliveTimeout(TimeSpan.FromSeconds(newTimeoutSeconds));

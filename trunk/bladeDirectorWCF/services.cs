@@ -50,6 +50,11 @@ namespace bladeDirectorWCF
             return hostStateManager.getBladeStatus(sanitizeAddress(requestorIP), sanitizeAddress(nodeIP));
         }
 
+        private GetBladeStatusResult _GetVMStatus(string requestorIP, string nodeIP)
+        {
+            return hostStateManager.getVMStatus(sanitizeAddress(requestorIP), sanitizeAddress(nodeIP));
+        }
+
         private static resultAndWaitToken _ReleaseBlade(string nodeIP, string requestorIP, bool force)
         {
             return hostStateManager.releaseBladeOrVM(sanitizeAddress(nodeIP), sanitizeAddress(requestorIP), force);
@@ -73,6 +78,11 @@ namespace bladeDirectorWCF
         private static resultAndBladeName _RequestAnySingleVM(string requestorIP, VMHardwareSpec hwSpec, VMSoftwareSpec swSpec)
         {
             return hostStateManager.RequestAnySingleVM(sanitizeAddress(requestorIP), hwSpec, swSpec);
+        }
+
+        private static resultAndBladeName[] _requestAsManyVMAsPossible(string requestorIP, VMHardwareSpec hwSpec, VMSoftwareSpec swSpec)
+        {
+            return hostStateManager.requestAsManyVMAsPossible(sanitizeAddress(requestorIP), hwSpec, swSpec);
         }
 
         public static string _generateIPXEScript(string requestorIP)
@@ -173,6 +183,11 @@ namespace bladeDirectorWCF
             return _GetBladeStatus(getSrcIP(), sanitizeAddress(nodeIP));
         }
 
+        public GetBladeStatusResult GetVMStatus(string nodeIP)
+        {
+            return _GetVMStatus(getSrcIP(), nodeIP);
+        }
+
         public resultAndWaitToken ReleaseBladeOrVM(string nodeIP)
         {
             return _ReleaseBlade(sanitizeAddress(nodeIP), getSrcIP(), false);
@@ -196,6 +211,11 @@ namespace bladeDirectorWCF
         public resultAndBladeName RequestAnySingleVM(VMHardwareSpec hwSpec, VMSoftwareSpec swSpec)
         {
             return _RequestAnySingleVM(getSrcIP(), hwSpec, swSpec);
+        }
+
+        public resultAndBladeName[] requestAsManyVMAsPossible(VMHardwareSpec hwSpec, VMSoftwareSpec swSpec)
+        {
+            return _requestAsManyVMAsPossible(getSrcIP(), hwSpec, swSpec);
         }
 
         public string generateIPXEScript()

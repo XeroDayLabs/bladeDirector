@@ -41,6 +41,9 @@
             <setting name="repoRoot" serializeAs="String">
                 <value>C:\code\bladeDirector</value>
             </setting>
+            <setting name="webURL" serializeAs="String">
+                <value>http://0.0.0.0/bladeDirector-dev</value>
+            </setting>
         </tests.Properties.Settings>
     </userSettings>
 </configuration>

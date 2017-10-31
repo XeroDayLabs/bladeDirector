@@ -26,16 +26,16 @@ namespace bladeDirectorClient
         /// <param name="bladeDirectorWCFExe"></param>
         /// <param name="port"></param>
         /// <param name="withWeb"></param>
-        public BladeDirectorServices(string bladeDirectorWCFExe, ushort port, bool withWeb)
+        public BladeDirectorServices(string bladeDirectorWCFExe, ushort port, Uri webUri)
         {
             baseURL = string.Format("http://127.0.0.1:{0}/{1}", port, Guid.NewGuid().ToString());
             servicesURL = baseURL + "/bladeDirector";
 
             iLoHypervisorPool.ensurePortIsFree(port);
-            if (withWeb)
-                iLoHypervisorPool.ensurePortIsFree(81);
+            if (webUri != null)
+                iLoHypervisorPool.ensurePortIsFree((ushort) webUri.Port);
 
-            connectWithArgs(bladeDirectorWCFExe, "--baseURL " + baseURL + (withWeb ? "" : " --no-web "));
+            connectWithArgs(bladeDirectorWCFExe, "--baseURL " + baseURL + (webUri != null ? webUri.AbsoluteUri : " --no-web "));
 
             connect();
         }

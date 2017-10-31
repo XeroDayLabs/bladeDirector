@@ -15,8 +15,8 @@ namespace bladeDirectorClient
 
         private static ushort _portNum = 90;
 
-        public bladeDirectorDebugServices(string executablePath, bool withWeb)
-            : base(executablePath, (_portNum++), withWeb)
+        public bladeDirectorDebugServices(string executablePath, Uri webURL = null)
+            : base(executablePath, (_portNum++), webURL)
         {
             servicesDebugURL = baseURL + "/bladeDirectorDebug";
 
@@ -32,14 +32,14 @@ namespace bladeDirectorClient
             connect();
         }
 
-        public bladeDirectorDebugServices(string executablePath, string[] IPAddresses, bool isMocked = true, bool withWeb = false)
-            : this(executablePath, withWeb)
+        public bladeDirectorDebugServices(string executablePath, string[] IPAddresses, bool isMocked = true, Uri webURL = null)
+            : this(executablePath, webURL)
         {
             svcDebug.initWithBladesFromIPList(IPAddresses, isMocked, NASFaultInjectionPolicy.retunSuccessful);
         }
 
-        public bladeDirectorDebugServices(string executablePath, string ipAddress, bool isMocked, bool withWeb )
-            : this(executablePath, new string[] { ipAddress }, isMocked, withWeb)
+        public bladeDirectorDebugServices(string executablePath, string ipAddress, bool isMocked, Uri webUri = null )
+            : this(executablePath, new string[] { ipAddress }, isMocked, webUri)
         {
         }
 

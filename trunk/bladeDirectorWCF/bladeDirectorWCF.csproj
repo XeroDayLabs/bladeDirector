@@ -75,6 +75,12 @@
     <Reference Include="CommandLine">
       <HintPath>..\..\thirdparty\commandline\CommandLine.dll</HintPath>
     </Reference>
+    <Reference Include="Decider.Csp.BaseTypes">
+      <HintPath>..\packages\Decider.0.3.4\lib\net45\Decider.Csp.BaseTypes.dll</HintPath>
+    </Reference>
+    <Reference Include="Decider.Csp.Integer">
+      <HintPath>..\packages\Decider.0.3.4\lib\net45\Decider.Csp.Integer.dll</HintPath>
+    </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
     <Reference Include="System.Data.SQLite, Version=1.0.105.2, Culture=neutral, PublicKeyToken=db937bc2d44ff139, processorArchitecture=AMD64">

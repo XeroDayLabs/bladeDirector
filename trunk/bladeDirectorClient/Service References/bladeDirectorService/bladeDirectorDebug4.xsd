@@ -175,6 +175,21 @@
       </xs:sequence>
     </xs:complexType>
   </xs:element>
+  <xs:element name="_GetVMStatus">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element minOccurs="0" name="requestorIP" nillable="true" type="xs:string" />
+        <xs:element minOccurs="0" name="VMIP" nillable="true" type="xs:string" />
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="_GetVMStatusResponse">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element xmlns:q16="http://schemas.datacontract.org/2004/07/bladeDirectorWCF" minOccurs="0" name="_GetVMStatusResult" type="q16:GetBladeStatusResult" />
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
   <xs:element name="_isBladeMine">
     <xs:complexType>
       <xs:sequence>
@@ -203,7 +218,7 @@
   <xs:element name="_ReleaseBladeOrVMResponse">
     <xs:complexType>
       <xs:sequence>
-        <xs:element xmlns:q16="http://schemas.datacontract.org/2004/07/bladeDirectorWCF" minOccurs="0" name="_ReleaseBladeOrVMResult" nillable="true" type="q16:resultAndWaitToken" />
+        <xs:element xmlns:q17="http://schemas.datacontract.org/2004/07/bladeDirectorWCF" minOccurs="0" name="_ReleaseBladeOrVMResult" nillable="true" type="q17:resultAndWaitToken" />
       </xs:sequence>
     </xs:complexType>
   </xs:element>
@@ -223,15 +238,31 @@
     <xs:complexType>
       <xs:sequence>
         <xs:element minOccurs="0" name="requestorIP" nillable="true" type="xs:string" />
-        <xs:element xmlns:q17="http://schemas.datacontract.org/2004/07/bladeDirectorWCF" minOccurs="0" name="hwSpec" nillable="true" type="q17:VMHardwareSpec" />
-        <xs:element xmlns:q18="http://schemas.datacontract.org/2004/07/bladeDirectorWCF" minOccurs="0" name="swSpec" nillable="true" type="q18:VMSoftwareSpec" />
+        <xs:element xmlns:q18="http://schemas.datacontract.org/2004/07/bladeDirectorWCF" minOccurs="0" name="hwSpec" nillable="true" type="q18:VMHardwareSpec" />
+        <xs:element xmlns:q19="http://schemas.datacontract.org/2004/07/bladeDirectorWCF" minOccurs="0" name="swSpec" nillable="true" type="q19:VMSoftwareSpec" />
       </xs:sequence>
     </xs:complexType>
   </xs:element>
   <xs:element name="_requestAnySingleVMResponse">
     <xs:complexType>
       <xs:sequence>
-        <xs:element xmlns:q19="http://schemas.datacontract.org/2004/07/bladeDirectorWCF" minOccurs="0" name="_requestAnySingleVMResult" nillable="true" type="q19:resultAndBladeName" />
+        <xs:element xmlns:q20="http://schemas.datacontract.org/2004/07/bladeDirectorWCF" minOccurs="0" name="_requestAnySingleVMResult" nillable="true" type="q20:resultAndBladeName" />
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="_requestAsManyVMAsPossible">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element minOccurs="0" name="requestorIP" nillable="true" type="xs:string" />
+        <xs:element xmlns:q21="http://schemas.datacontract.org/2004/07/bladeDirectorWCF" minOccurs="0" name="hwSpec" nillable="true" type="q21:VMHardwareSpec" />
+        <xs:element xmlns:q22="http://schemas.datacontract.org/2004/07/bladeDirectorWCF" minOccurs="0" name="swSpec" nillable="true" type="q22:VMSoftwareSpec" />
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="_requestAsManyVMAsPossibleResponse">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element xmlns:q23="http://schemas.datacontract.org/2004/07/bladeDirectorWCF" minOccurs="0" name="_requestAsManyVMAsPossibleResult" nillable="true" type="q23:ArrayOfresultAndBladeName" />
       </xs:sequence>
     </xs:complexType>
   </xs:element>

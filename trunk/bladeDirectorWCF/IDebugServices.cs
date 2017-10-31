@@ -41,10 +41,13 @@ namespace bladeDirectorWCF
 
         [OperationContract]
         resultAndBladeName _RequestAnySingleNode(string requestorIP);
-        
+
         [OperationContract]
         GetBladeStatusResult _GetBladeStatus(string requestorIP, string nodeIP);
-        
+
+        [OperationContract]
+        GetBladeStatusResult _GetVMStatus(string requestorIP, string VMIP);
+
         [OperationContract]
         bool _isBladeMine(string requestorIP, string clientIP, bool ignoreDeployments = false);
         
@@ -57,6 +60,9 @@ namespace bladeDirectorWCF
         [OperationContract]
         resultAndBladeName _requestAnySingleVM(string requestorIP, VMHardwareSpec hwSpec, VMSoftwareSpec swSpec);
 
+        [OperationContract]
+        resultAndBladeName[] _requestAsManyVMAsPossible(string requestorIP, VMHardwareSpec hwSpec, VMSoftwareSpec swSpec);
+        
         [OperationContract]
         void setKeepAliveTimeout(int newTimeoutSeconds);
     }

@@ -45,6 +45,9 @@ namespace bladeDirectorWCF
         GetBladeStatusResult GetBladeStatus(string nodeIP);
 
         [OperationContract]
+        GetBladeStatusResult GetVMStatus(string nodeIP);
+
+        [OperationContract]
         resultAndWaitToken ReleaseBladeOrVM(string nodeIP);
 
         [OperationContract]
@@ -58,6 +61,9 @@ namespace bladeDirectorWCF
 
         [OperationContract]
         resultAndBladeName RequestAnySingleVM(VMHardwareSpec hwSpec, VMSoftwareSpec swSpec);
+
+        [OperationContract]
+        resultAndBladeName[] requestAsManyVMAsPossible(VMHardwareSpec hwSpec, VMSoftwareSpec swSpec);
 
         [OperationContract]
         string generateIPXEScript();

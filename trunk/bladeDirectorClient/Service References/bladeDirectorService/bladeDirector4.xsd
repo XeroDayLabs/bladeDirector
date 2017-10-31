@@ -101,6 +101,20 @@
       </xs:sequence>
     </xs:complexType>
   </xs:element>
+  <xs:element name="GetVMStatus">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element minOccurs="0" name="nodeIP" nillable="true" type="xs:string" />
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="GetVMStatusResponse">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element xmlns:q7="http://schemas.datacontract.org/2004/07/bladeDirectorWCF" minOccurs="0" name="GetVMStatusResult" type="q7:GetBladeStatusResult" />
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
   <xs:element name="ReleaseBladeOrVM">
     <xs:complexType>
       <xs:sequence>
@@ -111,7 +125,7 @@
   <xs:element name="ReleaseBladeOrVMResponse">
     <xs:complexType>
       <xs:sequence>
-        <xs:element xmlns:q7="http://schemas.datacontract.org/2004/07/bladeDirectorWCF" minOccurs="0" name="ReleaseBladeOrVMResult" nillable="true" type="q7:resultAndWaitToken" />
+        <xs:element xmlns:q8="http://schemas.datacontract.org/2004/07/bladeDirectorWCF" minOccurs="0" name="ReleaseBladeOrVMResult" nillable="true" type="q8:resultAndWaitToken" />
       </xs:sequence>
     </xs:complexType>
   </xs:element>
@@ -140,7 +154,7 @@
   <xs:element name="rebootAndStartDeployingBIOSToBladeResponse">
     <xs:complexType>
       <xs:sequence>
-        <xs:element xmlns:q8="http://schemas.datacontract.org/2004/07/bladeDirectorWCF" minOccurs="0" name="rebootAndStartDeployingBIOSToBladeResult" nillable="true" type="q8:resultAndWaitToken" />
+        <xs:element xmlns:q9="http://schemas.datacontract.org/2004/07/bladeDirectorWCF" minOccurs="0" name="rebootAndStartDeployingBIOSToBladeResult" nillable="true" type="q9:resultAndWaitToken" />
       </xs:sequence>
     </xs:complexType>
   </xs:element>
@@ -154,22 +168,37 @@
   <xs:element name="rebootAndStartReadingBIOSConfigurationResponse">
     <xs:complexType>
       <xs:sequence>
-        <xs:element xmlns:q9="http://schemas.datacontract.org/2004/07/bladeDirectorWCF" minOccurs="0" name="rebootAndStartReadingBIOSConfigurationResult" nillable="true" type="q9:resultAndWaitToken" />
+        <xs:element xmlns:q10="http://schemas.datacontract.org/2004/07/bladeDirectorWCF" minOccurs="0" name="rebootAndStartReadingBIOSConfigurationResult" nillable="true" type="q10:resultAndWaitToken" />
       </xs:sequence>
     </xs:complexType>
   </xs:element>
   <xs:element name="RequestAnySingleVM">
     <xs:complexType>
       <xs:sequence>
-        <xs:element xmlns:q10="http://schemas.datacontract.org/2004/07/bladeDirectorWCF" minOccurs="0" name="hwSpec" nillable="true" type="q10:VMHardwareSpec" />
-        <xs:element xmlns:q11="http://schemas.datacontract.org/2004/07/bladeDirectorWCF" minOccurs="0" name="swSpec" nillable="true" type="q11:VMSoftwareSpec" />
+        <xs:element xmlns:q11="http://schemas.datacontract.org/2004/07/bladeDirectorWCF" minOccurs="0" name="hwSpec" nillable="true" type="q11:VMHardwareSpec" />
+        <xs:element xmlns:q12="http://schemas.datacontract.org/2004/07/bladeDirectorWCF" minOccurs="0" name="swSpec" nillable="true" type="q12:VMSoftwareSpec" />
       </xs:sequence>
     </xs:complexType>
   </xs:element>
   <xs:element name="RequestAnySingleVMResponse">
     <xs:complexType>
       <xs:sequence>
-        <xs:element xmlns:q12="http://schemas.datacontract.org/2004/07/bladeDirectorWCF" minOccurs="0" name="RequestAnySingleVMResult" nillable="true" type="q12:resultAndBladeName" />
+        <xs:element xmlns:q13="http://schemas.datacontract.org/2004/07/bladeDirectorWCF" minOccurs="0" name="RequestAnySingleVMResult" nillable="true" type="q13:resultAndBladeName" />
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="requestAsManyVMAsPossible">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element xmlns:q14="http://schemas.datacontract.org/2004/07/bladeDirectorWCF" minOccurs="0" name="hwSpec" nillable="true" type="q14:VMHardwareSpec" />
+        <xs:element xmlns:q15="http://schemas.datacontract.org/2004/07/bladeDirectorWCF" minOccurs="0" name="swSpec" nillable="true" type="q15:VMSoftwareSpec" />
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="requestAsManyVMAsPossibleResponse">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element xmlns:q16="http://schemas.datacontract.org/2004/07/bladeDirectorWCF" minOccurs="0" name="requestAsManyVMAsPossibleResult" nillable="true" type="q16:ArrayOfresultAndBladeName" />
       </xs:sequence>
     </xs:complexType>
   </xs:element>
@@ -193,7 +222,7 @@
   <xs:element name="getKeepAliveTimeoutResponse">
     <xs:complexType>
       <xs:sequence>
-        <xs:element xmlns:q13="http://schemas.microsoft.com/2003/10/Serialization/" minOccurs="0" name="getKeepAliveTimeoutResult" type="q13:duration" />
+        <xs:element xmlns:q17="http://schemas.microsoft.com/2003/10/Serialization/" minOccurs="0" name="getKeepAliveTimeoutResult" type="q17:duration" />
       </xs:sequence>
     </xs:complexType>
   </xs:element>
@@ -210,7 +239,7 @@
   <xs:element name="addNodeResponse">
     <xs:complexType>
       <xs:sequence>
-        <xs:element xmlns:q14="http://schemas.datacontract.org/2004/07/bladeDirectorWCF" minOccurs="0" name="addNodeResult" type="q14:resultCode" />
+        <xs:element xmlns:q18="http://schemas.datacontract.org/2004/07/bladeDirectorWCF" minOccurs="0" name="addNodeResult" type="q18:resultCode" />
       </xs:sequence>
     </xs:complexType>
   </xs:element>
@@ -224,7 +253,7 @@
   <xs:element name="getVMByIP_withoutLockingResponse">
     <xs:complexType>
       <xs:sequence>
-        <xs:element xmlns:q15="http://schemas.datacontract.org/2004/07/bladeDirectorWCF" minOccurs="0" name="getVMByIP_withoutLockingResult" nillable="true" type="q15:vmSpec" />
+        <xs:element xmlns:q19="http://schemas.datacontract.org/2004/07/bladeDirectorWCF" minOccurs="0" name="getVMByIP_withoutLockingResult" nillable="true" type="q19:vmSpec" />
       </xs:sequence>
     </xs:complexType>
   </xs:element>
@@ -238,7 +267,7 @@
   <xs:element name="getBladeByIP_withoutLockingResponse">
     <xs:complexType>
       <xs:sequence>
-        <xs:element xmlns:q16="http://schemas.datacontract.org/2004/07/bladeDirectorWCF" minOccurs="0" name="getBladeByIP_withoutLockingResult" nillable="true" type="q16:bladeSpec" />
+        <xs:element xmlns:q20="http://schemas.datacontract.org/2004/07/bladeDirectorWCF" minOccurs="0" name="getBladeByIP_withoutLockingResult" nillable="true" type="q20:bladeSpec" />
       </xs:sequence>
     </xs:complexType>
   </xs:element>
@@ -252,7 +281,7 @@
   <xs:element name="getBladesByAllocatedServerResponse">
     <xs:complexType>
       <xs:sequence>
-        <xs:element xmlns:q17="http://schemas.microsoft.com/2003/10/Serialization/Arrays" minOccurs="0" name="getBladesByAllocatedServerResult" nillable="true" type="q17:ArrayOfstring" />
+        <xs:element xmlns:q21="http://schemas.microsoft.com/2003/10/Serialization/Arrays" minOccurs="0" name="getBladesByAllocatedServerResult" nillable="true" type="q21:ArrayOfstring" />
       </xs:sequence>
     </xs:complexType>
   </xs:element>
@@ -266,7 +295,7 @@
   <xs:element name="getVMByVMServerIP_nolockingResponse">
     <xs:complexType>
       <xs:sequence>
-        <xs:element xmlns:q18="http://schemas.datacontract.org/2004/07/bladeDirectorWCF" minOccurs="0" name="getVMByVMServerIP_nolockingResult" nillable="true" type="q18:ArrayOfvmSpec" />
+        <xs:element xmlns:q22="http://schemas.datacontract.org/2004/07/bladeDirectorWCF" minOccurs="0" name="getVMByVMServerIP_nolockingResult" nillable="true" type="q22:ArrayOfvmSpec" />
       </xs:sequence>
     </xs:complexType>
   </xs:element>
@@ -278,7 +307,7 @@
   <xs:element name="getLogEventsResponse">
     <xs:complexType>
       <xs:sequence>
-        <xs:element xmlns:q19="http://schemas.microsoft.com/2003/10/Serialization/Arrays" minOccurs="0" name="getLogEventsResult" nillable="true" type="q19:ArrayOfstring" />
+        <xs:element xmlns:q23="http://schemas.microsoft.com/2003/10/Serialization/Arrays" minOccurs="0" name="getLogEventsResult" nillable="true" type="q23:ArrayOfstring" />
       </xs:sequence>
     </xs:complexType>
   </xs:element>
@@ -292,7 +321,7 @@
   <xs:element name="getCredentialsForVMServerByVMIPResponse">
     <xs:complexType>
       <xs:sequence>
-        <xs:element xmlns:q20="http://schemas.datacontract.org/2004/07/bladeDirectorWCF" minOccurs="0" name="getCredentialsForVMServerByVMIPResult" nillable="true" type="q20:vmServerCredentials" />
+        <xs:element xmlns:q24="http://schemas.datacontract.org/2004/07/bladeDirectorWCF" minOccurs="0" name="getCredentialsForVMServerByVMIPResult" nillable="true" type="q24:vmServerCredentials" />
       </xs:sequence>
     </xs:complexType>
   </xs:element>
@@ -306,7 +335,7 @@
   <xs:element name="getCurrentSnapshotDetailsResponse">
     <xs:complexType>
       <xs:sequence>
-        <xs:element xmlns:q21="http://schemas.datacontract.org/2004/07/bladeDirectorWCF" minOccurs="0" name="getCurrentSnapshotDetailsResult" nillable="true" type="q21:snapshotDetails" />
+        <xs:element xmlns:q25="http://schemas.datacontract.org/2004/07/bladeDirectorWCF" minOccurs="0" name="getCurrentSnapshotDetailsResult" nillable="true" type="q25:snapshotDetails" />
       </xs:sequence>
     </xs:complexType>
   </xs:element>
@@ -321,7 +350,7 @@
   <xs:element name="selectSnapshotForBladeOrVMResponse">
     <xs:complexType>
       <xs:sequence>
-        <xs:element xmlns:q22="http://schemas.datacontract.org/2004/07/bladeDirectorWCF" minOccurs="0" name="selectSnapshotForBladeOrVMResult" nillable="true" type="q22:resultAndWaitToken" />
+        <xs:element xmlns:q26="http://schemas.datacontract.org/2004/07/bladeDirectorWCF" minOccurs="0" name="selectSnapshotForBladeOrVMResult" nillable="true" type="q26:resultAndWaitToken" />
       </xs:sequence>
     </xs:complexType>
   </xs:element>

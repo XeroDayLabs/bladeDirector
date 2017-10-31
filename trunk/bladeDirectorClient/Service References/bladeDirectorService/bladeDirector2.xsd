@@ -3,16 +3,16 @@
   <xs:import schemaLocation="http://127.0.0.1/bladeDirector?xsd=xsd4" namespace="http://schemas.datacontract.org/2004/07/createDisks" />
   <xs:import schemaLocation="http://127.0.0.1/bladeDirector?xsd=xsd5" namespace="http://schemas.datacontract.org/2004/07/System.Data.SQLite" />
   <xs:import schemaLocation="http://127.0.0.1/bladeDirector?xsd=xsd0" namespace="http://schemas.microsoft.com/2003/10/Serialization/" />
-  <xs:complexType name="resultAndBIOSConfig">
+  <xs:complexType name="resultAndBladeName">
     <xs:complexContent mixed="false">
       <xs:extension base="tns:resultAndWaitToken">
         <xs:sequence>
-          <xs:element minOccurs="0" name="BIOSConfig" nillable="true" type="xs:string" />
+          <xs:element minOccurs="0" name="bladeName" nillable="true" type="xs:string" />
         </xs:sequence>
       </xs:extension>
     </xs:complexContent>
   </xs:complexType>
-  <xs:element name="resultAndBIOSConfig" nillable="true" type="tns:resultAndBIOSConfig" />
+  <xs:element name="resultAndBladeName" nillable="true" type="tns:resultAndBladeName" />
   <xs:complexType name="resultAndWaitToken">
     <xs:sequence>
       <xs:element minOccurs="0" name="result" nillable="true" type="tns:result" />
@@ -59,16 +59,16 @@
     </xs:restriction>
   </xs:simpleType>
   <xs:element name="handleTypes" nillable="true" type="tns:handleTypes" />
-  <xs:complexType name="resultAndBladeName">
+  <xs:complexType name="resultAndBIOSConfig">
     <xs:complexContent mixed="false">
       <xs:extension base="tns:resultAndWaitToken">
         <xs:sequence>
-          <xs:element minOccurs="0" name="bladeName" nillable="true" type="xs:string" />
+          <xs:element minOccurs="0" name="BIOSConfig" nillable="true" type="xs:string" />
         </xs:sequence>
       </xs:extension>
     </xs:complexContent>
   </xs:complexType>
-  <xs:element name="resultAndBladeName" nillable="true" type="tns:resultAndBladeName" />
+  <xs:element name="resultAndBIOSConfig" nillable="true" type="tns:resultAndBIOSConfig" />
   <xs:simpleType name="GetBladeStatusResult">
     <xs:restriction base="xs:string">
       <xs:enumeration value="bladeNotFound" />
@@ -95,6 +95,12 @@
     </xs:sequence>
   </xs:complexType>
   <xs:element name="VMSoftwareSpec" nillable="true" type="tns:VMSoftwareSpec" />
+  <xs:complexType name="ArrayOfresultAndBladeName">
+    <xs:sequence>
+      <xs:element minOccurs="0" maxOccurs="unbounded" name="resultAndBladeName" nillable="true" type="tns:resultAndBladeName" />
+    </xs:sequence>
+  </xs:complexType>
+  <xs:element name="ArrayOfresultAndBladeName" nillable="true" type="tns:ArrayOfresultAndBladeName" />
   <xs:complexType name="vmSpec">
     <xs:complexContent mixed="false">
       <xs:extension base="tns:bladeOwnership">

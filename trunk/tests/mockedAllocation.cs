@@ -147,6 +147,29 @@ namespace tests
             }
         }
 
+        [TestMethod]
+        public void canAllocateAllVMsMocked()
+        {
+            string hostIP = "1.1.1.1";
+
+            using (bladeDirectorDebugServices svc = new bladeDirectorDebugServices(basicBladeTests.WCFPath, 
+                new[] { "1.1.1.1", "2.2.2.2", "3.3.3.3" }))
+            {
+                svc.svcDebug._setExecutionResultsIfMocked(mockedExecutionResponses.successful);
+
+                vmHWAndSWSpec toAlloc = new vmHWAndSWSpec(
+                        new VMHardwareSpec() {memoryMB = 4, cpuCount = 1},
+                        new VMSoftwareSpec());
+
+                resultAndBladeName[] res = svc.svcDebug._requestAsManyVMAsPossible(hostIP, toAlloc.hw, toAlloc.sw);
+                foreach (resultAndBladeName resultAndBladeName in res)
+                    testUtils.waitForSuccess(svc, resultAndBladeName, TimeSpan.FromMinutes(1));
+
+                // Now see what we got.
+                Assert.AreEqual(3 * 12, res.Length);
+            }
+        }
+
         public static resultAndBladeName[] doVMAllocationsForTest(bladeDirectorDebugServices uut, string hostIP, vmHWAndSWSpec[] specs, NASFaultInjectionPolicy NASFaultInjection = NASFaultInjectionPolicy.retunSuccessful)
         {
             uut.svcDebug.initWithBladesFromIPList(new[] { "172.17.129.131", "172.17.129.130" }, true, NASFaultInjection);
