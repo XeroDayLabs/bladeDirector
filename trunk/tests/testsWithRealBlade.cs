@@ -49,7 +49,7 @@ namespace tests
         [TestMethod]
         public void willCancelBIOSWrite()
         {
-            willCancelBIOSWrite(TimeSpan.MinValue);
+            willCancelBIOSWrite(TimeSpan.FromSeconds(1));
         }
 
         [TestMethod]

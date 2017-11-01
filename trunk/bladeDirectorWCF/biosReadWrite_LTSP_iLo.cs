@@ -284,6 +284,7 @@ namespace bladeDirectorWCF
             {
                 blade.spec.currentlyHavingBIOSDeployed = true;
             }
+            param.connectDeadline = DateTime.Now + TimeSpan.FromMinutes(5);
             param.isStarted = true;
 
             using (lockableBladeSpec blade = _hostManager.db.getBladeByIP(param.nodeIP,
@@ -298,7 +299,6 @@ namespace bladeDirectorWCF
 
                 // Wait for it to boot.  Note that we don't ping the client repeatedly here - since the Ping class can cause 
                 // a BSoD.. ;_; Instead, we wait for port 22 (SSH) to be open.
-                param.connectDeadline = DateTime.Now + TimeSpan.FromMinutes(5);
                 _hostManager.setCallbackOnTCPPortOpen(22, param.onBootFinishEvent, param.onBootFailureEvent, param.connectDeadline, param);
 
                 // Wait for the boot to either complete or to fail.
