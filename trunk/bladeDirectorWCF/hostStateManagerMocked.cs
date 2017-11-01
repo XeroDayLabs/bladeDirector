@@ -124,19 +124,19 @@ namespace bladeDirectorWCF
         {
         }
 
-        public override void startBladePowerOff(lockableBladeSpec nodeSpec)
+        public override void startBladePowerOff(lockableBladeSpec nodeSpec, DateTime deadline)
         {
             using (hypervisor hyp = new hypervisor_mocked_ilo(nodeSpec.spec, callMockedExecutionHandler))
             {
-                hyp.powerOff();
+                hyp.powerOff(deadline);
             }
         }
 
-        public override void startBladePowerOn(lockableBladeSpec nodeSpec)
+        public override void startBladePowerOn(lockableBladeSpec nodeSpec, DateTime deadline)
         {
             using (hypervisor hyp = new hypervisor_mocked_ilo(nodeSpec.spec, callMockedExecutionHandler))
             {
-                hyp.powerOn();
+                hyp.powerOn(deadline);
             }
         }
 

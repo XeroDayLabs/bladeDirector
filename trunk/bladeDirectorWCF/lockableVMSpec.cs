@@ -5,7 +5,16 @@ using System.Diagnostics;
 
 namespace bladeDirectorWCF
 {
-    public class lockableVMSpec : IDisposable
+    public interface ILockableSpec
+    {
+        bladeLocks getCurrentLocks();
+        void downgradeLocks(bladeLocks locks);
+        void upgradeLocks(bladeLocks locks);
+        void upgradeLocks(bladeLockType readToAdd, bladeLockType writeToAdd);
+        void downgradeLocks(bladeLockType readToRelease, bladeLockType writeToRelease);
+    }
+
+    public class lockableVMSpec : IDisposable, ILockableSpec
     {
         private bladeLockType _readLocks;
         private bladeLockType _writeLocks;
@@ -50,6 +59,11 @@ namespace bladeDirectorWCF
                     _bladeLockStatus[spec.VMIP].acquire(_readLocks, _writeLocks);
                 }
             }
+        }
+
+        public void upgradeLocks(bladeLocks locks)
+        {
+            upgradeLocks(locks.read, locks.write);
         }
 
         public void upgradeLocks(bladeLockType readToAdd, bladeLockType writeToAdd)

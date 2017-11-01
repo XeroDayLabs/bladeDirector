@@ -2,6 +2,7 @@ using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.IO;
 using System.Threading;
 using bladeDirectorWCF.Properties;
 using hypervisors;
@@ -129,9 +130,10 @@ namespace bladeDirectorWCF
                 _hostManager.addLogEvent(msg);
                 state.result = new result(resultCode.genericFail, msg);
 
-                state.blade.upgradeLocks(bladeLockType.lockNone, bladeLockType.lockBIOS);
-                _hostManager.markLastKnownBIOS(state.blade, "unknown");
-                state.blade.downgradeLocks(bladeLockType.lockNone, bladeLockType.lockBIOS);
+                using (var tmp = new tempLockElevation(state.blade, bladeLockType.lockNone, bladeLockType.lockBIOS))
+                {
+                    _hostManager.markLastKnownBIOS(state.blade, "unknown");
+                }
 
                 state.isFinished = true;
             }
@@ -139,7 +141,7 @@ namespace bladeDirectorWCF
 
         private void _GetBIOS(biosThreadState state)
         {
-            copyDeploymentFilesToBlade(state.blade, null);
+            copyDeploymentFilesToBlade(state.blade, null, state.connectDeadline);
 
             using (hypervisor hyp = _hostManager.makeHypervisorForBlade_LTSP(state.blade))
             {
@@ -163,12 +165,13 @@ namespace bladeDirectorWCF
                 state.biosxml = hyp.getFileFromGuest("currentbios.xml");
 
                 // All done, now we can power off and return.
-                hyp.powerOff();
+                hyp.powerOff(state.connectDeadline);
             }
 
-            state.blade.upgradeLocks(bladeLockType.lockNone, bladeLockType.lockBIOS);
-            _hostManager.markLastKnownBIOS(state.blade, state.biosxml);
-            state.blade.downgradeLocks(bladeLockType.lockNone, bladeLockType.lockBIOS);
+            using (var tmp = new tempLockElevation(state.blade, bladeLockType.lockNone, bladeLockType.lockBIOS))
+            {
+                _hostManager.markLastKnownBIOS(state.blade, state.biosxml);
+            }
 
             state.isFinished = true;
         }
@@ -185,9 +188,10 @@ namespace bladeDirectorWCF
                 _hostManager.addLogEvent(msg);
                 state.result = new result(resultCode.genericFail, msg);
 
-                state.blade.upgradeLocks(bladeLockType.lockNone, bladeLockType.lockBIOS);
-                _hostManager.markLastKnownBIOS(state.blade, "unknown");
-                state.blade.downgradeLocks(bladeLockType.lockNone, bladeLockType.lockBIOS);
+                using (var tmp = new tempLockElevation(state.blade, bladeLockType.lockNone, bladeLockType.lockBIOS))
+                {
+                    _hostManager.markLastKnownBIOS(state.blade, "unknown");
+                }
 
                 state.isFinished = true;
             }
@@ -196,7 +200,7 @@ namespace bladeDirectorWCF
         private void _SetBIOS(biosThreadState state)
         {
             // SCP some needed files to it.
-            copyDeploymentFilesToBlade(state.blade, state.biosxml);
+            copyDeploymentFilesToBlade(state.blade, state.biosxml, state.connectDeadline);
 
             // And execute the command to deploy the BIOS via SSH.
             using (hypervisor hyp = _hostManager.makeHypervisorForBlade_LTSP(state.blade))
@@ -214,21 +218,22 @@ namespace bladeDirectorWCF
                 {
                     _hostManager.addLogEvent(string.Format("Deployed BIOS successfully to {0}", state.nodeIP));
 
-                    state.blade.upgradeLocks(bladeLockType.lockNone, bladeLockType.lockBIOS);
-                    _hostManager.markLastKnownBIOS(state.blade, state.biosxml);
-                    state.blade.downgradeLocks(bladeLockType.lockNone, bladeLockType.lockBIOS);
+                    using (var tmp = new tempLockElevation(state.blade, bladeLockType.lockNone, bladeLockType.lockBIOS))
+                    {
+                        _hostManager.markLastKnownBIOS(state.blade, state.biosxml);
+                    }
 
                     state.result = new result(resultCode.success);
                 }
 
                 // All done, now we can power off and return.
-                hyp.powerOff();
+                hyp.powerOff(state.connectDeadline);
             }
 
             state.isFinished = true;
         }
 
-        private void copyDeploymentFilesToBlade(lockableBladeSpec nodeSpec, string biosConfigFile)
+        private void copyDeploymentFilesToBlade(lockableBladeSpec nodeSpec, string biosConfigFile, DateTime deadline)
         {
             using (hypervisor hyp = _hostManager.makeHypervisorForBlade_LTSP(nodeSpec))
             {
@@ -244,21 +249,32 @@ namespace bladeDirectorWCF
                 foreach (KeyValuePair<string, string> kvp in toCopy)
                 {
                     hypervisor.doWithRetryOnSomeExceptions(() => { hyp.copyToGuestFromBuffer(kvp.Key, kvp.Value); },
-                        TimeSpan.FromSeconds(10), TimeSpan.FromMinutes(3));
+                        TimeSpan.FromSeconds(10), deadline: deadline);
                 }
                 // And copy this file specifically as binary.
                 hypervisor.doWithRetryOnSomeExceptions(() =>
                 {
                     hyp.copyToGuestFromBuffer("conrep", Resources.conrep);
-                }, TimeSpan.FromSeconds(10), TimeSpan.FromMinutes(3));
+                }, TimeSpan.FromSeconds(10), deadline: deadline);
             }
         }
 
         private void ltspBootThread(Object o)
         {
             biosThreadState param = (biosThreadState)o;
-            param.result = new result(resultCode.pending);
-            _ltspBootThreadStart(param);
+            try
+            {
+                param.result = new result(resultCode.pending);
+                _ltspBootThreadStart(param);
+            }
+            catch (Exception e)
+            {
+                param.result = new result(resultCode.genericFail, e.Message);
+            }
+            finally
+            {
+                param.isFinished = true;
+            }
         }
 
         private void _ltspBootThreadStart(biosThreadState param)
@@ -275,8 +291,8 @@ namespace bladeDirectorWCF
                 bladeLockType.lockNone, permitAccessDuringBIOS: true, permitAccessDuringDeployment: true))
             {
                 // Power cycle it
-                _hostManager.startBladePowerOff(blade);
-                _hostManager.startBladePowerOn(blade);
+                _hostManager.startBladePowerOff(blade, param.connectDeadline);
+                _hostManager.startBladePowerOn(blade, param.connectDeadline);
 
                 param.blade = blade;
 
@@ -300,7 +316,6 @@ namespace bladeDirectorWCF
                     }
                 }
             }
-            param.isFinished = true;
         }
 
         public void cancelOperationsForBlade(string bladeIP)
@@ -320,9 +335,21 @@ namespace bladeDirectorWCF
             {
                 toCancel.connectDeadline = DateTime.MinValue;
 
+                // If we can't cancel within 30 seconds, we write a crashdump so that an operator can work out why.
+                DateTime dumpTime = DateTime.Now + TimeSpan.FromSeconds(30);
+
                 while (!toCancel.isFinished)
                 {
                     _hostManager.addLogEvent("Waiting for BIOS operation on " + bladeIP + " to cancel");
+
+                    if (DateTime.Now > dumpTime)
+                    {
+                        _hostManager.addLogEvent("Cancel has taken more than 30 seconds; writing dump");
+                        miniDumpUtils.dumpSelf(Path.Combine(Settings.Default.internalErrorDumpPath, "slow_bios_" + Guid.NewGuid().ToString() + ".dmp"));
+
+                        dumpTime = DateTime.MaxValue;
+                    }
+
                     Thread.Sleep(TimeSpan.FromSeconds(1));
                 }
             }

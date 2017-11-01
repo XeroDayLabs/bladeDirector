@@ -16,7 +16,6 @@ namespace tests
             string testBiosXML = Properties.Resources.testBIOS;
 
             using (bladeDirectorDebugServices svc = new bladeDirectorDebugServices(basicBladeTests.WCFPath, basicBladeTests.WebURI))
-            //using (bladeDirectorDebugServices svc = new bladeDirectorDebugServices("http://localhost/bladeDirectorDebug", "http://localhost/bladeDirector"))
             {
                 string hostip = "1.2.3.4";
 
@@ -25,7 +24,7 @@ namespace tests
                 svc.svcDebug.initWithBladesFromBladeSpec(new[] { spec }, false, NASFaultInjectionPolicy.retunSuccessful);
 
                 resultAndBladeName res = svc.svcDebug._RequestAnySingleNode(hostip);
-                Assert.AreEqual(bladeDirectorClient.bladeDirectorService.resultCode.success, res.result.code);
+                Assert.AreEqual(resultCode.success, res.result.code);
 
                 // Write the new BIOS. This configuration has the 'boot state' of the numlock key set to 'off', so we can
                 // read that back after writing to ensure that the BIOS write succeeds.
@@ -46,6 +45,53 @@ namespace tests
                 Assert.AreEqual(bladeDirectorClient.bladeDirectorService.resultCode.success, relRes.result.code);
             }
         }
+
+        [TestMethod]
+        public void willCancelBIOSWrite()
+        {
+            willCancelBIOSWrite(TimeSpan.MinValue);
+        }
+
+        [TestMethod]
+        public void willCancelBIOSWriteAfterWaiting()
+        {
+            for (int mins = 1; mins < 10; mins++)
+                willCancelBIOSWrite(TimeSpan.FromMinutes(mins));
+        }
+
+        public void willCancelBIOSWrite(TimeSpan delay)
+        {
+            using (bladeDirectorDebugServices svc = new bladeDirectorDebugServices(basicBladeTests.WCFPath, basicBladeTests.WebURI))
+            {
+                string hostIP = "1.1.1.1";
+                bladeSpec spec = svc.svcDebug.createBladeSpec("172.17.129.131", "192.168.129.131", "172.17.2.131", 1234, false, VMDeployStatus.notBeingDeployed, " ... ", bladeLockType.lockAll, bladeLockType.lockAll);
+                svc.svcDebug.initWithBladesFromBladeSpec(new[] { spec }, false, NASFaultInjectionPolicy.retunSuccessful);
+
+                resultAndBladeName res = svc.svcDebug._RequestAnySingleNode(hostIP);
+                Assert.AreEqual(resultCode.success, res.result.code);
+                string ourBlade = ((resultAndBladeName)testUtils.waitForSuccess(svc, res, TimeSpan.FromSeconds(30))).bladeName;
+
+                // Start a BIOS read
+                resultAndWaitToken readRes = svc.svcDebug._rebootAndStartReadingBIOSConfiguration(hostIP, ourBlade);
+                Assert.AreEqual(resultCode.pending, readRes.result.code);
+
+                // Wait a while to see if we get somewhere where it is impossible to free without a hueg delay
+                Thread.Sleep(delay);
+
+                // Then free the blade. The BIOS operation should be cancelled before it soaks up all the ten minutes of time.
+                resultAndWaitToken releaseRes = svc.svcDebug._ReleaseBladeOrVM(hostIP, ourBlade, false);
+                testUtils.waitForSuccess(svc, releaseRes, TimeSpan.FromMinutes(1));
+
+                // And it should be no longer getting.
+                resultAndWaitToken bladeState = svc.svc.getProgress(readRes.waitToken);
+                Assert.AreNotEqual(resultCode.pending, bladeState.result.code);
+
+                // It no longer be allocated to us.
+                GetBladeStatusResult ownershipRes = svc.svc.GetBladeStatus(ourBlade);
+                Assert.AreEqual(GetBladeStatusResult.notYours, ownershipRes);
+            }
+        }
+
 
         [TestMethod]
         public void willProvisionVM()

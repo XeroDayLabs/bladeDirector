@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.IO;
 using System.Linq;
 using System.Net;
 using System.Net.Sockets;
@@ -56,8 +57,8 @@ namespace bladeDirectorWCF
         public abstract hypervisor makeHypervisorForBlade_ESXi(lockableBladeSpec bladeSpec);
 
         protected abstract void waitForESXiBootToComplete(hypervisor hyp);
-        public abstract void startBladePowerOff(lockableBladeSpec blade);
-        public abstract void startBladePowerOn(lockableBladeSpec blade);
+        public abstract void startBladePowerOff(lockableBladeSpec blade, DateTime deadline);
+        public abstract void startBladePowerOn(lockableBladeSpec blade, DateTime deadline);
         public abstract void setCallbackOnTCPPortOpen(int nodePort, ManualResetEvent onCompletion, ManualResetEvent onError , DateTime deadline, biosThreadState biosThreadState);
         protected abstract NASAccess getNasForDevice(bladeSpec vmServer);
 
@@ -185,7 +186,7 @@ namespace bladeDirectorWCF
             }
 
             // It's all okay, so add us to the queue.
-            reqBlade.spec.state = bladeStatus.releaseRequested;
+            //reqBlade.spec.state = bladeStatus.releaseRequested;
             reqBlade.spec.nextOwner = requestorID;
 
             addLogEvent("Blade " + requestorID + " requested blade " + bladeIP + "(success, requestor added to queue)");
@@ -422,8 +423,7 @@ namespace bladeDirectorWCF
             // during BIOS or VM deployment here, since we check and wait for that in releaseBlade(lockableBladeSpec).
             using (lockableBladeSpec reqBlade = 
                 db.getBladeByIP(reqBladeIP, 
-                bladeLockType.lockVMCreation | bladeLockType.lockBIOS | bladeLockType.lockSnapshot | bladeLockType.lockNASOperations | bladeLockType.lockOwnership  | bladeLockType.lockvmDeployState, 
-                bladeLockType.lockVMCreation | bladeLockType.lockBIOS | bladeLockType.lockSnapshot | bladeLockType.lockNASOperations | bladeLockType.lockOwnership  | bladeLockType.lockvmDeployState,
+                bladeLockType.lockOwnership, bladeLockType.lockNone,
                 permitAccessDuringBIOS: true, permitAccessDuringDeployment: true))
             {
                 if (!force)
@@ -439,12 +439,20 @@ namespace bladeDirectorWCF
             }
         }
 
-        private result releaseBlade(lockableBladeSpec toRelease, bool omitChildVMs = false)
+        private result releaseBlade(lockableBladeSpec toRelease)
         {
             // Kill off any pending BIOS deployments ASAP.
-            if (toRelease.spec.currentlyHavingBIOSDeployed)
+            bool wasHavingBIOSDeployed = false;
+            using (var elev1 = new tempLockElevation(toRelease, bladeLockType.lockBIOS, bladeLockType.lockBIOS))
             {
-                toRelease.spec.currentlyHavingBIOSDeployed = false;
+                if (toRelease.spec.currentlyHavingBIOSDeployed)
+                {
+                    toRelease.spec.currentlyHavingBIOSDeployed = false;
+                    wasHavingBIOSDeployed = true;
+                }
+            }
+            if (wasHavingBIOSDeployed)
+            {
                 biosRWEngine.cancelOperationsForBlade(toRelease.spec.bladeIP);
 
                 result BIOSProgress = biosRWEngine.checkBIOSOperationProgress(toRelease.spec.bladeIP);
@@ -453,13 +461,12 @@ namespace bladeDirectorWCF
                     addLogEvent("Waiting for blade " + toRelease.spec.bladeIP + " to cancel BIOS operation...");
 
                     // We need to drop these locks temporarily, since they are needed for the BIOS deploy to cancel.
-                    toRelease.downgradeLocks(bladeLockType.lockBIOS | bladeLockType.lockvmDeployState, 
-                        bladeLockType.lockBIOS | bladeLockType.lockvmDeployState);
-
-                    Thread.Sleep(TimeSpan.FromSeconds(3));
-
-                    toRelease.upgradeLocks(bladeLockType.lockBIOS | bladeLockType.lockvmDeployState, 
-                        bladeLockType.lockBIOS | bladeLockType.lockvmDeployState);
+                    using(var dep = new tempLockDepression(toRelease, 
+                        bladeLockType.lockBIOS | bladeLockType.lockvmDeployState,
+                        bladeLockType.lockBIOS | bladeLockType.lockvmDeployState))
+                    {
+                        Thread.Sleep(TimeSpan.FromSeconds(3));
+                    }
 
                     BIOSProgress = biosRWEngine.checkBIOSOperationProgress(toRelease.spec.bladeIP);
                 }
@@ -468,68 +475,74 @@ namespace bladeDirectorWCF
             }
 
             // Reset any VM server the blade may be
-            if (!omitChildVMs)
+            if (toRelease.spec.currentlyBeingAVMServer)
             {
-                if (toRelease.spec.currentlyBeingAVMServer)
+                toRelease.spec.currentlyBeingAVMServer = false;
+
+                // Is it currently being deployed?
+                if (toRelease.spec.vmDeployState != VMDeployStatus.notBeingDeployed &&
+                    toRelease.spec.vmDeployState != VMDeployStatus.failed)
                 {
-                    toRelease.spec.currentlyBeingAVMServer = false;
-
-                    // Is it currently being deployed?
-                    if (toRelease.spec.vmDeployState != VMDeployStatus.notBeingDeployed &&
-                        toRelease.spec.vmDeployState != VMDeployStatus.failed)
+                    // Oh, it is being deployed. Cancel any deploys that reference this blade.
+                    KeyValuePair<waitToken, VMThreadState>[] deployingChildVMs;
+                    lock (_vmDeployState)
                     {
-                        // Oh, it is being deployed. Cancel any deploys that reference this blade.
-                        KeyValuePair<waitToken, VMThreadState>[] deployingChildVMs;
-                        lock (_vmDeployState)
-                        {
-                            deployingChildVMs = _vmDeployState.Where(x => x.Value.vmServerIP == toRelease.spec.bladeIP).ToArray();
+                        deployingChildVMs =
+                            _vmDeployState.Where(x => x.Value.vmServerIP == toRelease.spec.bladeIP).ToArray();
 
-                            foreach (KeyValuePair<waitToken, VMThreadState> kvp in deployingChildVMs)
-                                kvp.Value.deployDeadline = DateTime.MinValue;
-                        }
-
-                        foreach (KeyValuePair<waitToken, VMThreadState> childVM in deployingChildVMs)
-                        {
-                            while (true)
-                            {
-                                if (childVM.Value.currentProgress.result.code != resultCode.pending)
-                                    break;
-                                addLogEvent("Waiting for VM " + childVM.Value.childVMIP + " to cancel VM deployment operation...");
-                                Thread.Sleep(TimeSpan.FromSeconds(3));
-                            }
-                        }
+                        foreach (KeyValuePair<waitToken, VMThreadState> kvp in deployingChildVMs)
+                            kvp.Value.deployDeadline = DateTime.MinValue;
                     }
 
-                    // OK, all deployments are finished. Release any VMs that succeeded.
-                    List<vmSpec> childVMs = db.getVMByVMServerIP_nolocking(toRelease.spec.bladeIP);
-                    foreach (vmSpec child in childVMs)
+                    foreach (KeyValuePair<waitToken, VMThreadState> childVM in deployingChildVMs)
                     {
-                        result res = releaseVM(child.VMIP);
-                        if (res.code != resultCode.success)
-                            return res;
+                        while (true)
+                        {
+                            if (childVM.Value.currentProgress.result.code != resultCode.pending)
+                                break;
+                            addLogEvent("Waiting for VM " + childVM.Value.childVMIP +
+                                        " to cancel VM deployment operation...");
+                            Thread.Sleep(TimeSpan.FromSeconds(3));
+                        }
+                    }
+                }
+
+                // OK, all deployments are finished. Release any VMs that succeeded.
+                List<vmSpec> childVMs = db.getVMByVMServerIP_nolocking(toRelease.spec.bladeIP);
+                foreach (vmSpec child in childVMs)
+                {
+                    result res = releaseVM(child.VMIP);
+                    if (res.code != resultCode.success)
+                        return res;
+                }
+
+                // Now that BIOS and VM deployments have finished, it is safe to lock the blade.
+                // There is a race condition here - there could be another BIOS/VM operation started before we lock.
+                using (var elev = new tempLockElevation(toRelease,
+                    bladeLockType.lockVMCreation | bladeLockType.lockSnapshot | bladeLockType.lockNASOperations | bladeLockType.lockOwnership | bladeLockType.lockvmDeployState,
+                    bladeLockType.lockVMCreation | bladeLockType.lockSnapshot | bladeLockType.lockNASOperations | bladeLockType.lockOwnership | bladeLockType.lockvmDeployState))
+                {
+                    // If there's someone waiting, allocate it to that blade.
+                    if (toRelease.spec.state == bladeStatus.releaseRequested)
+                    {
+                        addLogEvent("Blade release : " + toRelease.spec.bladeIP +
+                                    " (success, blade is now owned by queue entry " + toRelease.spec.nextOwner + ")");
+
+                        toRelease.spec.state = bladeStatus.inUse;
+                        toRelease.spec.currentOwner = toRelease.spec.nextOwner;
+                        toRelease.spec.nextOwner = null;
+                        toRelease.spec.lastKeepAlive = DateTime.Now;
+                    }
+                    else
+                    {
+                        // There's no-one waiting, so set it to idle.
+                        toRelease.spec.state = bladeStatus.unused;
+                        toRelease.spec.currentOwner = null;
+                        toRelease.spec.nextOwner = null;
+                        addLogEvent("Blade release : " + toRelease.spec.bladeIP + " (success, blade is now idle)");
                     }
                 }
             }
-
-            // If there's someone waiting, allocate it to that blade.
-            if (toRelease.spec.state == bladeStatus.releaseRequested)
-            {
-                addLogEvent("Blade release : " + toRelease.spec.bladeIP + " (success, blade is now owned by queue entry " + toRelease.spec.nextOwner + ")");
-
-                toRelease.spec.state = bladeStatus.inUse;
-                toRelease.spec.currentOwner = toRelease.spec.nextOwner;
-                toRelease.spec.nextOwner = null;
-                toRelease.spec.lastKeepAlive = DateTime.Now;
-            }
-            else
-            {
-                // There's no-one waiting, so set it to idle.
-                toRelease.spec.state = bladeStatus.unused;
-                toRelease.spec.currentOwner = null;
-                toRelease.spec.nextOwner = null;
-                addLogEvent("Blade release : " + toRelease.spec.bladeIP + " (success, blade is now idle)");
-            }
-
             return new result(resultCode.success);
         }
 
@@ -562,20 +575,37 @@ namespace bladeDirectorWCF
                 {
                     // Ahh, this VM is currently being deployed. We can't release it until the thread doing the deployment says so.
                     _vmDeployState[waitToken].deployDeadline = DateTime.MinValue;
+
+                    // If we can't cancel within 30 seconds, we write a crashdump so that an operator can work out why.
+                    DateTime dumpTime = DateTime.Now + TimeSpan.FromSeconds(30);
+
                     while (_vmDeployState[waitToken].currentProgress.result.code == resultCode.pending)
                     {
                         addLogEvent("Waiting for VM deploy on " + lockedVM.spec.VMIP + " to cancel");
 
+                        if (DateTime.Now > dumpTime)
+                        {
+                            addLogEvent("VM deploy cancellation has taken more than 30 seconds; writing dump");
+                            miniDumpUtils.dumpSelf(Path.Combine(Settings.Default.internalErrorDumpPath, "slow_vm_cancel_" + Guid.NewGuid().ToString() + ".dmp"));
+
+                            dumpTime = DateTime.MaxValue;
+                        }
+
                         Monitor.Exit(_vmDeployState);
                         islocked = false;
-                        // Drop all locks on the VM (except IP address) while we wait for it to release. This will permit 
+                        // Drop all locks on the VM (except IP address) while we wait for it to release. This will permit  
                         // allocation to finish.
-                        bladeLocks locks = lockedVM.getCurrentLocks();
-                        locks.read &= ~bladeLockType.lockIPAddresses;
-                        lockedVM.downgradeLocks(locks);
-                        Thread.Sleep(TimeSpan.FromSeconds(10));
-
-                        lockedVM.upgradeLocks(locks.read, locks.write);
+                        using (
+                            tempLockDepression tmp = new tempLockDepression(lockedVM, 
+                                ~bladeLockType.lockIPAddresses,
+                                ~bladeLockType.lockAll))
+                        {
+                            //bladeLocks locks = lockedVM.getCurrentLocks();
+                            //locks.read &= ~bladeLockType.lockIPAddresses;
+                            //lockedVM.downgradeLocks(locks);
+                            Thread.Sleep(TimeSpan.FromSeconds(10));
+                            //lockedVM.upgradeLocks(locks.read, locks.write);
+                        }
                         Monitor.Enter(_vmDeployState);
                         islocked = true;
                     }
@@ -1172,7 +1202,7 @@ bladeLockType.lockvmDeployState,  // <-- TODO/FIXME: write perms shuold imply re
             string[] owners = stats.Where(x => x.ownerName != "vmserver").Select(x => x.ownerName).ToArray();
             if (owners.Length == 0)
                 return;
-            int fairShare = db.getAllBladeIP().Length / owners.Length;
+            float fairShare = (float)db.getAllBladeIP().Length / (float)owners.Length;
 
             currentOwnerStat[] ownersOverQuota = stats.Where(x => x.allocatedBlades > fairShare).ToArray();
             List<currentOwnerStat> ownersUnderQuota = stats.Where(x => x.allocatedBlades < fairShare).ToList();
@@ -1620,6 +1650,50 @@ bladeLockType.lockvmDeployState,  // <-- TODO/FIXME: write perms shuold imply re
             }
 
             return toRet.ToArray();
+        }
+    }
+
+    public class tempLockElevation : IDisposable
+    {
+        private readonly ILockableSpec _blade;
+
+        private readonly bladeLocks _permsAdded;
+
+        public tempLockElevation(ILockableSpec blade, bladeLockType newRead, bladeLockType newWrite)
+        {
+            _blade = blade;
+            _permsAdded = blade.getCurrentLocks();
+            _permsAdded.read = newRead & _permsAdded.read;
+            _permsAdded.write = newWrite & ~_permsAdded.write;
+
+            blade.upgradeLocks(newRead & ~newWrite, newWrite);
+        }
+
+        public void Dispose()
+        {
+            _blade.downgradeLocks(_permsAdded);
+        }
+    }
+
+    public class tempLockDepression : IDisposable
+    {
+        private readonly ILockableSpec _blade;
+
+        private readonly bladeLocks _permsAdded;
+
+        public tempLockDepression(ILockableSpec blade, bladeLockType toDropRead, bladeLockType toDropWrite)
+        {
+            _blade = blade;
+            _permsAdded = blade.getCurrentLocks();
+            _permsAdded.read = toDropRead & _permsAdded.read;
+            _permsAdded.write = toDropWrite & _permsAdded.write;
+
+            blade.downgradeLocks(toDropRead, toDropWrite);
+        }
+
+        public void Dispose()
+        {
+            _blade.upgradeLocks(_permsAdded);
         }
     }
 }

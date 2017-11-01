@@ -81,10 +81,8 @@ namespace bladeDirectorWCF
             return new hypervisor_iLo(iloSpec, clientExecutionMethod.smb);
         }
 
-        public override void startBladePowerOff(lockableBladeSpec nodeSpec)
+        public override void startBladePowerOff(lockableBladeSpec nodeSpec, DateTime deadline)
         {
-            DateTime deadline = DateTime.Now + TimeSpan.FromMinutes(3);
-
             using (hypervisor_iLo_HTTP hyp = new hypervisor_iLo_HTTP(nodeSpec.spec.iLOIP, Settings.Default.iloUsername, Settings.Default.iloPassword))
             {
                 hyp.connect();
@@ -100,10 +98,8 @@ namespace bladeDirectorWCF
             }
         }
 
-        public override void startBladePowerOn(lockableBladeSpec nodeSpec)
+        public override void startBladePowerOn(lockableBladeSpec nodeSpec, DateTime deadline)
         {
-            DateTime deadline = DateTime.Now + TimeSpan.FromMinutes(3); // This should be high enough to allow for an in-progress reset
-
             using (hypervisor_iLo_HTTP hyp = new hypervisor_iLo_HTTP(nodeSpec.spec.iLOIP, Settings.Default.iloUsername, Settings.Default.iloPassword))
             {
                 hyp.connect();

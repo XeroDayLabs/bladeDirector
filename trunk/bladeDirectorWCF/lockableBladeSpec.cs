@@ -6,7 +6,7 @@ using System.Threading;
 
 namespace bladeDirectorWCF
 {
-    public class lockableBladeSpec : IDisposable
+    public class lockableBladeSpec : IDisposable, ILockableSpec
     {
         private readonly SQLiteConnection _conn;
         private readonly string _ip;
@@ -87,6 +87,21 @@ namespace bladeDirectorWCF
                 }
             }
             GC.SuppressFinalize(this);
+        }
+
+        public bladeLocks getCurrentLocks()
+        {
+            return new bladeLocks() { read = _lockTypeRead, write = _lockTypeWrite};
+        }
+
+        public void downgradeLocks(bladeLocks locks)
+        {
+            downgradeLocks(locks.read, locks.write);
+        }
+
+        public void upgradeLocks(bladeLocks locks)
+        {
+            upgradeLocks(locks.read, locks.write);
         }
 
         public void upgradeLocks(bladeLockType readToAdd, bladeLockType writeToAdd)
