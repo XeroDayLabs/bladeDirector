@@ -185,6 +185,7 @@ namespace bladeDirectorWCF
             }
 
             // It's all okay, so add us to the queue.
+            reqBlade.spec.state = bladeStatus.releaseRequested;
             reqBlade.spec.nextOwner = requestorID;
 
             addLogEvent("Blade " + requestorID + " requested blade " + bladeIP + "(success, requestor added to queue)");
@@ -915,6 +916,8 @@ bladeLockType.lockvmDeployState,  // <-- TODO/FIXME: write perms shuold imply re
                         if (progress.result.code != resultCode.success &&
                             progress.result.code != resultCode.pending)
                         {
+                            // The BIOS write has failed, or been cancelled.
+                            // TODO: handle this correctly by marking the blade server as dead or whatever.
                             return progress.result;
                         }
                         hyp.powerOn(threadState.deployDeadline);
@@ -1143,9 +1146,10 @@ bladeLockType.lockvmDeployState,  // <-- TODO/FIXME: write perms shuold imply re
                 foreach (lockableBladeSpec reqBlade in orderedBlades)
                 {
                     result res = requestBlade(reqBlade, requestorIP);
+                    // If this request succeded, great, we can just return it.
                     if (res.code == resultCode.success || res.code == resultCode.pending)
                     {
-                        toRet = new resultAndBladeName(res) {bladeName = reqBlade.spec.bladeIP};
+                        toRet = new resultAndBladeName(res) {bladeName = reqBlade.spec.bladeIP, result = res};
                         break;
                     }
                 }

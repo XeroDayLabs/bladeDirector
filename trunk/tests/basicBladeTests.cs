@@ -90,7 +90,7 @@ namespace tests
                 // First, the node should be ours.
                 Assert.AreEqual(GetBladeStatusResult.yours, uut.svcDebug._GetBladeStatus(hostip, "1.1.1.1"));
 
-                // Then, someoene else requests it..
+                // Then, someone else requests it..
                 Assert.AreEqual(resultCode.pending, uut.svcDebug._RequestAnySingleNode("192.168.2.2").result.code);
 
                 // and it should be pending.
@@ -262,10 +262,7 @@ namespace tests
                     }
                 }
                 Assert.AreEqual(12, releaseRequestCount);
-
-                Debug.WriteLine("aaa " + uut.svcDebug._GetBladeStatus(hostipB, "1.1.1.2"));
-                Debug.WriteLine("aaa " + uut.svcDebug._GetBladeStatus(hostipB, "1.1.1.1"));
-
+                
                 // Now, host B should have one blade.
                 Assert.IsTrue(
                         uut.svcDebug._GetBladeStatus(hostipB, "1.1.1.2") == GetBladeStatusResult.yours ||
