@@ -2,6 +2,7 @@ using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Web.UI.WebControls;
@@ -141,14 +142,19 @@ namespace bladeDirectorWCF
                         foreach (takenLockInfo takenLockInfo in _readTakenList[lockTypeName].Values)
                         {
                             if (takenLockInfo.threadID == Thread.CurrentThread.ManagedThreadId)
+                            {
+                                miniDumpUtils.dumpSelf(Path.Combine(Properties.Settings.Default.internalErrorDumpPath, "_lockAlreadyTaken_" + Guid.NewGuid().ToString() + ".dmp"));
                                 throw new Exception("this thread already owns the read lock on " + lockTypeName + "! Previous lock was taken by " + takenLockInfo.stackTrace + " <stack trace end>");
+                            }
                         }
                     }
                 }
 
-                if (writeRequested &&  _writeTakenList[lockTypeName].threadID == Thread.CurrentThread.ManagedThreadId)
+                if (writeRequested && _writeTakenList[lockTypeName].threadID == Thread.CurrentThread.ManagedThreadId)
+                {
+                    miniDumpUtils.dumpSelf(Path.Combine(Properties.Settings.Default.internalErrorDumpPath, "_lockAlreadyTaken_" + Guid.NewGuid().ToString() + ".dmp"));
                     throw new Exception("this thread already owns the write lock on " + lockTypeName + "! Previous lock was taken by " + _writeTakenList[lockTypeName].stackTrace + " <stack trace end>");
-
+                }
                 // IF we get to this point, we have either a read lock, a writer lock, or both. Writer locks imply read locks, so
                 // we need to take the read lock now.
                 // Note that we always acquire the reader lock and then upgrade to a writer lock,  instead of acquiring the writer 

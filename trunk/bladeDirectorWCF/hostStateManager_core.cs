@@ -419,8 +419,8 @@ namespace bladeDirectorWCF
 
         private result releaseBlade(string reqBladeIP, string requestorIP, bool force)
         {
-            // Lock with almost everything, but not the IP-addresses lock, since we don't change that. Note that we permit access
-            // during BIOS or VM deployment here, since we check and wait for that in releaseBlade(lockableBladeSpec).
+            // Note that we permit access during BIOS or VM deployment here, since we check and wait for that in 
+            // releaseBlade(lockableBladeSpec).
             using (lockableBladeSpec reqBlade = 
                 db.getBladeByIP(reqBladeIP, 
                 bladeLockType.lockOwnership, bladeLockType.lockNone,
@@ -1663,10 +1663,10 @@ bladeLockType.lockvmDeployState,  // <-- TODO/FIXME: write perms shuold imply re
         {
             _blade = blade;
             _permsAdded = blade.getCurrentLocks();
-            _permsAdded.read = newRead & _permsAdded.read;
+            _permsAdded.read = newRead & ~_permsAdded.read;
             _permsAdded.write = newWrite & ~_permsAdded.write;
 
-            blade.upgradeLocks(newRead & ~newWrite, newWrite);
+            blade.upgradeLocks(_permsAdded);
         }
 
         public void Dispose()
@@ -1679,21 +1679,21 @@ bladeLockType.lockvmDeployState,  // <-- TODO/FIXME: write perms shuold imply re
     {
         private readonly ILockableSpec _blade;
 
-        private readonly bladeLocks _permsAdded;
+        private readonly bladeLocks _permsDropped;
 
         public tempLockDepression(ILockableSpec blade, bladeLockType toDropRead, bladeLockType toDropWrite)
         {
             _blade = blade;
-            _permsAdded = blade.getCurrentLocks();
-            _permsAdded.read = toDropRead & _permsAdded.read;
-            _permsAdded.write = toDropWrite & _permsAdded.write;
+            _permsDropped = blade.getCurrentLocks();
+            _permsDropped.read = toDropRead & _permsDropped.read;
+            _permsDropped.write = toDropWrite & _permsDropped.write;
 
-            blade.downgradeLocks(toDropRead, toDropWrite);
+            blade.downgradeLocks(_permsDropped);
         }
 
         public void Dispose()
         {
-            _blade.upgradeLocks(_permsAdded);
+            _blade.upgradeLocks(_permsDropped);
         }
     }
 }
