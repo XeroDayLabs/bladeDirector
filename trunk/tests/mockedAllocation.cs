@@ -138,7 +138,8 @@ namespace tests
                     {
                         // The VM server should still be allocated before release..
                         Assert.AreEqual(svc.svcDebug._GetBladeStatus(hostIP, bladeAndParent.Key), GetBladeStatusResult.notYours);
-                        svc.svcDebug._ReleaseBladeOrVM(hostIP, res.bladeName, false);
+                        resultAndWaitToken releaseWait = svc.svcDebug._ReleaseBladeOrVM(hostIP, res.bladeName, false);
+                        testUtils.waitForSuccess(svc, releaseWait, TimeSpan.FromSeconds(30));
                     }
 
                     // This VM server should now be unused.
