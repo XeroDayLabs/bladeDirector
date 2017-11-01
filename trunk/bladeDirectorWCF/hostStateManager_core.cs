@@ -515,34 +515,35 @@ namespace bladeDirectorWCF
                     if (res.code != resultCode.success)
                         return res;
                 }
+            }
 
-                // Now that BIOS and VM deployments have finished, it is safe to lock the blade.
-                // There is a race condition here - there could be another BIOS/VM operation started before we lock.
-                using (var elev = new tempLockElevation(toRelease,
-                    bladeLockType.lockVMCreation | bladeLockType.lockSnapshot | bladeLockType.lockNASOperations | bladeLockType.lockOwnership | bladeLockType.lockvmDeployState,
-                    bladeLockType.lockVMCreation | bladeLockType.lockSnapshot | bladeLockType.lockNASOperations | bladeLockType.lockOwnership | bladeLockType.lockvmDeployState))
+            // Now that BIOS and VM deployments have finished, it is safe to lock the blade.
+            // There is a race condition here - there could be another BIOS/VM operation started before we lock.
+            using (var elev = new tempLockElevation(toRelease,
+                bladeLockType.lockVMCreation | bladeLockType.lockSnapshot | bladeLockType.lockNASOperations | bladeLockType.lockOwnership | bladeLockType.lockvmDeployState,
+                bladeLockType.lockVMCreation | bladeLockType.lockSnapshot | bladeLockType.lockNASOperations | bladeLockType.lockOwnership | bladeLockType.lockvmDeployState))
+            {
+                // If there's someone waiting, allocate it to that blade.
+                if (toRelease.spec.state == bladeStatus.releaseRequested)
                 {
-                    // If there's someone waiting, allocate it to that blade.
-                    if (toRelease.spec.state == bladeStatus.releaseRequested)
-                    {
-                        addLogEvent("Blade release : " + toRelease.spec.bladeIP +
-                                    " (success, blade is now owned by queue entry " + toRelease.spec.nextOwner + ")");
+                    addLogEvent("Blade release : " + toRelease.spec.bladeIP +
+                                " (success, blade is now owned by queue entry " + toRelease.spec.nextOwner + ")");
 
-                        toRelease.spec.state = bladeStatus.inUse;
-                        toRelease.spec.currentOwner = toRelease.spec.nextOwner;
-                        toRelease.spec.nextOwner = null;
-                        toRelease.spec.lastKeepAlive = DateTime.Now;
-                    }
-                    else
-                    {
-                        // There's no-one waiting, so set it to idle.
-                        toRelease.spec.state = bladeStatus.unused;
-                        toRelease.spec.currentOwner = null;
-                        toRelease.spec.nextOwner = null;
-                        addLogEvent("Blade release : " + toRelease.spec.bladeIP + " (success, blade is now idle)");
-                    }
+                    toRelease.spec.state = bladeStatus.inUse;
+                    toRelease.spec.currentOwner = toRelease.spec.nextOwner;
+                    toRelease.spec.nextOwner = null;
+                    toRelease.spec.lastKeepAlive = DateTime.Now;
+                }
+                else
+                {
+                    // There's no-one waiting, so set it to idle.
+                    toRelease.spec.state = bladeStatus.unused;
+                    toRelease.spec.currentOwner = null;
+                    toRelease.spec.nextOwner = null;
+                    addLogEvent("Blade release : " + toRelease.spec.bladeIP + " (success, blade is now idle)");
                 }
             }
+
             return new result(resultCode.success);
         }
 
