@@ -599,7 +599,7 @@ namespace bladeDirectorWCF
                         using (
                             tempLockDepression tmp = new tempLockDepression(lockedVM, 
                                 ~bladeLockType.lockIPAddresses,
-                                ~bladeLockType.lockAll))
+                                bladeLockType.lockAll))
                         {
                             //bladeLocks locks = lockedVM.getCurrentLocks();
                             //locks.read &= ~bladeLockType.lockIPAddresses;
