@@ -18,7 +18,7 @@ namespace bladeDirectorWCF
             public Socket biosUpdateSocket;
             public ManualResetEvent biosUpdateConnectionEvent;
             public ManualResetEvent biosUpdateTimeoutEvent;
-            public DateTime biosUpdateDeadline;
+            public cancellableDateTime biosUpdateDeadline;
             public biosThreadState biosCurrentThreadState;
             public IPEndPoint biosUpdateEndpoint;
         }
@@ -81,7 +81,7 @@ namespace bladeDirectorWCF
             return new hypervisor_iLo(iloSpec, clientExecutionMethod.smb);
         }
 
-        public override void startBladePowerOff(lockableBladeSpec nodeSpec, DateTime deadline)
+        public override void startBladePowerOff(lockableBladeSpec nodeSpec, cancellableDateTime deadline)
         {
             using (hypervisor_iLo_HTTP hyp = new hypervisor_iLo_HTTP(nodeSpec.spec.iLOIP, Settings.Default.iloUsername, Settings.Default.iloPassword))
             {
@@ -91,14 +91,13 @@ namespace bladeDirectorWCF
                     hyp.powerOff();
                     if (hyp.getPowerStatus() == false)
                         break;
-                    if (DateTime.Now > deadline)
-                        throw new TimeoutException();
+                    deadline.throwIfTimedOutOrCancelled();
                     Thread.Sleep(TimeSpan.FromSeconds(5));
                 }
             }
         }
 
-        public override void startBladePowerOn(lockableBladeSpec nodeSpec, DateTime deadline)
+        public override void startBladePowerOn(lockableBladeSpec nodeSpec, cancellableDateTime deadline)
         {
             using (hypervisor_iLo_HTTP hyp = new hypervisor_iLo_HTTP(nodeSpec.spec.iLOIP, Settings.Default.iloUsername, Settings.Default.iloPassword))
             {
@@ -108,14 +107,13 @@ namespace bladeDirectorWCF
                     hyp.powerOn();
                     if (hyp.getPowerStatus())
                         break;
-                    if (DateTime.Now > deadline)
-                        throw new TimeoutException();
+                    deadline.throwIfTimedOutOrCancelled();
                     Thread.Sleep(TimeSpan.FromSeconds(5));
                 }
             }
         }
 
-        public override void setCallbackOnTCPPortOpen(int port, ManualResetEvent onCompletion, ManualResetEvent onError, DateTime deadline, biosThreadState state)
+        public override void setCallbackOnTCPPortOpen(int port, ManualResetEvent onCompletion, ManualResetEvent onError, cancellableDateTime deadline, biosThreadState state)
         {
             lock (inProgressTCPConnects)
             {
@@ -124,7 +122,12 @@ namespace bladeDirectorWCF
 
                 hostStateDBInProgressTCPConnect newInProg = new hostStateDBInProgressTCPConnect
                 {
-                    biosUpdateEndpoint = new IPEndPoint(IPAddress.Parse(state.nodeIP), port), biosUpdateConnectionEvent = onCompletion, biosUpdateDeadline = deadline, biosUpdateTimeoutEvent = onError, biosCurrentThreadState = state, biosUpdateSocket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp)
+                    biosUpdateEndpoint = new IPEndPoint(IPAddress.Parse(state.nodeIP), port), 
+                    biosUpdateConnectionEvent = onCompletion, 
+                    biosUpdateDeadline = deadline, 
+                    biosUpdateTimeoutEvent = onError, 
+                    biosCurrentThreadState = state, 
+                    biosUpdateSocket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp)
                 };
 
                 inProgressTCPConnects.GetOrAdd(state.nodeIP, newInProg);
@@ -162,21 +165,24 @@ namespace bladeDirectorWCF
 
             // We failed to connect, either because .EndConnect threw, or because the socket was not connected. Report failure 
             // (if our timeout has expired), or start another connection attempt if it has not.
-            if (DateTime.Now > inProgressConnect.biosUpdateDeadline)
+            if (!inProgressConnect.biosUpdateDeadline.stillOK)
             {
                 inProgressConnect.biosUpdateSocket = null;
                 inProgressConnect.biosUpdateTimeoutEvent.Set();
+
+                return;
             }
 
             // Otherwise, queue up another connect attempt to just keep retrying.
             inProgressConnect.biosUpdateSocket.BeginConnect(inProgressConnect.biosUpdateEndpoint, TCPCallback, inProgressConnect);
         }
 
-        protected override void waitForESXiBootToComplete(hypervisor hyp)
+        protected override void waitForESXiBootToComplete(hypervisor hyp, cancellableDateTime deadline)
         {
             while (true)
             {
-                executionResult res = hypervisor.doWithRetryOnSomeExceptions(() => hyp.startExecutable("/etc/init.d/vpxa", "status"), TimeSpan.FromSeconds(1), TimeSpan.FromSeconds(10));
+                executionResult res = hypervisor.doWithRetryOnSomeExceptions(
+                    () => hyp.startExecutable("/etc/init.d/vpxa", "status"), deadline, TimeSpan.FromSeconds(1));
 
                 if (res.resultCode != 0)
                 {
@@ -193,7 +199,7 @@ namespace bladeDirectorWCF
     
     public class VMThreadState
     {
-        public DateTime deployDeadline;
+        public cancellableDateTime deployDeadline;
         public resultAndBladeName currentProgress;
         public string vmServerIP;
         public string childVMIP;
@@ -206,7 +212,7 @@ namespace bladeDirectorWCF
         public bool isFinished;
         public bool isStarted;
         public result result;
-        public DateTime connectDeadline;
+        public cancellableDateTime connectDeadline;
         public Thread rebootThread;
         public lockableBladeSpec blade;
 

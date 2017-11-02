@@ -8,7 +8,7 @@ namespace bladeDirectorWCF
 {
     public class hostStateManagerMocked : hostStateManager_core
     {
-        public delegate executionResult mockedExecutionDelegate(hypervisor sender, string command, string args, string workingDir, DateTime deadline = default(DateTime));
+        public delegate executionResult mockedExecutionDelegate(hypervisor sender, string command, string args, string workingDir, cancellableDateTime deadline = null);
 
         public delegate bool mockedConnectionAttempt(string nodeIp, int nodePort, Action<biosThreadState> onBootFinish, Action<biosThreadState> onError, DateTime deadline, biosThreadState biosThreadState);
         public mockedConnectionAttempt onTCPConnectionAttempt;
@@ -120,11 +120,11 @@ namespace bladeDirectorWCF
             return new hypervisor_mocked_ilo(newBladeSpec.spec, callMockedExecutionHandler);
         }
 
-        protected override void waitForESXiBootToComplete(hypervisor hyp)
+        protected override void waitForESXiBootToComplete(hypervisor hyp, cancellableDateTime deadline)
         {
         }
 
-        public override void startBladePowerOff(lockableBladeSpec nodeSpec, DateTime deadline)
+        public override void startBladePowerOff(lockableBladeSpec nodeSpec, cancellableDateTime deadline)
         {
             using (hypervisor hyp = new hypervisor_mocked_ilo(nodeSpec.spec, callMockedExecutionHandler))
             {
@@ -132,7 +132,7 @@ namespace bladeDirectorWCF
             }
         }
 
-        public override void startBladePowerOn(lockableBladeSpec nodeSpec, DateTime deadline)
+        public override void startBladePowerOn(lockableBladeSpec nodeSpec, cancellableDateTime deadline)
         {
             using (hypervisor hyp = new hypervisor_mocked_ilo(nodeSpec.spec, callMockedExecutionHandler))
             {
@@ -140,7 +140,7 @@ namespace bladeDirectorWCF
             }
         }
 
-        public override void setCallbackOnTCPPortOpen(int nodePort, ManualResetEvent onCompletion, ManualResetEvent onError, DateTime deadline, biosThreadState biosThreadState)
+        public override void setCallbackOnTCPPortOpen(int nodePort, ManualResetEvent onCompletion, ManualResetEvent onError, cancellableDateTime deadline, biosThreadState biosThreadState)
         {
             //if (onTCPConnectionAttempt.Invoke(biosThreadState.nodeIP, nodePort, onBootFinish, onError, deadline, biosThreadState))
             onCompletion.Set();
@@ -168,7 +168,7 @@ namespace bladeDirectorWCF
             }
         }
 
-        private executionResult callMockedExecutionHandler(hypervisor sender, string command, string args, string workingdir, DateTime deadline)
+        private executionResult callMockedExecutionHandler(hypervisor sender, string command, string args, string workingdir, cancellableDateTime deadline)
         {
             return handler.callMockedExecutionHandler(sender, command, args, workingdir, deadline);
         }

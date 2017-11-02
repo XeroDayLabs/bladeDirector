@@ -9,7 +9,7 @@ namespace bladeDirectorWCF
     {
         private List<string> executedCommands = new List<string>();
 
-        public override executionResult callMockedExecutionHandler(hypervisor sender, string command, string args, string workingdir, DateTime deadline)
+        public override executionResult callMockedExecutionHandler(hypervisor sender, string command, string args, string workingdir, cancellableDateTime deadline)
         {
             string commandLine = command + " " + args;
 
@@ -22,7 +22,7 @@ namespace bladeDirectorWCF
 
     public class mockedExecutionHandler_successfulButSlow : mockedExecutionHandler_successful
     {
-        public override executionResult callMockedExecutionHandler(hypervisor sender, string command, string args, string workingdir, DateTime deadline)
+        public override executionResult callMockedExecutionHandler(hypervisor sender, string command, string args, string workingdir, cancellableDateTime deadline)
         {
             Thread.Sleep(TimeSpan.FromSeconds(10));
             return base.callMockedExecutionHandler(sender, command, args, workingdir, deadline);
@@ -31,7 +31,7 @@ namespace bladeDirectorWCF
 
     public class mockedExecutionHandler_successful : mockedExecutionHandler
     {
-        public override executionResult callMockedExecutionHandler(hypervisor sender, string command, string args, string workingdir, DateTime deadline)
+        public override executionResult callMockedExecutionHandler(hypervisor sender, string command, string args, string workingdir, cancellableDateTime deadline)
         {
             string commandLine = command + " " + args;
             switch (commandLine)

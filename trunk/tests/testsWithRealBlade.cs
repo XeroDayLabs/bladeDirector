@@ -53,6 +53,7 @@ namespace tests
         }
 
         [TestMethod]
+        [TestCategory("disabledTests")]
         public void willCancelBIOSWriteAfterWaiting()
         {
             for (int mins = 1; mins < 10; mins++)
@@ -86,9 +87,9 @@ namespace tests
                 resultAndWaitToken bladeState = svc.svc.getProgress(readRes.waitToken);
                 Assert.AreNotEqual(resultCode.pending, bladeState.result.code);
 
-                // It no longer be allocated to us.
+                // It no longer be allocated to us, since we released it earlier.
                 GetBladeStatusResult ownershipRes = svc.svc.GetBladeStatus(ourBlade);
-                Assert.AreEqual(GetBladeStatusResult.notYours, ownershipRes);
+                Assert.AreEqual(GetBladeStatusResult.unused, ownershipRes);
             }
         }
 

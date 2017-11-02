@@ -36,21 +36,21 @@ namespace bladeDirectorWCF
             events.Add(new mockedCall("connect", null));
         }
 
-        public override void powerOn(DateTime deadline = default(DateTime))
+        public override void powerOn(cancellableDateTime deadline)
         {
-            events.Add(new mockedCall("powerOn", "deadline: " + deadline.ToString("T")));
+            events.Add(new mockedCall("powerOn", "deadline: " + deadline.ToString()));
 
             powerState = true;
         }
 
-        public override void powerOff(DateTime deadline = default(DateTime))
+        public override void powerOff(cancellableDateTime deadline)
         {
-            events.Add(new mockedCall("powerOff", "deadline: " + deadline.ToString("T")));
+            events.Add(new mockedCall("powerOff", "deadline: " + deadline.ToString()));
 
             powerState = false;
         }
 
-        public override void copyToGuest(string dstpath, string srcpath)
+        public override void copyToGuest(string dstpath, string srcpath, cancellableDateTime deadline)
         {
             events.Add(new mockedCall("copyToGuest", "source: '" +  srcpath + "' dest: '" + dstpath + "'"));
             lock (files)
@@ -75,16 +75,16 @@ namespace bladeDirectorWCF
             }
         }
 
-        public override string getFileFromGuest(string srcpath, TimeSpan timeout = new TimeSpan())
+        public override string getFileFromGuest(string srcpath, cancellableDateTime deadline)
         {
-            events.Add(new mockedCall("getFileFromGuest", "timeout: " + timeout.ToString("T")));
+            events.Add(new mockedCall("getFileFromGuest", "timeout: " + deadline.ToString()));
             lock (files)
             {
                 return files[srcpath];
             }
         }
 
-        public override executionResult startExecutable(string toExecute, string args, string workingdir = null, DateTime deadline = default(DateTime))
+        public override executionResult startExecutable(string toExecute, string args, string workingdir = null, cancellableDateTime deadline = null)
         {
             events.Add(new mockedCall("startExecutable", "toExecute: '" +  toExecute + "' args: '" + args + "'" + " working dir: '" + (workingdir ?? "<null>") + "'"));
 
@@ -107,7 +107,7 @@ namespace bladeDirectorWCF
             return new asycExcecutionResult_mocked(res);
         }
 
-        public override void mkdir(string newDir)
+        public override void mkdir(string newDir, cancellableDateTime deadline)
         {
             events.Add(new mockedCall("mkdir", "newDir: '" +  newDir + "'"));
         }

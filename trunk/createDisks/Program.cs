@@ -120,7 +120,7 @@ namespace createDisks
             }
             else
             {
-                addBlades(itemsToAdd.ToArray(), args.tagName, args.bladeDirectorURL, args.baseSnapshot, args.additionalScript, args.additionalDeploymentItems, makeILOHyp);
+                addBlades(itemsToAdd.ToArray(), args.tagName, args.bladeDirectorURL, args.baseSnapshot, args.additionalScript, args.additionalDeploymentItems, makeILOHyp, new cancellableDateTime());
             }
         }
 
@@ -220,7 +220,7 @@ namespace createDisks
         }
 
         public static void addBlades<T>(itemToAdd[] itemsToAdd, string tagName, string directorURL, string baseSnapshot,
-            string additionalScript, string[] additionalDeploymentItem, hypCreateDelegate<T> createHyp, DateTime deadline = default(DateTime))
+            string additionalScript, string[] additionalDeploymentItem, hypCreateDelegate<T> createHyp, cancellableDateTime deadline)
         {
             NASAccess nas = new FreeNAS(
                 Properties.Settings.Default.iscsiServerIP,
@@ -231,13 +231,12 @@ namespace createDisks
         }
 
         public static void addBlades<T>(NASAccess nas, itemToAdd[] itemsToAdd, string tagName, string directorURL, string baseSnapshot,
-            string additionalScript, string[] additionalDeploymentItem, hypCreateDelegate<T> createHyp, DateTime deadline = default(DateTime))
+            string additionalScript, string[] additionalDeploymentItem, hypCreateDelegate<T> createHyp, cancellableDateTime deadline = null)
         {
-            if (deadline == default(DateTime))
-                deadline = DateTime.MaxValue;
+            if (deadline == null)
+                deadline = new cancellableDateTime();
 
-
-            if (DateTime.Now > deadline) throw new TimeoutException();
+            deadline.throwIfTimedOutOrCancelled();
             
             // Get the snapshot we'll be cloning
             List<snapshot> snapshots = nas.getSnapshots();
@@ -248,11 +247,11 @@ namespace createDisks
             // and clone it
             createClones(nas, toClone, toCloneVolume, itemsToAdd);
 
-            if (DateTime.Now > deadline) throw new TimeoutException();
+            deadline.throwIfTimedOutOrCancelled();
 
             exportClonesViaiSCSI(nas, itemsToAdd);
 
-            if (DateTime.Now > deadline) throw new TimeoutException();
+            deadline.throwIfTimedOutOrCancelled();
 
             string[] serverIPs = itemsToAdd.Select(x => x.serverIP).Distinct().ToArray();
 
@@ -279,7 +278,7 @@ namespace createDisks
                     {
                         using (hypervisorWithSpec<T> hyp = createHyp(itemToAdd, nas))
                         {
-                            prepareCloneImage(itemToAdd, toCloneVolume, tagName, directorURL, additionalScript, additionalDeploymentItem, hyp, nas);
+                            prepareCloneImage(itemToAdd, toCloneVolume, tagName, directorURL, additionalScript, additionalDeploymentItem, hyp, nas, deadline);
                         }
                     }, 4*1024*1024);
                     toWaitOn[index].Name = "Create disks for machine " + itemToAdd.bladeIP;
@@ -303,8 +302,9 @@ namespace createDisks
 
         public static void prepareCloneImage<T>(
             itemToAdd itemToAdd, string toCloneVolume, string tagName, string directorURL, 
-            string additionalScript, string[] additionalDeploymentItem, hypervisorWithSpec<T> hyp, NASAccess nas)
+            string additionalScript, string[] additionalDeploymentItem, hypervisorWithSpec<T> hyp, NASAccess nas, cancellableDateTime deadline)
         {
+            // TODO: handle that cancellableDateTime better
             Debug.WriteLine("Preparing " + itemToAdd.bladeIP + " for server " + itemToAdd.serverIP);
 
             hyp.connect();
@@ -382,7 +382,7 @@ namespace createDisks
             hypervisor.doWithRetryOnSomeExceptions(() => hyp.startExecutableAsyncWithRetry("C:\\windows\\system32\\cmd", "/c shutdown -s -f -t 01"));
 
             // Once it has shut down totally, we can take the snapshot of it.
-            hyp.WaitForStatus(false, TimeSpan.FromMinutes(1));
+            hyp.WaitForStatus(false, deadline);
 
             Debug.WriteLine(itemToAdd.bladeIP + " turned off, creating snapshot");
 
@@ -450,7 +450,7 @@ namespace createDisks
                 });
                 string args = String.Format("/c c:\\deployed.bat {0}", scriptArgs);
                 hyp.mkdir("c:\\deployment");
-                executionResult res = hyp.startExecutable("cmd.exe", args, "c:\\deployment", deadline: DateTime.Now + TimeSpan.FromMinutes(3) );
+                executionResult res = hyp.startExecutable("cmd.exe", args, "c:\\deployment", deadline: new cancellableDateTime(TimeSpan.FromMinutes(3)) );
                 if (res.resultCode != 0)
                 {
                 //    throw new  Exception("deployment batch file returned nonzero: stderr '" + res.stderr + "' stdout '" + res.stdout + "'");

@@ -56,10 +56,10 @@ namespace bladeDirectorWCF
         public abstract hypervisor makeHypervisorForBlade_LTSP(lockableBladeSpec bladeSpec);
         public abstract hypervisor makeHypervisorForBlade_ESXi(lockableBladeSpec bladeSpec);
 
-        protected abstract void waitForESXiBootToComplete(hypervisor hyp);
-        public abstract void startBladePowerOff(lockableBladeSpec blade, DateTime deadline);
-        public abstract void startBladePowerOn(lockableBladeSpec blade, DateTime deadline);
-        public abstract void setCallbackOnTCPPortOpen(int nodePort, ManualResetEvent onCompletion, ManualResetEvent onError , DateTime deadline, biosThreadState biosThreadState);
+        protected abstract void waitForESXiBootToComplete(hypervisor hyp, cancellableDateTime deadline);
+        public abstract void startBladePowerOff(lockableBladeSpec blade, cancellableDateTime deadline);
+        public abstract void startBladePowerOn(lockableBladeSpec blade, cancellableDateTime deadline);
+        public abstract void setCallbackOnTCPPortOpen(int nodePort, ManualResetEvent onCompletion, ManualResetEvent onError, cancellableDateTime deadline, biosThreadState biosThreadState);
         protected abstract NASAccess getNasForDevice(bladeSpec vmServer);
 
         private readonly string _basePath;
@@ -491,7 +491,7 @@ namespace bladeDirectorWCF
                             _vmDeployState.Where(x => x.Value.vmServerIP == toRelease.spec.bladeIP).ToArray();
 
                         foreach (KeyValuePair<waitToken, VMThreadState> kvp in deployingChildVMs)
-                            kvp.Value.deployDeadline = DateTime.MinValue;
+                            kvp.Value.deployDeadline.markCancelled();
                     }
 
                     foreach (KeyValuePair<waitToken, VMThreadState> childVM in deployingChildVMs)
@@ -575,7 +575,7 @@ namespace bladeDirectorWCF
                     _vmDeployState[waitToken].currentProgress.result.code == resultCode.pending)
                 {
                     // Ahh, this VM is currently being deployed. We can't release it until the thread doing the deployment says so.
-                    _vmDeployState[waitToken].deployDeadline = DateTime.MinValue;
+                    _vmDeployState[waitToken].deployDeadline.markCancelled();
 
                     // If we can't cancel within 30 seconds, we write a crashdump so that an operator can work out why.
                     DateTime dumpTime = DateTime.Now + TimeSpan.FromSeconds(30);
@@ -726,7 +726,7 @@ namespace bladeDirectorWCF
                         {
                             vmServerIP = freeVMServer.spec.bladeIP,
                             childVMIP = childVM.spec.VMIP,
-                            deployDeadline = DateTime.Now + TimeSpan.FromMinutes(25),
+                            deployDeadline = new cancellableDateTime(TimeSpan.FromMinutes(25)),
                             currentProgress = new resultAndBladeName(resultCode.pending, waitToken, null)
                         };
                         _vmDeployState.Add(waitToken, deployState);
@@ -922,8 +922,7 @@ bladeLockType.lockvmDeployState,  // <-- TODO/FIXME: write perms shuold imply re
                 {
                     using (hypervisor hyp = makeHypervisorForBlade_ESXi(VMServerBladeIPAddress))
                     {
-                        if (threadState.deployDeadline < DateTime.Now)
-                            throw new TimeoutException();
+                        threadState.deployDeadline.throwIfTimedOutOrCancelled();
 
                         hyp.connect();
 
@@ -937,7 +936,7 @@ bladeLockType.lockvmDeployState,  // <-- TODO/FIXME: write perms shuold imply re
                                 progress.result.code == resultCode.unknown   )
                         {
                             // If we timeout or are cancelled, tell the bios operation we are cancelling
-                            if (threadState.deployDeadline < DateTime.Now)
+                            if (!threadState.deployDeadline.stillOK)
                                 biosRWEngine.cancelOperationsForBlade(VMServerBladeIPAddress);
 
                             // Otherwise, poll for operation finish
@@ -953,7 +952,7 @@ bladeLockType.lockvmDeployState,  // <-- TODO/FIXME: write perms shuold imply re
                         }
                         hyp.powerOn(threadState.deployDeadline);
 
-                        waitForESXiBootToComplete(hyp);
+                        waitForESXiBootToComplete(hyp, threadState.deployDeadline);
 
                         // Once it's powered up, we ensure the datastore is mounted okay. Sometimes I'm seeing ESXi hosts boot
                         // with an inaccessible NFS datastore, so remount if neccessary. Retry this since it doesn't seem to 
@@ -995,7 +994,7 @@ bladeLockType.lockvmDeployState,  // <-- TODO/FIXME: write perms shuold imply re
                     }
                     Thread.Sleep(TimeSpan.FromSeconds(1));
 
-                    if (threadState.deployDeadline < DateTime.Now)
+                    if (!threadState.deployDeadline.stillOK)
                         throw new TimeoutException();
                 }
             }
@@ -1010,7 +1009,7 @@ bladeLockType.lockvmDeployState,  // <-- TODO/FIXME: write perms shuold imply re
                     string destDirDatastoreType = "[esxivms] " + VMServerBladeIPAddress + "_" + childVM_unsafe.vmConfigKey;
                     string vmxPath = destDir + "/PXETemplate.vmx";
 
-                    if (threadState.deployDeadline < DateTime.Now)
+                    if (!threadState.deployDeadline.stillOK)
                         throw new TimeoutException();
 
                     // Remove the VM if it's already there. We don't mind if these commands fail - which they will, if the VM doesn't
@@ -1018,9 +1017,8 @@ bladeLockType.lockvmDeployState,  // <-- TODO/FIXME: write perms shuold imply re
                     string dstDatastoreDirEscaped = destDirDatastoreType.Replace("[", "\\[").Replace("]", "\\]");
                     hypervisor.doWithRetryOnSomeExceptions(() =>
                     {
-                        throwIfTimedOut(threadState.deployDeadline);
                         hyp.startExecutable("vim-cmd", "vmsvc/power.off `vim-cmd vmsvc/getallvms | grep \"" + dstDatastoreDirEscaped + "\"`");
-                    }, deadline: threadState.deployDeadline);
+                    }, threadState.deployDeadline);
                     hypervisor.doWithRetryOnSomeExceptions(() => hyp.startExecutable("vim-cmd", "vmsvc/power.off `vim-cmd vmsvc/getallvms | grep \"" + childVM_unsafe.displayName + "\"`"), deadline: threadState.deployDeadline);
                     hypervisor.doWithRetryOnSomeExceptions(() => hyp.startExecutable("vim-cmd", "vmsvc/unregister `vim-cmd vmsvc/getallvms | grep \"" + dstDatastoreDirEscaped + "\"`"), deadline: threadState.deployDeadline);
                     hypervisor.doWithRetryOnSomeExceptions(() => hyp.startExecutable("vim-cmd", "vmsvc/unregister `vim-cmd vmsvc/getallvms | grep \"" + childVM_unsafe.displayName + "\"`"), deadline: threadState.deployDeadline);
@@ -1047,8 +1045,7 @@ bladeLockType.lockvmDeployState,  // <-- TODO/FIXME: write perms shuold imply re
 
                 itemToAdd itm = childVM_unsafe.toItemToAdd(true);
 
-                if (threadState.deployDeadline < DateTime.Now)
-                    throw new TimeoutException();
+                threadState.deployDeadline.throwIfTimedOutOrCancelled();
 
                 // Now we can select the new snapshot. We must be very careful and do this quickly, with the appropriate write lock
                 // held, because it will block the ipxe script creation until we unlock.
@@ -1064,8 +1061,7 @@ bladeLockType.lockvmDeployState,  // <-- TODO/FIXME: write perms shuold imply re
                     NASAccess nas = getNasForDevice(bladeSpec.spec);
                     createDisks.Program.deleteBlade(itm.cloneName, nas);
 
-                    if (threadState.deployDeadline < DateTime.Now)
-                        throw new TimeoutException();
+                    threadState.deployDeadline.throwIfTimedOutOrCancelled();
 
                     // TODO: handle timeouts in makeHypervisorForVM
 
@@ -1077,8 +1073,7 @@ bladeLockType.lockvmDeployState,  // <-- TODO/FIXME: write perms shuold imply re
                 }
                 // TODO: Ability to deploy transportDriver
 
-                if (threadState.deployDeadline < DateTime.Now)
-                    throw new TimeoutException();
+                threadState.deployDeadline.throwIfTimedOutOrCancelled();
 
                 // All done. We can mark the blade as in use. Again, we are careful to hold write locks for as short a time as is
                 // possible, to avoid blocking the PXE-script generation.
@@ -1124,7 +1119,7 @@ bladeLockType.lockvmDeployState,  // <-- TODO/FIXME: write perms shuold imply re
             return toRet;
         }
 
-        private void doCmdAndCheckSuccess(hypervisor hyp, string cmd, string args, DateTime deadline)
+        private void doCmdAndCheckSuccess(hypervisor hyp, string cmd, string args, cancellableDateTime deadline)
         {
             executionResult res = hypervisor.doWithRetryOnSomeExceptions(() => hyp.startExecutable(cmd, args, deadline: deadline));
             if (res.resultCode != 0)

@@ -229,7 +229,7 @@ namespace tests
         }
 
         [TestMethod]
-        public void willEnforceSharingWithVMs()
+        public void willEnforceSharingWithVMsAndBlades()
         {
             using (bladeDirectorDebugServices uut = new bladeDirectorDebugServices(WCFPath, new[] { "1.1.1.1", "1.1.1.2" }))
             {
@@ -271,5 +271,45 @@ namespace tests
             }
         }
 
+        [TestMethod]
+        public void willEnforceSharingWithVMs()
+        {
+            using (bladeDirectorDebugServices uut = new bladeDirectorDebugServices(WCFPath, new[] { "1.1.1.1", "1.1.1.2" }))
+            {
+                string hostipA = "192.168.1.1";
+                string hostipB = "192.168.1.2";
+
+                // Host A requests all the VMs
+                vmHWAndSWSpec toAlloc = new vmHWAndSWSpec(new VMHardwareSpec() { memoryMB = 4, cpuCount = 1 }, new VMSoftwareSpec());
+
+                resultAndBladeName[] intialReqs = uut.svcDebug._requestAsManyVMAsPossible(hostipA, toAlloc.hw, toAlloc.sw);
+                for (int index = 0; index < intialReqs.Length; index++)
+                {
+                    intialReqs[index] = (resultAndBladeName)testUtils.waitForSuccess(uut, intialReqs[index], TimeSpan.FromMinutes(1));
+                }
+
+                // Now B requests a VM
+                resultAndBladeName reqFromB = uut.svcDebug._requestAnySingleVM(hostipB, toAlloc.hw, toAlloc.sw);
+                Assert.AreEqual(resultCode.pending, reqFromB.result.code);
+
+                // A should be asked to release a single VM, and does as it is told
+                int releaseRequestCount = 0;
+                foreach (resultAndBladeName req in intialReqs)
+                {
+                    Debug.WriteLine(uut.svcDebug._GetVMStatus(hostipA, req.bladeName));
+                    if (uut.svcDebug._GetVMStatus(hostipA, req.bladeName) == GetBladeStatusResult.releasePending)
+                    {
+                        resultAndWaitToken relWait = uut.svcDebug._ReleaseBladeOrVM(hostipA, req.bladeName, false);
+                        testUtils.waitForSuccess(uut, relWait, TimeSpan.FromSeconds(30));
+
+                        releaseRequestCount++;
+                    }
+                }
+                Assert.AreEqual(1, releaseRequestCount);
+
+                // Now, host B should have one VM.
+                Assert.AreEqual(resultCode.success, testUtils.waitForSuccess(uut, reqFromB, TimeSpan.FromSeconds(30)));
+            }
+        }
     }
 }

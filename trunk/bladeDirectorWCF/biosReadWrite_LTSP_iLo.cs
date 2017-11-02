@@ -162,7 +162,7 @@ namespace bladeDirectorWCF
                 }
 
                 // Retrieve the output
-                state.biosxml = hyp.getFileFromGuest("currentbios.xml");
+                state.biosxml = hyp.getFileFromGuest("currentbios.xml", state.connectDeadline);
 
                 // All done, now we can power off and return.
                 hyp.powerOff(state.connectDeadline);
@@ -233,7 +233,7 @@ namespace bladeDirectorWCF
             state.isFinished = true;
         }
 
-        private void copyDeploymentFilesToBlade(lockableBladeSpec nodeSpec, string biosConfigFile, DateTime deadline)
+        private void copyDeploymentFilesToBlade(lockableBladeSpec nodeSpec, string biosConfigFile, cancellableDateTime deadline)
         {
             using (hypervisor hyp = _hostManager.makeHypervisorForBlade_LTSP(nodeSpec))
             {
@@ -249,13 +249,13 @@ namespace bladeDirectorWCF
                 foreach (KeyValuePair<string, string> kvp in toCopy)
                 {
                     hypervisor.doWithRetryOnSomeExceptions(() => { hyp.copyToGuestFromBuffer(kvp.Key, kvp.Value); },
-                        TimeSpan.FromSeconds(10), deadline: deadline);
+                        deadline, TimeSpan.FromSeconds(10));
                 }
                 // And copy this file specifically as binary.
                 hypervisor.doWithRetryOnSomeExceptions(() =>
                 {
                     hyp.copyToGuestFromBuffer("conrep", Resources.conrep);
-                }, TimeSpan.FromSeconds(10), deadline: deadline);
+                }, deadline, TimeSpan.FromSeconds(10));
             }
         }
 
@@ -284,7 +284,7 @@ namespace bladeDirectorWCF
             {
                 blade.spec.currentlyHavingBIOSDeployed = true;
             }
-            param.connectDeadline = DateTime.Now + TimeSpan.FromMinutes(5);
+            param.connectDeadline = new cancellableDateTime(TimeSpan.FromMinutes(5));
             param.isStarted = true;
 
             using (lockableBladeSpec blade = _hostManager.db.getBladeByIP(param.nodeIP,
@@ -333,7 +333,7 @@ namespace bladeDirectorWCF
             biosThreadState toCancel = _currentlyDeployingNodes[bladeIP];
             while (!toCancel.isFinished)
             {
-                toCancel.connectDeadline = DateTime.MinValue;
+                toCancel.connectDeadline.markCancelled();
 
                 // If we can't cancel within 30 seconds, we write a crashdump so that an operator can work out why.
                 DateTime dumpTime = DateTime.Now + TimeSpan.FromSeconds(30);
