@@ -119,7 +119,7 @@ namespace bladeDirectorWCF
                     }
                 }
             }
-            debugmsg(Thread.CurrentThread.ManagedThreadId + " bladeLockCollection release for blade " + _name + " finished, new access " + _readLock + " / " + _writeLock);
+            debugmsg(Thread.CurrentThread.ManagedThreadId + " bladeLockCollection release for blade " + _name + " finished");
         }
 
         public void acquire(bladeLockType readTypes, bladeLockType writeTypes)
@@ -239,7 +239,7 @@ namespace bladeDirectorWCF
                     _writeTakenList[lockTypeName].stackTrace = Environment.StackTrace;
                 }
             }
-            debugmsg(Thread.CurrentThread.ManagedThreadId + " bladeLockCollection acquisition for blade " + _name + " finished, new access " + _readLock + " / " + _writeLock);
+            debugmsg(Thread.CurrentThread.ManagedThreadId + " bladeLockCollection acquisition for blade " + _name + " finished");
         }
 
         public void downgrade(bladeLockType toDropRead, bladeLockType toDropWrite)
