@@ -27,6 +27,9 @@ namespace bladeDirectorWCF
         resultAndWaitToken logIn();
 
         [OperationContract]
+        void setResourceSharingModel(fairnessChecker.fairnessType fairnessType);
+
+        [OperationContract]
         void setWebSvcURL(string newURL);
 
         [OperationContract]

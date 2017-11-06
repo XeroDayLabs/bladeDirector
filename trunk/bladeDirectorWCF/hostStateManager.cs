@@ -203,6 +203,7 @@ namespace bladeDirectorWCF
         public resultAndBladeName currentProgress;
         public string vmServerIP;
         public string childVMIP;
+        public VMHardwareSpec hwSpec;
     }
 
     public class biosThreadState
@@ -353,6 +354,12 @@ namespace bladeDirectorWCF
         {
             code = newCode;
             errMsg = newMsg;
+        }
+
+        public result(resultCode newCode, Exception e)
+        {
+            code = newCode;
+            errMsg = e.ToString();
         }
 
         public override string ToString()

@@ -100,7 +100,10 @@ namespace bladeDirectorWCF
         // ReSharper restore NotAccessedField.Global
         // ReSharper restore MemberCanBePrivate.Global
 
-        private VMCapacity _VMCapacity = new VMCapacity();
+        /// <summary>
+        /// Maximum resources available on this VM. For now this is static.
+        /// </summary>
+        private static VMCapacity _VMCapacity = new VMCapacity();
 
         public bladeSpec()
             : base()
@@ -126,12 +129,6 @@ namespace bladeDirectorWCF
             ESXiPassword = Settings.Default.esxiPassword;
             iLoUsername = Settings.Default.iloUsername;
             iLoPassword = Settings.Default.iloPassword;
-
-            if (conn != null)
-            {
-                // Do an empty insert, so we get a DB ID for this row
-                createOrUpdateInDB(new List<string>());
-            }
         }
 
         public bladeSpec(SQLiteConnection conn,
@@ -153,12 +150,6 @@ namespace bladeDirectorWCF
             ESXiPassword = Settings.Default.esxiPassword;
             iLoUsername = Settings.Default.iloUsername;
             iLoPassword = Settings.Default.iloPassword;
-
-            if (conn != null)
-            {
-                // Do an empty insert, so we get a DB ID for this row
-                createOrUpdateInDB(new List<string>());
-            }
         }
 
         public bladeSpec(SQLiteConnection conn, SQLiteDataReader reader, bladeLockType permittedAccessRead, bladeLockType permittedAccessWrite)
@@ -398,7 +389,8 @@ namespace bladeDirectorWCF
                 if (bladeID.HasValue)
                     cmd.Parameters.AddWithValue("bladeConfigKey", bladeID.Value);
 
-                cmd.ExecuteNonQuery();
+                if (cmd.ExecuteNonQuery() != 1)
+                    throw new Exception("SQL statement did not return 1: '" + sqlCommand + "'");
                 if (!bladeID.HasValue)
                     bladeID = (int)conn.LastInsertRowId;
             }
@@ -409,7 +401,7 @@ namespace bladeDirectorWCF
             if ((permittedAccessRead & bladeLockType.lockVMCreation) == bladeLockType.lockNone)
                 throw  new Exception("lockVMCreation is needed when calling .canAccomodate");
 
-            vmserverTotals totals = db.getVMServerTotalsByVMServerIP(bladeIP);
+            vmserverTotals totals = db.getVMServerTotals(this);
 
             if (totals.VMs + 1 > _VMCapacity.maxVMs)
                 return false;
@@ -428,13 +420,13 @@ namespace bladeDirectorWCF
 
             vmSpec newVM = new vmSpec(conn, bladeLockType.lockAll, bladeLockType.lockAll);
             newVM.parentBladeIP = bladeIP;
-            newVM.currentOwner = "vmserver"; // We own the blade until we are done setting it up
             newVM.state = bladeStatus.inUseByDirector;
+            newVM.currentOwner = "vmserver"; // We own the blade until we are done setting it up
             newVM.nextOwner = newOwner;
             newVM.parentBladeID = bladeID.Value;
             newVM.memoryMB = reqhw.memoryMB;
             newVM.cpuCount = reqhw.cpuCount;
-            vmserverTotals totals = db.getVMServerTotalsByVMServerIP(bladeIP);
+            vmserverTotals totals = db.getVMServerTotals(this);
             newVM.indexOnServer = totals.VMs + 1;
 
             byte[] VMServerIPBytes = IPAddress.Parse(bladeIP).GetAddressBytes();
@@ -453,7 +445,9 @@ namespace bladeDirectorWCF
             // VMs always have this implicit snapshot.
             newVM.currentSnapshot = "vm";
 
-            return new lockableVMSpec(db.conn, newVM);
+            lockableVMSpec toRet = new lockableVMSpec(newVM.VMIP, bladeLockType.lockAll, bladeLockType.lockAll);
+            toRet.setSpec(newVM);
+            return toRet;
         }
 
         public override itemToAdd toItemToAdd(bool useNextOwner)
@@ -491,6 +485,28 @@ namespace bladeDirectorWCF
             script = script.Replace("{BLADE_IP_MAIN}", bladeIP);
 
             return base.generateIPXEScript(script);
+        }
+
+        public static float asPercentageOfCapacity(float cpuCount, float memoryMB)
+        {
+            // We just express as the largest percentage of CPU/ram/number of VMs.
+            float pctVMCount = 1f / _VMCapacity.maxVMs * 100f;
+            float pctCPUCount = cpuCount / _VMCapacity.maxCPUCount * 100f;
+            float pctMemorySize = memoryMB / _VMCapacity.maxVMMemoryMB * 100f;
+
+            if (pctVMCount >= pctCPUCount &&
+                pctVMCount >= pctMemorySize)
+                return pctVMCount;
+
+            if (pctCPUCount >= pctVMCount &&
+                pctCPUCount >= pctMemorySize)
+                return pctCPUCount;
+
+            if (pctMemorySize >= pctCPUCount &&
+                pctMemorySize >= pctVMCount)
+                return pctMemorySize;
+
+            throw new Exception("this code should be unreachable.. r-right? ._.");
         }
     }
 

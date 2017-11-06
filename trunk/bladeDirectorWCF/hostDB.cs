@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Data.SQLite;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Threading;
@@ -142,6 +143,13 @@ namespace bladeDirectorWCF
                     continue;
                 }
 
+                // Have we hit our maximum yet?
+                if (toRet.Count == max)
+                {
+                    blade.Dispose();
+                    continue;
+                }
+
                 // Otherwise, okay.
                 toRet.Add(blade);
             }
@@ -246,6 +254,8 @@ namespace bladeDirectorWCF
             // We need to lock IP addressess, since we're searching by them.
             readLock = readLock | bladeLockType.lockIPAddresses;
 
+            lockableVMSpec toRet = new lockableVMSpec(bladeName, readLock, writeLock);
+
             string sqlCommand = "select * from bladeOwnership " +
                                 "join VMConfiguration on ownershipKey = VMConfiguration.ownershipID " +
                                 "where VMConfiguration.VMIP = $VMIP";
@@ -256,12 +266,88 @@ namespace bladeDirectorWCF
                 {
                     if (reader.Read())
                     {
-                        return new lockableVMSpec(conn, reader, readLock, writeLock);
+                        toRet.setSpec( new vmSpec(conn, reader, readLock, writeLock));
+                        return toRet;
                     }
+
                     // No records returned.
+                    toRet.Dispose();
                     return null;
                 }
             }
+        }
+
+        public disposingList<lockableVMSpec> getVMByVMServerIP(lockableBladeSpec blade, bladeLockType readLock,
+            bladeLockType writeLock)
+        {
+            disposingList<lockableVMSpec> toRet = new disposingList<lockableVMSpec>();
+
+            if ((blade.getCurrentLocks().read & bladeLockType.lockVMCreation) == 0)
+                throw new Exception("lockVMCreation required on vmserver passed to getVMByVMServerIP");
+
+            // We need to lock IP addressess on the VMs, since we lock by them.
+            readLock = readLock | bladeLockType.lockIPAddresses;
+
+            // Since we hold lockVMCreation, we can assume no new VMs will be added or removed to/from this blade. We assume that
+            // VM IP addresses will never change, except during initialization, when they go from null - we just drop any with a
+            // NULL IP address.
+
+            Dictionary<string, lockableVMSpec> VMNames = new Dictionary<string, lockableVMSpec>();
+            string sqlCommand = "select VMIP from vmConfiguration " +
+                                "join bladeConfiguration on parentbladeID = bladeConfigKey " +
+                                "where bladeIP = $vmServerIP";
+            using (SQLiteCommand cmd = new SQLiteCommand(sqlCommand, conn))
+            {
+                cmd.Parameters.AddWithValue("$vmServerIP", blade.spec.bladeIP);
+                using (SQLiteDataReader reader = cmd.ExecuteReader())
+                {
+                    while (reader.Read())
+                    {
+                        string VMName = reader[0].ToString();
+                        if (!String.IsNullOrEmpty(VMName))
+                            VMNames.Add(VMName, new lockableVMSpec(VMName, readLock, writeLock));
+                    }
+                }
+            }
+
+            try
+            {
+                // Now read each from the DB, now that we hold the lock for each.
+                foreach (KeyValuePair<string, lockableVMSpec> kvp in VMNames)
+                {
+                    string vmName = kvp.Key;
+                    lockableVMSpec vmSpec = kvp.Value;
+
+                    string sql_getVM = "select bladeOwnership.*, vmConfiguration.* from vmConfiguration " +
+                                       " join bladeOwnership on bladeOwnership.ownershipKey = vmConfiguration.ownershipID " +
+                                       " join bladeConfiguration on parentbladeID = bladeConfigKey " +
+                                       " where VMIP = $vmIP";
+
+                    using (SQLiteCommand cmd = new SQLiteCommand(sql_getVM, conn))
+                    {
+                        cmd.Parameters.AddWithValue("$vmIP", vmName);
+
+                        using (SQLiteDataReader reader = cmd.ExecuteReader())
+                        {
+                            if (!reader.Read())
+                                throw new Exception("VM disappeared, even though we hold lockVMCreation on the parent!");
+
+                            vmSpec.setSpec(new vmSpec(conn, reader, readLock, writeLock));
+                            toRet.Add(vmSpec);
+                        }
+                    }
+
+                }
+            }
+            catch (Exception)
+            {
+                foreach (KeyValuePair<string, lockableVMSpec> kvp in VMNames)
+                {
+                    kvp.Value.Dispose();
+                }
+                throw;
+            }
+            return toRet;
         }
 
         // Fixme: code duplication ^^
@@ -285,91 +371,90 @@ namespace bladeDirectorWCF
             }
         }
 
-        public currentOwnerStat[] getFairnessStats_withoutLocking()
+        public currentOwnerStat[] getFairnessStats(disposingList<lockableBladeSpec> blades )
         {
-            List<currentOwnerStat> blades = getFairnessStatsForBlades_withoutLocking().ToList();
+            List<currentOwnerStat> bladeStats = getFairnessStatsForBlades(blades).ToList();
+            if (bladeStats.Any(x => bladeStats.Count(y => x.ownerName == y.ownerName) == 0))
+                throw new Exception("Not passed enough locks!");
+
             // Now add VM stats. 
-            blades.RemoveAll(x => x.ownerName == "vmserver");
-
-            foreach (string bladeIP in getAllBladeIP())
+            foreach (lockableBladeSpec blade in blades)
             {
-                float totalVMs = 0;
-                Dictionary<string, float> ownershipForThisBlade = new Dictionary<string, float>();
-
-                string sqlCommand = "select bladeOwnership.currentOwner from VMConfiguration " +
-                                    " join bladeOwnership on VMConfiguration.ownershipID = bladeOwnership.ownershipKey " +
-                                    " where parentBladeIP == $bladeIP ";
-                using (SQLiteCommand cmd = new SQLiteCommand(sqlCommand, conn))
+                using (disposingList<lockableVMSpec> vms = getVMByVMServerIP(blade,
+                    bladeLockType.lockOwnership | bladeLockType.lockVMCreation | bladeLockType.lockVirtualHW,
+                    bladeLockType.lockNone))
                 {
-                    cmd.Parameters.AddWithValue("$bladeIP", bladeIP);
-                    using (SQLiteDataReader reader = cmd.ExecuteReader())
+                    foreach (lockableVMSpec vm in vms)
                     {
-                        while (reader.Read())
+                        string owner;
+                        //if (vm.spec.state == bladeStatus.inUse || vm.spec.state == bladeStatus.inUseByDirector)
                         {
-                            string owner = reader[0].ToString();
-                            if (!ownershipForThisBlade.ContainsKey(owner))
-                                ownershipForThisBlade.Add(owner, 0);
-
-                            ownershipForThisBlade[owner]++;
-
-                            totalVMs++;
+                            // During deployment, the VM is allocated to the VMServer, with the real requestor queued in the
+                            // nextOwner. We count ownership quota against the nextOwner.
+                            owner = vm.spec.currentOwner;
+                            if (vm.spec.currentOwner == "vmserver")
+                            {
+                                owner = vm.spec.nextOwner;
+                                if (string.IsNullOrEmpty(owner))
+                                {
+                                    // if this is empty, then this VM is not yet created and thus can't be owned.
+                                    // It shouldn't be in the DB if it has no owner, unless the blade is not locked properly.
+                                    throw new Exception("VM has 'vmserver' owner but no queued owner");
+                                }
+                            }
+                            if (!vm.spec.ownershipRowID.HasValue)
+                                throw new Exception("VM " + vm.spec.VMIP + " has no ownership row ID!?");
+                            if (string.IsNullOrEmpty(owner))
+                            {
+                                // Likewise, this should be impossible, because we hold the VMCreation read lock.
+                                throw new Exception("VM " + vm.spec.VMIP + " has no owner!?");
+                            }
                         }
+
+                        int cpuCount = vm.spec.cpuCount;
+                        int memoryMB = vm.spec.memoryMB;
+
+                        float pct = bladeSpec.asPercentageOfCapacity(cpuCount, memoryMB)/100f;
+
+                        if (bladeStats.Count(x => x.ownerName == owner) == 0)
+                            bladeStats.Add(new currentOwnerStat(owner, 0));
+                        bladeStats.Single(x => x.ownerName == owner).allocatedBlades += (pct * 100 / 1);
                     }
-                }
-                foreach (KeyValuePair<string, float> kvp in ownershipForThisBlade)
-                {
-                    if (blades.Count(x => x.ownerName == kvp.Key) == 0)
-                        blades.Add(new currentOwnerStat(kvp.Key, 0));
-                    blades.Single(x => x.ownerName == kvp.Key).allocatedBlades += ((1.0f/totalVMs) * kvp.Value);
                 }
             }
 
-            return blades.ToArray();
+            bladeStats.RemoveAll(x => x.ownerName == "vmserver");
+            return bladeStats.ToArray();
         }
 
-        public currentOwnerStat[] getFairnessStatsForBlades_withoutLocking()
+        public currentOwnerStat[] getFairnessStatsForBlades(disposingList<lockableBladeSpec> blades)
         {
-            // TODO: check .state
-            List<currentOwnerStat> toRet = new List<currentOwnerStat>();
+            Dictionary<string, currentOwnerStat> ownershipByOwnerIP = new Dictionary<string, currentOwnerStat>();
 
-            string sqlCommand = "select bladeOwnership.currentOwner, count(*) from bladeConfiguration " +
-                                " join bladeOwnership on bladeConfiguration.ownershipID = bladeOwnership.ownershipKey " +
-                                " group by bladeOwnership.currentOwner";
-            using (SQLiteCommand cmd = new SQLiteCommand(sqlCommand, conn))
+            // TODO: check .state and omit release-requested blades
+            foreach (lockableBladeSpec blade in blades)
             {
-                using (SQLiteDataReader reader = cmd.ExecuteReader())
+                if (!string.IsNullOrEmpty(blade.spec.currentOwner) && !ownershipByOwnerIP.ContainsKey(blade.spec.currentOwner))
+                    ownershipByOwnerIP.Add(blade.spec.currentOwner, new currentOwnerStat(blade.spec.currentOwner, 0));
+
+                if (!string.IsNullOrEmpty(blade.spec.nextOwner) && !ownershipByOwnerIP.ContainsKey(blade.spec.nextOwner))
+                    ownershipByOwnerIP.Add(blade.spec.nextOwner, new currentOwnerStat(blade.spec.nextOwner, 0));
+
+                // We don't count any blades which are in 'release requested' as owned by the current owner - we count them as owned
+                // by the queued owner.
+                if (blade.spec.state == bladeStatus.releaseRequested)
                 {
-                    while (reader.Read())
-                    {
-                        toRet.Add(new currentOwnerStat(reader[0].ToString(), int.Parse(reader[1].ToString())));
-                    }
+                    if (string.IsNullOrEmpty(blade.spec.nextOwner))
+                        throw new Exception("Blade has no .nextOwner but is in releaseRequested state");
+                    ownershipByOwnerIP[blade.spec.nextOwner].allocatedBlades++;
+                }
+                else if (blade.spec.state == bladeStatus.inUse || blade.spec.state == bladeStatus.inUseByDirector)
+                {
+                    ownershipByOwnerIP[blade.spec.currentOwner].allocatedBlades++;
                 }
             }
 
-            // Add any owners in the queue but not actually owning any blades
-            string allOwnersSQL = "select bladeOwnership.currentOwner, bladeOwnership.nextOwner from bladeOwnership ";
-            using (SQLiteCommand cmd = new SQLiteCommand(allOwnersSQL, conn))
-            {
-                using (SQLiteDataReader reader = cmd.ExecuteReader())
-                {
-                    while (reader.Read())
-                    {
-                        if (reader[0].ToString() != "" & toRet.Count(x => x.ownerName == reader[0].ToString()) == 0)
-                            toRet.Add(new currentOwnerStat(reader[0].ToString(), 0));
-
-                        if (reader[1].ToString() != "" & toRet.Count(x => x.ownerName == reader[1].ToString()) == 0)
-                            toRet.Add(new currentOwnerStat(reader[1].ToString(), 0));
-                    }
-                }
-            }
-
-
-            return toRet.ToArray();
-        }
-
-        public lockableVMSpec getVMByDBID(long VMID)
-        {
-            return new lockableVMSpec(conn, getVMByDBID_nolocking(VMID));
+            return ownershipByOwnerIP.Values.ToArray();
         }
 
         public vmSpec getVMByDBID_nolocking(long VMID)
@@ -390,15 +475,6 @@ namespace bladeDirectorWCF
                     return null;
                 }
             }
-        }
-
-        public disposingList<lockableVMSpec> getVMByVMServerIP(string vmServerIP)
-        {
-            List<vmSpec> VMs = getVMByVMServerIP_nolocking(vmServerIP);
-            disposingList<lockableVMSpec> toRet = new disposingList<lockableVMSpec>();
-            foreach (vmSpec vmSpec in VMs)
-                toRet.Add(new lockableVMSpec(conn, vmSpec));
-            return toRet;
         }
 
         public List<vmSpec> getVMByVMServerIP_nolocking(string vmServerIP)
@@ -566,18 +642,21 @@ namespace bladeDirectorWCF
             }
         }
 
-        public vmserverTotals getVMServerTotalsByVMServerIP(string vmServerIP)
+        public vmserverTotals getVMServerTotals(bladeSpec blade)
         {
             // You should hold a lock on the VM server before calling this, to ensure the result doesn't change before you get
             // a chance to use it.
+            if ((blade.permittedAccessRead & bladeLockType.lockVMCreation) == bladeLockType.lockNone)
+                throw new Exception("lockVMCreation is needed when calling .getVMServerTotals");
 
             string sqlCommand = "select sum(cpucount) as cpus, sum(memoryMB) as ram, count(*) as VMs " +
                                 " from vmConfiguration " +
                                 "join bladeConfiguration on parentbladeID = bladeConfigKey " +
-                                "where bladeIP = $vmServerIP";
+                                "where bladeIP = $vmServerIP" + 
+                                " and isWaitingForResources = 0 ";
             using (SQLiteCommand cmd = new SQLiteCommand(sqlCommand, conn))
             {
-                cmd.Parameters.AddWithValue("$vmServerIP", vmServerIP);
+                cmd.Parameters.AddWithValue("$vmServerIP", blade.bladeIP);
                 using (SQLiteDataReader reader = cmd.ExecuteReader())
                 {
                     if (!reader.Read())

@@ -38,7 +38,8 @@ create table VMConfiguration(
 	displayname,
     kernelDebugPort,
     kernelDebugKey,
-	
+	isWaitingForResources,
+
 	foreign key (parentBladeID ) references bladeConfiguration(bladeConfigKey),
 	foreign key (ownershipID) references bladeOwnership(ownershipKey)
 	);

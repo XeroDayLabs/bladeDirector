@@ -55,12 +55,6 @@ namespace bladeDirectorWCF
             _state = bladeStatus.unused;
             this.permittedAccessRead = permittedAccessRead;
             this.permittedAccessWrite = permittedAccessWrite;
-
-            if (conn != null)
-            {
-                // Do an empty insert, so we get a DB ID for this row
-                createOrUpdateOwnershipInDB(new List<string>());
-            }
         }
 
         protected bladeOwnership(SQLiteConnection conn, SQLiteDataReader reader, bladeLockType permittedAccessRead, bladeLockType permittedAccessWrite)
@@ -183,13 +177,13 @@ namespace bladeDirectorWCF
         protected void checkPermsR(string propertyName)
         {
             if (!getPermittedFieldsInclInheritorsR().Contains(propertyName))
-                throw new Exception("Lock violation: Read access to field "  + propertyName + " denied");
+                throw new bladeLockExeception("Lock violation: Read access to field "  + propertyName + " denied");
         }
 
         protected void checkPermsW(string propertyName)
         {
             if (!getPermittedFieldsInclInheritorsW().Contains(propertyName))
-                throw new Exception("Lock violation: Write access to field " + propertyName + " denied");
+                throw new bladeLockExeception("Lock violation: Write access to field " + propertyName + " denied");
         }
 
         public void notifyOfUpgradedLocks(bladeLockType readToAdd, bladeLockType writeToAdd)
@@ -384,4 +378,8 @@ namespace bladeDirectorWCF
         }
     }
 
+    public class bladeLockExeception : Exception
+    {
+        public bladeLockExeception(string msg) : base(msg) { }
+    }
 }

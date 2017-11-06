@@ -16,7 +16,9 @@ namespace bladeDirectorWCF
         private int disposalInhibition;
 
         public bladeSpec spec { get; private set; }
-        
+
+        private const bool lotsOfDebugOutput = false;
+
         public lockableBladeSpec(SQLiteConnection conn, string IP, bladeLockType lockTypeRead, bladeLockType lockTypeWrite)
         {
             _lockTypeRead = lockTypeRead;
@@ -27,23 +29,9 @@ namespace bladeDirectorWCF
             init(_ip);
         }
 
-        public lockableBladeSpec(SQLiteConnection conn, SQLiteDataReader reader, bladeLockType lockTypeRead, bladeLockType lockTypeWrite)
-        {
-            _lockTypeRead = lockTypeRead;
-            _lockTypeWrite = lockTypeWrite;
-            _conn = conn;
-            spec = new bladeSpec(conn, reader, bladeLockType.lockNone, bladeLockType.lockNone);
-            init(spec.bladeIP);
-            // Now do the real DB read, since we have the lock
-            // FIXME: this won't re-read the DB
-            spec = new bladeSpec(conn, reader, lockTypeRead, lockTypeWrite);
-            Debug.WriteLine("OK, blade " + spec.bladeIP + " read lock (" + _lockTypeRead + ") write lock (" + _lockTypeWrite + ") now owned by thread " + Thread.CurrentThread.ManagedThreadId + " ('" + Thread.CurrentThread.Name + ")");
-            Debug.WriteLine(Environment.StackTrace);
-        }
-
         private void init(string IP)
         {
-            Debug.WriteLine("Attempting to lock blade " + IP);
+            log("Attempting to lock blade " + IP);
 
             bladeLockCollection tryAddThis = new bladeLockCollection(IP, _lockTypeRead, _lockTypeWrite);
             if (bladeLockStatus.TryAdd(IP, tryAddThis))
@@ -51,8 +39,8 @@ namespace bladeDirectorWCF
                 // Successfully added the lock collection, which is set to the locks we desire.
 
                 // We can return now.
-                Debug.WriteLine("OK, blade " + IP + " read lock " + _lockTypeRead + " now owned by thread " + Thread.CurrentThread.ManagedThreadId + " ('" + Thread.CurrentThread.Name + ")");
-                Debug.WriteLine(Environment.StackTrace);
+                log("OK, blade " + IP + " read lock " + _lockTypeRead + " now owned by thread " + Thread.CurrentThread.ManagedThreadId + " ('" + Thread.CurrentThread.Name + ")");
+                log(Environment.StackTrace);
                 return;
             }
 
@@ -63,12 +51,21 @@ namespace bladeDirectorWCF
             // and now lock the mutexes in the dictionary. Note that, since mutexes are never removed from the dict, we don't have
             // to re-check the dictionary.
             bladeLockStatus.GetOrAdd(IP, (bladeLockCollection) null).acquire(_lockTypeRead, _lockTypeWrite);
-            Debug.WriteLine("OK, blade " + IP + " read lock (" + _lockTypeRead + ") write lock (" + _lockTypeWrite + ") now owned by thread " + Thread.CurrentThread.ManagedThreadId + " ('" + Thread.CurrentThread.Name + ")");
+            log("OK, blade " + IP + " read lock (" + _lockTypeRead + ") write lock (" + _lockTypeWrite + ") now owned by thread " + Thread.CurrentThread.ManagedThreadId + " ('" + Thread.CurrentThread.Name + ")");
         }
 
         public lockableBladeSpec()
         {
             spec = null;
+        }
+
+        private void log(string msg)
+        {
+#pragma warning disable 162 // 'Code is unreachable'
+            // ReSharper disable once ConditionIsAlwaysTrueOrFalse
+            if (lotsOfDebugOutput)
+                Debug.WriteLine(msg);
+#pragma warning restore 162
         }
 
         public void Dispose()
@@ -78,7 +75,7 @@ namespace bladeDirectorWCF
                 if (disposalInhibition == 0)
                 {
                     spec.createOrUpdateInDB();
-                    Debug.WriteLine("About to release blade " + spec.bladeIP + " read lock " + _lockTypeRead + " write lock " + _lockTypeWrite + " from ownership by by thread " + Thread.CurrentThread.ManagedThreadId + " ('" + Thread.CurrentThread.Name + ")");
+                    //Debug.WriteLine("About to release blade " + spec.bladeIP + " read lock " + _lockTypeRead + " write lock " + _lockTypeWrite + " from ownership by by thread " + Thread.CurrentThread.ManagedThreadId + " ('" + Thread.CurrentThread.Name + ")");
                     bladeLockStatus.GetOrAdd(spec.bladeIP, (bladeLockCollection)null).release(_lockTypeRead, _lockTypeWrite);
                 }
                 else
@@ -129,7 +126,7 @@ namespace bladeDirectorWCF
         {
             if (spec != null)
             {
-                Debug.Fail("lockableBladeSpec for blade " + spec.bladeIP + " with lock " + _lockTypeRead + " was never released");
+                throw new bladeLockExeception("lockableBladeSpec for blade " + spec.bladeIP + " with lock " + _lockTypeRead + " was never released");
             }
         }
 

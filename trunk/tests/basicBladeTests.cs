@@ -83,6 +83,8 @@ namespace tests
         {
             using (bladeDirectorDebugServices uut = new bladeDirectorDebugServices(WCFPath, new[] { "1.1.1.1" }))
             {
+                uut.svc.setResourceSharingModel(fairnessCheckerfairnessType.allowAny);
+
                 string hostip = "192.168.1.1";
 
                 Assert.AreEqual(resultCode.success, uut.svcDebug._RequestAnySingleNode(hostip).result.code);
@@ -112,6 +114,8 @@ namespace tests
         {
             using (bladeDirectorDebugServices uut = new bladeDirectorDebugServices(WCFPath, new[] { "1.1.1.1" }))
             {
+                uut.svc.setResourceSharingModel(fairnessCheckerfairnessType.allowAny);
+
                 uut.svcDebug.setKeepAliveTimeout(10);
 
                 Assert.AreEqual(resultCode.success, uut.svcDebug._RequestAnySingleNode("192.168.1.1").result.code);
@@ -178,6 +182,8 @@ namespace tests
         {
             using (bladeDirectorDebugServices uut = new bladeDirectorDebugServices(WCFPath, new[] { "1.1.1.1", "1.1.1.2" }))
             {
+                uut.svc.setResourceSharingModel(fairnessCheckerfairnessType.fair);
+
                 string hostipA = "192.168.1.1";
                 string hostipB = "192.168.1.2";
 
@@ -308,7 +314,8 @@ namespace tests
                 Assert.AreEqual(1, releaseRequestCount);
 
                 // Now, host B should have one VM.
-                Assert.AreEqual(resultCode.success, testUtils.waitForSuccess(uut, reqFromB, TimeSpan.FromSeconds(30)));
+                resultAndWaitToken newVM = testUtils.waitForSuccess(uut, reqFromB, TimeSpan.FromSeconds(30));
+                Assert.AreEqual(resultCode.success, newVM.result.code);
             }
         }
     }

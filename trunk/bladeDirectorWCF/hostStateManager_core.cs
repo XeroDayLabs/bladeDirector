@@ -23,13 +23,6 @@ namespace bladeDirectorWCF
         SHT, // Setting a blade snapshot
     }
 
-    public enum resourceSharingMode
-    {
-        FirstComeFirstServed,
-        Proportional
-    }
-
-
     /// <summary>
     /// Almost all main program logic. Note that the inheritor is expected to define the type of hypervisor we'll be working on.
     /// </summary>
@@ -41,8 +34,6 @@ namespace bladeDirectorWCF
         public TimeSpan keepAliveTimeout = TimeSpan.FromMinutes(1);
 
         public readonly hostDB db;
-
-        public readonly resourceSharingMode shareMode;
 
         private Dictionary<waitToken, VMThreadState> _vmDeployState = new Dictionary<waitToken, VMThreadState>();
 
@@ -62,16 +53,17 @@ namespace bladeDirectorWCF
         public abstract void setCallbackOnTCPPortOpen(int nodePort, ManualResetEvent onCompletion, ManualResetEvent onError, cancellableDateTime deadline, biosThreadState biosThreadState);
         protected abstract NASAccess getNasForDevice(bladeSpec vmServer);
 
+        public fairnessChecker fairness = null;
+
         private readonly string _basePath;
         private vmServerControl _vmServerControl;
         private string _ipxeUrl;
 
-        protected hostStateManager_core(string basePath, vmServerControl newVmServerControl, IBiosReadWrite newBiosReadWrite, resourceSharingMode newShareMode = resourceSharingMode.FirstComeFirstServed)
+        protected hostStateManager_core(string basePath, vmServerControl newVmServerControl, IBiosReadWrite newBiosReadWrite)
         {
             _basePath = basePath;
             _vmServerControl = newVmServerControl;
             biosRWEngine = newBiosReadWrite;
-            shareMode = newShareMode;
 
             db = new hostDB(basePath);
         }
@@ -79,12 +71,17 @@ namespace bladeDirectorWCF
         /// <summary>
         /// Init the hoststateDB with an in-memory database
         /// </summary>
-        protected hostStateManager_core(vmServerControl newVmServerControl, IBiosReadWrite newBiosReadWrite, resourceSharingMode newShareMode = resourceSharingMode.FirstComeFirstServed)
+        protected hostStateManager_core(vmServerControl newVmServerControl, IBiosReadWrite newBiosReadWrite)
         {
             _vmServerControl = newVmServerControl;
             biosRWEngine = newBiosReadWrite;
-            shareMode = newShareMode;
             db = new hostDB();
+            setResourceSharingModel(fairnessChecker.fairnessType.fair);
+        }
+
+        public void setResourceSharingModel(fairnessChecker.fairnessType fairnessSpec)
+        {
+            fairness = fairnessChecker.create(fairnessSpec);
         }
        
         public void setKeepAliveTimeout(TimeSpan newTimeout)
@@ -392,28 +389,37 @@ namespace bladeDirectorWCF
 
         private void releaseBladeOrVMBlocking(inProgressOperation blockingOperation, string NodeIP, string requestorIP, bool force = false)
         {
-            result toRet = new result(resultCode.genericFail, null);
-
-            if (db.getAllBladeIP().Contains(NodeIP))
+            result toRet = new result(resultCode.genericFail);
+            try
             {
-                toRet = releaseBlade(NodeIP, requestorIP, force);
+                if (db.getAllBladeIP().Contains(NodeIP))
+                {
+                    toRet = releaseBlade(NodeIP, requestorIP, force);
+                }
+                else if (db.getAllVMIP().Contains(NodeIP))
+                {
+                    toRet = releaseVM(NodeIP);
+                }
+                else
+                {
+                    // Neither a blade nor a VM
+                    string msg = "Requestor " + requestorIP + " attempted to release blade " + NodeIP +
+                                 " (blade not found)";
+                    addLogEvent(msg);
+                    toRet = new result(resultCode.bladeNotFound, msg);
+                }
             }
-            else if (db.getAllVMIP().Contains(NodeIP))
+            catch (Exception e)
             {
-                toRet = releaseVM(NodeIP);
+                toRet = new result(resultCode.genericFail, e);
             }
-            else
+            finally
             {
-                // Neither a blade nor a VM
-                string msg = "Requestor " + requestorIP + " attempted to release blade " + NodeIP + " (blade not found)";
-                addLogEvent(msg);
-                toRet = new result(resultCode.bladeNotFound, msg);
-            }
-
-            lock (_currentlyRunningLogIns)
-            {
-                blockingOperation.status = toRet;
-                blockingOperation.isFinished = true;
+                lock (_currentlyRunningLogIns)
+                {
+                    blockingOperation.status = toRet;
+                    blockingOperation.isFinished = true;
+                }
             }
         }
 
@@ -553,7 +559,7 @@ namespace bladeDirectorWCF
                 bladeLockType.lockOwnership | bladeLockType.lockSnapshot | bladeLockType.lockVirtualHW,
                 bladeLockType.lockOwnership))
             {
-                return releaseVM(lockedVM, 
+                return releaseVM(lockedVM,
                     bladeLockType.lockOwnership | bladeLockType.lockSnapshot | bladeLockType.lockVirtualHW,
                     bladeLockType.lockOwnership);
             }
@@ -596,16 +602,10 @@ namespace bladeDirectorWCF
                         islocked = false;
                         // Drop all locks on the VM (except IP address) while we wait for it to release. This will permit  
                         // allocation to finish.
-                        using (
-                            tempLockDepression tmp = new tempLockDepression(lockedVM, 
-                                ~bladeLockType.lockIPAddresses,
-                                bladeLockType.lockAll))
+                        using ( tempLockDepression tmp = new tempLockDepression(lockedVM, 
+                                ~bladeLockType.lockIPAddresses, bladeLockType.lockAll))
                         {
-                            //bladeLocks locks = lockedVM.getCurrentLocks();
-                            //locks.read &= ~bladeLockType.lockIPAddresses;
-                            //lockedVM.downgradeLocks(locks);
                             Thread.Sleep(TimeSpan.FromSeconds(10));
-                            //lockedVM.upgradeLocks(locks.read, locks.write);
                         }
                         Monitor.Enter(_vmDeployState);
                         islocked = true;
@@ -617,50 +617,42 @@ namespace bladeDirectorWCF
                 if (islocked)
                     Monitor.Exit(_vmDeployState);
             }
-            /*
-            // VMs always get destroyed on release. First, though, power the relevant blade off on the hypervisor.
-            try
+
+            // Now we can power down the VM
+            using (lockableBladeSpec parentBlade = db.getBladeByIP(lockedVM.spec.parentBladeIP,
+                bladeLockType.lockOwnership | bladeLockType.lockVMCreation, 
+                bladeLockType.lockNone))
             {
-                using (lockableBladeSpec parentBlade = db.getBladeByIP(lockedVM.spec.parentBladeIP, bladeLockType.lockOwnership, bladeLockType.lockNone))
+                using (hypervisor hyp = makeHypervisorForVM(lockedVM, parentBlade))
                 {
-                    using (hypervisor hyp = makeHypervisorForVM(lockedVM, parentBlade))
+                    // TODO: timeouts
+                    hyp.powerOff();
+                }
+
+                // Now we dispose the VM, and then specify that the next release of the VM (ie, that done by the parent) should
+                // be inhibited. This means the caller is left with a disposed, invalid, VM, but is able to call .Dispose (or leave a
+                // using() {..} block) as normal.
+                lockedVM.deleteOnRelease = true;
+                lockedVM.Dispose();
+                lockedVM.inhibitNextDisposal();
+
+                // Now, if the VM server is empty, we can power it off. Otherwise, just power off the VM instead.
+                vmserverTotals VMTotals = db.getVMServerTotals(parentBlade.spec);
+                if (VMTotals.VMs == 0)
+                {
+                    using (var temp = new tempLockElevation(parentBlade, 
+                        bladeLockType.lockBIOS | bladeLockType.lockvmDeployState,
+                        bladeLockType.lockBIOS | bladeLockType.lockOwnership))
                     {
-                        hyp.powerOff();
+                        VMTotals = db.getVMServerTotals(parentBlade.spec);
+
+                        // double lock for performance.
+                        if (VMTotals.VMs == 0)
+                            return releaseBlade(parentBlade);
                     }
                 }
             }
-            catch (SocketException) { }
-            catch (WebException) { }
-            catch (VMNotFoundException) { } // ?!*/
 
-            // Make a note of the VM server IP so we can use it later
-            string vmserverip = lockedVM.spec.parentBladeIP;
-
-            lockedVM.downgradeLocks(additionalPrivsToDowngradeRead, additionalPrivsToDowngradeWrite);
-
-            // Now we dispose the VM, and then specify that the next release of the VM (ie, that done by the parent) should
-            // be inhibited. This means the caller is left with a disposed, invalid, VM, but is able to call .Dispose (or leave a
-            // using() {..} block) as normal.
-            lockedVM.deleteOnRelease = true;
-            lockedVM.Dispose();
-            lockedVM.inhibitNextDisposal();
-
-            // Now, if the VM server is empty, we can power it off. Otherwise, just power off the VM instead.
-            vmserverTotals VMTotals = db.getVMServerTotalsByVMServerIP(vmserverip);
-            if (VMTotals.VMs == 0)
-            {
-                using (lockableBladeSpec parentBlade = db.getBladeByIP(vmserverip,
-                    bladeLockType.lockOwnership | bladeLockType.lockBIOS | bladeLockType.lockvmDeployState,
-                    bladeLockType.lockOwnership | bladeLockType.lockBIOS))
-                {
-                    VMTotals = db.getVMServerTotalsByVMServerIP(vmserverip);
-
-                    // double lock for performance.
-                    if (VMTotals.VMs == 0)
-                        return releaseBlade(parentBlade);
-                }
-            }
-            
             return new result(resultCode.success);
         }
 
@@ -692,9 +684,12 @@ namespace bladeDirectorWCF
 
             lock (_vmDeployState) // lock this since we're accessing the _vmDeployState variable
             {
-                lockableBladeSpec freeVMServer = findAndLockBladeForNewVM(hwSpec);
+                resultCode serverStatus;
+                lockableBladeSpec freeVMServer = findAndLockBladeForNewVM(hwSpec, requestorIP, out serverStatus);
                 if (freeVMServer == null)
-                    return new resultAndBladeName(resultCode.bladeQueueFull, null, "Cluster is full");
+                {
+                    return new resultAndBladeName(serverStatus, null, "Cannot find VM server for VM");
+                }
                 using (freeVMServer)
                 {
                     // Create rows for the child VM in the DB. Before we write it to the database, check we aren't about to add a 
@@ -726,8 +721,9 @@ namespace bladeDirectorWCF
                         {
                             vmServerIP = freeVMServer.spec.bladeIP,
                             childVMIP = childVM.spec.VMIP,
-                            deployDeadline = new cancellableDateTime(TimeSpan.FromMinutes(25)),
-                            currentProgress = new resultAndBladeName(resultCode.pending, waitToken, null)
+                            deployDeadline = new cancellableDateTime(),
+                            currentProgress = new resultAndBladeName(resultCode.pending, waitToken, null),
+                            hwSpec = hwSpec
                         };
                         _vmDeployState.Add(waitToken, deployState);
                     }
@@ -737,19 +733,19 @@ namespace bladeDirectorWCF
             }
         }
         
-        private lockableBladeSpec findAndLockBladeForNewVM(VMHardwareSpec hwSpec)
+        private lockableBladeSpec findAndLockBladeForNewVM(VMHardwareSpec hwSpec, string newOwner, out resultCode res)
         {
             lockableBladeSpec freeVMServer = null;
 //            checkKeepAlives();
             // First, we need to find a blade to use as a VM server. Do we have a free VM server? If so, just use that.
             // We create a new bladeSpec to make sure that we don't double-release when the disposingList is released.
-            using (disposingList<lockableBladeSpec> serverList = db.getAllBladeInfo( x => true,
+            using (disposingList<lockableBladeSpec> serverList = db.getAllBladeInfo(x => true,
                 bladeLockType.lockVMCreation | bladeLockType.lockOwnership,
                 bladeLockType.lockNone, true, true))
             {
-                lockableBladeSpec[] freeVMServerList = serverList.Where(x => 
-                    x.spec.currentlyBeingAVMServer &&       // must be a VM server
-                    x.spec.canAccommodate(db, hwSpec)       // the blade must not be full
+                lockableBladeSpec[] freeVMServerList = serverList.Where(x =>
+                    x.spec.currentlyBeingAVMServer && // must be a VM server
+                    x.spec.canAccommodate(db, hwSpec) // the blade must not be full
                     ).ToArray();
 
                 if (freeVMServerList.Length != 0)
@@ -758,25 +754,41 @@ namespace bladeDirectorWCF
                     // Just use the one we found. Again, we return this freeVMServer locked, so don't 'use (..' it here.
                     freeVMServer = freeVMServerList.First();
                     freeVMServer.inhibitNextDisposal();
+
+                    res = resultCode.success;
+                    return freeVMServer;
                 }
                 else
                 {
                     // Nope, no free VM server. Maybe we have free blades, and can can make a new one.
                     foreach (lockableBladeSpec spec in serverList)
                     {
-                        spec.upgradeLocks(bladeLockType.lockvmDeployState | bladeLockType.lockBIOS, bladeLockType.lockNone);
-                        if (spec.spec.currentOwner != null ||
-                            spec.spec.currentlyBeingAVMServer ||
-                            spec.spec.currentlyHavingBIOSDeployed)
+                        // Double lock so we can avoid taking the write lock most of the time
+                        using (var tmp = new tempLockElevation(spec,
+                            bladeLockType.lockOwnership | bladeLockType.lockvmDeployState | bladeLockType.lockBIOS,
+                            bladeLockType.lockNone))
                         {
-                            spec.downgradeLocks(bladeLockType.lockvmDeployState | bladeLockType.lockBIOS, bladeLockType.lockNone);
-                            continue;
+                            if (spec.spec.currentOwner != null ||
+                                spec.spec.currentlyBeingAVMServer ||
+                                spec.spec.currentlyHavingBIOSDeployed)
+                            {
+                                continue;
+                            }
                         }
-                        spec.upgradeLocks(bladeLockType.lockNone, 
-                            bladeLockType.lockvmDeployState | bladeLockType.lockBIOS | bladeLockType.lockOwnership);
 
-                        try
+                        using (var tmp = new tempLockElevation(spec,
+                            bladeLockType.lockOwnership | bladeLockType.lockvmDeployState | bladeLockType.lockBIOS,
+                            bladeLockType.lockOwnership | bladeLockType.lockvmDeployState))
                         {
+                            // Double lock check..
+                            if (spec.spec.currentOwner != null ||
+                                spec.spec.currentlyBeingAVMServer ||
+                                spec.spec.currentlyHavingBIOSDeployed)
+                            {
+                                continue;
+                            }
+
+                            // Ah, we can use this blade as a VM server!
                             result resp = requestBlade(spec, "vmserver");
                             if (resp.code == resultCode.success)
                             {
@@ -788,26 +800,71 @@ namespace bladeDirectorWCF
                                 break;
                             }
                         }
-                        finally
-                        {
-                            spec.downgradeLocks(bladeLockType.lockvmDeployState | bladeLockType.lockBIOS,
-                                bladeLockType.lockvmDeployState | bladeLockType.lockBIOS | bladeLockType.lockOwnership);
-                        }
                     }
 
-                    if (freeVMServer == null)
+                    if (freeVMServer != null)
                     {
-                        // No free blades and no free VMs. The cluster cannot accomodate the VM we're being asked for, but maybe we
-                        // can destroy some existing VMs to make room for it, if the sharing mode allows us to do so.
-                        if (shareMode == resourceSharingMode.Proportional)
-                        {
-                            //db.
-                        }
-                        return null;
+                        res = resultCode.success;
+                        return freeVMServer;
                     }
                 }
             }
-            return freeVMServer;
+
+            // No free blades and no free VMs. The cluster cannot accomodate the VM we're being asked for.
+            // However, we can probably queue up the request.
+            // We need to work out where the best place to queue is. If there is a user who is over quota, then we
+            // should try to enqueue on that user's resources. If there are no over-quota users, we just return fail,
+            // since that indicates that this user is attempting to exceed their quota.
+            using (disposingList<lockableBladeSpec> serverList = db.getAllBladeInfo(x => true,
+                bladeLockType.lockVMCreation | bladeLockType.lockOwnership | bladeLockType.lockvmDeployState | bladeLockType.lockVMCreation,
+                bladeLockType.lockNone, true, true))
+            {
+                currentOwnerStat[] stats = db.getFairnessStats(serverList);
+
+                string[] owners = stats.Where(x => x.ownerName != "vmserver").Select(x => x.ownerName).ToArray();
+                float fairShare = (float) db.getAllBladeIP().Length/(float) owners.Length;
+                List<currentOwnerStat> ownersOverQuota = stats.Where(x => x.allocatedBlades > fairShare).ToList();
+
+                if (ownersOverQuota.Exists(x => x.ownerName == newOwner))
+                {
+                    // If this user is over quota, don't let them queue anything additional up.
+                    res = resultCode.bladeQueueFull;
+                    return null;
+                }
+
+                foreach (lockableBladeSpec spec in serverList)
+                {
+                    if (spec.spec.currentlyBeingAVMServer)
+                    {
+                        // It's a VM server.
+                        // Are there any VMs owned by someone over-quota with an empty queue?
+                        using (disposingList<lockableVMSpec> vms = db.getVMByVMServerIP(spec,
+                            bladeLockType.lockIPAddresses | bladeLockType.lockOwnership | bladeLockType.lockVMCreation,
+                            bladeLockType.lockOwnership))
+                        {
+                            var lockedVM = vms.FirstOrDefault(x =>
+                                // where owner is over quota
+                                ownersOverQuota.Exists(owner => owner.ownerName == x.spec.currentOwner) &&
+                                // And queue is empty
+                                x.spec.nextOwner == null);
+
+                            if (lockedVM != null)
+                            {
+                                // OK, we found a VM! Now we can queue up on it and return its VM server.
+                                lockedVM.spec.nextOwner = newOwner;
+                                lockedVM.spec.state = bladeStatus.releaseRequested;
+                                res = resultCode.pending;
+                                spec.inhibitNextDisposal();
+                                return spec;
+                            }
+                        }
+                    }
+                }
+
+                // No VMs have over-quota owners and non-empty queues.
+                res = resultCode.bladeQueueFull;
+                return null;
+            }
         }
 
         public resultAndWaitToken rebootAndStartDeployingBIOSToBlade(string requestorIp, string nodeIp, string biosxml, bool ignoreOwnership = false)
@@ -999,6 +1056,29 @@ bladeLockType.lockvmDeployState,  // <-- TODO/FIXME: write perms shuold imply re
                 }
             }
 
+            // If the VM server cannot yet accomodate this VM, wait until it can.
+            if (childVM_unsafe.isWaitingForResources)   // check without locking to avoid locking sometimes :)
+            {
+                while (true)
+                {
+                    using (lockableVMSpec childVMFromDB = db.getVMByIP(childVM_unsafe.VMIP,
+                        bladeLockType.lockVMCreation, bladeLockType.lockVMCreation))
+                    {
+                        using (lockableBladeSpec VMServer = db.getBladeByIP(vmServerIP,
+                            bladeLockType.lockVMCreation, bladeLockType.lockVMCreation, true, true))
+                        {
+                            if (VMServer.spec.canAccommodate(db, threadState.hwSpec))
+                            {
+                                childVMFromDB.spec.isWaitingForResources = false;
+                                break;
+                            }
+                        }
+                    }
+                    addLogEvent("Waiting for resources on VM server");
+                    Thread.Sleep(TimeSpan.FromSeconds(5));
+                }
+            }
+
             // Anything we do after this point is fatal to the new VM, not to the VM server.
             try
             {
@@ -1160,9 +1240,8 @@ bladeLockType.lockvmDeployState,  // <-- TODO/FIXME: write perms shuold imply re
 
             // Put blades in an order of preference. First come unused blades, then used blades with an empty queue.
             using (disposingList<lockableBladeSpec> blades = db.getAllBladeInfo(
-                //x => x.currentlyBeingAVMServer == false && x.currentlyHavingBIOSDeployed == false,
                 x => true,
-                bladeLockType.lockOwnership | bladeLockType.lockvmDeployState | bladeLockType.lockBIOS,
+                bladeLockType.lockOwnership | bladeLockType.lockvmDeployState | bladeLockType.lockVMCreation | bladeLockType.lockBIOS,
                 bladeLockType.lockOwnership | bladeLockType.lockvmDeployState))
             {
                 IEnumerable<lockableBladeSpec> unusedBlades = blades.Where(x => x.spec.currentOwner == null);
@@ -1176,6 +1255,7 @@ bladeLockType.lockvmDeployState,  // <-- TODO/FIXME: write perms shuold imply re
                     if (res.code == resultCode.success || res.code == resultCode.pending)
                     {
                         toRet = new resultAndBladeName(res) {bladeName = reqBlade.spec.bladeIP, result = res};
+                        fairness.checkFairness_blades(db, blades);
                         break;
                     }
                 }
@@ -1187,78 +1267,7 @@ bladeLockType.lockvmDeployState,  // <-- TODO/FIXME: write perms shuold imply re
                 }
             }
 
-            checkFairness();
             return toRet;
-        }
-        
-        private void checkFairness()
-        {
-            // If a blade owner is under its quota, then promote it in any queues where the current owner is over-quota.
-            currentOwnerStat[] stats = db.getFairnessStats_withoutLocking();
-            string[] owners = stats.Where(x => x.ownerName != "vmserver").Select(x => x.ownerName).ToArray();
-            if (owners.Length == 0)
-                return;
-            float fairShare = (float)db.getAllBladeIP().Length / (float)owners.Length;
-
-            currentOwnerStat[] ownersOverQuota = stats.Where(x => x.allocatedBlades > fairShare).ToArray();
-            List<currentOwnerStat> ownersUnderQuota = stats.Where(x => x.allocatedBlades < fairShare).ToList();
-
-            //foreach (var migrateFrom in ownersOverQuota)
-            {
-                foreach (var migrateTo in ownersUnderQuota)
-                {
-                    using (disposingList<lockableBladeSpec> migratory = db.getAllBladeInfo(x => 
-                            (
-                                // Migrate if the dest is currently owned by someone over-quota
-                                (ownersOverQuota.Count(y => y.ownerName == x.currentOwner) > 0 ) ||
-                                // Or if it is a VM server, and currently holds VMs that are _all_ allocated to over-quota users
-                                ( 
-                                    x.currentOwner == "vmserver" &&
-
-                                    db.getVMByVMServerIP_nolocking(x.bladeIP).All(vm =>
-                                        (ownersOverQuota.Count(overQuotaUser => overQuotaUser.ownerName == vm.currentOwner) > 0)
-                                    )
-                                )
-                            )
-                            &&
-                            x.nextOwner == migrateTo.ownerName &&
-                            (x.state == bladeStatus.inUse || x.state == bladeStatus.inUseByDirector),
-                        bladeLockType.lockOwnership,
-                        bladeLockType.lockOwnership,
-                        true, true,
-                        max: 1))
-                    {
-                        if (migratory.Count == 0)
-                        {
-                            // There is nowhere to migrate this owner from. Try another.
-                            continue;
-                        }
-
-                        if (migratory[0].spec.currentlyBeingAVMServer)
-                        {
-                            // It's a VM server. Migrate all the VMs off it (ie, request them to be destroyed).
-                            migratory[0].spec.nextOwner = migrateTo.ownerName;
-                            using (disposingList<lockableVMSpec> childVMs = db.getVMByVMServerIP(migratory[0].spec.bladeIP))
-                            {
-                                foreach (lockableVMSpec VM in childVMs)
-                                {
-                                    Debug.WriteLine("Requesting release for VM " + VM.spec.VMIP);
-                                    VM.spec.state = bladeStatus.releaseRequested;
-                                }
-                            }
-                            migratory[0].spec.nextOwner = migrateTo.ownerName;
-                            migratory[0].spec.state = bladeStatus.releaseRequested;
-                        }
-                        else
-                        {
-                            // It's a physical server. Just mark it as .releaseRequested.
-                            Debug.WriteLine("Requesting release for blade " + migratory[0].spec.bladeIP);
-                            migratory[0].spec.nextOwner = migrateTo.ownerName;
-                            migratory[0].spec.state = bladeStatus.releaseRequested;
-                        }
-                    }
-                }
-            }
         }
 
         private void notifyBootDirectorOfNode(bladeSpec blade)
@@ -1478,7 +1487,8 @@ bladeLockType.lockvmDeployState,  // <-- TODO/FIXME: write perms shuold imply re
                     childVMs = db.getVMByVMServerIP_nolocking(reqBlade.spec.bladeIP);
                     if (childVMs.Count == 0)
                     {
-                        using (disposingList<lockableVMSpec> childVMsLocked = db.getVMByVMServerIP(reqBlade.spec.bladeIP))
+                        using (disposingList<lockableVMSpec> childVMsLocked = db.getVMByVMServerIP(reqBlade,
+                            bladeLockType.lockVMCreation, bladeLockType.lockNone))
                         {
                             if (childVMsLocked.Count == 0)
                             {

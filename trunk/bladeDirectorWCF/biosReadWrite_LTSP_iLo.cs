@@ -94,7 +94,7 @@ namespace bladeDirectorWCF
                 return new result(resultCode.bladeNotFound, "Blade is not being BIOS read nor written right now");
 
             if (!newState.isFinished)
-                return new result(resultCode.pending, null);
+                return new result(resultCode.pending);
 
             return newState.result;
         }

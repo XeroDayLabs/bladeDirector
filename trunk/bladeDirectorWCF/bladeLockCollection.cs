@@ -25,6 +25,8 @@ namespace bladeDirectorWCF
 
         private readonly TimeSpan lockTimeout = TimeSpan.FromSeconds(30);
 
+        private const bool beSuperDuperVerbose = false;
+
         public bladeLockCollection(bladeLockType readLocks, bladeLockType writeLocks)
             : this("idk", readLocks, writeLocks)
         {
@@ -40,8 +42,14 @@ namespace bladeDirectorWCF
                 _writeTakenList.TryAdd(lockTypeName, new takenLockInfo());
             }
 
-            Debug.WriteLine(Thread.CurrentThread.ManagedThreadId + " bladeLockCollection for blade " + _name + " constructed");
+            debugmsg(Thread.CurrentThread.ManagedThreadId + " bladeLockCollection for blade " + _name + " constructed");
             acquire(readLocks, writeLocks);
+        }
+
+        private void debugmsg(string msg)
+        {
+            if (beSuperDuperVerbose)
+                Debug.WriteLine(msg);
         }
 
         public static string[] getLockNames()
@@ -56,15 +64,15 @@ namespace bladeDirectorWCF
 
         public void release(bladeLockType readTypes, bladeLockType writeTypes)
         {
-            Debug.WriteLine(Thread.CurrentThread.ManagedThreadId + " bladeLockCollection release for blade " + _name + " releasing " + readTypes + " / " + writeTypes);
-            Debug.WriteLine(Thread.CurrentThread.ManagedThreadId + Environment.StackTrace);
+            debugmsg(Thread.CurrentThread.ManagedThreadId + " bladeLockCollection release for blade " + _name + " releasing " + readTypes + " / " + writeTypes);
+            debugmsg(Thread.CurrentThread.ManagedThreadId + Environment.StackTrace);
             foreach (string lockTypeName in getLockNames())
             {
                 bladeLockType lockType = (bladeLockType)Enum.Parse(typeof(bladeLockType), lockTypeName);
                 bool willReleaseReadLock = (((int)readTypes & (int)lockType) != 0);
                 bool willReleaseWriteLock = (((int)writeTypes & (int)lockType) != 0);
 
-                Debug.WriteLine(lockTypeName + " releasing " + willReleaseReadLock + "/" + willReleaseWriteLock +
+                debugmsg(lockTypeName + " releasing " + willReleaseReadLock + "/" + willReleaseWriteLock +
                     " : current access " + locksForThisBlade[lockTypeName].IsReaderLockHeld + "/" + locksForThisBlade[lockTypeName].IsWriterLockHeld);
 
                 if (willReleaseWriteLock)
@@ -78,9 +86,9 @@ namespace bladeDirectorWCF
 
                         LockCookie lockCookie;
                         lockCookiesForThisBlade.TryRemove(lockTypeName, out lockCookie);
-                        Debug.WriteLine(Thread.CurrentThread.ManagedThreadId + " bladeLockCollection release for blade " + _name + lockTypeName + " downgrading");
+                        debugmsg(Thread.CurrentThread.ManagedThreadId + " bladeLockCollection release for blade " + _name + lockTypeName + " downgrading");
                         locksForThisBlade[lockTypeName].DowngradeFromWriterLock(ref lockCookie);
-                        Debug.WriteLine(Thread.CurrentThread.ManagedThreadId + " bladeLockCollection release for blade " + _name + lockTypeName + " releasing reader lock");
+                        debugmsg(Thread.CurrentThread.ManagedThreadId + " bladeLockCollection release for blade " + _name + lockTypeName + " releasing reader lock");
                         locksForThisBlade[lockTypeName].ReleaseReaderLock();
 
                         // The read lock is now not taken by this thread.
@@ -91,7 +99,7 @@ namespace bladeDirectorWCF
                     {
                         LockCookie lockCookie;
                         lockCookiesForThisBlade.TryRemove(lockTypeName, out lockCookie);
-                        Debug.WriteLine(Thread.CurrentThread.ManagedThreadId + " bladeLockCollection release for blade " + _name + lockTypeName + " downgrading (!willReleaseReaderLock)");
+                        debugmsg(Thread.CurrentThread.ManagedThreadId + " bladeLockCollection release for blade " + _name + lockTypeName + " downgrading (!willReleaseReaderLock)");
                         locksForThisBlade[lockTypeName].DowngradeFromWriterLock(ref lockCookie);
 
                         takenLockInfo tmp;
@@ -106,18 +114,18 @@ namespace bladeDirectorWCF
                         takenLockInfo tmp;
                         _readTakenList[lockTypeName].TryRemove(Thread.CurrentThread.ManagedThreadId, out tmp);
 
-                        Debug.WriteLine(Thread.CurrentThread.ManagedThreadId + " bladeLockCollection release for blade " + _name + " " + lockTypeName + " releasing reader lock (!willReleaseWriterLock)");
+                        debugmsg(Thread.CurrentThread.ManagedThreadId + " bladeLockCollection release for blade " + _name + " " + lockTypeName + " releasing reader lock (!willReleaseWriterLock)");
                         locksForThisBlade[lockTypeName].ReleaseReaderLock();
                     }
                 }
             }
-            // Debug.WriteLine(Thread.CurrentThread.ManagedThreadId + " bladeLockCollection release for blade " + _name + " finished, new access " + _readLock + " / " + _writeLock);
+            debugmsg(Thread.CurrentThread.ManagedThreadId + " bladeLockCollection release for blade " + _name + " finished, new access " + _readLock + " / " + _writeLock);
         }
 
         public void acquire(bladeLockType readTypes, bladeLockType writeTypes)
         {
-            Debug.WriteLine(Thread.CurrentThread.ManagedThreadId + " bladeLockCollection for blade " + _name + " acquiring " + readTypes + " / " + writeTypes); 
-            Debug.WriteLine(Thread.CurrentThread.ManagedThreadId + Environment.StackTrace);
+            debugmsg(Thread.CurrentThread.ManagedThreadId + " bladeLockCollection for blade " + _name + " acquiring " + readTypes + " / " + writeTypes);
+            debugmsg(Thread.CurrentThread.ManagedThreadId + Environment.StackTrace);
 
             foreach (string lockTypeName in getLockNames())
             {
@@ -133,7 +141,7 @@ namespace bladeDirectorWCF
                 if (readRequested && writeAlreadyTaken)
                     throw new Exception("oh no");
 
-                Debug.WriteLine(lockTypeName + " requested " + readRequested + "/" + writeRequested + " : current access " + readAlreadyTaken + "/" + writeAlreadyTaken);
+                debugmsg(lockTypeName + " requested " + readRequested + "/" + writeRequested + " : current access " + readAlreadyTaken + "/" + writeAlreadyTaken);
 
                 if (readRequested)
                 {
@@ -163,7 +171,7 @@ namespace bladeDirectorWCF
                 {
                     try
                     {
-                        Debug.WriteLine(Thread.CurrentThread.ManagedThreadId + " bladeLockCollection for blade " + _name + lockTypeName + " acquiring reader lock");
+                        debugmsg(Thread.CurrentThread.ManagedThreadId + " bladeLockCollection for blade " + _name + lockTypeName + " acquiring reader lock");
                         locksForThisBlade[lockTypeName].AcquireReaderLock(lockTimeout);
                     }
                     catch (ApplicationException)
@@ -191,7 +199,7 @@ namespace bladeDirectorWCF
                 {
                     try
                     {
-                        Debug.WriteLine(Thread.CurrentThread.ManagedThreadId + " bladeLockCollection for blade " + _name + lockTypeName + " UpgradeToWriterLock");
+                        debugmsg(Thread.CurrentThread.ManagedThreadId + " bladeLockCollection for blade " + _name + lockTypeName + " UpgradeToWriterLock");
                         lockCookiesForThisBlade[lockTypeName] = locksForThisBlade[lockTypeName].UpgradeToWriterLock(TimeSpan.FromSeconds(10));
                     }
                     catch (ApplicationException)
@@ -231,7 +239,7 @@ namespace bladeDirectorWCF
                     _writeTakenList[lockTypeName].stackTrace = Environment.StackTrace;
                 }
             }
-            // Debug.WriteLine(Thread.CurrentThread.ManagedThreadId + " bladeLockCollection acquisition for blade " + _name + " finished, new access " + _readLock + " / " + _writeLock);
+            debugmsg(Thread.CurrentThread.ManagedThreadId + " bladeLockCollection acquisition for blade " + _name + " finished, new access " + _readLock + " / " + _writeLock);
         }
 
         public void downgrade(bladeLockType toDropRead, bladeLockType toDropWrite)

@@ -1,6 +1,6 @@
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
-using System.Data.SQLite;
 using System.Diagnostics;
 
 namespace bladeDirectorWCF
@@ -16,48 +16,43 @@ namespace bladeDirectorWCF
 
     public class lockableVMSpec : IDisposable, ILockableSpec
     {
+        private readonly string _VMIP;
         private bladeLockType _readLocks;
         private bladeLockType _writeLocks;
-        private static Dictionary<string, bladeLockCollection> _bladeLockStatus = new Dictionary<string, bladeLockCollection>();
+        private static readonly ConcurrentDictionary<string, bladeLockCollection> _bladeLockStatus = new ConcurrentDictionary<string, bladeLockCollection>();
         public bool deleteOnRelease = false;
         private int disposalInhibition = 0;
 
+        public string allocationStack;
+
         public vmSpec spec { get; private set; }
 
-        public lockableVMSpec(SQLiteConnection conn, SQLiteDataReader reader, bladeLockType readLocks, bladeLockType writeLocks)
+        public lockableVMSpec(string bladeIP, bladeLockType readLocks, bladeLockType writeLocks)
         {
+            _VMIP = bladeIP;
             _readLocks = readLocks;
             _writeLocks = writeLocks;
-            spec = new vmSpec(conn, reader, readLocks, writeLocks);
-
-            acquire();
-
-            // Re-read, in case we blocked before.
-            // lol what, this won't re-query the db, FIXME/TODO
-            spec = new vmSpec(conn, reader, readLocks, writeLocks);
-        }
-
-        public lockableVMSpec(SQLiteConnection conn, vmSpec newVm)
-        {
-            spec = newVm;
+            spec = null;
+            allocationStack = Environment.StackTrace;
 
             acquire();
         }
-
+        
         private void acquire()
         {
-            lock (_bladeLockStatus)
+            // it's probably already there already, and since we never remove from this collection, we can just check using
+            // .ContainsKey before we add in a thread-safe fashion.
+            if (_bladeLockStatus.ContainsKey(_VMIP))
             {
-                Debug.WriteLine("Node " + spec.VMIP + " enter ");
+                _bladeLockStatus[_VMIP].acquire(_readLocks, _writeLocks);
+                return;
+            }
 
-                if (!_bladeLockStatus.ContainsKey(spec.VMIP))
-                {
-                    _bladeLockStatus.Add(spec.VMIP, new bladeLockCollection(spec.VMIP,_readLocks, _writeLocks));
-                }
-                else
-                {
-                    _bladeLockStatus[spec.VMIP].acquire(_readLocks, _writeLocks);
-                }
+            bladeLockCollection newLock = new bladeLockCollection(_VMIP, _readLocks, _writeLocks);
+            if (!_bladeLockStatus.TryAdd(_VMIP, newLock))
+            {
+                // Oh, someone added it already. Just use the one already there.
+                _bladeLockStatus[_VMIP].acquire(_readLocks, _writeLocks);
             }
         }
 
@@ -102,39 +97,49 @@ namespace bladeDirectorWCF
 
         public void Dispose()
         {
-            lock (_bladeLockStatus)
+            if (spec != null)
             {
-                if (spec != null)
+                if (disposalInhibition != 0)
                 {
-                    if (disposalInhibition == 0)
-                    {
-                        if (deleteOnRelease)
-                        {
-                            spec.deleteInDB();
-                        }
-                        else
-                        {
-                            spec.createOrUpdateInDB();
-                        }
-                        _bladeLockStatus[spec.VMIP].release(_readLocks, _writeLocks);
-                    }
-                    else
-                    {
-                        disposalInhibition--;
-                    }
+                    disposalInhibition--;
                 }
-                GC.SuppressFinalize(this);
+                else
+                {
+                    if (deleteOnRelease)
+                        spec.deleteInDB();
+                    else
+                        spec.createOrUpdateInDB();
+
+                    _bladeLockStatus[spec.VMIP].release(_readLocks, _writeLocks);
+                }
             }
+
+            GC.SuppressFinalize(this);
         }
 
         ~lockableVMSpec()
         {
-            Debug.Fail("lockableVMSpec for VM " + spec.VMIP + " was never released" );
+            throw new bladeLockExeception("lockableVMSpec for VM " + _VMIP + " was never released! Allocation stack trace: " + allocationStack);
         }
 
         public void inhibitNextDisposal()
         {
             disposalInhibition++;
+        }
+
+        public void setSpec(vmSpec newSpec)
+        {
+            if (spec != null)
+                throw new Exception();
+
+            if (newSpec.VMIP != _VMIP)
+                throw new Exception();
+
+            if (newSpec.permittedAccessRead != _readLocks ||
+                newSpec.permittedAccessWrite != _writeLocks)
+                throw new Exception();
+
+            spec = newSpec;
         }
     }
 

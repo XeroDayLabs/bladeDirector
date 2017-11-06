@@ -104,6 +104,7 @@
     <Compile Include="debugServices.cs" />
     <Compile Include="disposingList.cs" />
     <Compile Include="disposingListOfBladesAndVMs.cs" />
+    <Compile Include="fairnessChecker.cs" />
     <Compile Include="hostDB.cs" />
     <Compile Include="hostStateManager.cs" />
     <Compile Include="hostStateManagerMocked.cs" />

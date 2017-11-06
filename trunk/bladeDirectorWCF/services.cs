@@ -20,6 +20,11 @@ namespace bladeDirectorWCF
             return hostStateManager.logIn(sanitizeAddress(requestorIP));
         }
 
+        public static void _setResourceSharingModel(fairnessChecker.fairnessType fairnessType)
+        {
+            hostStateManager.setResourceSharingModel(fairnessType);
+        }
+
         public static void _setWebSvcURL(string newURL)
         {
             hostStateManager.setWebSvcURL(newURL);
@@ -151,6 +156,11 @@ namespace bladeDirectorWCF
         public resultAndWaitToken logIn()
         {
             return _logIn(getSrcIP());
+        }
+
+        public void setResourceSharingModel(fairnessChecker.fairnessType fairnessType)
+        {
+            _setResourceSharingModel(fairnessType);
         }
 
         public string getWebSvcURL()

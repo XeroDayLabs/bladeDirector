@@ -105,6 +105,14 @@ namespace bladeDirectorWCF
         }
         private int _memoryMB;
 
+        public bool isWaitingForResources
+        {
+            get { checkPermsR("isWaitingForResources"); return _isWaitingForResources; }
+            set { checkPermsW("isWaitingForResources"); _isWaitingForResources = value; }
+        }
+        private bool _isWaitingForResources;
+        
+
         public vmSpec()
             : base()
         {
@@ -115,17 +123,16 @@ namespace bladeDirectorWCF
             : base(conn, readLock, writeLock)
         {
             vmConfigKey = null;
-
-            createOrUpdateInDB(new List<string>());
         }
 
-        public vmSpec(SQLiteConnection conn, string IP , bladeLockType readLock, bladeLockType writeLock)
+        public vmSpec(SQLiteConnection conn, string IP , bladeLockType readLock, bladeLockType writeLock, bool writeToDBImmediately = true)
             : base(conn, readLock, writeLock)
         {
             vmConfigKey = null;
             VMIP = IP;
 
-            createOrUpdateInDB(new List<string>());
+            if (writeToDBImmediately)
+                createOrUpdateInDB(new List<string>() { "vmConfigKey", "VMIP" });
         }
 
         public vmSpec(SQLiteConnection conn, SQLiteDataReader reader, bladeLockType readLock, bladeLockType writeLock)
@@ -170,7 +177,9 @@ namespace bladeDirectorWCF
             if (fieldList.Contains("memoryMB") && !(reader["memoryMB"] is DBNull))
                 _memoryMB = Convert.ToInt32(reader["memoryMB"]);
             if (fieldList.Contains("cpuCount") && !(reader["cpuCount"] is DBNull))
-                _cpuCount = Convert.ToInt32(reader["cpuCount"]);            
+                _cpuCount = Convert.ToInt32(reader["cpuCount"]);
+            if (fieldList.Contains("isWaitingForResources"))
+                _isWaitingForResources = (long)reader["isWaitingForResources"] != 0;
         }
 
 #region locking stuff
@@ -229,6 +238,7 @@ namespace bladeDirectorWCF
                 toRet.Add("parentBladeID");
                 toRet.Add("parentBladeIP");
                 toRet.Add("indexOnServer");
+                toRet.Add("isWaitingForResources");
             }
 
             return toRet.Distinct().ToList();
@@ -284,6 +294,7 @@ namespace bladeDirectorWCF
                 }
             }
         }
+
         public override void createOrUpdateInDB(List<string> fieldsToWrite)
         {
             base.createOrUpdateOwnershipInDB(fieldsToWrite);
@@ -329,8 +340,12 @@ namespace bladeDirectorWCF
                 cmd.Parameters.AddWithValue("$kernelDebugPort", _kernelDebugPort);
                 cmd.Parameters.AddWithValue("$kernelDebugKey", _kernelDebugKey);
                 cmd.Parameters.AddWithValue("$indexOnServer", _indexOnServer);
-                
-                cmd.ExecuteNonQuery();
+                cmd.Parameters.AddWithValue("$isWaitingForResources", _isWaitingForResources);
+
+                if (cmd.ExecuteNonQuery() != 1)
+                {
+                    throw new Exception("SQL statement did not return 1: '" + cmd_VMConfig + "'");
+                }
                 if (!vmConfigKey.HasValue)
                     vmConfigKey = (int)conn.LastInsertRowId;
             }
