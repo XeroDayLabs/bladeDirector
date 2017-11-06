@@ -1270,6 +1270,22 @@ bladeLockType.lockvmDeployState,  // <-- TODO/FIXME: write perms shuold imply re
             return toRet;
         }
 
+        public resultAndBladeName RequestSpecificNode(string requestorIP, string nodeIP)
+        {
+            using (lockableBladeSpec blade = db.getBladeByIP(nodeIP,
+                bladeLockType.lockOwnership | bladeLockType.lockvmDeployState | bladeLockType.lockVMCreation | bladeLockType.lockBIOS,
+                bladeLockType.lockOwnership | bladeLockType.lockvmDeployState))
+            {
+                result res = requestBlade(blade, requestorIP);
+                resultAndBladeName toRet = new resultAndBladeName(res)
+                {
+                    bladeName = nodeIP, 
+                    result = res
+                };
+                return toRet;
+            }
+        }
+
         private void notifyBootDirectorOfNode(bladeSpec blade)
         {
             Uri wcfURI = new Uri("http://localhost/bootMenuController");

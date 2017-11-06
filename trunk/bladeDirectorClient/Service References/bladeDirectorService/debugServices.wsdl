@@ -96,6 +96,12 @@
   <wsdl:message name="IDebugServices__RequestAnySingleNode_OutputMessage">
     <wsdl:part name="parameters" element="tns:_RequestAnySingleNodeResponse" />
   </wsdl:message>
+  <wsdl:message name="IDebugServices__RequestSpecificNode_InputMessage">
+    <wsdl:part name="parameters" element="tns:_RequestSpecificNode" />
+  </wsdl:message>
+  <wsdl:message name="IDebugServices__RequestSpecificNode_OutputMessage">
+    <wsdl:part name="parameters" element="tns:_RequestSpecificNodeResponse" />
+  </wsdl:message>
   <wsdl:message name="IDebugServices__GetBladeStatus_InputMessage">
     <wsdl:part name="parameters" element="tns:_GetBladeStatus" />
   </wsdl:message>
@@ -188,6 +194,10 @@
     <wsdl:operation name="_RequestAnySingleNode">
       <wsdl:input wsam:Action="http://tempuri.org/IDebugServices/_RequestAnySingleNode" message="tns:IDebugServices__RequestAnySingleNode_InputMessage" />
       <wsdl:output wsam:Action="http://tempuri.org/IDebugServices/_RequestAnySingleNodeResponse" message="tns:IDebugServices__RequestAnySingleNode_OutputMessage" />
+    </wsdl:operation>
+    <wsdl:operation name="_RequestSpecificNode">
+      <wsdl:input wsam:Action="http://tempuri.org/IDebugServices/_RequestSpecificNode" message="tns:IDebugServices__RequestSpecificNode_InputMessage" />
+      <wsdl:output wsam:Action="http://tempuri.org/IDebugServices/_RequestSpecificNodeResponse" message="tns:IDebugServices__RequestSpecificNode_OutputMessage" />
     </wsdl:operation>
     <wsdl:operation name="_GetBladeStatus">
       <wsdl:input wsam:Action="http://tempuri.org/IDebugServices/_GetBladeStatus" message="tns:IDebugServices__GetBladeStatus_InputMessage" />
@@ -317,6 +327,15 @@
     </wsdl:operation>
     <wsdl:operation name="_RequestAnySingleNode">
       <soap12:operation soapAction="http://tempuri.org/IDebugServices/_RequestAnySingleNode" style="document" />
+      <wsdl:input>
+        <soap12:body use="literal" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap12:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="_RequestSpecificNode">
+      <soap12:operation soapAction="http://tempuri.org/IDebugServices/_RequestSpecificNode" style="document" />
       <wsdl:input>
         <soap12:body use="literal" />
       </wsdl:input>

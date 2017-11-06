@@ -43,6 +43,9 @@ namespace bladeDirectorWCF
         resultAndBladeName _RequestAnySingleNode(string requestorIP);
 
         [OperationContract]
+        resultAndBladeName _RequestSpecificNode(string requestorIP, string nodeIP);
+        
+        [OperationContract]
         GetBladeStatusResult _GetBladeStatus(string requestorIP, string nodeIP);
 
         [OperationContract]

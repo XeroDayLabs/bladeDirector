@@ -43,6 +43,14 @@ namespace bladeDirectorClient
         {
         }
 
+        public static bladeDirectorDebugServices fromBasePath(string baseURL)
+        {
+            string serviceURL = baseURL + "/bladeDirector";
+            string debugServiceURL = baseURL + "/bladeDirectorDebug";
+
+            return new bladeDirectorDebugServices(debugServiceURL, serviceURL);
+        }
+
         private void connect()
         {
             waitUntilReady(() =>

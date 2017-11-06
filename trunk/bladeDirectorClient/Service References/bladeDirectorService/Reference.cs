@@ -2094,6 +2094,9 @@ namespace bladeDirectorClient.bladeDirectorService {
         [System.ServiceModel.OperationContractAttribute(Action="http://tempuri.org/IServices/RequestAnySingleNode", ReplyAction="http://tempuri.org/IServices/RequestAnySingleNodeResponse")]
         bladeDirectorClient.bladeDirectorService.resultAndBladeName RequestAnySingleNode();
         
+        [System.ServiceModel.OperationContractAttribute(Action="http://tempuri.org/IServices/RequestSpecificNode", ReplyAction="http://tempuri.org/IServices/RequestSpecificNodeResponse")]
+        bladeDirectorClient.bladeDirectorService.resultAndBladeName RequestSpecificNode(string nodeIP);
+        
         [System.ServiceModel.OperationContractAttribute(Action="http://tempuri.org/IServices/GetBladeStatus", ReplyAction="http://tempuri.org/IServices/GetBladeStatusResponse")]
         bladeDirectorClient.bladeDirectorService.GetBladeStatusResult GetBladeStatus(string nodeIP);
         
@@ -2211,6 +2214,10 @@ namespace bladeDirectorClient.bladeDirectorService {
             return base.Channel.RequestAnySingleNode();
         }
         
+        public bladeDirectorClient.bladeDirectorService.resultAndBladeName RequestSpecificNode(string nodeIP) {
+            return base.Channel.RequestSpecificNode(nodeIP);
+        }
+        
         public bladeDirectorClient.bladeDirectorService.GetBladeStatusResult GetBladeStatus(string nodeIP) {
             return base.Channel.GetBladeStatus(nodeIP);
         }
@@ -2326,6 +2333,9 @@ namespace bladeDirectorClient.bladeDirectorService {
         [System.ServiceModel.OperationContractAttribute(Action="http://tempuri.org/IDebugServices/_RequestAnySingleNode", ReplyAction="http://tempuri.org/IDebugServices/_RequestAnySingleNodeResponse")]
         bladeDirectorClient.bladeDirectorService.resultAndBladeName _RequestAnySingleNode(string requestorIP);
         
+        [System.ServiceModel.OperationContractAttribute(Action="http://tempuri.org/IDebugServices/_RequestSpecificNode", ReplyAction="http://tempuri.org/IDebugServices/_RequestSpecificNodeResponse")]
+        bladeDirectorClient.bladeDirectorService.resultAndBladeName _RequestSpecificNode(string requestorIP, string nodeIP);
+        
         [System.ServiceModel.OperationContractAttribute(Action="http://tempuri.org/IDebugServices/_GetBladeStatus", ReplyAction="http://tempuri.org/IDebugServices/_GetBladeStatusResponse")]
         bladeDirectorClient.bladeDirectorService.GetBladeStatusResult _GetBladeStatus(string requestorIP, string nodeIP);
         
@@ -2420,6 +2430,10 @@ namespace bladeDirectorClient.bladeDirectorService {
         
         public bladeDirectorClient.bladeDirectorService.resultAndBladeName _RequestAnySingleNode(string requestorIP) {
             return base.Channel._RequestAnySingleNode(requestorIP);
+        }
+        
+        public bladeDirectorClient.bladeDirectorService.resultAndBladeName _RequestSpecificNode(string requestorIP, string nodeIP) {
+            return base.Channel._RequestSpecificNode(requestorIP, nodeIP);
         }
         
         public bladeDirectorClient.bladeDirectorService.GetBladeStatusResult _GetBladeStatus(string requestorIP, string nodeIP) {

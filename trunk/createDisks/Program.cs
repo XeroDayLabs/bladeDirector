@@ -6,7 +6,8 @@ using System.Linq;
 using System.ServiceModel;
 using System.Threading;
 using System.Threading.Tasks;
-using createDisks.bladeDirector;
+using bladeDirectorClient;
+using bladeDirectorClient.bladeDirectorService;
 using CommandLine;
 using CommandLine.Text;
 using hypervisors;
@@ -70,9 +71,12 @@ namespace createDisks
     {
         public delegate hypervisorWithSpec<T> hypCreateDelegate<T>(itemToAdd hyp, NASAccess hostingNAS);
 
+        private static bool logToConsole = false;
+
         static void Main(string[] args)
         {
             Parser parser = new CommandLine.Parser();
+            logToConsole = true;
             createDisksArgs parsedArgs = new createDisksArgs();
             if (parser.ParseArgumentsStrict(args, parsedArgs, () => { Debug.Write(HelpText.AutoBuild(parsedArgs).ToString()); }))
                 _Main(parsedArgs);
@@ -124,6 +128,12 @@ namespace createDisks
             }
         }
 
+        private static void log(string msg)
+        {
+            if (logToConsole)
+                Console.WriteLine(msg);
+        }
+
         private static hypervisorWithSpec<hypSpec_iLo> makeILOHyp(itemToAdd hyp, NASAccess hostingnas)
         {
             return new hypervisor_iLo(new hypSpec_iLo(
@@ -136,48 +146,69 @@ namespace createDisks
 
         public static void deleteBlades(itemToAdd[] blades)
         {
-            Debug.WriteLine("Connecting to NAS..");
-            NASAccess nas = new FreeNAS(Properties.Settings.Default.iscsiServerIP,
-                Properties.Settings.Default.iscsiServerUsername, Properties.Settings.Default.iscsiServerPassword);
-            Debug.WriteLine("Connected to NAS okay");
+            log("Connecting to NAS and getting initial objects.. ");
+            NASAccess nas = new FreeNAS(Properties.Settings.Default.iscsiServerIP, 
+                Properties.Settings.Default.iscsiServerUsername, 
+                Properties.Settings.Default.iscsiServerPassword);
 
-            foreach (itemToAdd item in blades)
-                deleteBlade(item.cloneName, nas);
-        }
-
-        public static void deleteBlade(string cloneName, NASAccess nas)
-        {
             // Get some data from the NAS, so we don't have to keep querying it..
             List<snapshot> snapshots = nas.getSnapshots();
             List<iscsiTarget> iscsiTargets = nas.getISCSITargets();
             List<iscsiExtent> iscsiExtents = nas.getExtents();
-            // List<iscsiTargetToExtentMapping> tgtToExts = nas.getTargetToExtents();
             List<volume> volumes = nas.getVolumes();
 
+            log(".. ok");
+
+            log("Spawning " + blades.Length + " tasks to delete NAS configuration..");
+            Task[] tasks = new Task[blades.Length];
+            for (int index = 0; index < blades.Length; index++)
+            {
+                itemToAdd item = blades[index];
+                tasks[index] = new Task(() => deleteBlade(item.cloneName, nas, snapshots, iscsiTargets, iscsiExtents, volumes));
+                tasks[index].Start();
+            }
+            foreach (Task task in tasks)
+                task.Wait();
+            log("deletion complete.");
+        }
+
+        public static void deleteBlade(string cloneName, NASAccess nas)
+        {
+            List<snapshot> snapshots = nas.getSnapshots();
+            List<iscsiTarget> iscsiTargets = nas.getISCSITargets();
+            List<iscsiExtent> iscsiExtents = nas.getExtents();
+            List<volume> volumes = nas.getVolumes();
+
+            deleteBlade(cloneName, nas, snapshots, iscsiTargets, iscsiExtents, volumes);
+        }
+
+        public static void deleteBlade(string cloneName, NASAccess nas, List<snapshot> snapshots, List<iscsiTarget> iscsiTargets, List<iscsiExtent> iscsiExtents, List<volume> volumes)
+        {
             // Delete target-to-extent, target, and extent
             iscsiTarget tgt = iscsiTargets.SingleOrDefault(x => x.targetName == cloneName);
             if (tgt != null)
+            {
+                log("Deleting iSCSI target " + tgt.targetName + " ... ");
                 nas.deleteISCSITarget(tgt);
+                log("Deleting iSCSI target " + tgt.targetName + " complete.");
+            }
 
             iscsiExtent ext = iscsiExtents.SingleOrDefault(x => x.iscsi_target_extent_name == cloneName);
             if (ext != null)
+            {
+                log("Deleting iSCSI extent " + ext.iscsi_target_extent_path + " ... ");
                 nas.deleteISCSIExtent(ext);
-            /*
-                if (tgt != null || ext != null)
-                {
-                    iscsiTargetToExtentMapping tgtToExt = tgtToExts.SingleOrDefault(x => 
-                        ( tgt != null && (x.iscsi_target == tgt.id) || 
-                        ( ext != null && (x.iscsi_extent == ext.id   ))));
-                    if (tgtToExt != null)
-                    {
-                        nas.deleteISCSITargetToExtent(tgtToExt);
-                    }
-                }*/
+                log("Deleting iSCSI extent " + ext.iscsi_target_extent_path + " complete.");
+            }
 
             // Now delete the snapshot.
             snapshot toDelete = snapshots.SingleOrDefault(x => x.filesystem.ToLower().EndsWith("/" + cloneName));
             if (toDelete != null)
+            {
+                log("Deleting ZFS snapshot " + toDelete.fullname + " ... ");
                 nas.deleteSnapshot(toDelete);
+                log("Deleting ZFS snapshot " + toDelete.fullname + " complete.");
+            }
 
             // And the volume. Use a retry here since freenas will return before the iscsi deletion is complete.
             // Just use a small retry, since we will give up and use another file if there's a 'real' problem.
@@ -189,13 +220,16 @@ namespace createDisks
                 {
                     try
                     {
+                        log("Deleting ZVOL " + vol.name + " ... ");
                         nas.deleteZVol(vol);
+                        log("Deleting ZVOL " + vol.name + " complete. ");
                         break;
                     }
-                    catch (Exception)
+                    catch (Exception e)
                     {
                         if (DateTime.Now > deadline)
                             throw;
+                        log("Deleting ZVOL " + vol.name + " failed, will retry in 15s. Exception was "  + e.Message);
                         Thread.Sleep(TimeSpan.FromSeconds(15));
                     }
                 }
@@ -222,10 +256,12 @@ namespace createDisks
         public static void addBlades<T>(itemToAdd[] itemsToAdd, string tagName, string directorURL, string baseSnapshot,
             string additionalScript, string[] additionalDeploymentItem, hypCreateDelegate<T> createHyp, cancellableDateTime deadline)
         {
+            log("Connecting to NAS..");
             NASAccess nas = new FreeNAS(
                 Properties.Settings.Default.iscsiServerIP,
                 Properties.Settings.Default.iscsiServerUsername,
                 Properties.Settings.Default.iscsiServerPassword);
+            log("..ok");
 
             addBlades(nas, itemsToAdd, tagName, directorURL, baseSnapshot, additionalScript, additionalDeploymentItem, createHyp, deadline);
         }
@@ -237,6 +273,8 @@ namespace createDisks
                 deadline = new cancellableDateTime();
 
             deadline.throwIfTimedOutOrCancelled();
+
+            log("Creating disk clones..");
             
             // Get the snapshot we'll be cloning
             List<snapshot> snapshots = nas.getSnapshots();
@@ -253,6 +291,8 @@ namespace createDisks
 
             deadline.throwIfTimedOutOrCancelled();
 
+            log(".. OK");
+
             string[] serverIPs = itemsToAdd.Select(x => x.serverIP).Distinct().ToArray();
 
             // Ensure there are sufficient threads in the worker pool so that we can prepare everything at the same time.
@@ -264,10 +304,10 @@ namespace createDisks
                 ThreadPool.SetMaxThreads(wkrThreadCount + serverIPs.Length, completionPortThreads);
 
             // Next, we must prepare each clone. Do this in parallel, per-server.
-            CancellationTokenSource tkn = new CancellationTokenSource();
-
             foreach (string serverIP in serverIPs)
             {
+                log("Configuring for server " + serverIP);
+
                 itemToAdd[] toPrep = itemsToAdd.Where(x => x.serverIP == serverIP).ToArray();
                 Thread[] toWaitOn = new Thread[toPrep.Length];
                 for (int index = 0; index < toPrep.Length; index++)
@@ -285,17 +325,9 @@ namespace createDisks
                     toWaitOn[index].Start();
                 }
 
-                try
-                {
-                    foreach (Thread thread in toWaitOn)
-                        thread.Join();
-                }
-                catch (AggregateException)
-                {
-                    tkn.Cancel(false);
-
-                    throw;
-                }
+                foreach (Thread thread in toWaitOn)
+                    thread.Join();
+                log("Configuring for server " + serverIP + " complete.");
             }
 
         }
@@ -315,24 +347,32 @@ namespace createDisks
             {
                 // We must ensure the blade is allocated to the required blade before we power it on. This will cause it to
                 // use the required iSCSI root path.
-            /*    EndpointAddress ep = new EndpointAddress(String.Format("http://{0}/services.asmx", directorURL));
-                BasicHttpBinding binding = new BasicHttpBinding();
-                using (bladeDirector.servicesSoapClient bladeDirectorClient = new bladeDirector.servicesSoapClient(binding, ep))
+                using (bladeDirectorDebugServices services = bladeDirectorDebugServices.fromBasePath(directorURL))
                 {
-                    bladeDirectorClient.Open();
-                    resultCode res = bladeDirectorClient.forceBladeAllocation(itemToAdd.bladeIP, itemToAdd.serverIP);
-                    if (res != resultCode.success)
-                        throw new Exception("Can't claim blade " + itemToAdd.bladeIP);
-                    resultCode shotResCode = bladeDirectorClient.selectSnapshotForBladeOrVM(itemToAdd.bladeIP, tagName);
-                    while (shotResCode == resultCode.pending)
+                    services.svc.setResourceSharingModel(fairnessCheckerfairnessType.allowAny);
+
+                    resultAndWaitToken res = services.svcDebug._RequestSpecificNode(itemToAdd.serverIP, itemToAdd.bladeIP);
+                    while (res.result.code == resultCode.pending)
                     {
-                        Thread.Sleep(TimeSpan.FromSeconds(4));
-                        shotResCode = bladeDirectorClient.selectSnapshotForBladeOrVM_getProgress(itemToAdd.bladeIP);
+                        res = services.svc.getProgress(res.waitToken);
+                        Thread.Sleep(TimeSpan.FromSeconds(1));
                     }
-                    if (shotResCode != resultCode.success)
+                    if (res.result.code != resultCode.success)
+                        throw new Exception("Can't claim blade " + itemToAdd.bladeIP);
+
+                    resultAndWaitToken shotResCode = services.svc.selectSnapshotForBladeOrVM(itemToAdd.bladeIP, tagName);
+                    while (shotResCode.result.code == resultCode.pending)
+                    {
+                        shotResCode = services.svc.getProgress(res.waitToken);
+                        Thread.Sleep(TimeSpan.FromSeconds(1));
+                    }
+                    if (shotResCode.result.code != resultCode.success)
                         throw new Exception("Can't select snapshot on blade " + itemToAdd.bladeIP);
-                }*/
+
+                    services.svc.setResourceSharingModel(fairnessCheckerfairnessType.fair);
+                }
             }
+
             Debug.WriteLine(itemToAdd.bladeIP + " allocated, powering up");
             hyp.powerOn();
             Debug.WriteLine(itemToAdd.bladeIP + " powered up, deploying");

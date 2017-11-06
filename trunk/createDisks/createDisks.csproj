@@ -113,11 +113,6 @@
       <DesignTimeSharedInput>True</DesignTimeSharedInput>
       <DependentUpon>Settings.settings</DependentUpon>
     </Compile>
-    <Compile Include="Service References\bladeDirector\Reference.cs">
-      <AutoGen>True</AutoGen>
-      <DesignTime>True</DesignTime>
-      <DependentUpon>Reference.svcmap</DependentUpon>
-    </Compile>
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />
@@ -126,55 +121,9 @@
       <Generator>SettingsSingleFileGenerator</Generator>
       <LastGenOutput>Settings.Designer.cs</LastGenOutput>
     </None>
-    <None Include="Service References\bladeDirector\Arrays.xsd">
-      <SubType>Designer</SubType>
-    </None>
-    <None Include="Service References\bladeDirector\bladeDirectorWCF.xsd">
-      <SubType>Designer</SubType>
-    </None>
-    <None Include="Service References\bladeDirector\createDisks.xsd">
-      <SubType>Designer</SubType>
-    </None>
-    <None Include="Service References\bladeDirector\service.wsdl" />
-    <None Include="Service References\bladeDirector\service.xsd">
-      <SubType>Designer</SubType>
-    </None>
-    <None Include="Service References\bladeDirector\service1.xsd">
-      <SubType>Designer</SubType>
-    </None>
-    <None Include="Service References\bladeDirector\System.ComponentModel.xsd">
-      <SubType>Designer</SubType>
-    </None>
-    <None Include="Service References\bladeDirector\System.Data.Common.xsd">
-      <SubType>Designer</SubType>
-    </None>
-    <None Include="Service References\bladeDirector\System.Data.SQLite.xsd">
-      <SubType>Designer</SubType>
-    </None>
-    <None Include="Service References\bladeDirector\System.Data.xsd">
-      <SubType>Designer</SubType>
-    </None>
-    <None Include="Service References\bladeDirector\System.xsd">
-      <SubType>Designer</SubType>
-    </None>
   </ItemGroup>
   <ItemGroup>
     <WCFMetadata Include="Service References\" />
-  </ItemGroup>
-  <ItemGroup>
-    <WCFMetadataStorage Include="Service References\bladeDirector\" />
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="Service References\bladeDirector\configuration91.svcinfo" />
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="Service References\bladeDirector\configuration.svcinfo" />
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="Service References\bladeDirector\Reference.svcmap">
-      <Generator>WCF Proxy Generator</Generator>
-      <LastGenOutput>Reference.cs</LastGenOutput>
-    </None>
   </ItemGroup>
   <ItemGroup>
     <EmbeddedResource Include="Properties\Resources.resx">
@@ -186,6 +135,10 @@
     <ProjectReference Include="..\..\thirdparty\hypervisors\trunk\hypervisors\hypervisors.csproj">
       <Project>{47995dd9-9f78-4313-809d-55c515eaf89e}</Project>
       <Name>hypervisors</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\bladeDirectorClient\bladeDirectorClient.csproj">
+      <Project>{4abb1cc9-0c59-48f3-be95-0fa21c420055}</Project>
+      <Name>bladeDirectorClient</Name>
     </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

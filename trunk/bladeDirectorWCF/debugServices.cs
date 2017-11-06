@@ -88,7 +88,12 @@ namespace bladeDirectorWCF
         {
             return services.hostStateManager.RequestAnySingleNode(requestorIP);
         }
-        
+
+        public resultAndBladeName _RequestSpecificNode(string requestorIP, string nodeIP)
+        {
+            return services.hostStateManager.RequestSpecificNode(requestorIP, nodeIP);
+        }
+
         public GetBladeStatusResult _GetBladeStatus(string requestorIP, string nodeIP)
         {
             return services.hostStateManager.getBladeStatus(requestorIP, nodeIP);

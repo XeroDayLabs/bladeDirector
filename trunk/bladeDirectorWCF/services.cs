@@ -50,6 +50,11 @@ namespace bladeDirectorWCF
             return hostStateManager.RequestAnySingleNode(sanitizeAddress(requestorIP));
         }
 
+        public static resultAndBladeName _RequestSpecificNode(string requestorIP, string nodeIP)
+        {
+            return hostStateManager.RequestSpecificNode(sanitizeAddress(requestorIP), nodeIP);
+        }
+
         private static GetBladeStatusResult _GetBladeStatus(string requestorIP, string nodeIP)
         {
             return hostStateManager.getBladeStatus(sanitizeAddress(requestorIP), sanitizeAddress(nodeIP));
@@ -186,6 +191,11 @@ namespace bladeDirectorWCF
         public resultAndBladeName RequestAnySingleNode()
         {
             return _RequestAnySingleNode(getSrcIP());
+        }
+
+        public resultAndBladeName RequestSpecificNode(string nodeIP)
+        {
+            return _RequestSpecificNode(getSrcIP(), nodeIP);
         }
 
         public GetBladeStatusResult GetBladeStatus(string nodeIP)
