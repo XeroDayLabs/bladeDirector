@@ -6,12 +6,11 @@ using System.Linq;
 using System.Net;
 using System.Xml.Serialization;
 using bladeDirectorWCF.Properties;
-using createDisks;
 
 namespace bladeDirectorWCF
 {
     [XmlInclude(typeof(bladeOwnership))]
-    public class bladeSpec : bladeOwnership
+    public class bladeSpec : bladeOwnership, IDebuggableThing
     {
         // ReSharper disable UnusedMember.Global
 
@@ -37,6 +36,7 @@ namespace bladeDirectorWCF
         }
         private string _iLOIP;
 
+        // FIXME: is this the windbg port? if so, this is a bad name. :/
         public ushort iLOPort
         {
             get { checkPermsR("iLOPort"); return _iLOPort; }
@@ -44,12 +44,40 @@ namespace bladeDirectorWCF
         }
         private ushort _iLOPort;
 
+        public override ushort kernelDebugPort
+        {
+            // Just an alias of iLOPort until I sort out silly naming
+            get { checkPermsR("iLOPort"); return _iLOPort; }
+            set { checkPermsW("iLOPort"); _iLOPort = value; }
+        }
+
+        public override string kernelDebugKey
+        {
+            get { checkPermsR("kernelDebugKey"); return _kernelDebugKey; }
+            set { checkPermsW("kernelDebugKey"); _kernelDebugKey = value; }
+        }
+        private string _kernelDebugKey;
+
+        public override string availableUsersCSV
+        {
+            get { checkPermsR("availableUsersCSV"); return _availableUsersCSV; }
+            set { checkPermsW("availableUsersCSV"); _availableUsersCSV = value; }
+        }
+        private string _availableUsersCSV;
+
         public VMDeployStatus vmDeployState
         {
             get { checkPermsR("vmDeployState"); return _vmDeployState; }
             set { checkPermsW("vmDeployState"); _vmDeployState = value; }
         }
         private VMDeployStatus _vmDeployState;
+
+        public override string friendlyName
+        {
+            get { checkPermsR("friendlyName"); return _friendlyName; }
+            set { checkPermsW("friendlyName"); _friendlyName = value; }
+        }
+        private string _friendlyName;
 
         public bool currentlyHavingBIOSDeployed
         {
@@ -71,6 +99,9 @@ namespace bladeDirectorWCF
             set { checkPermsW("lastDeployedBIOS"); _lastDeployedBIOS = value; }
         }
         private string _lastDeployedBIOS;
+
+        public override string kernelDebugAddress { get { return bladeIP; } }
+
         // ReSharper restore UnusedMember.Global
 
         [XmlIgnore]
@@ -113,13 +144,18 @@ namespace bladeDirectorWCF
 
         public bladeSpec(SQLiteConnection conn,
             string newBladeIP, string newISCSIIP,
-            string newILOIP, ushort newILOPort)
+            string newILOIP, ushort newILOPort, string newKernelDebugKey = "idk", string newFriendlyName = null)
             : base(conn, bladeLockType.lockAll, bladeLockType.lockAll)
         {
             _iscsiIP = newISCSIIP;
             _bladeIP = newBladeIP;
             _iLOPort = newILOPort;
             _iLOIP = newILOIP;
+            _kernelDebugKey = newKernelDebugKey;
+            if (newFriendlyName == null)
+                _friendlyName = _bladeIP;
+            else
+                _friendlyName = newFriendlyName;
 
             _currentlyHavingBIOSDeployed = false;
             _lastDeployedBIOS = null;
@@ -129,18 +165,25 @@ namespace bladeDirectorWCF
             ESXiPassword = Settings.Default.esxiPassword;
             iLoUsername = Settings.Default.iloUsername;
             iLoPassword = Settings.Default.iloPassword;
+
+            _availableUsersCSV = makeUsersCSV(new[] { new userDesc(Settings.Default.vmUsername, Settings.Default.vmPassword) });
         }
 
         public bladeSpec(SQLiteConnection conn,
             string newBladeIP, string newISCSIIP, 
             string newILOIP, ushort newILOPort, 
-            bool newCurrentlyHavingBIOSDeployed, VMDeployStatus newvmDeployState, string newCurrentBIOS, bladeLockType permittedAccessRead, bladeLockType permittedAccessWrite)
+            bool newCurrentlyHavingBIOSDeployed, 
+            VMDeployStatus newvmDeployState, string newCurrentBIOS, 
+            string newKernelDebugKey, string newFriendlyName,
+            bladeLockType permittedAccessRead, bladeLockType permittedAccessWrite)
             : base(conn, permittedAccessRead, permittedAccessWrite)
         {
             _iscsiIP = newISCSIIP;
             _bladeIP = newBladeIP;
             _iLOPort = newILOPort;
             _iLOIP = newILOIP;
+            _kernelDebugKey = newKernelDebugKey;
+            _friendlyName = newFriendlyName;
 
             _currentlyHavingBIOSDeployed = newCurrentlyHavingBIOSDeployed;
             _lastDeployedBIOS = newCurrentBIOS;
@@ -150,6 +193,9 @@ namespace bladeDirectorWCF
             ESXiPassword = Settings.Default.esxiPassword;
             iLoUsername = Settings.Default.iloUsername;
             iLoPassword = Settings.Default.iloPassword;
+
+            if (permittedAccessRead.HasFlag(bladeLockType.lockVirtualHW))
+                _availableUsersCSV = makeUsersCSV(new[] { new userDesc(Settings.Default.vmUsername, Settings.Default.vmPassword) });
         }
 
         public bladeSpec(SQLiteConnection conn, SQLiteDataReader reader, bladeLockType permittedAccessRead, bladeLockType permittedAccessWrite)
@@ -161,6 +207,9 @@ namespace bladeDirectorWCF
             ESXiPassword = Settings.Default.esxiPassword;
             iLoUsername = Settings.Default.iloUsername;
             iLoPassword = Settings.Default.iloPassword;
+
+            if (permittedAccessRead.HasFlag(bladeLockType.lockVirtualHW))
+                _availableUsersCSV = makeUsersCSV(new[] { new userDesc(Settings.Default.vmUsername, Settings.Default.vmPassword) });
         }
 
         private void parseFromDBRow(SQLiteDataReader reader)
@@ -174,6 +223,15 @@ namespace bladeDirectorWCF
 
             if (fieldList.Contains("bladeIP"))
                 _bladeIP = (string)reader["bladeIP"];
+
+            if (fieldList.Contains("kernelDebugKey"))
+                _kernelDebugKey = (string)reader["kernelDebugKey"];
+
+            if (fieldList.Contains("availableUsersCSV"))
+                _availableUsersCSV = (string)reader["availableUsersCSV"];
+
+            if (fieldList.Contains("friendlyName"))
+                _friendlyName = (string)reader["friendlyName"];
 
             if (fieldList.Contains("iLOPort"))
                 _iLOPort = ushort.Parse(reader["iLOPort"].ToString());
@@ -235,6 +293,10 @@ namespace bladeDirectorWCF
                 return false;
             if (bladeID != compareTo.bladeID)
                 return false;
+            if (kernelDebugKey != compareTo.kernelDebugKey)
+                return false;
+            if (kernelDebugPort != compareTo.kernelDebugPort)
+                return false;
 
             return true;
         }
@@ -279,6 +341,12 @@ namespace bladeDirectorWCF
                 toRet.Add("bladeIP");
                 toRet.Add("iLOIP");
                 toRet.Add("iLOPort");
+            }
+            if ((lockType & bladeLockType.lockVirtualHW) != bladeLockType.lockNone)
+            {
+                toRet.Add("kernelDebugKey");
+                toRet.Add("friendlyName");
+                toRet.Add("availableUsersCSV");
             }
             if ((lockType & bladeLockType.lockvmDeployState) != bladeLockType.lockNone)
             {
@@ -378,6 +446,9 @@ namespace bladeDirectorWCF
             {
                 cmd.Parameters.AddWithValue("iscsiIP", _iscsiIP);
                 cmd.Parameters.AddWithValue("bladeIP", _bladeIP);
+                cmd.Parameters.AddWithValue("kernelDebugKey", _kernelDebugKey);
+                cmd.Parameters.AddWithValue("friendlyName", _friendlyName);
+                cmd.Parameters.AddWithValue("availableUsersCSV", _availableUsersCSV);
                 cmd.Parameters.AddWithValue("iLOIP", _iLOIP);
                 cmd.Parameters.AddWithValue("iLOPort", _iLOPort);
                 cmd.Parameters.AddWithValue("currentlyHavingBIOSDeployed", _currentlyHavingBIOSDeployed ? 1 : 0);
@@ -436,7 +507,7 @@ namespace bladeDirectorWCF
             newVM.iscsiIP = "10.0." + (28 + VMServerIPBytes[3]) + "." + newVM.indexOnServer;
             newVM.eth0MAC = "00:50:56:00:" + (VMServerIPBytes[3] - 100).ToString("D2") + ":" + newVM.indexOnServer.ToString("D2");
             newVM.eth1MAC = "00:50:56:01:" + (VMServerIPBytes[3] - 100).ToString("D2") + ":" + newVM.indexOnServer.ToString("D2");
-            newVM.displayName = "VM_" + (VMServerIPBytes[3] - 100).ToString("D2") + "_" + newVM.indexOnServer.ToString("D2");
+            newVM.friendlyName = "VM_" + (VMServerIPBytes[3] - 100).ToString("D2") + "_" + newVM.indexOnServer.ToString("D2");
 
             if (reqsw.debuggerPort == 0)
                 reqsw.debuggerPort = (ushort) (50000 + ((VMServerIPBytes[3] - 100)*100) + newVM.indexOnServer);
@@ -450,21 +521,16 @@ namespace bladeDirectorWCF
             return toRet;
         }
 
-        public override itemToAdd toItemToAdd(bool useNextOwner)
+        // FIXME: this should probably be in the NAS
+        public override string getCloneName()
         {
-            itemToAdd toRet = new itemToAdd();
-
-            if (useNextOwner)
-                toRet.cloneName = bladeIP + "-" + nextOwner + "-" + currentSnapshot;
+            string owner;
+            if (state == bladeStatus.inUseByDirector)
+                owner = nextOwner;
             else
-                toRet.cloneName = bladeIP + "-" + currentOwner + "-" + currentSnapshot;
-            toRet.serverIP = currentOwner;
-            toRet.snapshotName = currentSnapshot;
-            toRet.bladeIP = bladeIP;
-            toRet.computerName = bladeIP;
-            toRet.isVirtualMachine = false;
+                owner = currentOwner;
 
-            return toRet;
+            return bladeIP + "-" + owner + "-" + currentSnapshot;
         }
 
         public string generateIPXEScript()

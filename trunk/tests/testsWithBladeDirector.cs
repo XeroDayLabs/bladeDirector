@@ -24,7 +24,7 @@ namespace tests
 
                 bladeSpec spec = svc.svcDebug.createBladeSpec(
                     "172.17.129.131", "192.168.129.131", "172.17.2.131", 1234,
-                    false, VMDeployStatus.notBeingDeployed, " ... ", bladeLockType.lockAll, bladeLockType.lockAll);
+                    false, VMDeployStatus.notBeingDeployed, " ... ", "idk", "mybox", bladeLockType.lockAll, bladeLockType.lockAll);
 
                 svc.svcDebug.initWithBladesFromBladeSpec(new[] {spec}, false, NASFaultInjectionPolicy.retunSuccessful);
 

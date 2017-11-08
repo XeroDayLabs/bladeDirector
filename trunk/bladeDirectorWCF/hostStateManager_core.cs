@@ -5,11 +5,11 @@ using System.IO;
 using System.Linq;
 using System.Net;
 using System.Net.Sockets;
+using System.Runtime.Serialization;
 using System.ServiceModel;
 using System.Threading;
 using System.Threading.Tasks;
 using bladeDirectorWCF.Properties;
-using createDisks;
 using hypervisors;
 
 namespace bladeDirectorWCF
@@ -52,6 +52,7 @@ namespace bladeDirectorWCF
         public abstract void startBladePowerOn(lockableBladeSpec blade, cancellableDateTime deadline);
         public abstract void setCallbackOnTCPPortOpen(int nodePort, ManualResetEvent onCompletion, ManualResetEvent onError, cancellableDateTime deadline, biosThreadState biosThreadState);
         protected abstract NASAccess getNasForDevice(bladeSpec vmServer);
+        protected abstract NASParams getNASParams();
 
         public fairnessChecker fairness = null;
 
@@ -376,7 +377,7 @@ namespace bladeDirectorWCF
             int n = 0;
             foreach (string bladeIP in bladeIPs)
                 specs[n++] = new bladeSpec(db.conn, bladeIP, n.ToString(), n.ToString(),
-                    (ushort)n, false, VMDeployStatus.notBeingDeployed, "bioscontents", 
+                    (ushort)n, false, VMDeployStatus.notBeingDeployed, "bioscontents", "idk", bladeIP,
                     bladeLockType.lockAll, bladeLockType.lockAll);
 
             initWithBlades(specs);
@@ -1099,9 +1100,9 @@ bladeLockType.lockvmDeployState,  // <-- TODO/FIXME: write perms shuold imply re
                     {
                         hyp.startExecutable("vim-cmd", "vmsvc/power.off `vim-cmd vmsvc/getallvms | grep \"" + dstDatastoreDirEscaped + "\"`");
                     }, threadState.deployDeadline);
-                    hypervisor.doWithRetryOnSomeExceptions(() => hyp.startExecutable("vim-cmd", "vmsvc/power.off `vim-cmd vmsvc/getallvms | grep \"" + childVM_unsafe.displayName + "\"`"), deadline: threadState.deployDeadline);
+                    hypervisor.doWithRetryOnSomeExceptions(() => hyp.startExecutable("vim-cmd", "vmsvc/power.off `vim-cmd vmsvc/getallvms | grep \"" + childVM_unsafe.friendlyName + "\"`"), deadline: threadState.deployDeadline);
                     hypervisor.doWithRetryOnSomeExceptions(() => hyp.startExecutable("vim-cmd", "vmsvc/unregister `vim-cmd vmsvc/getallvms | grep \"" + dstDatastoreDirEscaped + "\"`"), deadline: threadState.deployDeadline);
-                    hypervisor.doWithRetryOnSomeExceptions(() => hyp.startExecutable("vim-cmd", "vmsvc/unregister `vim-cmd vmsvc/getallvms | grep \"" + childVM_unsafe.displayName + "\"`"), deadline: threadState.deployDeadline);
+                    hypervisor.doWithRetryOnSomeExceptions(() => hyp.startExecutable("vim-cmd", "vmsvc/unregister `vim-cmd vmsvc/getallvms | grep \"" + childVM_unsafe.friendlyName + "\"`"), deadline: threadState.deployDeadline);
 
                     // copy the template VM into a new directory
                     doCmdAndCheckSuccess(hyp, "rm", " -rf " + destDir, threadState.deployDeadline);
@@ -1109,7 +1110,7 @@ bladeLockType.lockvmDeployState,  // <-- TODO/FIXME: write perms shuold imply re
                     // and then customise it.
                     doCmdAndCheckSuccess(hyp, "sed", " -e 's/ethernet0.address[= ].*/ethernet0.address = \"" + childVM_unsafe.eth0MAC + "\"/g' -i " + vmxPath, threadState.deployDeadline);
                     doCmdAndCheckSuccess(hyp, "sed", " -e 's/ethernet1.address[= ].*/ethernet1.address = \"" + childVM_unsafe.eth1MAC + "\"/g' -i " + vmxPath, threadState.deployDeadline);
-                    doCmdAndCheckSuccess(hyp, "sed", " -e 's/displayName[= ].*/displayName = \"" + childVM_unsafe.displayName + "\"/g' -i " + vmxPath, threadState.deployDeadline);
+                    doCmdAndCheckSuccess(hyp, "sed", " -e 's/displayName[= ].*/displayName = \"" + childVM_unsafe.friendlyName + "\"/g' -i " + vmxPath, threadState.deployDeadline);
                     doCmdAndCheckSuccess(hyp, "sed", " -e 's/memSize[= ].*/memSize = \"" + childVM_unsafe.memoryMB + "\"/g' -i " + vmxPath, threadState.deployDeadline);
                     doCmdAndCheckSuccess(hyp, "sed", " -e 's/sched.mem.min[= ].*/sched.mem.min = \"" + childVM_unsafe.memoryMB + "\"/g' -i " + vmxPath, threadState.deployDeadline);
                     doCmdAndCheckSuccess(hyp, "sed", " -e 's/sched.mem.minSize[= ].*/sched.mem.minSize = \"" + childVM_unsafe.memoryMB + "\"/g' -i " + vmxPath, threadState.deployDeadline);
@@ -1123,48 +1124,42 @@ bladeLockType.lockvmDeployState,  // <-- TODO/FIXME: write perms shuold imply re
                     hypervisor.doWithRetryOnSomeExceptions(() => doCmdAndCheckSuccess(hyp, "vim-cmd", " solo/registervm " + vmxPath, threadState.deployDeadline));
                 }
 
-                itemToAdd itm = childVM_unsafe.toItemToAdd(true);
+                //itemToAdd itm = childVM_unsafe.toItemToAdd(true);
 
                 threadState.deployDeadline.throwIfTimedOutOrCancelled();
 
                 // Now we can select the new snapshot. We must be very careful and do this quickly, with the appropriate write lock
                 // held, because it will block the ipxe script creation until we unlock.
-                using (lockableVMSpec childVMFromDB = db.getVMByIP(childVM_unsafe.VMIP, bladeLockType.lockSnapshot, bladeLockType.lockSnapshot))
+                using (lockableVMSpec childVMFromDB = db.getVMByIP(childVM_unsafe.VMIP, 
+                    bladeLockType.lockSnapshot | bladeLockType.lockOwnership | bladeLockType.lockVirtualHW, bladeLockType.lockNone))
                 {
-                    childVMFromDB.spec.currentSnapshot = itm.snapshotName;
-                }
+                    using (lockableBladeSpec bladeSpec = db.getBladeByIP(vmServerIP,
+                        bladeLockType.lockNASOperations, bladeLockType.lockNone, true, true))
+                    {
+                        NASAccess nas = getNasForDevice(bladeSpec.spec);
+                        deleteBlade(childVMFromDB.spec.getCloneName(), nas);
 
-                using (lockableBladeSpec bladeSpec = db.getBladeByIP(vmServerIP,
-                    bladeLockType.lockNASOperations,
-                    bladeLockType.lockNone, true, true))
-                {
-                    NASAccess nas = getNasForDevice(bladeSpec.spec);
-                    createDisks.Program.deleteBlade(itm.cloneName, nas);
+                        threadState.deployDeadline.throwIfTimedOutOrCancelled();
+                        
+                        // Now create the disks, and customise the VM by naming it appropriately.
+                        configureVMDisks(nas, bladeSpec, childVMFromDB,
+                            "bladebasestable-esxi", null, null, null, childVM_unsafe.nextOwner, threadState.deployDeadline);
+                    }
+                    // TODO: Ability to deploy transportDriver
 
                     threadState.deployDeadline.throwIfTimedOutOrCancelled();
 
-                    // TODO: handle timeouts in makeHypervisorForVM
-
-                    // Now create the disks, and customise the VM by naming it appropriately.
-                    createDisks.Program.addBlades(nas, new[] {itm}, itm.snapshotName, _basePath, "bladebasestable-esxi", null, null,
-                        (a, b) => {
-                            return (hypervisorWithSpec<hypSpec_vmware>) makeHypervisorForVM(bladeSpec.spec.bladeIP, childVM_unsafe.VMIP, true, true);
-                        }, threadState.deployDeadline);
-                }
-                // TODO: Ability to deploy transportDriver
-
-                threadState.deployDeadline.throwIfTimedOutOrCancelled();
-
-                // All done. We can mark the blade as in use. Again, we are careful to hold write locks for as short a time as is
-                // possible, to avoid blocking the PXE-script generation.
-                using (lockableVMSpec childVMFromDB = db.getVMByIP(childVM_unsafe.VMIP,
-                    bladeLockType.lockOwnership | bladeLockType.lockvmDeployState | bladeLockType.lockSnapshot,
-                    bladeLockType.lockOwnership | bladeLockType.lockvmDeployState))
-                {
-                    childVMFromDB.spec.state = bladeStatus.inUse;
-                    childVMFromDB.spec.currentOwner = childVMFromDB.spec.nextOwner;
-                    childVMFromDB.spec.nextOwner = null;
-                    childVMFromDB.spec.lastKeepAlive = DateTime.Now;
+                    // All done. We can mark the blade as in use. Again, we are careful to hold write locks for as short a time as is
+                    // possible, to avoid blocking the PXE-script generation.
+                    using ( var tmp = new tempLockElevation(childVMFromDB,
+                        bladeLockType.lockvmDeployState | bladeLockType.lockSnapshot,
+                        bladeLockType.lockOwnership | bladeLockType.lockvmDeployState))
+                    {
+                        childVMFromDB.spec.state = bladeStatus.inUse;
+                        childVMFromDB.spec.currentOwner = childVMFromDB.spec.nextOwner;
+                        childVMFromDB.spec.nextOwner = null;
+                        childVMFromDB.spec.lastKeepAlive = DateTime.Now;
+                    }
                 }
                 return new result(resultCode.success);
             }
@@ -1181,7 +1176,7 @@ bladeLockType.lockvmDeployState,  // <-- TODO/FIXME: write perms shuold imply re
                     childVMFromDB.spec.nextOwner = null;
                     childVMFromDB.spec.lastKeepAlive = DateTime.Now;
                 }
-                return new result(resultCode.genericFail);
+                return new result(resultCode.genericFail, e);
             }
         }
 
@@ -1354,9 +1349,10 @@ bladeLockType.lockvmDeployState,  // <-- TODO/FIXME: write perms shuold imply re
             return doAsync(_currentlyRunningSnapshotSets, bladeName, handleTypes.SHT,
                 (e) =>
                 {
+                    // We need to be really careful about holding a write on lockSnapshot, since it'll block iPXE script generation.
                     using (var blade = db.getBladeByIP(bladeName,
-                        bladeLockType.lockSnapshot | bladeLockType.lockNASOperations | bladeLockType.lockOwnership,
-                        bladeLockType.lockSnapshot | bladeLockType.lockNASOperations))
+                        bladeLockType.lockSnapshot | bladeLockType.lockNASOperations | bladeLockType.lockOwnership | bladeLockType.lockVirtualHW,
+                        bladeLockType.lockNASOperations))
                     {
                         try
                         {
@@ -1365,10 +1361,17 @@ bladeLockType.lockvmDeployState,  // <-- TODO/FIXME: write perms shuold imply re
                                 _currentlyRunningSnapshotSets[e.waitToken].status = new result(resultCode.bladeInUse, "Blade is not yours");
                                 return;
                             }
+                            using (var tmp = new tempLockElevation(blade, bladeLockType.lockNone, bladeLockType.lockSnapshot))
+                            {
+                                blade.spec.currentSnapshot = newShot;
+                            }
+                            NASAccess nas = getNasForDevice(blade.spec);
 
-                            blade.spec.currentSnapshot = newShot;
-                            itemToAdd itm = blade.spec.toItemToAdd(false);
-                            createDisks.Program.repairBladeDeviceNodes(new[] {itm});
+                            // TODO: re-use exising image if possible
+                            //repairBladeDeviceNodes(nas, blade.spec);
+                            deleteBlade(blade.spec.getCloneName(), nas);
+                            // TODO: cancellability
+                            configureBladeDisks(nas, blade, "bladeBaseStableSnapshot", null, null, null, requestorIP, new cancellableDateTime());
 
                             _currentlyRunningSnapshotSets[e.waitToken].status = new result(resultCode.success);
                         }
@@ -1600,9 +1603,9 @@ bladeLockType.lockvmDeployState,  // <-- TODO/FIXME: write perms shuold imply re
             return db.getVMByIP_withoutLocking(vmip);
         }
 
-        public resultCode addNode(string newIP, string newISCSIIP, string newILOIP, ushort newDebugPort)
+        public resultCode addNode(string newIP, string newISCSIIP, string newILOIP, ushort newDebugPort, string newDebugKey, string newFriendlyName)
         {
-            bladeSpec newSpec = new bladeSpec(db.conn, newIP, newISCSIIP, newILOIP, newDebugPort, false, VMDeployStatus.notBeingDeployed, null, bladeLockType.lockAll, bladeLockType.lockAll);
+            bladeSpec newSpec = new bladeSpec(db.conn, newIP, newISCSIIP, newILOIP, newDebugPort, false, VMDeployStatus.notBeingDeployed, null, newDebugKey, newFriendlyName, bladeLockType.lockAll, bladeLockType.lockAll);
             db.addNode(newSpec);
             return resultCode.success;
         }
@@ -1673,6 +1676,349 @@ bladeLockType.lockvmDeployState,  // <-- TODO/FIXME: write perms shuold imply re
 
             return toRet.ToArray();
         }
+
+        public NASParams getNASParams(string srcIP)
+        {
+            return getNASParams();
+        }
+
+        private static bool logToConsole = false;
+
+        private static void log(string msg)
+        {
+            if (logToConsole)
+                Console.WriteLine(msg);
+        }
+
+        public static void deleteBlade(string cloneName, NASAccess nas)
+        {
+            List<snapshot> snapshots = nas.getSnapshots();
+            List<iscsiTarget> iscsiTargets = nas.getISCSITargets();
+            List<iscsiExtent> iscsiExtents = nas.getExtents();
+            List<volume> volumes = nas.getVolumes();
+
+            deleteBlade(cloneName, nas, snapshots, iscsiTargets, iscsiExtents, volumes);
+        }
+
+        public static void deleteBlade(string cloneName, NASAccess nas, List<snapshot> snapshots, List<iscsiTarget> iscsiTargets, List<iscsiExtent> iscsiExtents, List<volume> volumes)
+        {
+            // Delete target-to-extent, target, and extent
+            iscsiTarget tgt = iscsiTargets.SingleOrDefault(x => x.targetName == cloneName);
+            if (tgt != null)
+            {
+                log("Deleting iSCSI target " + tgt.targetName + " ... ");
+                nas.deleteISCSITarget(tgt);
+                log("Deleting iSCSI target " + tgt.targetName + " complete.");
+            }
+
+            iscsiExtent ext = iscsiExtents.SingleOrDefault(x => x.iscsi_target_extent_name == cloneName);
+            if (ext != null)
+            {
+                log("Deleting iSCSI extent " + ext.iscsi_target_extent_path + " ... ");
+                nas.deleteISCSIExtent(ext);
+                log("Deleting iSCSI extent " + ext.iscsi_target_extent_path + " complete.");
+            }
+
+            // Now delete the snapshot.
+            snapshot toDelete = snapshots.SingleOrDefault(x => x.filesystem.ToLower().EndsWith("/" + cloneName));
+            if (toDelete != null)
+            {
+                log("Deleting ZFS snapshot " + toDelete.fullname + " ... ");
+                nas.deleteSnapshot(toDelete);
+                log("Deleting ZFS snapshot " + toDelete.fullname + " complete.");
+            }
+
+            // And the volume. Use a retry here since freenas will return before the iscsi deletion is complete.
+            // Just use a small retry, since we will give up and use another file if there's a 'real' problem.
+            volume vol = nas.findVolumeByName(volumes, cloneName);
+            if (vol != null)
+            {
+                DateTime deadline = DateTime.Now + TimeSpan.FromMinutes(1);
+                while (true)
+                {
+                    try
+                    {
+                        log("Deleting ZVOL " + vol.name + " ... ");
+                        nas.deleteZVol(vol);
+                        log("Deleting ZVOL " + vol.name + " complete. ");
+                        break;
+                    }
+                    catch (Exception e)
+                    {
+                        if (DateTime.Now > deadline)
+                            throw;
+                        log("Deleting ZVOL " + vol.name + " failed, will retry in 15s. Exception was " + e.Message);
+                        Thread.Sleep(TimeSpan.FromSeconds(15));
+                    }
+                }
+            }
+        }
+
+        public static void repairBladeDeviceNodes(NASAccess nas, bladeOwnership toAdd, DateTime deadline = default(DateTime))
+        {
+            if (deadline == default(DateTime))
+                deadline = DateTime.MaxValue;
+
+            if (DateTime.Now > deadline) throw new TimeoutException();
+
+            exportClonesViaiSCSI(nas, toAdd);
+
+            if (DateTime.Now > deadline) throw new TimeoutException();
+        }
+
+        public void configureVMDisks(NASAccess nas, 
+            lockableBladeSpec parent, lockableVMSpec newVM, 
+            string baseSnapshot,
+            string additionalScript, string[] additionalDeploymentItem,
+            userAddRequest[] usersToAdd, string newOwner,
+            cancellableDateTime deadline = null)
+        {
+            if (deadline == null)
+                deadline = new cancellableDateTime();
+
+            deadline.throwIfTimedOutOrCancelled();
+
+            log("Creating disk clones..");
+
+            // Get the snapshot we'll be cloning
+            List<snapshot> snapshots = nas.getSnapshots();
+            snapshot toClone = snapshots.SingleOrDefault(x => x.name.Equals(baseSnapshot, StringComparison.CurrentCultureIgnoreCase));
+            if (toClone == null)
+                throw new Exception("Snapshot not found");
+            string toCloneVolume = toClone.fullname.Split('/')[0];
+
+            // and clone it
+            createClones(nas, toClone, toCloneVolume, newVM.spec);
+
+            deadline.throwIfTimedOutOrCancelled();
+
+            exportClonesViaiSCSI(nas, newVM.spec);
+
+            deadline.throwIfTimedOutOrCancelled();
+
+            using (hypervisor hyp = makeHypervisorForVM(newVM, parent))
+            {
+                prepareCloneImage(newVM.spec, toCloneVolume, additionalScript,
+                    additionalDeploymentItem, hyp, nas, usersToAdd, newOwner, deadline);
+            }
+           
+
+            log("Configured OK.");
+        }
+
+        public void configureBladeDisks(NASAccess nas, 
+            lockableBladeSpec newBlade, 
+            string baseSnapshot,
+            string additionalScript, string[] additionalDeploymentItem,
+            userAddRequest[] usersToAdd, string newOwner,
+            cancellableDateTime deadline = null)
+        {
+            if (deadline == null)
+                deadline = new cancellableDateTime();
+
+            deadline.throwIfTimedOutOrCancelled();
+
+            log("Creating disk clones..");
+
+            // Get the snapshot we'll be cloning
+            List<snapshot> snapshots = nas.getSnapshots();
+            snapshot toClone = snapshots.SingleOrDefault(x => x.name.Equals(baseSnapshot, StringComparison.CurrentCultureIgnoreCase));
+            if (toClone == null)
+                throw new Exception("Snapshot not found");
+            string toCloneVolume = toClone.fullname.Split('/')[0];
+
+            // and clone it
+            createClones(nas, toClone, toCloneVolume, newBlade.spec);
+
+            deadline.throwIfTimedOutOrCancelled();
+
+            exportClonesViaiSCSI(nas, newBlade.spec);
+
+            deadline.throwIfTimedOutOrCancelled();
+
+            log(".. OK");
+
+            // Next, we must prepare the clone. 
+            log("Configuring new system.. ");
+
+            using (hypervisor hyp = makeHypervisorForBlade_windows(newBlade))
+            {
+                prepareCloneImage(newBlade.spec, toCloneVolume, additionalScript,
+                    additionalDeploymentItem, hyp, nas, usersToAdd, newOwner, deadline);
+            }
+
+
+            log("Configured OK.");
+        }
+
+        public void prepareCloneImage(
+            bladeOwnership itemToAdd, string toCloneVolume, 
+            string additionalScript, string[] additionalDeploymentItem, 
+            hypervisor hyp, NASAccess nas, userAddRequest[] usersToAdd, string newOwner,
+            cancellableDateTime deadline)
+        {
+            // TODO: handle that cancellableDateTime better
+
+            hyp.connect();
+            hyp.powerOff(deadline);
+            hyp.powerOn(deadline);
+
+            // Now deploy and execute our deployment script.
+            string args;
+            if (itemToAdd.kernelDebugAddress == null || itemToAdd.kernelDebugPort == 0 || itemToAdd.kernelDebugKey == null)
+                args = String.Format("{0}", itemToAdd.friendlyName);
+            else
+                args = String.Format("{0} {1} {2} {3}", itemToAdd.friendlyName, itemToAdd.currentOwner, itemToAdd.kernelDebugPort, itemToAdd.kernelDebugKey);
+
+            // TODO: timeout
+            copyAndRunScript(args, hyp);
+
+            // Copy any extra folders the user has requested that we deploy also, if there's an additional script we should
+            // execute, then do that now
+            if (additionalDeploymentItem != null)
+            {
+                hypervisor.doWithRetryOnSomeExceptions(() => hyp.mkdir("C:\\deployment"));
+                foreach (string toCopy in additionalDeploymentItem)
+                    copyRecursive(hyp, toCopy, "C:\\deployment");
+
+                if (additionalScript != null)
+                    hypervisor.doWithRetryOnSomeExceptions(() => hyp.startExecutable("cmd.exe", string.Format("/c {0}", additionalScript), "C:\\deployment"));
+            }
+            else
+            {
+                if (additionalScript != null)
+                    hypervisor.doWithRetryOnSomeExceptions(() => hyp.startExecutable("cmd.exe", string.Format("/c {0}", additionalScript), "C:\\"));
+            }
+
+            // Finally, add any users as requested.
+            if (usersToAdd != null)
+            {
+                foreach (userAddRequest newUser in usersToAdd)
+                {
+                    hypervisor.doWithRetryOnSomeExceptions(() => hyp.mkdir("C:\\users\\" + newUser.username));
+                    executionResult adduserres = hyp.startExecutable("cmd.exe", string.Format("/c net user {0} {1} /ADD", newUser.username, newUser.password));
+                    if (newUser.isAdministrator)
+                    {
+                        executionResult addgroupres = hyp.startExecutable("cmd.exe", string.Format("/c net localgroup Administrators {0} /ADD", newUser.username));
+                    }
+                }
+            }
+
+            // That's all we need, so shut down the system.
+            hypervisor.doWithRetryOnSomeExceptions(() => hyp.startExecutableAsyncWithRetry("C:\\windows\\system32\\cmd", "/c shutdown -s -f -t 01"));
+
+            // Once it has shut down totally, we can take the snapshot of it.
+            hyp.WaitForStatus(false, deadline);
+
+            nas.createSnapshot(toCloneVolume + "/" + itemToAdd.getCloneName(), itemToAdd.currentSnapshot);
+        }
+
+        private static void copyRecursive(hypervisor hyp, string srcFileOrDir, string destPath)
+        {
+            FileAttributes attr = File.GetAttributes(srcFileOrDir);
+            if (attr.HasFlag(FileAttributes.Directory))
+            {
+                foreach (string srcDir in Directory.GetDirectories(srcFileOrDir))
+                {
+                    string fullPath = Path.Combine(destPath, Path.GetFileName(srcDir));
+                    hypervisor_iLo.doWithRetryOnSomeExceptions(() => { hyp.mkdir(fullPath); });
+                    foreach (string file in Directory.GetFiles(srcFileOrDir))
+                    {
+                        hypervisor_iLo.doWithRetryOnSomeExceptions(() =>
+                        {
+                            copyRecursive(hyp, file, fullPath);
+                        });
+                    }
+                }
+
+                foreach (string srcFile in Directory.GetFiles(srcFileOrDir))
+                {
+                    try
+                    {
+                        hypervisor_iLo.doWithRetryOnSomeExceptions(() =>
+                        {
+                            hyp.copyToGuest(Path.Combine(destPath, Path.GetFileName(srcFile)), srcFile);
+                        });
+                    }
+                    catch (IOException)
+                    {
+                        // The file probably already exists.
+                    }
+                }
+            }
+            else
+            {
+                try
+                {
+                    hypervisor_iLo.doWithRetryOnSomeExceptions(() =>
+                    {
+                        hyp.copyToGuest(Path.Combine(destPath, Path.GetFileName(srcFileOrDir)), srcFileOrDir);
+                    });
+                }
+                catch (IOException)
+                {
+                    // The file probably already exists.
+                }
+            }
+        }
+
+        private static void copyAndRunScript(string scriptArgs, hypervisor hyp)
+        {
+            using (temporaryFile deployFile = new temporaryFile())
+            {
+                File.WriteAllText(deployFile.filename, Properties.Resources.deploy);
+                hypervisor.doWithRetryOnSomeExceptions(() =>
+                {
+                    hyp.copyToGuest("C:\\deployed.bat", deployFile.filename);
+                });
+                string args = String.Format("/c c:\\deployed.bat {0}", scriptArgs);
+                hyp.mkdir("c:\\deployment");
+                executionResult res = hyp.startExecutable("cmd.exe", args, "c:\\deployment", deadline: new cancellableDateTime(TimeSpan.FromMinutes(3)));
+                if (res.resultCode != 0)
+                {
+                    throw new Exception("deployment batch file returned nonzero: stderr '" + res.stderr + "' stdout '" + res.stdout + "'");
+                }
+            }
+        }
+
+        private static void createClones(NASAccess nas, snapshot toClone, string toCloneVolume, bladeOwnership newThing)
+        {
+            string fullCloneName = String.Format("{0}/{1}", toCloneVolume, newThing.getCloneName());
+            nas.cloneSnapshot(toClone, fullCloneName);
+        }
+
+        private static void exportClonesViaiSCSI(NASAccess nas, bladeOwnership itemToAdd)
+        {
+            // Now expose each via iSCSI.
+            targetGroup tgtGrp = nas.getTargetGroups()[0];
+
+            iscsiTarget toAdd = new iscsiTarget();
+            toAdd.targetAlias = itemToAdd.getCloneName();
+            toAdd.targetName = itemToAdd.getCloneName();
+            iscsiTarget newTarget = nas.getISCSITargets().SingleOrDefault(x => x.targetName == itemToAdd.getCloneName());
+            if (newTarget == null)
+                newTarget = nas.addISCSITarget(toAdd);
+
+            iscsiExtent newExtent = nas.getExtents().SingleOrDefault(x => x.iscsi_target_extent_name == toAdd.targetName);
+
+            if (newExtent == null)
+            {
+                newExtent = nas.addISCSIExtent(new iscsiExtent()
+                {
+                    iscsi_target_extent_name = toAdd.targetName,
+                    iscsi_target_extent_type = "Disk",
+                    iscsi_target_extent_disk = String.Format("zvol/SSDs/{0}", toAdd.targetName)
+                });
+            }
+
+            targetGroup newTgtGroup = nas.getTargetGroups().SingleOrDefault(x => x.iscsi_target == newTarget.id);
+            if (newTgtGroup == null)
+                nas.addTargetGroup(tgtGrp, newTarget);
+
+            iscsiTargetToExtentMapping newTToE = nas.getTargetToExtents().SingleOrDefault(x => x.iscsi_target == newTarget.id);
+            if (newTToE == null)
+                nas.addISCSITargetToExtent(newTarget.id, newExtent);
+        }
     }
 
     public class tempLockElevation : IDisposable
@@ -1716,6 +2062,34 @@ bladeLockType.lockvmDeployState,  // <-- TODO/FIXME: write perms shuold imply re
         public void Dispose()
         {
             _blade.upgradeLocks(_permsDropped);
+        }
+    }
+
+    [DataContract]
+    public class userDesc
+    {
+        [DataMember]
+        public string username;
+
+        [DataMember]
+        public string password;
+
+        public userDesc(string newUsername, string newPassword)
+        {
+            username = newUsername;
+            password = newPassword;
+        }
+    }
+
+    [DataContract]
+    public class userAddRequest : userDesc
+    {
+        [DataMember]
+        public bool isAdministrator;
+
+        public userAddRequest(string newUsername, string newPassword) : base(newUsername, newPassword)
+        {
+            isAdministrator = false;
         }
     }
 }

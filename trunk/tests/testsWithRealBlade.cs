@@ -1,9 +1,13 @@
 ﻿using System;
+using System.Diagnostics;
 using System.Net;
+using System.Text.RegularExpressions;
 using System.Threading;
 using bladeDirectorClient;
 using bladeDirectorClient.bladeDirectorService;
+using hypervisors;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using NASParams = bladeDirectorClient.bladeDirectorService.NASParams;
 
 namespace tests
 {
@@ -20,7 +24,7 @@ namespace tests
                 string hostip = "1.2.3.4";
 
                 // We will be using this blade for our tests.
-                bladeSpec spec = svc.svcDebug.createBladeSpec("172.17.129.131", "192.168.129.131", "172.17.2.131", 1234, false, VMDeployStatus.notBeingDeployed, " ... ", bladeLockType.lockAll, bladeLockType.lockAll);
+                bladeSpec spec = svc.svcDebug.createBladeSpec("172.17.129.131", "192.168.129.131", "172.17.2.131", 1234, false, VMDeployStatus.notBeingDeployed, " ... ", "idk", "box", bladeLockType.lockAll, bladeLockType.lockAll);
                 svc.svcDebug.initWithBladesFromBladeSpec(new[] { spec }, false, NASFaultInjectionPolicy.retunSuccessful);
 
                 resultAndBladeName res = svc.svcDebug._RequestAnySingleNode(hostip);
@@ -65,7 +69,7 @@ namespace tests
             using (bladeDirectorDebugServices svc = new bladeDirectorDebugServices(basicBladeTests.WCFPath, basicBladeTests.WebURI))
             {
                 string hostIP = "1.1.1.1";
-                bladeSpec spec = svc.svcDebug.createBladeSpec("172.17.129.131", "192.168.129.131", "172.17.2.131", 1234, false, VMDeployStatus.notBeingDeployed, " ... ", bladeLockType.lockAll, bladeLockType.lockAll);
+                bladeSpec spec = svc.svcDebug.createBladeSpec("172.17.129.131", "192.168.129.131", "172.17.2.131", 1234, false, VMDeployStatus.notBeingDeployed, " ... ", "idk", "box", bladeLockType.lockAll, bladeLockType.lockAll);
                 svc.svcDebug.initWithBladesFromBladeSpec(new[] { spec }, false, NASFaultInjectionPolicy.retunSuccessful);
 
                 resultAndBladeName res = svc.svcDebug._RequestAnySingleNode(hostIP);
@@ -93,7 +97,6 @@ namespace tests
             }
         }
 
-
         [TestMethod]
         public void willProvisionVM()
         {
@@ -103,7 +106,8 @@ namespace tests
                 string debuggerHost = testUtils.getBestRouteTo(IPAddress.Parse("172.17.129.131")).ToString();
 
                 // We will be using this blade for our tests.
-                bladeSpec spec = svc.svcDebug.createBladeSpec("172.17.129.131", "192.168.129.131", "172.17.2.131", 1234, false, VMDeployStatus.notBeingDeployed, " ... ", bladeLockType.lockAll, bladeLockType.lockAll);
+                bladeSpec spec = svc.svcDebug.createBladeSpecForXDLNode(31, "xdl.hacks.the.planet", bladeLockType.lockAll, bladeLockType.lockAll);
+                //bladeSpec spec = svc.svcDebug.createBladeSpec("172.17.129.131", "192.168.129.131", "172.17.2.131", 1234, false, VMDeployStatus.notBeingDeployed, " ... ", "idk", "box", bladeLockType.lockAll, bladeLockType.lockAll);
                 svc.svcDebug.initWithBladesFromBladeSpec(new[] { spec }, false, NASFaultInjectionPolicy.retunSuccessful);
 
                 VMSoftwareSpec sw = new VMSoftwareSpec() { debuggerHost = debuggerHost, debuggerKey = "a.b.c.d", debuggerPort = 10234 };
@@ -113,8 +117,77 @@ namespace tests
 
                 string VMName = res.bladeName;
 
+                // Okay, we have our new VM allocated now. 
+                vmSpec createdBlade = svc.svc.getVMByIP_withoutLocking(VMName);
+                bladeSpec parentBlade = svc.svc.getBladeByIP_withoutLocking(createdBlade.parentBladeIP);
+                snapshotDetails snap = svc.svc.getCurrentSnapshotDetails(VMName);
+                NASParams nas = svc.svc.getNASParams();
+                using (hypervisor_vmware_FreeNAS foo = utils.createHypForVM(createdBlade, parentBlade, snap, nas))
+                {
+                    // Check that debugging has been provisioned correctly
+                    executionResult bcdEditRes = foo.startExecutable("bcdedit", "/dbgsettings");
+                    Assert.AreEqual(0, bcdEditRes.resultCode);
+                    Debug.WriteLine("stdout " + bcdEditRes.stdout);
+                    Debug.WriteLine("stderr " + bcdEditRes.stderr);
+                    Assert.IsTrue(Regex.IsMatch(bcdEditRes.stdout, "key\\s*a.b.c.d"));
+                    Assert.IsTrue(Regex.IsMatch(bcdEditRes.stdout, "debugtype\\s*NET"));
+                    Assert.IsTrue(Regex.IsMatch(bcdEditRes.stdout, "hostip\\s*1.2.3.4"));
+                    Assert.IsTrue(Regex.IsMatch(bcdEditRes.stdout, "port\\s*10234"));
+
+                    // TODO: verify allocated CPU count and memory size
+
+                    executionResult getNameRes = foo.startExecutable("echo %COMPUTERNAME%", "");
+                    Assert.AreEqual(0, getNameRes.resultCode);
+                    Debug.WriteLine("stdout " + getNameRes.stdout);
+                    Debug.WriteLine("stderr " + getNameRes.stderr);
+                    Assert.AreSame(getNameRes.stdout.ToLower(), "box".Trim().ToLower());
+                }
+            }
+        }
+
+        [TestMethod]
+        public void willProvisionBlade()
+        {
+            using (bladeDirectorDebugServices svc = new bladeDirectorDebugServices(basicBladeTests.WCFPath, basicBladeTests.WebURI))
+            {
+                string hostip = "1.2.3.4";
+                //string debuggerHost = testUtils.getBestRouteTo(IPAddress.Parse("172.17.129.131")).ToString();
+
+                // We will be using this blade for our tests.
+                bladeSpec spec = svc.svcDebug.createBladeSpecForXDLNode(31, "xdl.hacks.the.planet", bladeLockType.lockAll, bladeLockType.lockAll);
+                svc.svcDebug.initWithBladesFromBladeSpec(new[] { spec }, false, NASFaultInjectionPolicy.retunSuccessful);
+
+                resultAndBladeName res = svc.svcDebug._RequestAnySingleNode(hostip);
+                testUtils.waitForSuccess(svc, res, TimeSpan.FromMinutes(15));
+
+                string bladeName = res.bladeName;
+                resultAndWaitToken res2 = svc.svcDebug._selectSnapshotForBladeOrVM(hostip, bladeName, "discord");
+                testUtils.waitForSuccess(svc, res2, TimeSpan.FromMinutes(30));
+
                 // Okay, we have our blade allocated now. 
-                // TODO: check it, power it on, etc.
+                bladeSpec createdBlade = svc.svc.getBladeByIP_withoutLocking(bladeName);
+                snapshotDetails snap = svc.svc.getCurrentSnapshotDetails(bladeName);
+                NASParams nas = svc.svc.getNASParams();
+                using (hypervisor foo = utils.createHypForBlade(createdBlade, snap, nas))
+                {
+                    foo.powerOn(new cancellableDateTime(TimeSpan.FromMinutes(5)));
+
+                    // Check that debugging has been provisioned correctly
+                    executionResult bcdEditRes = foo.startExecutable("bcdedit", "/dbgsettings");
+                    Assert.AreEqual(0, bcdEditRes.resultCode);
+                    //Debug.WriteLine("stdout " + bcdEditRes.stdout);
+                    //Debug.WriteLine("stderr " + bcdEditRes.stderr);
+                    Assert.IsTrue(Regex.IsMatch(bcdEditRes.stdout, "key\\s*xdl.hacks.the.planet"));
+                    Assert.IsTrue(Regex.IsMatch(bcdEditRes.stdout, "debugtype\\s*NET"));
+                    Assert.IsTrue(Regex.IsMatch(bcdEditRes.stdout, "hostip\\s*1.2.3.4"));
+                    Assert.IsTrue(Regex.IsMatch(bcdEditRes.stdout, "port\\s*59812"));
+
+                    executionResult getNameRes = foo.startExecutable("echo %COMPUTERNAME%", "");
+                    Assert.AreEqual(0, getNameRes.resultCode);
+                    //Debug.WriteLine("stdout " + getNameRes.stdout);
+                    //Debug.WriteLine("stderr " + getNameRes.stderr);
+                    Assert.AreSame(getNameRes.stdout.ToLower(), "newBlade".Trim().ToLower());
+                }
             }
         }
 

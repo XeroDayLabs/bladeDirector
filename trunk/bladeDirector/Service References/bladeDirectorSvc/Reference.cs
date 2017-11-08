@@ -310,6 +310,83 @@ namespace bladeDirector.bladeDirectorSvc {
         allowAny = 1,
     }
     
+    [System.Diagnostics.DebuggerStepThroughAttribute()]
+    [System.CodeDom.Compiler.GeneratedCodeAttribute("System.Runtime.Serialization", "4.0.0.0")]
+    [System.Runtime.Serialization.DataContractAttribute(Name="NASParams", Namespace="http://schemas.datacontract.org/2004/07/hypervisors")]
+    [System.SerializableAttribute()]
+    public partial class NASParams : object, System.Runtime.Serialization.IExtensibleDataObject, System.ComponentModel.INotifyPropertyChanged {
+        
+        [System.NonSerializedAttribute()]
+        private System.Runtime.Serialization.ExtensionDataObject extensionDataField;
+        
+        [System.Runtime.Serialization.OptionalFieldAttribute()]
+        private string IPField;
+        
+        [System.Runtime.Serialization.OptionalFieldAttribute()]
+        private string passwordField;
+        
+        [System.Runtime.Serialization.OptionalFieldAttribute()]
+        private string usernameField;
+        
+        [global::System.ComponentModel.BrowsableAttribute(false)]
+        public System.Runtime.Serialization.ExtensionDataObject ExtensionData {
+            get {
+                return this.extensionDataField;
+            }
+            set {
+                this.extensionDataField = value;
+            }
+        }
+        
+        [System.Runtime.Serialization.DataMemberAttribute()]
+        public string IP {
+            get {
+                return this.IPField;
+            }
+            set {
+                if ((object.ReferenceEquals(this.IPField, value) != true)) {
+                    this.IPField = value;
+                    this.RaisePropertyChanged("IP");
+                }
+            }
+        }
+        
+        [System.Runtime.Serialization.DataMemberAttribute()]
+        public string password {
+            get {
+                return this.passwordField;
+            }
+            set {
+                if ((object.ReferenceEquals(this.passwordField, value) != true)) {
+                    this.passwordField = value;
+                    this.RaisePropertyChanged("password");
+                }
+            }
+        }
+        
+        [System.Runtime.Serialization.DataMemberAttribute()]
+        public string username {
+            get {
+                return this.usernameField;
+            }
+            set {
+                if ((object.ReferenceEquals(this.usernameField, value) != true)) {
+                    this.usernameField = value;
+                    this.RaisePropertyChanged("username");
+                }
+            }
+        }
+        
+        public event System.ComponentModel.PropertyChangedEventHandler PropertyChanged;
+        
+        protected void RaisePropertyChanged(string propertyName) {
+            System.ComponentModel.PropertyChangedEventHandler propertyChanged = this.PropertyChanged;
+            if ((propertyChanged != null)) {
+                propertyChanged(this, new System.ComponentModel.PropertyChangedEventArgs(propertyName));
+            }
+        }
+    }
+    
     [System.CodeDom.Compiler.GeneratedCodeAttribute("System.Runtime.Serialization", "4.0.0.0")]
     [System.Runtime.Serialization.DataContractAttribute(Name="GetBladeStatusResult", Namespace="http://schemas.datacontract.org/2004/07/bladeDirectorWCF")]
     public enum GetBladeStatusResult : int {
@@ -486,7 +563,7 @@ namespace bladeDirector.bladeDirectorSvc {
     
     [System.Diagnostics.DebuggerStepThroughAttribute()]
     [System.CodeDom.Compiler.GeneratedCodeAttribute("System.Runtime.Serialization", "4.0.0.0")]
-    [System.Runtime.Serialization.DataContractAttribute(Name="userAddRequest", Namespace="http://schemas.datacontract.org/2004/07/createDisks")]
+    [System.Runtime.Serialization.DataContractAttribute(Name="userAddRequest", Namespace="http://schemas.datacontract.org/2004/07/bladeDirectorWCF")]
     [System.SerializableAttribute()]
     public partial class userAddRequest : object, System.Runtime.Serialization.IExtensibleDataObject, System.ComponentModel.INotifyPropertyChanged {
         
@@ -582,6 +659,15 @@ namespace bladeDirector.bladeDirectorSvc {
         private string currentSnapshotField;
         
         [System.Runtime.Serialization.OptionalFieldAttribute()]
+        private string friendlyNameField;
+        
+        [System.Runtime.Serialization.OptionalFieldAttribute()]
+        private string kernelDebugKeyField;
+        
+        [System.Runtime.Serialization.OptionalFieldAttribute()]
+        private ushort kernelDebugPortField;
+        
+        [System.Runtime.Serialization.OptionalFieldAttribute()]
         private System.DateTime lastKeepAliveField;
         
         [System.Runtime.Serialization.OptionalFieldAttribute()]
@@ -644,6 +730,45 @@ namespace bladeDirector.bladeDirectorSvc {
                 if ((object.ReferenceEquals(this.currentSnapshotField, value) != true)) {
                     this.currentSnapshotField = value;
                     this.RaisePropertyChanged("currentSnapshot");
+                }
+            }
+        }
+        
+        [System.Runtime.Serialization.DataMemberAttribute()]
+        public string friendlyName {
+            get {
+                return this.friendlyNameField;
+            }
+            set {
+                if ((object.ReferenceEquals(this.friendlyNameField, value) != true)) {
+                    this.friendlyNameField = value;
+                    this.RaisePropertyChanged("friendlyName");
+                }
+            }
+        }
+        
+        [System.Runtime.Serialization.DataMemberAttribute()]
+        public string kernelDebugKey {
+            get {
+                return this.kernelDebugKeyField;
+            }
+            set {
+                if ((object.ReferenceEquals(this.kernelDebugKeyField, value) != true)) {
+                    this.kernelDebugKeyField = value;
+                    this.RaisePropertyChanged("kernelDebugKey");
+                }
+            }
+        }
+        
+        [System.Runtime.Serialization.DataMemberAttribute()]
+        public ushort kernelDebugPort {
+            get {
+                return this.kernelDebugPortField;
+            }
+            set {
+                if ((this.kernelDebugPortField.Equals(value) != true)) {
+                    this.kernelDebugPortField = value;
+                    this.RaisePropertyChanged("kernelDebugPort");
                 }
             }
         }
@@ -1115,9 +1240,6 @@ namespace bladeDirector.bladeDirectorSvc {
         private int cpuCountField;
         
         [System.Runtime.Serialization.OptionalFieldAttribute()]
-        private string displayNameField;
-        
-        [System.Runtime.Serialization.OptionalFieldAttribute()]
         private string eth0MACField;
         
         [System.Runtime.Serialization.OptionalFieldAttribute()]
@@ -1131,12 +1253,6 @@ namespace bladeDirector.bladeDirectorSvc {
         
         [System.Runtime.Serialization.OptionalFieldAttribute()]
         private string iscsiIPField;
-        
-        [System.Runtime.Serialization.OptionalFieldAttribute()]
-        private string kernelDebugKeyField;
-        
-        [System.Runtime.Serialization.OptionalFieldAttribute()]
-        private ushort kernelDebugPortField;
         
         [System.Runtime.Serialization.OptionalFieldAttribute()]
         private int memoryMBField;
@@ -1178,19 +1294,6 @@ namespace bladeDirector.bladeDirectorSvc {
                 if ((this.cpuCountField.Equals(value) != true)) {
                     this.cpuCountField = value;
                     this.RaisePropertyChanged("cpuCount");
-                }
-            }
-        }
-        
-        [System.Runtime.Serialization.DataMemberAttribute()]
-        public string displayName {
-            get {
-                return this.displayNameField;
-            }
-            set {
-                if ((object.ReferenceEquals(this.displayNameField, value) != true)) {
-                    this.displayNameField = value;
-                    this.RaisePropertyChanged("displayName");
                 }
             }
         }
@@ -1256,32 +1359,6 @@ namespace bladeDirector.bladeDirectorSvc {
                 if ((object.ReferenceEquals(this.iscsiIPField, value) != true)) {
                     this.iscsiIPField = value;
                     this.RaisePropertyChanged("iscsiIP");
-                }
-            }
-        }
-        
-        [System.Runtime.Serialization.DataMemberAttribute()]
-        public string kernelDebugKey {
-            get {
-                return this.kernelDebugKeyField;
-            }
-            set {
-                if ((object.ReferenceEquals(this.kernelDebugKeyField, value) != true)) {
-                    this.kernelDebugKeyField = value;
-                    this.RaisePropertyChanged("kernelDebugKey");
-                }
-            }
-        }
-        
-        [System.Runtime.Serialization.DataMemberAttribute()]
-        public ushort kernelDebugPort {
-            get {
-                return this.kernelDebugPortField;
-            }
-            set {
-                if ((this.kernelDebugPortField.Equals(value) != true)) {
-                    this.kernelDebugPortField = value;
-                    this.RaisePropertyChanged("kernelDebugPort");
                 }
             }
         }
@@ -1434,7 +1511,7 @@ namespace bladeDirector.bladeDirectorSvc {
     [System.Runtime.Serialization.KnownTypeAttribute(typeof(bladeDirector.bladeDirectorSvc.Component))]
     [System.Runtime.Serialization.KnownTypeAttribute(typeof(bladeDirector.bladeDirectorSvc.DbConnection))]
     [System.Runtime.Serialization.KnownTypeAttribute(typeof(bladeDirector.bladeDirectorSvc.SQLiteConnection))]
-    [System.Runtime.Serialization.KnownTypeAttribute(typeof(string[]))]
+    [System.Runtime.Serialization.KnownTypeAttribute(typeof(bladeDirector.bladeDirectorSvc.NASParams))]
     [System.Runtime.Serialization.KnownTypeAttribute(typeof(bladeDirector.bladeDirectorSvc.resultAndBladeName))]
     [System.Runtime.Serialization.KnownTypeAttribute(typeof(bladeDirector.bladeDirectorSvc.resultAndWaitToken))]
     [System.Runtime.Serialization.KnownTypeAttribute(typeof(bladeDirector.bladeDirectorSvc.result))]
@@ -1446,6 +1523,8 @@ namespace bladeDirector.bladeDirectorSvc {
     [System.Runtime.Serialization.KnownTypeAttribute(typeof(bladeDirector.bladeDirectorSvc.GetBladeStatusResult))]
     [System.Runtime.Serialization.KnownTypeAttribute(typeof(bladeDirector.bladeDirectorSvc.VMHardwareSpec))]
     [System.Runtime.Serialization.KnownTypeAttribute(typeof(bladeDirector.bladeDirectorSvc.VMSoftwareSpec))]
+    [System.Runtime.Serialization.KnownTypeAttribute(typeof(bladeDirector.bladeDirectorSvc.userAddRequest[]))]
+    [System.Runtime.Serialization.KnownTypeAttribute(typeof(bladeDirector.bladeDirectorSvc.userAddRequest))]
     [System.Runtime.Serialization.KnownTypeAttribute(typeof(bladeDirector.bladeDirectorSvc.resultAndBladeName[]))]
     [System.Runtime.Serialization.KnownTypeAttribute(typeof(bladeDirector.bladeDirectorSvc.vmSpec))]
     [System.Runtime.Serialization.KnownTypeAttribute(typeof(bladeDirector.bladeDirectorSvc.bladeOwnership))]
@@ -1456,9 +1535,8 @@ namespace bladeDirector.bladeDirectorSvc {
     [System.Runtime.Serialization.KnownTypeAttribute(typeof(bladeDirector.bladeDirectorSvc.vmSpec[]))]
     [System.Runtime.Serialization.KnownTypeAttribute(typeof(bladeDirector.bladeDirectorSvc.vmServerCredentials))]
     [System.Runtime.Serialization.KnownTypeAttribute(typeof(bladeDirector.bladeDirectorSvc.snapshotDetails))]
-    [System.Runtime.Serialization.KnownTypeAttribute(typeof(bladeDirector.bladeDirectorSvc.userAddRequest[]))]
-    [System.Runtime.Serialization.KnownTypeAttribute(typeof(bladeDirector.bladeDirectorSvc.userAddRequest))]
     [System.Runtime.Serialization.KnownTypeAttribute(typeof(bladeDirector.bladeDirectorSvc.DbType))]
+    [System.Runtime.Serialization.KnownTypeAttribute(typeof(string[]))]
     [System.Runtime.Serialization.KnownTypeAttribute(typeof(bladeDirector.bladeDirectorSvc.SQLiteConnectionFlags))]
     public partial class MarshalByRefObject : object, System.Runtime.Serialization.IExtensibleDataObject, System.ComponentModel.INotifyPropertyChanged {
         
@@ -1506,7 +1584,7 @@ namespace bladeDirector.bladeDirectorSvc {
     [System.SerializableAttribute()]
     [System.Runtime.Serialization.KnownTypeAttribute(typeof(bladeDirector.bladeDirectorSvc.DbConnection))]
     [System.Runtime.Serialization.KnownTypeAttribute(typeof(bladeDirector.bladeDirectorSvc.SQLiteConnection))]
-    [System.Runtime.Serialization.KnownTypeAttribute(typeof(string[]))]
+    [System.Runtime.Serialization.KnownTypeAttribute(typeof(bladeDirector.bladeDirectorSvc.NASParams))]
     [System.Runtime.Serialization.KnownTypeAttribute(typeof(bladeDirector.bladeDirectorSvc.MarshalByRefObject))]
     [System.Runtime.Serialization.KnownTypeAttribute(typeof(bladeDirector.bladeDirectorSvc.resultAndBladeName))]
     [System.Runtime.Serialization.KnownTypeAttribute(typeof(bladeDirector.bladeDirectorSvc.resultAndWaitToken))]
@@ -1519,6 +1597,8 @@ namespace bladeDirector.bladeDirectorSvc {
     [System.Runtime.Serialization.KnownTypeAttribute(typeof(bladeDirector.bladeDirectorSvc.GetBladeStatusResult))]
     [System.Runtime.Serialization.KnownTypeAttribute(typeof(bladeDirector.bladeDirectorSvc.VMHardwareSpec))]
     [System.Runtime.Serialization.KnownTypeAttribute(typeof(bladeDirector.bladeDirectorSvc.VMSoftwareSpec))]
+    [System.Runtime.Serialization.KnownTypeAttribute(typeof(bladeDirector.bladeDirectorSvc.userAddRequest[]))]
+    [System.Runtime.Serialization.KnownTypeAttribute(typeof(bladeDirector.bladeDirectorSvc.userAddRequest))]
     [System.Runtime.Serialization.KnownTypeAttribute(typeof(bladeDirector.bladeDirectorSvc.resultAndBladeName[]))]
     [System.Runtime.Serialization.KnownTypeAttribute(typeof(bladeDirector.bladeDirectorSvc.vmSpec))]
     [System.Runtime.Serialization.KnownTypeAttribute(typeof(bladeDirector.bladeDirectorSvc.bladeOwnership))]
@@ -1529,9 +1609,8 @@ namespace bladeDirector.bladeDirectorSvc {
     [System.Runtime.Serialization.KnownTypeAttribute(typeof(bladeDirector.bladeDirectorSvc.vmSpec[]))]
     [System.Runtime.Serialization.KnownTypeAttribute(typeof(bladeDirector.bladeDirectorSvc.vmServerCredentials))]
     [System.Runtime.Serialization.KnownTypeAttribute(typeof(bladeDirector.bladeDirectorSvc.snapshotDetails))]
-    [System.Runtime.Serialization.KnownTypeAttribute(typeof(bladeDirector.bladeDirectorSvc.userAddRequest[]))]
-    [System.Runtime.Serialization.KnownTypeAttribute(typeof(bladeDirector.bladeDirectorSvc.userAddRequest))]
     [System.Runtime.Serialization.KnownTypeAttribute(typeof(bladeDirector.bladeDirectorSvc.DbType))]
+    [System.Runtime.Serialization.KnownTypeAttribute(typeof(string[]))]
     [System.Runtime.Serialization.KnownTypeAttribute(typeof(bladeDirector.bladeDirectorSvc.SQLiteConnectionFlags))]
     public partial class Component : bladeDirector.bladeDirectorSvc.MarshalByRefObject {
         
@@ -1994,6 +2073,12 @@ namespace bladeDirector.bladeDirectorSvc {
         [System.ServiceModel.OperationContractAttribute(Action="http://tempuri.org/IServices/getWebSvcURL", ReplyAction="http://tempuri.org/IServices/getWebSvcURLResponse")]
         System.Threading.Tasks.Task<string> getWebSvcURLAsync();
         
+        [System.ServiceModel.OperationContractAttribute(Action="http://tempuri.org/IServices/getNASParams", ReplyAction="http://tempuri.org/IServices/getNASParamsResponse")]
+        bladeDirector.bladeDirectorSvc.NASParams getNASParams();
+        
+        [System.ServiceModel.OperationContractAttribute(Action="http://tempuri.org/IServices/getNASParams", ReplyAction="http://tempuri.org/IServices/getNASParamsResponse")]
+        System.Threading.Tasks.Task<bladeDirector.bladeDirectorSvc.NASParams> getNASParamsAsync();
+        
         [System.ServiceModel.OperationContractAttribute(Action="http://tempuri.org/IServices/getProgress", ReplyAction="http://tempuri.org/IServices/getProgressResponse")]
         bladeDirector.bladeDirectorSvc.resultAndWaitToken getProgress(bladeDirector.bladeDirectorSvc.waitToken waitToken);
         
@@ -2079,10 +2164,10 @@ namespace bladeDirector.bladeDirectorSvc {
         System.Threading.Tasks.Task<System.TimeSpan> getKeepAliveTimeoutAsync();
         
         [System.ServiceModel.OperationContractAttribute(Action="http://tempuri.org/IServices/addNode", ReplyAction="http://tempuri.org/IServices/addNodeResponse")]
-        bladeDirector.bladeDirectorSvc.resultCode addNode(string nodeIP, string iSCSIIP, string iLoIP, ushort debugPort);
+        bladeDirector.bladeDirectorSvc.resultCode addNode(string nodeIP, string iSCSIIP, string iLoIP, ushort debugPort, string debugKey, string newFriendlyName);
         
         [System.ServiceModel.OperationContractAttribute(Action="http://tempuri.org/IServices/addNode", ReplyAction="http://tempuri.org/IServices/addNodeResponse")]
-        System.Threading.Tasks.Task<bladeDirector.bladeDirectorSvc.resultCode> addNodeAsync(string nodeIP, string iSCSIIP, string iLoIP, ushort debugPort);
+        System.Threading.Tasks.Task<bladeDirector.bladeDirectorSvc.resultCode> addNodeAsync(string nodeIP, string iSCSIIP, string iLoIP, ushort debugPort, string debugKey, string newFriendlyName);
         
         [System.ServiceModel.OperationContractAttribute(Action="http://tempuri.org/IServices/getVMByIP_withoutLocking", ReplyAction="http://tempuri.org/IServices/getVMByIP_withoutLockingResponse")]
         bladeDirector.bladeDirectorSvc.vmSpec getVMByIP_withoutLocking(string VMIP);
@@ -2200,6 +2285,14 @@ namespace bladeDirector.bladeDirectorSvc {
             return base.Channel.getWebSvcURLAsync();
         }
         
+        public bladeDirector.bladeDirectorSvc.NASParams getNASParams() {
+            return base.Channel.getNASParams();
+        }
+        
+        public System.Threading.Tasks.Task<bladeDirector.bladeDirectorSvc.NASParams> getNASParamsAsync() {
+            return base.Channel.getNASParamsAsync();
+        }
+        
         public bladeDirector.bladeDirectorSvc.resultAndWaitToken getProgress(bladeDirector.bladeDirectorSvc.waitToken waitToken) {
             return base.Channel.getProgress(waitToken);
         }
@@ -2312,12 +2405,12 @@ namespace bladeDirector.bladeDirectorSvc {
             return base.Channel.getKeepAliveTimeoutAsync();
         }
         
-        public bladeDirector.bladeDirectorSvc.resultCode addNode(string nodeIP, string iSCSIIP, string iLoIP, ushort debugPort) {
-            return base.Channel.addNode(nodeIP, iSCSIIP, iLoIP, debugPort);
+        public bladeDirector.bladeDirectorSvc.resultCode addNode(string nodeIP, string iSCSIIP, string iLoIP, ushort debugPort, string debugKey, string newFriendlyName) {
+            return base.Channel.addNode(nodeIP, iSCSIIP, iLoIP, debugPort, debugKey, newFriendlyName);
         }
         
-        public System.Threading.Tasks.Task<bladeDirector.bladeDirectorSvc.resultCode> addNodeAsync(string nodeIP, string iSCSIIP, string iLoIP, ushort debugPort) {
-            return base.Channel.addNodeAsync(nodeIP, iSCSIIP, iLoIP, debugPort);
+        public System.Threading.Tasks.Task<bladeDirector.bladeDirectorSvc.resultCode> addNodeAsync(string nodeIP, string iSCSIIP, string iLoIP, ushort debugPort, string debugKey, string newFriendlyName) {
+            return base.Channel.addNodeAsync(nodeIP, iSCSIIP, iLoIP, debugPort, debugKey, newFriendlyName);
         }
         
         public bladeDirector.bladeDirectorSvc.vmSpec getVMByIP_withoutLocking(string VMIP) {

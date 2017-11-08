@@ -1,6 +1,7 @@
 ﻿using System;
 using System.ServiceModel;
 using System.ServiceModel.Channels;
+using hypervisors;
 
 namespace bladeDirectorWCF
 {
@@ -33,6 +34,11 @@ namespace bladeDirectorWCF
         public static string _getWebSvcURL(string srcIP)
         {
             return hostStateManager.getWebSvcURL(srcIP);
+        }
+
+        public static NASParams _getNASParams(string srcIP)
+        {
+            return hostStateManager.getNASParams(srcIP);
         }
 
         private static resultAndWaitToken _getProgress(waitToken waitToken)
@@ -105,9 +111,9 @@ namespace bladeDirectorWCF
             return hostStateManager.getKeepAliveTimeout();
         }
 
-        private resultCode _addNode(string newIP, string iScsiip, string iLoIP, ushort debugPort)
+        private resultCode _addNode(string newIP, string iScsiip, string iLoIP, ushort debugPort, string debugKey, string newFriendlyName)
         {
-            return hostStateManager.addNode(newIP, iScsiip, iLoIP, debugPort);
+            return hostStateManager.addNode(newIP, iScsiip, iLoIP, debugPort, debugKey, newFriendlyName);
         }
 
         private vmSpec _getVMByIP_withoutLocking(string VMIP)
@@ -176,6 +182,11 @@ namespace bladeDirectorWCF
         public void setWebSvcURL(string newURL)
         {
             _setWebSvcURL(newURL);
+        }
+
+        public NASParams getNASParams()
+        {
+            return _getNASParams(getSrcIP());
         }
 
         public resultAndWaitToken getProgress(waitToken waitToken)
@@ -248,9 +259,9 @@ namespace bladeDirectorWCF
             return _getKeepAliveTimeout();
         }
 
-        public resultCode addNode(string nodeIP, string iSCSIIP, string iLoIP, ushort debugPort)
+        public resultCode addNode(string nodeIP, string iSCSIIP, string iLoIP, ushort debugPort, string debugKey, string newFriendlyName)
         {
-            return _addNode(nodeIP, iSCSIIP, iLoIP, debugPort);
+            return _addNode(nodeIP, iSCSIIP, iLoIP, debugPort, debugKey, newFriendlyName);
         }
 
         public vmSpec getVMByIP_withoutLocking(string VMIP)

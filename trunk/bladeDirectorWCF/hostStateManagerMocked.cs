@@ -153,6 +153,11 @@ namespace bladeDirectorWCF
             return nas;
         }
 
+        protected override NASParams getNASParams()
+        {
+            return new NASParams();
+        }
+
         public void setExecutionResults(mockedExecutionResponses respType)
         {
             switch (respType)
@@ -203,7 +208,7 @@ namespace bladeDirectorWCF
         public hypervisor_mocked_vmware(vmSpec spec, bladeSpec parentSpec, hostStateManagerMocked.mockedExecutionDelegate onMockedExecution)
             : base(null, onMockedExecution)
         {
-            _spec = new hypSpec_vmware(spec.displayName, parentSpec.bladeIP, Settings.Default.esxiUsername, Settings.Default.esxiPassword, Settings.Default.vmUsername, Settings.Default.vmPassword, spec.currentSnapshot, null, spec.kernelDebugPort, spec.kernelDebugKey, spec.VMIP);
+            _spec = new hypSpec_vmware(spec.friendlyName, parentSpec.bladeIP, Settings.Default.esxiUsername, Settings.Default.esxiPassword, Settings.Default.vmUsername, Settings.Default.vmPassword, spec.currentSnapshot, null, spec.kernelDebugPort, spec.kernelDebugKey, spec.VMIP);
         }
     }
 

@@ -38,7 +38,7 @@ namespace bladeDirectorWCF
 
         public override hypervisor makeHypervisorForVM(lockableVMSpec vm, lockableBladeSpec parentBladeSpec)
         {
-            hypSpec_vmware spec = new hypSpec_vmware(vm.spec.displayName, parentBladeSpec.spec.bladeIP,
+            hypSpec_vmware spec = new hypSpec_vmware(vm.spec.friendlyName, parentBladeSpec.spec.bladeIP,
                 Settings.Default.esxiUsername, Settings.Default.esxiPassword,
                 Settings.Default.vmUsername, Settings.Default.vmPassword, null, null,
                 vm.spec.kernelDebugPort, vm.spec.kernelDebugKey, vm.spec.VMIP);
@@ -139,6 +139,16 @@ namespace bladeDirectorWCF
         protected override NASAccess getNasForDevice(bladeSpec vmServer)
         {
             return new FreeNAS(Settings.Default.iscsiServerIP, Settings.Default.iscsiServerUsername, Settings.Default.iscsiServerPassword);
+        }
+
+        protected override NASParams getNASParams()
+        {
+            return new NASParams()
+            {
+                IP = Settings.Default.iscsiServerIP,
+                username = Settings.Default.iscsiServerUsername,
+                password = Settings.Default.iscsiServerPassword
+            };
         }
 
         private void TCPCallback(IAsyncResult ar)

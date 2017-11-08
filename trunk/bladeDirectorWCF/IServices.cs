@@ -4,6 +4,7 @@ using System.IO;
 using System.Security.Cryptography.X509Certificates;
 using System.ServiceModel;
 using System.ServiceModel.Web;
+using hypervisors;
 
 namespace bladeDirectorWCF
 {
@@ -34,6 +35,9 @@ namespace bladeDirectorWCF
 
         [OperationContract]
         string getWebSvcURL();
+
+        [OperationContract]
+        NASParams getNASParams();
 
         [OperationContract]
         resultAndWaitToken getProgress(waitToken waitToken);
@@ -78,7 +82,7 @@ namespace bladeDirectorWCF
         TimeSpan getKeepAliveTimeout();
 
         [OperationContract]
-        resultCode addNode(string nodeIP, string iSCSIIP, string iLoIP, ushort debugPort);
+        resultCode addNode(string nodeIP, string iSCSIIP, string iLoIP, ushort debugPort, string debugKey, string newFriendlyName);
 
         [OperationContract]
         vmSpec getVMByIP_withoutLocking(string VMIP);

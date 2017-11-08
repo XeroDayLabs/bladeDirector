@@ -27,7 +27,6 @@
       <xsd:import schemaLocation="http://127.0.0.1/bladeDirectorDebug?xsd=xsd7" namespace="http://schemas.datacontract.org/2004/07/System" />
       <xsd:import schemaLocation="http://127.0.0.1/bladeDirectorDebug?xsd=xsd8" namespace="http://schemas.datacontract.org/2004/07/System.Data" />
       <xsd:import schemaLocation="http://127.0.0.1/bladeDirectorDebug?xsd=xsd9" namespace="http://schemas.datacontract.org/2004/07/hypervisors" />
-      <xsd:import schemaLocation="http://127.0.0.1/bladeDirectorDebug?xsd=xsd10" namespace="http://schemas.datacontract.org/2004/07/createDisks" />
     </xsd:schema>
   </wsdl:types>
   <wsdl:message name="IDebugServices_ping_InputMessage">
@@ -54,6 +53,12 @@
   <wsdl:message name="IDebugServices_createBladeSpec_OutputMessage">
     <wsdl:part name="parameters" element="tns:createBladeSpecResponse" />
   </wsdl:message>
+  <wsdl:message name="IDebugServices_createBladeSpecForXDLNode_InputMessage">
+    <wsdl:part name="parameters" element="tns:createBladeSpecForXDLNode" />
+  </wsdl:message>
+  <wsdl:message name="IDebugServices_createBladeSpecForXDLNode_OutputMessage">
+    <wsdl:part name="parameters" element="tns:createBladeSpecForXDLNodeResponse" />
+  </wsdl:message>
   <wsdl:message name="IDebugServices__logIn_InputMessage">
     <wsdl:part name="parameters" element="tns:_logIn" />
   </wsdl:message>
@@ -77,6 +82,12 @@
   </wsdl:message>
   <wsdl:message name="IDebugServices__setBIOSOperationTimeIfMocked_OutputMessage">
     <wsdl:part name="parameters" element="tns:_setBIOSOperationTimeIfMockedResponse" />
+  </wsdl:message>
+  <wsdl:message name="IDebugServices__selectSnapshotForBladeOrVM_InputMessage">
+    <wsdl:part name="parameters" element="tns:_selectSnapshotForBladeOrVM" />
+  </wsdl:message>
+  <wsdl:message name="IDebugServices__selectSnapshotForBladeOrVM_OutputMessage">
+    <wsdl:part name="parameters" element="tns:_selectSnapshotForBladeOrVMResponse" />
   </wsdl:message>
   <wsdl:message name="IDebugServices__rebootAndStartReadingBIOSConfiguration_InputMessage">
     <wsdl:part name="parameters" element="tns:_rebootAndStartReadingBIOSConfiguration" />
@@ -167,6 +178,10 @@
       <wsdl:input wsam:Action="http://tempuri.org/IDebugServices/createBladeSpec" message="tns:IDebugServices_createBladeSpec_InputMessage" />
       <wsdl:output wsam:Action="http://tempuri.org/IDebugServices/createBladeSpecResponse" message="tns:IDebugServices_createBladeSpec_OutputMessage" />
     </wsdl:operation>
+    <wsdl:operation name="createBladeSpecForXDLNode">
+      <wsdl:input wsam:Action="http://tempuri.org/IDebugServices/createBladeSpecForXDLNode" message="tns:IDebugServices_createBladeSpecForXDLNode_InputMessage" />
+      <wsdl:output wsam:Action="http://tempuri.org/IDebugServices/createBladeSpecForXDLNodeResponse" message="tns:IDebugServices_createBladeSpecForXDLNode_OutputMessage" />
+    </wsdl:operation>
     <wsdl:operation name="_logIn">
       <wsdl:input wsam:Action="http://tempuri.org/IDebugServices/_logIn" message="tns:IDebugServices__logIn_InputMessage" />
       <wsdl:output wsam:Action="http://tempuri.org/IDebugServices/_logInResponse" message="tns:IDebugServices__logIn_OutputMessage" />
@@ -182,6 +197,10 @@
     <wsdl:operation name="_setBIOSOperationTimeIfMocked">
       <wsdl:input wsam:Action="http://tempuri.org/IDebugServices/_setBIOSOperationTimeIfMocked" message="tns:IDebugServices__setBIOSOperationTimeIfMocked_InputMessage" />
       <wsdl:output wsam:Action="http://tempuri.org/IDebugServices/_setBIOSOperationTimeIfMockedResponse" message="tns:IDebugServices__setBIOSOperationTimeIfMocked_OutputMessage" />
+    </wsdl:operation>
+    <wsdl:operation name="_selectSnapshotForBladeOrVM">
+      <wsdl:input wsam:Action="http://tempuri.org/IDebugServices/_selectSnapshotForBladeOrVM" message="tns:IDebugServices__selectSnapshotForBladeOrVM_InputMessage" />
+      <wsdl:output wsam:Action="http://tempuri.org/IDebugServices/_selectSnapshotForBladeOrVMResponse" message="tns:IDebugServices__selectSnapshotForBladeOrVM_OutputMessage" />
     </wsdl:operation>
     <wsdl:operation name="_rebootAndStartReadingBIOSConfiguration">
       <wsdl:input wsam:Action="http://tempuri.org/IDebugServices/_rebootAndStartReadingBIOSConfiguration" message="tns:IDebugServices__rebootAndStartReadingBIOSConfiguration_InputMessage" />
@@ -271,6 +290,15 @@
         <soap12:body use="literal" />
       </wsdl:output>
     </wsdl:operation>
+    <wsdl:operation name="createBladeSpecForXDLNode">
+      <soap12:operation soapAction="http://tempuri.org/IDebugServices/createBladeSpecForXDLNode" style="document" />
+      <wsdl:input>
+        <soap12:body use="literal" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap12:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
     <wsdl:operation name="_logIn">
       <soap12:operation soapAction="http://tempuri.org/IDebugServices/_logIn" style="document" />
       <wsdl:input>
@@ -300,6 +328,15 @@
     </wsdl:operation>
     <wsdl:operation name="_setBIOSOperationTimeIfMocked">
       <soap12:operation soapAction="http://tempuri.org/IDebugServices/_setBIOSOperationTimeIfMocked" style="document" />
+      <wsdl:input>
+        <soap12:body use="literal" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap12:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="_selectSnapshotForBladeOrVM">
+      <soap12:operation soapAction="http://tempuri.org/IDebugServices/_selectSnapshotForBladeOrVM" style="document" />
       <wsdl:input>
         <soap12:body use="literal" />
       </wsdl:input>

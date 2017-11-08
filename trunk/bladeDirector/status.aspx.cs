@@ -209,7 +209,7 @@ namespace bladeDirector
                     makeInvisibleDiv()
                     ));
 
-                thisVMRow.Cells.Add(new TableCell() { Text = vmInfo.displayName });
+                thisVMRow.Cells.Add(new TableCell() { Text = vmInfo.friendlyName });
                 thisVMRow.Cells.Add(new TableCell() { Text = vmInfo.VMIP });
                 thisVMRow.Cells.Add(new TableCell() { Text = vmInfo.iscsiIP });
                 thisVMRow.Cells.Add(new TableCell() { Text = vmInfo.currentOwner });
@@ -276,7 +276,7 @@ namespace bladeDirector
         {
             using (BladeDirectorServices services = new BladeDirectorServices(getCurrentServerURL()))
             {
-                services.svc.addNode(txtNewNodeIP.Text, txtNewISCSI.Text, txtNewIloIP.Text, UInt16.Parse(txtNewPort.Text));
+                services.svc.addNode(txtNewNodeIP.Text, txtNewISCSI.Text, txtNewIloIP.Text, UInt16.Parse(txtNewPort.Text), "TODO.the.key.here", "name of " + txtNewNodeIP.Text);
             }
             Response.Redirect(Request.RawUrl);
         }

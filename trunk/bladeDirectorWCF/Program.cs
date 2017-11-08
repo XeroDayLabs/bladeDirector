@@ -117,9 +117,10 @@ namespace bladeDirectorWCF
                                         string bladeIP = "172.17.129." + (100 + id);
                                         string iloIP = "172.17.2." + (100 + id);
                                         string iSCSIIP = "10.0.0." + (100 + id);
-                                        ushort debugPort = (ushort) (60000 + id);
-                                        Console.WriteLine("Creating node {0}: IP {1}, ilo {2}, iSCSI IP {3}, debug port {4}", id, bladeIP, iloIP, iSCSIIP, debugPort);
-                                        conn.svc.addNode(bladeIP, iSCSIIP, iloIP, debugPort);
+                                        ushort debugPort = (ushort)(60000 + id);
+                                        string debugKey = "some.test.key.here";
+                                        Console.WriteLine("Creating node {0}: IP {1}, ilo {2}, iSCSI IP {3}, debug port {4}, debug key {5}", id, bladeIP, iloIP, iSCSIIP, debugPort, debugKey);
+                                        conn.svc.addNode(bladeIP, iSCSIIP, iloIP, debugPort, debugKey, "todo_" + bladeIP);
                                     }
                                 }
                             }

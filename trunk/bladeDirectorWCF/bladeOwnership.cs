@@ -7,12 +7,11 @@ using System.Diagnostics;
 using System.Linq;
 using System.Web.UI.WebControls;
 using System.Xml.Serialization;
-using createDisks;
 
 namespace bladeDirectorWCF
 {
     [XmlInclude(typeof (bladeSpec))]
-    public abstract class bladeOwnership
+    public abstract class bladeOwnership : IDebuggableThing
     {
         [XmlIgnore]
         public SQLiteConnection conn;
@@ -42,6 +41,21 @@ namespace bladeDirectorWCF
 
         public long? ownershipRowID;
 
+        // These must be public so that the WCF client can access them.
+        // ReSharper disable MemberCanBeProtected.Global
+        public abstract string kernelDebugAddress { get; }
+        public abstract ushort kernelDebugPort { get; set; }
+        public abstract string kernelDebugKey { get; set; }
+        public abstract string friendlyName { get; set; }
+        public abstract string availableUsersCSV { get; set; }
+        // ReSharper restore MemberCanBeProtected.Global
+
+        [XmlIgnore]
+        public userDesc[] getUserList
+        {
+            get { return unpackUsersCSV(); }
+        }
+
         protected bladeOwnership()
         {
             // Used for XML de/ser
@@ -65,6 +79,39 @@ namespace bladeDirectorWCF
 
             parseFromDBRow(reader);
         }
+
+        protected string makeUsersCSV(userDesc[] newUsers)
+        {
+            string toRet = string.Join(",", newUsers.Select(x =>
+                Convert.ToBase64String(System.Text.Encoding.UTF8.GetBytes(x.password))
+                + "," +
+                Convert.ToBase64String(System.Text.Encoding.UTF8.GetBytes(x.password))
+                ).ToArray());
+
+            return toRet;
+        }
+
+        protected userDesc[] unpackUsersCSV()
+        {
+            List<userDesc> toRet = new List<userDesc>();
+
+            string[] segments = availableUsersCSV.Split(',');
+
+            for (int i = 0; i < segments.Length; i+=2)
+            {
+                string usernameb64 = segments[i];
+                string passwordb64 = segments[i];
+
+                toRet.Add(new userDesc(
+                    System.Text.Encoding.UTF8.GetString(Convert.FromBase64String(usernameb64)),
+                    System.Text.Encoding.UTF8.GetString(Convert.FromBase64String(passwordb64))
+                ));
+            }
+
+            return toRet.ToArray();
+        }
+
+        public abstract string getCloneName();
 
         protected void parseFromDBRow(SQLiteDataReader reader)
         {
@@ -347,11 +394,6 @@ namespace bladeDirectorWCF
                 cmd.Parameters.AddWithValue("$ownershipKey", ownershipRowID);
                 cmd.ExecuteNonQuery();
             }
-        }
-
-        public virtual itemToAdd toItemToAdd(bool useNextOwner = false)
-        {
-            throw new NotImplementedException();
         }
 
         protected string generateIPXEScript(string script)

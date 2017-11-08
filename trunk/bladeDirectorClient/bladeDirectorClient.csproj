@@ -97,6 +97,7 @@
       <DesignTime>True</DesignTime>
       <DependentUpon>Reference.svcmap</DependentUpon>
     </Compile>
+    <Compile Include="utils.cs" />
     <Compile Include="VMWareHypervisorPool.cs" />
   </ItemGroup>
   <ItemGroup>
@@ -154,6 +155,9 @@
     <None Include="Service References\bladeDirectorService\bladeDirectorClient.bladeDirectorService.mockedCall.datasource">
       <DependentUpon>Reference.svcmap</DependentUpon>
     </None>
+    <None Include="Service References\bladeDirectorService\bladeDirectorClient.bladeDirectorService.NASParams.datasource">
+      <DependentUpon>Reference.svcmap</DependentUpon>
+    </None>
     <None Include="Service References\bladeDirectorService\bladeDirectorClient.bladeDirectorService.resultAndBladeName.datasource">
       <DependentUpon>Reference.svcmap</DependentUpon>
     </None>
@@ -176,9 +180,6 @@
       <SubType>Designer</SubType>
     </None>
     <None Include="Service References\bladeDirectorService\bladeDirectorDebug1.xsd">
-      <SubType>Designer</SubType>
-    </None>
-    <None Include="Service References\bladeDirectorService\bladeDirectorDebug10.xsd">
       <SubType>Designer</SubType>
     </None>
     <None Include="Service References\bladeDirectorService\bladeDirectorDebug2.xsd">

@@ -4,8 +4,7 @@ create table bladeOwnership(
 	currentOwner,
 	nextOwner,
 	lastKeepAlive,
-	currentSnapshot
-	);
+	currentSnapshot);
 
 create table bladeConfiguration(
 	bladeConfigKey integer primary key autoincrement,
@@ -18,6 +17,9 @@ create table bladeConfiguration(
 	currentlyBeingAVMServer,
 	vmDeployState,
 	lastDeployedBIOS,
+    kernelDebugKey,
+	friendlyName,
+	availableUsersCSV,
 
 	foreign key (ownershipID) references bladeOwnership(ownershipKey)
 	);
@@ -35,10 +37,11 @@ create table VMConfiguration(
 	VMIP,
 	eth0MAC,
 	eth1MAC,
-	displayname,
+	friendlyName,
     kernelDebugPort,
     kernelDebugKey,
 	isWaitingForResources,
+	availableUsersCSV,
 
 	foreign key (parentBladeID ) references bladeConfiguration(bladeConfigKey),
 	foreign key (ownershipID) references bladeOwnership(ownershipKey)

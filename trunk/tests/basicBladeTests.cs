@@ -35,8 +35,8 @@ namespace tests
         {
             using (bladeDirectorDebugServices svc = new bladeDirectorDebugServices(WCFPath))
             {
-                bladeSpec spec1Expected = svc.svcDebug.createBladeSpec("blade1ip", "blade1iscsiIP", "blade1ILOIP", 111, false, VMDeployStatus.notBeingDeployed, null, bladeLockType.lockAll, bladeLockType.lockAll );
-                bladeSpec spec2Expected = svc.svcDebug.createBladeSpec("blade2ip", "blade2iscsiIP", "blade2ILOIP", 222, false, VMDeployStatus.notBeingDeployed, null, bladeLockType.lockAll, bladeLockType.lockAll);
+                bladeSpec spec1Expected = svc.svcDebug.createBladeSpec("blade1ip", "blade1iscsiIP", "blade1ILOIP", 111, false, VMDeployStatus.notBeingDeployed, null, "idk", "box1", bladeLockType.lockAll, bladeLockType.lockAll);
+                bladeSpec spec2Expected = svc.svcDebug.createBladeSpec("blade2ip", "blade2iscsiIP", "blade2ILOIP", 222, false, VMDeployStatus.notBeingDeployed, null, "idk", "box2", bladeLockType.lockAll, bladeLockType.lockAll);
                 bladeSpec[] expected = new[] {spec1Expected, spec2Expected};
 
                 svc.svcDebug.initWithBladesFromBladeSpec(expected, false, NASFaultInjectionPolicy.retunSuccessful);

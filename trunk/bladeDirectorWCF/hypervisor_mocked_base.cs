@@ -50,6 +50,11 @@ namespace bladeDirectorWCF
             powerState = false;
         }
 
+        public override void WaitForStatus(bool isPowerOn, cancellableDateTime deadline)
+        {
+            events.Add(new mockedCall("WaitForStatus", "deadline: " + deadline.ToString()));
+        }
+
         public override void copyToGuest(string dstpath, string srcpath, cancellableDateTime deadline)
         {
             events.Add(new mockedCall("copyToGuest", "source: '" +  srcpath + "' dest: '" + dstpath + "'"));

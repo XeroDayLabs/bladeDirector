@@ -1,17 +1,295 @@
 <?xml version="1.0" encoding="utf-8"?>
-<xs:schema xmlns:tns="http://schemas.datacontract.org/2004/07/hypervisors" elementFormDefault="qualified" targetNamespace="http://schemas.datacontract.org/2004/07/hypervisors" xmlns:xs="http://www.w3.org/2001/XMLSchema">
-  <xs:complexType name="ArrayOfmockedCall">
+<xs:schema xmlns:tns="http://schemas.datacontract.org/2004/07/bladeDirectorWCF" elementFormDefault="qualified" targetNamespace="http://schemas.datacontract.org/2004/07/bladeDirectorWCF" xmlns:xs="http://www.w3.org/2001/XMLSchema">
+  <xs:import schemaLocation="http://127.0.0.1/bladeDirectorDebug?xsd=xsd4" namespace="http://schemas.datacontract.org/2004/07/System.Data.SQLite" />
+  <xs:import schemaLocation="http://127.0.0.1/bladeDirectorDebug?xsd=xsd1" namespace="http://schemas.microsoft.com/2003/10/Serialization/" />
+  <xs:simpleType name="NASFaultInjectionPolicy">
+    <xs:restriction base="xs:string">
+      <xs:enumeration value="retunSuccessful" />
+      <xs:enumeration value="failSnapshotDeletionOnFirstSnapshot" />
+    </xs:restriction>
+  </xs:simpleType>
+  <xs:element name="NASFaultInjectionPolicy" nillable="true" type="tns:NASFaultInjectionPolicy" />
+  <xs:complexType name="ArrayOfbladeSpec">
     <xs:sequence>
-      <xs:element minOccurs="0" maxOccurs="unbounded" name="mockedCall" nillable="true" type="tns:mockedCall" />
+      <xs:element minOccurs="0" maxOccurs="unbounded" name="bladeSpec" nillable="true" type="tns:bladeSpec" />
     </xs:sequence>
   </xs:complexType>
-  <xs:element name="ArrayOfmockedCall" nillable="true" type="tns:ArrayOfmockedCall" />
-  <xs:complexType name="mockedCall">
+  <xs:element name="ArrayOfbladeSpec" nillable="true" type="tns:ArrayOfbladeSpec" />
+  <xs:complexType name="bladeSpec">
+    <xs:complexContent mixed="false">
+      <xs:extension base="tns:bladeOwnership">
+        <xs:sequence>
+          <xs:element minOccurs="0" name="ESXiPassword" nillable="true" type="xs:string" />
+          <xs:element minOccurs="0" name="ESXiUsername" nillable="true" type="xs:string" />
+          <xs:element minOccurs="0" name="bladeID" nillable="true" type="xs:long" />
+          <xs:element minOccurs="0" name="bladeIP" nillable="true" type="xs:string" />
+          <xs:element minOccurs="0" name="currentlyBeingAVMServer" type="xs:boolean" />
+          <xs:element minOccurs="0" name="currentlyHavingBIOSDeployed" type="xs:boolean" />
+          <xs:element minOccurs="0" name="iLOIP" nillable="true" type="xs:string" />
+          <xs:element minOccurs="0" name="iLOPort" type="xs:unsignedShort" />
+          <xs:element minOccurs="0" name="iLoPassword" nillable="true" type="xs:string" />
+          <xs:element minOccurs="0" name="iLoUsername" nillable="true" type="xs:string" />
+          <xs:element minOccurs="0" name="iscsiIP" nillable="true" type="xs:string" />
+          <xs:element minOccurs="0" name="lastDeployedBIOS" nillable="true" type="xs:string" />
+          <xs:element minOccurs="0" name="vmDeployState" type="tns:VMDeployStatus" />
+        </xs:sequence>
+      </xs:extension>
+    </xs:complexContent>
+  </xs:complexType>
+  <xs:element name="bladeSpec" nillable="true" type="tns:bladeSpec" />
+  <xs:complexType name="bladeOwnership">
     <xs:sequence>
-      <xs:element name="functionName" nillable="true" type="xs:string" />
-      <xs:element name="message" nillable="true" type="xs:string" />
-      <xs:element name="timestamp" type="xs:dateTime" />
+      <xs:element xmlns:q1="http://schemas.datacontract.org/2004/07/System.Data.SQLite" minOccurs="0" name="conn" nillable="true" type="q1:SQLiteConnection" />
+      <xs:element minOccurs="0" name="currentOwner" nillable="true" type="xs:string" />
+      <xs:element minOccurs="0" name="currentSnapshot" nillable="true" type="xs:string" />
+      <xs:element minOccurs="0" name="friendlyName" nillable="true" type="xs:string" />
+      <xs:element minOccurs="0" name="getUserList" nillable="true" type="tns:ArrayOfuserDesc" />
+      <xs:element minOccurs="0" name="kernelDebugKey" nillable="true" type="xs:string" />
+      <xs:element minOccurs="0" name="kernelDebugPort" type="xs:unsignedShort" />
+      <xs:element minOccurs="0" name="lastKeepAlive" type="xs:dateTime" />
+      <xs:element minOccurs="0" name="nextOwner" nillable="true" type="xs:string" />
+      <xs:element minOccurs="0" name="ownershipRowID" nillable="true" type="xs:long" />
+      <xs:element minOccurs="0" name="permittedAccessRead" type="tns:bladeLockType" />
+      <xs:element minOccurs="0" name="permittedAccessWrite" type="tns:bladeLockType" />
+      <xs:element minOccurs="0" name="state" type="tns:bladeStatus" />
     </xs:sequence>
   </xs:complexType>
-  <xs:element name="mockedCall" nillable="true" type="tns:mockedCall" />
+  <xs:element name="bladeOwnership" nillable="true" type="tns:bladeOwnership" />
+  <xs:complexType name="ArrayOfuserDesc">
+    <xs:sequence>
+      <xs:element minOccurs="0" maxOccurs="unbounded" name="userDesc" nillable="true" type="tns:userDesc" />
+    </xs:sequence>
+  </xs:complexType>
+  <xs:element name="ArrayOfuserDesc" nillable="true" type="tns:ArrayOfuserDesc" />
+  <xs:complexType name="userDesc">
+    <xs:sequence>
+      <xs:element minOccurs="0" name="password" nillable="true" type="xs:string" />
+      <xs:element minOccurs="0" name="username" nillable="true" type="xs:string" />
+    </xs:sequence>
+  </xs:complexType>
+  <xs:element name="userDesc" nillable="true" type="tns:userDesc" />
+  <xs:simpleType name="bladeLockType">
+    <xs:list>
+      <xs:simpleType>
+        <xs:restriction base="xs:string">
+          <xs:enumeration value="lockAll">
+            <xs:annotation>
+              <xs:appinfo>
+                <EnumerationValue xmlns="http://schemas.microsoft.com/2003/10/Serialization/">65535</EnumerationValue>
+              </xs:appinfo>
+            </xs:annotation>
+          </xs:enumeration>
+          <xs:enumeration value="lockVMCreation">
+            <xs:annotation>
+              <xs:appinfo>
+                <EnumerationValue xmlns="http://schemas.microsoft.com/2003/10/Serialization/">1</EnumerationValue>
+              </xs:appinfo>
+            </xs:annotation>
+          </xs:enumeration>
+          <xs:enumeration value="lockBIOS">
+            <xs:annotation>
+              <xs:appinfo>
+                <EnumerationValue xmlns="http://schemas.microsoft.com/2003/10/Serialization/">2</EnumerationValue>
+              </xs:appinfo>
+            </xs:annotation>
+          </xs:enumeration>
+          <xs:enumeration value="lockSnapshot">
+            <xs:annotation>
+              <xs:appinfo>
+                <EnumerationValue xmlns="http://schemas.microsoft.com/2003/10/Serialization/">4</EnumerationValue>
+              </xs:appinfo>
+            </xs:annotation>
+          </xs:enumeration>
+          <xs:enumeration value="lockNASOperations">
+            <xs:annotation>
+              <xs:appinfo>
+                <EnumerationValue xmlns="http://schemas.microsoft.com/2003/10/Serialization/">8</EnumerationValue>
+              </xs:appinfo>
+            </xs:annotation>
+          </xs:enumeration>
+          <xs:enumeration value="lockOwnership">
+            <xs:annotation>
+              <xs:appinfo>
+                <EnumerationValue xmlns="http://schemas.microsoft.com/2003/10/Serialization/">16</EnumerationValue>
+              </xs:appinfo>
+            </xs:annotation>
+          </xs:enumeration>
+          <xs:enumeration value="lockvmDeployState">
+            <xs:annotation>
+              <xs:appinfo>
+                <EnumerationValue xmlns="http://schemas.microsoft.com/2003/10/Serialization/">32</EnumerationValue>
+              </xs:appinfo>
+            </xs:annotation>
+          </xs:enumeration>
+          <xs:enumeration value="lockIPAddresses">
+            <xs:annotation>
+              <xs:appinfo>
+                <EnumerationValue xmlns="http://schemas.microsoft.com/2003/10/Serialization/">64</EnumerationValue>
+              </xs:appinfo>
+            </xs:annotation>
+          </xs:enumeration>
+          <xs:enumeration value="lockVirtualHW">
+            <xs:annotation>
+              <xs:appinfo>
+                <EnumerationValue xmlns="http://schemas.microsoft.com/2003/10/Serialization/">128</EnumerationValue>
+              </xs:appinfo>
+            </xs:annotation>
+          </xs:enumeration>
+          <xs:enumeration value="lockLongRunningBIOS">
+            <xs:annotation>
+              <xs:appinfo>
+                <EnumerationValue xmlns="http://schemas.microsoft.com/2003/10/Serialization/">4096</EnumerationValue>
+              </xs:appinfo>
+            </xs:annotation>
+          </xs:enumeration>
+          <xs:enumeration value="lockLongRunningVM">
+            <xs:annotation>
+              <xs:appinfo>
+                <EnumerationValue xmlns="http://schemas.microsoft.com/2003/10/Serialization/">8192</EnumerationValue>
+              </xs:appinfo>
+            </xs:annotation>
+          </xs:enumeration>
+          <xs:enumeration value="lockNone">
+            <xs:annotation>
+              <xs:appinfo>
+                <EnumerationValue xmlns="http://schemas.microsoft.com/2003/10/Serialization/">0</EnumerationValue>
+              </xs:appinfo>
+            </xs:annotation>
+          </xs:enumeration>
+        </xs:restriction>
+      </xs:simpleType>
+    </xs:list>
+  </xs:simpleType>
+  <xs:element name="bladeLockType" nillable="true" type="tns:bladeLockType" />
+  <xs:simpleType name="bladeStatus">
+    <xs:restriction base="xs:string">
+      <xs:enumeration value="unused" />
+      <xs:enumeration value="releaseRequested" />
+      <xs:enumeration value="inUseByDirector" />
+      <xs:enumeration value="inUse" />
+      <xs:enumeration value="unusable" />
+    </xs:restriction>
+  </xs:simpleType>
+  <xs:element name="bladeStatus" nillable="true" type="tns:bladeStatus" />
+  <xs:simpleType name="VMDeployStatus">
+    <xs:restriction base="xs:string">
+      <xs:enumeration value="notBeingDeployed" />
+      <xs:enumeration value="needsPowerCycle" />
+      <xs:enumeration value="waitingForPowerUp" />
+      <xs:enumeration value="readyForDeployment" />
+      <xs:enumeration value="failed" />
+    </xs:restriction>
+  </xs:simpleType>
+  <xs:element name="VMDeployStatus" nillable="true" type="tns:VMDeployStatus" />
+  <xs:complexType name="resultAndWaitToken">
+    <xs:sequence>
+      <xs:element minOccurs="0" name="result" nillable="true" type="tns:result" />
+      <xs:element minOccurs="0" name="waitToken" nillable="true" type="tns:waitToken" />
+    </xs:sequence>
+  </xs:complexType>
+  <xs:element name="resultAndWaitToken" nillable="true" type="tns:resultAndWaitToken" />
+  <xs:complexType name="result">
+    <xs:sequence>
+      <xs:element minOccurs="0" name="code" type="tns:resultCode" />
+      <xs:element minOccurs="0" name="errMsg" nillable="true" type="xs:string" />
+    </xs:sequence>
+  </xs:complexType>
+  <xs:element name="result" nillable="true" type="tns:result" />
+  <xs:simpleType name="resultCode">
+    <xs:restriction base="xs:string">
+      <xs:enumeration value="success" />
+      <xs:enumeration value="bladeNotFound" />
+      <xs:enumeration value="bladeInUse" />
+      <xs:enumeration value="bladeQueueFull" />
+      <xs:enumeration value="pending" />
+      <xs:enumeration value="alreadyInProgress" />
+      <xs:enumeration value="cancelled" />
+      <xs:enumeration value="genericFail" />
+      <xs:enumeration value="noNeedLah" />
+      <xs:enumeration value="unknown" />
+    </xs:restriction>
+  </xs:simpleType>
+  <xs:element name="resultCode" nillable="true" type="tns:resultCode" />
+  <xs:complexType name="waitToken">
+    <xs:sequence>
+      <xs:element minOccurs="0" name="handleType" type="tns:handleTypes" />
+      <xs:element minOccurs="0" name="t" nillable="true" type="xs:string" />
+    </xs:sequence>
+  </xs:complexType>
+  <xs:element name="waitToken" nillable="true" type="tns:waitToken" />
+  <xs:simpleType name="handleTypes">
+    <xs:restriction base="xs:string">
+      <xs:enumeration value="LGI" />
+      <xs:enumeration value="REL" />
+      <xs:enumeration value="DEP" />
+      <xs:enumeration value="BOS" />
+      <xs:enumeration value="SHT" />
+    </xs:restriction>
+  </xs:simpleType>
+  <xs:element name="handleTypes" nillable="true" type="tns:handleTypes" />
+  <xs:simpleType name="mockedExecutionResponses">
+    <xs:restriction base="xs:string">
+      <xs:enumeration value="successful" />
+      <xs:enumeration value="successfulButSlow" />
+    </xs:restriction>
+  </xs:simpleType>
+  <xs:element name="mockedExecutionResponses" nillable="true" type="tns:mockedExecutionResponses" />
+  <xs:complexType name="resultAndBladeName">
+    <xs:complexContent mixed="false">
+      <xs:extension base="tns:resultAndWaitToken">
+        <xs:sequence>
+          <xs:element minOccurs="0" name="bladeName" nillable="true" type="xs:string" />
+        </xs:sequence>
+      </xs:extension>
+    </xs:complexContent>
+  </xs:complexType>
+  <xs:element name="resultAndBladeName" nillable="true" type="tns:resultAndBladeName" />
+  <xs:simpleType name="GetBladeStatusResult">
+    <xs:restriction base="xs:string">
+      <xs:enumeration value="bladeNotFound" />
+      <xs:enumeration value="unused" />
+      <xs:enumeration value="yours" />
+      <xs:enumeration value="releasePending" />
+      <xs:enumeration value="notYours" />
+    </xs:restriction>
+  </xs:simpleType>
+  <xs:element name="GetBladeStatusResult" nillable="true" type="tns:GetBladeStatusResult" />
+  <xs:complexType name="VMHardwareSpec">
+    <xs:sequence>
+      <xs:element minOccurs="0" name="cpuCount" type="xs:int" />
+      <xs:element minOccurs="0" name="memoryMB" type="xs:int" />
+    </xs:sequence>
+  </xs:complexType>
+  <xs:element name="VMHardwareSpec" nillable="true" type="tns:VMHardwareSpec" />
+  <xs:complexType name="VMSoftwareSpec">
+    <xs:sequence>
+      <xs:element minOccurs="0" name="debuggerHost" nillable="true" type="xs:string" />
+      <xs:element minOccurs="0" name="debuggerKey" nillable="true" type="xs:string" />
+      <xs:element minOccurs="0" name="debuggerPort" type="xs:unsignedShort" />
+      <xs:element minOccurs="0" name="usersToAdd" nillable="true" type="tns:ArrayOfuserAddRequest" />
+    </xs:sequence>
+  </xs:complexType>
+  <xs:element name="VMSoftwareSpec" nillable="true" type="tns:VMSoftwareSpec" />
+  <xs:complexType name="ArrayOfuserAddRequest">
+    <xs:sequence>
+      <xs:element minOccurs="0" maxOccurs="unbounded" name="userAddRequest" nillable="true" type="tns:userAddRequest" />
+    </xs:sequence>
+  </xs:complexType>
+  <xs:element name="ArrayOfuserAddRequest" nillable="true" type="tns:ArrayOfuserAddRequest" />
+  <xs:complexType name="userAddRequest">
+    <xs:complexContent mixed="false">
+      <xs:extension base="tns:userDesc">
+        <xs:sequence>
+          <xs:element minOccurs="0" name="isAdministrator" type="xs:boolean" />
+        </xs:sequence>
+      </xs:extension>
+    </xs:complexContent>
+  </xs:complexType>
+  <xs:element name="userAddRequest" nillable="true" type="tns:userAddRequest" />
+  <xs:complexType name="ArrayOfresultAndBladeName">
+    <xs:sequence>
+      <xs:element minOccurs="0" maxOccurs="unbounded" name="resultAndBladeName" nillable="true" type="tns:resultAndBladeName" />
+    </xs:sequence>
+  </xs:complexType>
+  <xs:element name="ArrayOfresultAndBladeName" nillable="true" type="tns:ArrayOfresultAndBladeName" />
 </xs:schema>

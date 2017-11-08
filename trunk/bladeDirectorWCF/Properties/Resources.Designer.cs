@@ -110,7 +110,7 @@ namespace bladeDirectorWCF.Properties {
         ///		&lt;platform&gt;ProLiant DL120 G7&lt;/platform&gt;
         ///		&lt;platform&gt;ProLiant ML110 G7&lt;/platform&gt;
         ///		&lt;platform&gt;ProLiant DL3&lt;/platform&gt;
-        ///		&lt;platform&gt;ProLiant ML3&lt;/pla [rest of string was truncated]&quot;;.
+        ///		&lt;platform&gt;P [rest of string was truncated]&quot;;.
         /// </summary>
         internal static string conrep_xml {
             get {
@@ -122,7 +122,6 @@ namespace bladeDirectorWCF.Properties {
         ///   Looks up a localized string similar to create table bladeOwnership(
         ///	ownershipKey integer primary key autoincrement,
         ///	state,
-        ///	vmDeployState,
         ///	currentOwner,
         ///	nextOwner,
         ///	lastKeepAlive,
@@ -141,11 +140,33 @@ namespace bladeDirectorWCF.Properties {
         ///	vmDeployState,
         ///	lastDeployedBIOS,
         ///
-        ///	foreign key (ownershipID) references bladeOwner [rest of string was truncated]&quot;;.
+        ///	foreign key (ownershipID) references bladeOwnership(ownershipKey [rest of string was truncated]&quot;;.
         /// </summary>
         internal static string DBCreation {
             get {
                 return ResourceManager.GetString("DBCreation", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to @echo on
+        ///REM usage : deployToBlade.bat &lt;computername&gt; [&lt;kernel debug server IP&gt; &lt;kernel debug server port&gt; &lt;kernel debug server key&gt;]
+        ///
+        ///REM Name the computer according to our parameters
+        ///wmic computersystem where caption=&apos;%COMPUTERNAME%&apos; call rename %1
+        ///if %ERRORLEVEL% neq 0 exit /b %errorlevel%
+        ///
+        ///REM enable the kernel debugger
+        ///Set KDHOST=%2
+        ///if DEFINED KDHOST ( 
+        ///	bcdedit /dbgsettings net hostip:%2 port:%3 key:%4
+        ///	if %ERRORLEVEL% neq 0 exit /b %errorlevel%
+        ///	bcdedit /debug on
+        ///	if %ERRORLEVEL% neq 0 e [rest of string was truncated]&quot;;.
+        /// </summary>
+        internal static string deploy {
+            get {
+                return ResourceManager.GetString("deploy", resourceCulture);
             }
         }
         
@@ -178,7 +199,7 @@ namespace bladeDirectorWCF.Properties {
         ///set net1/gateway 0.0.0.0
         ///set keep-san 1
         ///set initiator-iqn iqn.2017.05.lan.xd.fuzz:${mac:hexhyp}
-        ///sanboot iscsi:192.168.191.254::::iqn.2016-06.lan.xd.store:{BLADE_IP_MAIN}-{BLADE_OWNER}-{BLADE_SNAPSHOT}
+        ///sanboot iscsi:10.0.255.254::::iqn.2016-06.lan.xd.store:{BLADE_IP_MAIN}-{BLADE_OWNER}-{BLADE_SNAPSHOT}
         ///.
         /// </summary>
         internal static string ipxeTemplate {
@@ -210,8 +231,11 @@ namespace bladeDirectorWCF.Properties {
         /// <summary>
         ///   Looks up a localized string similar to #!ipxe
         ///
-        ///set 210 boot\x86\local\esxi\/
-        ///chain tftp://172.17.191.254/\boot\x86\local\esxi\pxelinux.0.
+        ///#set 210 boot\x86\local\esxi\/
+        ///#chain tftp://172.17.191.254/\boot\x86\local\esxi\pxelinux.0
+        ///
+        ///set 210 boot/x86/local/esxi/
+        ///chain tftp://172.17.191.253/boot/x86/local/esxi/pxelinux.0.
         /// </summary>
         internal static string ipxeTemplateForESXi {
             get {
@@ -229,7 +253,7 @@ namespace bladeDirectorWCF.Properties {
         ///  &lt;Section name=&quot;IPL_Order&quot; helptext=&quot;Current Initial ProgramLoad device boot order.&quot;&gt;
         ///    &lt;Index0&gt;04 &lt;/Index0&gt;
         ///    &lt;Index1&gt;00 &lt;/Index1&gt;
-        ///    &lt;Index2&gt; [rest of string was truncated]&quot;;.
+        ///    [rest of string was truncated]&quot;;.
         /// </summary>
         internal static string VMServerBIOS {
             get {

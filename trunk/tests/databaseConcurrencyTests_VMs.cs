@@ -26,7 +26,7 @@ namespace tests
                         using (lockableVMSpec refA = db.getVMByIP("1.1.1.2", bladeLockType.lockNone,
                             bladeLockType.lockVirtualHW | bladeLockType.lockOwnership))
                         {
-                            refA.spec.displayName = "test data";
+                            refA.spec.friendlyName = "test data";
                             refA.spec.currentOwner = "Dave_Lister";
                         }
                     });
@@ -34,7 +34,7 @@ namespace tests
                     innerThread.Join();
 
                     refB.upgradeLocks(bladeLockType.lockVirtualHW | bladeLockType.lockOwnership, bladeLockType.lockNone);
-                    Assert.AreEqual("test data", refB.spec.displayName);
+                    Assert.AreEqual("test data", refB.spec.friendlyName);
                     Assert.AreEqual("Dave_Lister", refB.spec.currentOwner);
                 }
             }
@@ -60,7 +60,7 @@ namespace tests
                     Assert.AreEqual(bladeLockType.lockIPAddresses, refA.spec.permittedAccessRead);
                     Assert.AreEqual(bladeLockType.lockNone, refA.spec.permittedAccessWrite);
 
-                    failIfNoThrow(() => { refA.spec.displayName = "test data"; });
+                    failIfNoThrow(() => { refA.spec.friendlyName = "test data"; });
                     failIfNoThrow(() => { refA.spec.currentOwner = "Dave_Lister"; });
                 }
             }
@@ -88,11 +88,11 @@ namespace tests
                     Assert.AreEqual(bladeLockType.lockNone, refA.spec.permittedAccessWrite);
 
                     // We should not be permitted to write fields
-                    failIfNoThrow(() => { refA.spec.displayName = "test data"; });
+                    failIfNoThrow(() => { refA.spec.friendlyName = "test data"; });
                     failIfNoThrow(() => { refA.spec.currentOwner = "Dave_Lister"; });
                     // but should be permitted to read them.
                     failIfThrow(() => { Debug.WriteLine(refA.spec.currentOwner); });
-                    failIfThrow(() => { Debug.WriteLine(refA.spec.displayName); });
+                    failIfThrow(() => { Debug.WriteLine(refA.spec.friendlyName); });
                 }
             }
         }
@@ -114,9 +114,9 @@ namespace tests
                     Assert.AreEqual(bladeLockType.lockIPAddresses | bladeLockType.lockOwnership | bladeLockType.lockVirtualHW, refA.spec.permittedAccessRead);
                     Assert.AreEqual(bladeLockType.lockNone, refA.spec.permittedAccessWrite);
 
-                    failIfNoThrow(() => { refA.spec.displayName = "test data"; });
+                    failIfNoThrow(() => { refA.spec.friendlyName = "test data"; });
                     failIfNoThrow(() => { refA.spec.currentOwner = "Dave_Lister"; });
-                    failIfThrow(() => { Debug.WriteLine(refA.spec.displayName); });
+                    failIfThrow(() => { Debug.WriteLine(refA.spec.friendlyName); });
                     failIfThrow(() => { Debug.WriteLine(refA.spec.currentOwner); });
                 }
             }
@@ -139,9 +139,9 @@ namespace tests
                     Assert.AreEqual(bladeLockType.lockIPAddresses | bladeLockType.lockOwnership | bladeLockType.lockVirtualHW, refA.spec.permittedAccessRead);
                     Assert.AreEqual(bladeLockType.lockOwnership | bladeLockType.lockVirtualHW, refA.spec.permittedAccessWrite);
 
-                    failIfThrow(() => { refA.spec.displayName = "test data"; });
+                    failIfThrow(() => { refA.spec.friendlyName = "test data"; });
                     failIfThrow(() => { refA.spec.currentOwner = "Dave_Lister"; });
-                    failIfThrow(() => { Debug.WriteLine(refA.spec.displayName); });
+                    failIfThrow(() => { Debug.WriteLine(refA.spec.friendlyName); });
                     failIfThrow(() => { Debug.WriteLine(refA.spec.currentOwner); });
                 }
             }
@@ -186,7 +186,7 @@ namespace tests
                         // The data should be flushed to the DB at that point, so we set a ManualResetEvent and the main thread
                         // will check that the data has indeed been flushed, by reading from the DB.
 
-                        refA.spec.displayName = "test data";
+                        refA.spec.friendlyName = "test data";
                         refA.spec.currentOwner = "Dave_Lister";
 
                         refA.downgradeLocks(
@@ -209,7 +209,7 @@ namespace tests
                         bladeLockType.lockNone))
                     {
                         Assert.AreEqual("Dave_Lister", refB.spec.currentOwner);
-                        Assert.AreEqual("test data", refB.spec.displayName);
+                        Assert.AreEqual("test data", refB.spec.friendlyName);
                     }
                 }
                 finally

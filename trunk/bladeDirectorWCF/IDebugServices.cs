@@ -18,8 +18,12 @@ namespace bladeDirectorWCF
 
         [OperationContract]
         bladeSpec createBladeSpec(string newBladeIP, string newISCSIIP, string newILOIP, ushort newILOPort, 
-            bool newCurrentlyHavingBIOSDeployed, VMDeployStatus newvmDeployState, string newCurrentBIOS, 
+            bool newCurrentlyHavingBIOSDeployed, VMDeployStatus newvmDeployState, string newCurrentBIOS, string newDebugKey,
+            string newFriendlyName,
             bladeLockType permittedAccessRead, bladeLockType permittedAccessWrite);
+
+        [OperationContract]
+        bladeSpec createBladeSpecForXDLNode(int nodeIndex, string newDebugKey, bladeLockType permittedAccessRead, bladeLockType permittedAccessWrite);
 
         [OperationContract]
         resultAndWaitToken _logIn(string requestorIP);
@@ -32,7 +36,10 @@ namespace bladeDirectorWCF
         
         [OperationContract]
         void _setBIOSOperationTimeIfMocked(int operationTimeSeconds);
-        
+
+        [OperationContract]
+        resultAndWaitToken _selectSnapshotForBladeOrVM(string requestorIP, string nodeIP, string snapshotName);
+
         [OperationContract]
         resultAndWaitToken _rebootAndStartReadingBIOSConfiguration(string requestorIP, string nodeIP);
         

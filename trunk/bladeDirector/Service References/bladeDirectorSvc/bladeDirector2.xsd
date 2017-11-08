@@ -1,6 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
 <xs:schema xmlns:tns="http://schemas.datacontract.org/2004/07/bladeDirectorWCF" elementFormDefault="qualified" targetNamespace="http://schemas.datacontract.org/2004/07/bladeDirectorWCF" xmlns:xs="http://www.w3.org/2001/XMLSchema">
-  <xs:import schemaLocation="http://127.0.0.1/bladeDirector?xsd=xsd4" namespace="http://schemas.datacontract.org/2004/07/createDisks" />
   <xs:import schemaLocation="http://127.0.0.1/bladeDirector?xsd=xsd5" namespace="http://schemas.datacontract.org/2004/07/System.Data.SQLite" />
   <xs:import schemaLocation="http://127.0.0.1/bladeDirector?xsd=xsd0" namespace="http://schemas.microsoft.com/2003/10/Serialization/" />
   <xs:complexType name="resultAndBladeName">
@@ -98,10 +97,24 @@
       <xs:element minOccurs="0" name="debuggerHost" nillable="true" type="xs:string" />
       <xs:element minOccurs="0" name="debuggerKey" nillable="true" type="xs:string" />
       <xs:element minOccurs="0" name="debuggerPort" type="xs:unsignedShort" />
-      <xs:element xmlns:q1="http://schemas.datacontract.org/2004/07/createDisks" minOccurs="0" name="usersToAdd" nillable="true" type="q1:ArrayOfuserAddRequest" />
+      <xs:element minOccurs="0" name="usersToAdd" nillable="true" type="tns:ArrayOfuserAddRequest" />
     </xs:sequence>
   </xs:complexType>
   <xs:element name="VMSoftwareSpec" nillable="true" type="tns:VMSoftwareSpec" />
+  <xs:complexType name="ArrayOfuserAddRequest">
+    <xs:sequence>
+      <xs:element minOccurs="0" maxOccurs="unbounded" name="userAddRequest" nillable="true" type="tns:userAddRequest" />
+    </xs:sequence>
+  </xs:complexType>
+  <xs:element name="ArrayOfuserAddRequest" nillable="true" type="tns:ArrayOfuserAddRequest" />
+  <xs:complexType name="userAddRequest">
+    <xs:sequence>
+      <xs:element minOccurs="0" name="isAdministrator" type="xs:boolean" />
+      <xs:element minOccurs="0" name="password" nillable="true" type="xs:string" />
+      <xs:element minOccurs="0" name="username" nillable="true" type="xs:string" />
+    </xs:sequence>
+  </xs:complexType>
+  <xs:element name="userAddRequest" nillable="true" type="tns:userAddRequest" />
   <xs:complexType name="ArrayOfresultAndBladeName">
     <xs:sequence>
       <xs:element minOccurs="0" maxOccurs="unbounded" name="resultAndBladeName" nillable="true" type="tns:resultAndBladeName" />
@@ -114,14 +127,11 @@
         <xs:sequence>
           <xs:element minOccurs="0" name="VMIP" nillable="true" type="xs:string" />
           <xs:element minOccurs="0" name="cpuCount" type="xs:int" />
-          <xs:element minOccurs="0" name="displayName" nillable="true" type="xs:string" />
           <xs:element minOccurs="0" name="eth0MAC" nillable="true" type="xs:string" />
           <xs:element minOccurs="0" name="eth1MAC" nillable="true" type="xs:string" />
           <xs:element minOccurs="0" name="indexOnServer" type="xs:int" />
           <xs:element minOccurs="0" name="isWaitingForResources" type="xs:boolean" />
           <xs:element minOccurs="0" name="iscsiIP" nillable="true" type="xs:string" />
-          <xs:element minOccurs="0" name="kernelDebugKey" nillable="true" type="xs:string" />
-          <xs:element minOccurs="0" name="kernelDebugPort" type="xs:unsignedShort" />
           <xs:element minOccurs="0" name="memoryMB" type="xs:int" />
           <xs:element minOccurs="0" name="parentBladeID" type="xs:long" />
           <xs:element minOccurs="0" name="parentBladeIP" nillable="true" type="xs:string" />
@@ -135,9 +145,12 @@
   <xs:element name="vmSpec" nillable="true" type="tns:vmSpec" />
   <xs:complexType name="bladeOwnership">
     <xs:sequence>
-      <xs:element xmlns:q2="http://schemas.datacontract.org/2004/07/System.Data.SQLite" minOccurs="0" name="conn" nillable="true" type="q2:SQLiteConnection" />
+      <xs:element xmlns:q1="http://schemas.datacontract.org/2004/07/System.Data.SQLite" minOccurs="0" name="conn" nillable="true" type="q1:SQLiteConnection" />
       <xs:element minOccurs="0" name="currentOwner" nillable="true" type="xs:string" />
       <xs:element minOccurs="0" name="currentSnapshot" nillable="true" type="xs:string" />
+      <xs:element minOccurs="0" name="friendlyName" nillable="true" type="xs:string" />
+      <xs:element minOccurs="0" name="kernelDebugKey" nillable="true" type="xs:string" />
+      <xs:element minOccurs="0" name="kernelDebugPort" type="xs:unsignedShort" />
       <xs:element minOccurs="0" name="lastKeepAlive" type="xs:dateTime" />
       <xs:element minOccurs="0" name="nextOwner" nillable="true" type="xs:string" />
       <xs:element minOccurs="0" name="ownershipRowID" nillable="true" type="xs:long" />

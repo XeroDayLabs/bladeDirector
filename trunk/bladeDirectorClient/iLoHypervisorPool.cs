@@ -13,6 +13,7 @@ using System.Threading;
 using bladeDirectorClient.bladeDirectorService;
 using hypervisors;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using NASParams = bladeDirectorClient.bladeDirectorService.NASParams;
 
 namespace bladeDirectorClient
 {
@@ -29,7 +30,7 @@ namespace bladeDirectorClient
 
         private bool isConnected = false;
 
-        private object _connectionLock = new object();
+        private readonly object _connectionLock = new object();
 
         public hypervisorCollection<hypSpec_vmware> requestVMs(VMSpec[] specs)
         {
@@ -56,26 +57,19 @@ namespace bladeDirectorClient
                     int idx = 0;
                     foreach (resultAndBladeName res in results)
                     {
-                        resultAndBladeName progress = (resultAndBladeName)director.waitForSuccess(res, deadline - DateTime.Now);
+                        resultAndBladeName progress = director.waitForSuccess(res, deadline - DateTime.Now);
 
                         vmSpec vmSpec = director.svc.getVMByIP_withoutLocking(progress.bladeName);
                         bladeSpec vmServerSpec = director.svc.getBladeByIP_withoutLocking(vmSpec.parentBladeIP);
                         snapshotDetails snapshotInfo = director.svc.getCurrentSnapshotDetails(vmSpec.VMIP);
+                        NASParams nasParams = director.svc.getNASParams();
 
-                        hypSpec_vmware newSpec = new hypSpec_vmware(
-                            vmSpec.displayName, vmServerSpec.bladeIP, vmServerSpec.ESXiUsername, vmServerSpec.ESXiPassword,
-                            vmSpec.username, vmSpec.password, snapshotInfo.friendlyName, snapshotInfo.path,
-                            vmSpec.kernelDebugPort, vmSpec.kernelDebugKey, vmSpec.VMIP);
+                        hypervisor_vmware_FreeNAS newVM = utils.createHypForVM(vmSpec, vmServerSpec, snapshotInfo, nasParams);
 
                         ensurePortIsFree(vmSpec.kernelDebugPort);
 
-                        // FIXME: these credentials should be passed down from the bladeDirector, I think.
-                        hypervisor_vmware_FreeNAS newVM = new hypervisor_vmware_FreeNAS(newSpec,
-                            Properties.Settings.Default.iloISCSIIP,
-                            Properties.Settings.Default.iloISCSIUsername,
-                            Properties.Settings.Default.iloISCSIPassword, clientExecutionMethod.smb);
-
                         newVM.setDisposalCallback(onDestruction);
+
                         if (!toRet.TryAdd(vmSpec.VMIP, newVM))
                             throw new Exception();
 

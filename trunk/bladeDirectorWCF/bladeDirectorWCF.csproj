@@ -180,10 +180,6 @@
       <Project>{4abb1cc9-0c59-48f3-be95-0fa21c420055}</Project>
       <Name>bladeDirectorClient</Name>
     </ProjectReference>
-    <ProjectReference Include="..\createDisks\createDisks.csproj">
-      <Project>{40dadae3-e73b-4b87-90a8-ec315d0aed76}</Project>
-      <Name>createDisks</Name>
-    </ProjectReference>
   </ItemGroup>
   <ItemGroup>
     <EmbeddedResource Include="Properties\Resources.resx">
@@ -229,6 +225,9 @@
       <Generator>WCF Proxy Generator</Generator>
       <LastGenOutput>Reference.cs</LastGenOutput>
     </None>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\deploy.bat" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

@@ -1,5 +1,3 @@
-using createDisks;
-
 namespace bladeDirectorWCF
 {
     public class VMSoftwareSpec

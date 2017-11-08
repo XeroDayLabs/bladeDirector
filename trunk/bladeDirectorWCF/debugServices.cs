@@ -44,16 +44,27 @@ namespace bladeDirectorWCF
             services.hostStateManager.initWithBlades(spec);
         }
 
-        // Reusing existing types isn't supported for non-WCF services, so we need to do this silly workaround until we scrap IIS
-        // and run entirely from WCF.
         public bladeSpec createBladeSpec(string newBladeIP, string newISCSIIP, string newILOIP, ushort newILOPort,
-            bool newCurrentlyHavingBIOSDeployed, VMDeployStatus newvmDeployState, string newCurrentBIOS,
+            bool newCurrentlyHavingBIOSDeployed, VMDeployStatus newvmDeployState, string newCurrentBIOS, string newDebugKey,
+            string newFriendlyName,
             bladeLockType permittedAccessRead, bladeLockType permittedAccessWrite)
         {
             return new bladeSpec(null, newBladeIP, newISCSIIP, newILOIP, newILOPort, newCurrentlyHavingBIOSDeployed,
-                newvmDeployState, newCurrentBIOS, permittedAccessRead, permittedAccessWrite);
+                newvmDeployState, newCurrentBIOS, newDebugKey, newFriendlyName, permittedAccessRead, permittedAccessWrite);
         }
-        
+
+        public bladeSpec createBladeSpecForXDLNode(int nodeIndex, string newDebugKey, bladeLockType permittedAccessRead, bladeLockType permittedAccessWrite)
+        {
+            string newBladeIP = "172.17.129." + (nodeIndex + 100);
+            string newISCSIIP = "10.0.0." + (nodeIndex + 100);
+            string newILOIP = "172.17.2." + (nodeIndex + 100);
+            ushort newILOPort = (ushort) (59900 + nodeIndex);
+            string newFriendlyName = "blade_" + nodeIndex.ToString("D2");
+
+            return new bladeSpec(null, newBladeIP, newISCSIIP, newILOIP, newILOPort, false, VMDeployStatus.notBeingDeployed,
+                null, newDebugKey, newFriendlyName, permittedAccessRead, permittedAccessWrite);
+        }
+
         public resultAndWaitToken _logIn(string requestorIP)
         {
             return services._logIn(requestorIP);
@@ -73,7 +84,12 @@ namespace bladeDirectorWCF
         {
             ((biosReadWrite_mocked)services.hostStateManager.biosRWEngine).biosOperationTime = TimeSpan.FromSeconds(operationTimeSeconds);
         }
-        
+
+        public resultAndWaitToken _selectSnapshotForBladeOrVM(string requestorIP, string nodeIP, string snapshotName)
+        {
+            return services.hostStateManager.selectSnapshotForBladeOrVM(requestorIP, nodeIP, snapshotName);
+        }
+
         public resultAndWaitToken _rebootAndStartReadingBIOSConfiguration(string requestorIP, string nodeIP)
         {
             return services.hostStateManager.rebootAndStartReadingBIOSConfiguration(nodeIP, requestorIP);

@@ -26,11 +26,11 @@
     <MetadataFile FileName="bladeDirector1.xsd" MetadataType="Schema" ID="7f15f448-0dfd-4aab-9100-41c8094a68ed" SourceId="1" SourceUrl="http://127.0.0.1/bladeDirector?xsd=xsd8" />
     <MetadataFile FileName="bladeDirector2.xsd" MetadataType="Schema" ID="40defbae-df22-44dc-9cc7-30a69daf13a0" SourceId="1" SourceUrl="http://127.0.0.1/bladeDirector?xsd=xsd1" />
     <MetadataFile FileName="bladeDirector.disco" MetadataType="Disco" ID="f711af91-2069-490b-a40e-6d388fcf5a94" SourceId="1" SourceUrl="http://127.0.0.1/bladeDirector?disco" />
-    <MetadataFile FileName="bladeDirector3.xsd" MetadataType="Schema" ID="4c135c6e-7211-4cc7-958f-a488171da99d" SourceId="1" SourceUrl="http://127.0.0.1/bladeDirector?xsd=xsd4" />
     <MetadataFile FileName="bladeDirector4.xsd" MetadataType="Schema" ID="af3c98aa-e81a-4c11-b9f0-3e7c637aa3cc" SourceId="1" SourceUrl="http://127.0.0.1/bladeDirector?xsd=xsd2" />
     <MetadataFile FileName="bladeDirector5.xsd" MetadataType="Schema" ID="d8906dcd-2a8a-418f-94e5-8d92ccc62a08" SourceId="1" SourceUrl="http://127.0.0.1/bladeDirector?xsd=xsd6" />
     <MetadataFile FileName="bladeDirector6.xsd" MetadataType="Schema" ID="f1233567-9f64-4f08-b76d-b1b600606b9e" SourceId="1" SourceUrl="http://127.0.0.1/bladeDirector?xsd=xsd0" />
     <MetadataFile FileName="bladeDirector7.xsd" MetadataType="Schema" ID="98b08ab6-895f-4bb0-a90f-b40ba60b64c5" SourceId="1" SourceUrl="http://127.0.0.1/bladeDirector?xsd=xsd9" />
+    <MetadataFile FileName="bladeDirector3.xsd" MetadataType="Schema" ID="4c135c6e-7211-4cc7-958f-a488171da99d" SourceId="1" SourceUrl="http://127.0.0.1/bladeDirector?xsd=xsd4" />
     <MetadataFile FileName="bladeDirector8.xsd" MetadataType="Schema" ID="cb584b47-c42c-4661-94da-5a9191acab33" SourceId="1" SourceUrl="http://127.0.0.1/bladeDirector?xsd=xsd7" />
     <MetadataFile FileName="services.wsdl" MetadataType="Wsdl" ID="ef640183-a8b8-4344-ac58-5c9f4b457ecc" SourceId="1" SourceUrl="http://127.0.0.1/bladeDirector?wsdl" />
     <MetadataFile FileName="bladeDirector9.xsd" MetadataType="Schema" ID="a9e188f6-5a92-49ea-af27-c489c4a53e82" SourceId="1" SourceUrl="http://127.0.0.1/bladeDirector?xsd=xsd5" />

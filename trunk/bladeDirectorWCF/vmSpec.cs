@@ -4,12 +4,19 @@ using System.Data.SQLite;
 using System.Linq;
 using System.Xml.Serialization;
 using bladeDirectorWCF.Properties;
-using createDisks;
 
 namespace bladeDirectorWCF
 {
+    public interface IDebuggableThing
+    {
+        string kernelDebugAddress { get; }
+        ushort kernelDebugPort { get; }
+        string kernelDebugKey { get; }
+        string friendlyName { get; }
+    }
+
     [XmlInclude(typeof (bladeOwnership))]
-    public class vmSpec : bladeOwnership
+    public class vmSpec : bladeOwnership, IDebuggableThing
     {
         public long parentBladeID
         {
@@ -55,12 +62,12 @@ namespace bladeDirectorWCF
         }
         private string _eth1MAC;
         
-        public string displayName
+        public override string friendlyName
         {
-            get { checkPermsR("displayName"); return _displayName; }
-            set { checkPermsW("displayName"); _displayName = value; }
+            get { checkPermsR("friendlyName"); return _friendlyName; }
+            set { checkPermsW("friendlyName"); _friendlyName = value; }
         }
-        private string _displayName;
+        private string _friendlyName;
         
         public int indexOnServer
         {
@@ -69,27 +76,30 @@ namespace bladeDirectorWCF
         }
         private int _indexOnServer;
 
-        public ushort kernelDebugPort
+        public override ushort kernelDebugPort
         {
             get { checkPermsR("kernelDebugPort"); return _kernelDebugPort; }
             set { checkPermsW("kernelDebugPort"); _kernelDebugPort = value; }
         }
         private ushort _kernelDebugPort;
 
-        public string kernelDebugKey
+        public override string kernelDebugKey
         {
             get { checkPermsR("kernelDebugKey"); return _kernelDebugKey; }
             set { checkPermsW("kernelDebugKey"); _kernelDebugKey = value; }
         }
         private string _kernelDebugKey;
 
-        // These two properties are accessed by the client via the XML response. They must be public and non-read-only.
-        // ReSharper disable MemberCanBePrivate.Global
-        // ReSharper disable NotAccessedField.Global
-        public string username;
-        public string password;
-        // ReSharper restore NotAccessedField.Global
-        // ReSharper restore MemberCanBePrivate.Global
+        public override string availableUsersCSV
+        {
+            get { checkPermsR("availableUsersCSV"); return _availableUsersCSV; }
+            set { checkPermsW("availableUsersCSV"); _availableUsersCSV = value; }
+        }
+        private string _availableUsersCSV;
+
+        // The kernel debug address is the VM's IP.
+        public override string kernelDebugAddress { get { return VMIP; } }
+
 
         public int cpuCount
         {
@@ -123,6 +133,9 @@ namespace bladeDirectorWCF
             : base(conn, readLock, writeLock)
         {
             vmConfigKey = null;
+
+            if (permittedAccessRead.HasFlag(bladeLockType.lockVirtualHW))
+                _availableUsersCSV = makeUsersCSV(new[] { new userDesc(Settings.Default.vmUsername, Settings.Default.vmPassword) });
         }
 
         public vmSpec(SQLiteConnection conn, string IP , bladeLockType readLock, bladeLockType writeLock, bool writeToDBImmediately = true)
@@ -130,6 +143,9 @@ namespace bladeDirectorWCF
         {
             vmConfigKey = null;
             VMIP = IP;
+
+            if (permittedAccessRead.HasFlag(bladeLockType.lockVirtualHW))
+                _availableUsersCSV = makeUsersCSV(new[] { new userDesc(Settings.Default.vmUsername, Settings.Default.vmPassword) });
 
             if (writeToDBImmediately)
                 createOrUpdateInDB(new List<string>() { "vmConfigKey", "VMIP" });
@@ -140,8 +156,8 @@ namespace bladeDirectorWCF
         {
             parseFromDBRow(reader);
 
-            username = Settings.Default.vmUsername;
-            password = Settings.Default.vmPassword;
+            if (permittedAccessRead.HasFlag(bladeLockType.lockVirtualHW))
+                _availableUsersCSV = makeUsersCSV(new[] { new userDesc(Settings.Default.vmUsername, Settings.Default.vmPassword) });
         }
 
         public void parseFromDBRow(SQLiteDataReader reader)
@@ -166,12 +182,14 @@ namespace bladeDirectorWCF
                 _eth0MAC = (string)reader["eth0MAC"];
             if (fieldList.Contains("eth1MAC") && !(reader["eth1MAC"] is DBNull))
                 _eth1MAC = (string)reader["eth1MAC"];
-            if (fieldList.Contains("displayname") && !(reader["displayname"] is DBNull))
-                _displayName = (string)reader["displayname"];
+            if (fieldList.Contains("friendlyName") && !(reader["friendlyName"] is DBNull))
+                _friendlyName = (string)reader["friendlyName"];
             if (fieldList.Contains("kernelDebugPort") && !(reader["kernelDebugPort"] is DBNull))
                 _kernelDebugPort = Convert.ToUInt16(reader["kernelDebugPort"]);
             if (fieldList.Contains("kernelDebugKey") && !(reader["kernelDebugKey"] is DBNull))
                 _kernelDebugKey = (string)reader["kernelDebugKey"];
+            if (fieldList.Contains("availableUsersCSV") && !(reader["availableUsersCSV"] is DBNull))
+                _availableUsersCSV = (string)reader["availableUsersCSV"];
             if (fieldList.Contains("indexOnServer") && !(reader["indexOnServer"] is DBNull))
                 _indexOnServer = Convert.ToInt32(reader["indexOnServer"]);
             if (fieldList.Contains("memoryMB") && !(reader["memoryMB"] is DBNull))
@@ -227,11 +245,12 @@ namespace bladeDirectorWCF
                 toRet.Add("vmConfigKey");
                 toRet.Add("eth0MAC");
                 toRet.Add("eth1MAC");
-                toRet.Add("displayName");
+                toRet.Add("friendlyName");
                 toRet.Add("kernelDebugPort");
                 toRet.Add("kernelDebugKey");
                 toRet.Add("cpuCount");
                 toRet.Add("memoryMB");
+                toRet.Add("availableUsersCSV");
             }
             if ((lockType & bladeLockType.lockOwnership) != bladeLockType.lockNone)
             {
@@ -336,9 +355,10 @@ namespace bladeDirectorWCF
                 cmd.Parameters.AddWithValue("$iscsiIP", _iscsiIP);
                 cmd.Parameters.AddWithValue("$eth0MAC", _eth0MAC);
                 cmd.Parameters.AddWithValue("$eth1MAC", _eth1MAC);
-                cmd.Parameters.AddWithValue("$displayName", _displayName);
+                cmd.Parameters.AddWithValue("$friendlyName", _friendlyName);
                 cmd.Parameters.AddWithValue("$kernelDebugPort", _kernelDebugPort);
                 cmd.Parameters.AddWithValue("$kernelDebugKey", _kernelDebugKey);
+                cmd.Parameters.AddWithValue("$availableUsersCSV", _availableUsersCSV);
                 cmd.Parameters.AddWithValue("$indexOnServer", _indexOnServer);
                 cmd.Parameters.AddWithValue("$isWaitingForResources", _isWaitingForResources);
 
@@ -351,28 +371,16 @@ namespace bladeDirectorWCF
             }
         }
 
-        public override itemToAdd toItemToAdd(bool useNextOwner = false)
+        // FIXME: this should probably be in the NAS
+        public override string getCloneName()
         {
-            itemToAdd toRet = new itemToAdd();
-
-            // If this is set, we should ignore the 'currentOwner' and use the 'nextOwner' instead. This is used when we are 
-            // preparing a VM for another blade, and have ownership temporarily assigned to the blade director itself.
             string owner;
-            if (useNextOwner) 
+            if (state == bladeStatus.inUseByDirector)
                 owner = nextOwner;
-            else 
+            else
                 owner = currentOwner;
 
-            toRet.cloneName = VMIP + "-" + owner + "-" + currentSnapshot;
-            toRet.serverIP = owner;
-            toRet.snapshotName = currentSnapshot;
-            toRet.bladeIP = VMIP;
-            toRet.computerName = displayName;
-            toRet.kernelDebugPort = kernelDebugPort;
-            toRet.kernelDebugKey = kernelDebugKey;
-            toRet.isVirtualMachine = true;
-
-            return toRet;
+            return VMIP + "-" + owner + "-" + currentSnapshot;
         }
 
         public string generateIPXEScript()
@@ -383,11 +391,6 @@ namespace bladeDirectorWCF
             script = script.Replace("{BLADE_IP_MAIN}", VMIP);
 
             return base.generateIPXEScript(script);
-        }
-
-        public void Dispose()
-        {
-            throw new NotImplementedException();
         }
     }
 }

@@ -84,6 +84,9 @@
     <Content Include="Service References\bladeDirectorSvc\bladeDirector.bladeDirectorSvc.vmSpec.datasource">
       <DependentUpon>Reference.svcmap</DependentUpon>
     </Content>
+    <Content Include="Service References\bladeDirectorSvc\bladeDirector.bladeDirectorSvc.NASParams.datasource">
+      <DependentUpon>Reference.svcmap</DependentUpon>
+    </Content>
     <None Include="Service References\bladeDirectorSvc\bladeDirector.xsd">
       <SubType>Designer</SubType>
     </None>
