@@ -350,7 +350,10 @@ namespace bladeDirectorClient
                         using (BladeDirectorServices director = new BladeDirectorServices(machinePools.bladeDirectorURL))
                         {
                             resultAndWaitToken waitToken = director.svc.logIn();
-                            director.waitForSuccess(waitToken, TimeSpan.FromMinutes(3));
+                            // If there's a login already going for this machine, we will just use that one.
+                            if (waitToken.result.code == resultCode.alreadyInProgress)
+                                waitToken.result.code = resultCode.pending;
+                            director.waitForSuccess(waitToken, TimeSpan.FromMinutes(10));
                         }
                         keepaliveThread = new Thread(keepaliveThreadMain);
                         keepaliveThread.Name = "Blade director keepalive thread";
