@@ -133,10 +133,10 @@ namespace bladeDirectorClient
                             bladeConfig.bladeIP, iloHostUsername, iloHostPassword,
                             bladeConfig.iLOIP, iloUsername, iloPassword,
                             iloISCSIIP, iloISCSIUsername, iloISCSIPassword,
-                            snapshot.friendlyName, snapshot.path, bladeConfig.iLOPort, iloKernelKey
+                            snapshot.friendlyName, snapshot.path, bladeConfig.kernelDebugPort, iloKernelKey
                             );
 
-                        ensurePortIsFree(bladeConfig.iLOPort);
+                        ensurePortIsFree(bladeConfig.kernelDebugPort);
 
                         bladeDirectedHypervisor_iLo newHyp = new bladeDirectedHypervisor_iLo(spec);
                         newHyp.setDisposalCallback(onDestruction);
@@ -290,10 +290,10 @@ namespace bladeDirectorClient
                         bladeConfig.bladeIP, iloHostUsername, iloHostPassword,
                         bladeConfig.iLOIP, iloUsername, iloPassword,
                         iloISCSIIP, iloISCSIUsername, iloISCSIPassword,
-                        currentShot.friendlyName, currentShot.path, bladeConfig.iLOPort, iloKernelKey
+                        currentShot.friendlyName, currentShot.path, bladeConfig.kernelDebugPort, iloKernelKey
                         );
 
-                    ensurePortIsFree(bladeConfig.iLOPort);
+                    ensurePortIsFree(bladeConfig.kernelDebugPort);
 
                     NASAccess nas = new FreeNAS(spec);
                     freeNASSnapshot.getSnapshotObjectsFromNAS(nas, spec.snapshotFullName);

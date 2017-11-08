@@ -29,7 +29,7 @@ namespace tests
                     Assert.AreEqual(toDB.currentlyBeingAVMServer, fromDB.spec.currentlyBeingAVMServer);
                     Assert.AreEqual(toDB.currentlyHavingBIOSDeployed, fromDB.spec.currentlyHavingBIOSDeployed);
                     Assert.AreEqual(toDB.iLOIP, fromDB.spec.iLOIP);
-                    Assert.AreEqual(toDB.iLOPort, fromDB.spec.iLOPort);
+                    Assert.AreEqual(toDB.kernelDebugPort, fromDB.spec.kernelDebugPort);
                     Assert.AreEqual(toDB.iLoPassword, fromDB.spec.iLoPassword);
                     Assert.AreEqual(toDB.iLoUsername, fromDB.spec.iLoUsername);
                     Assert.AreEqual(toDB.iscsiIP, fromDB.spec.iscsiIP);

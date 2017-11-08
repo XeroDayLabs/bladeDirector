@@ -49,7 +49,7 @@
         <xs:element minOccurs="0" name="newBladeIP" nillable="true" type="xs:string" />
         <xs:element minOccurs="0" name="newISCSIIP" nillable="true" type="xs:string" />
         <xs:element minOccurs="0" name="newILOIP" nillable="true" type="xs:string" />
-        <xs:element minOccurs="0" name="newILOPort" type="xs:unsignedShort" />
+        <xs:element minOccurs="0" name="newKernelDebugPort" type="xs:unsignedShort" />
         <xs:element minOccurs="0" name="newCurrentlyHavingBIOSDeployed" type="xs:boolean" />
         <xs:element xmlns:q5="http://schemas.datacontract.org/2004/07/bladeDirectorWCF" minOccurs="0" name="newvmDeployState" type="q5:VMDeployStatus" />
         <xs:element minOccurs="0" name="newCurrentBIOS" nillable="true" type="xs:string" />

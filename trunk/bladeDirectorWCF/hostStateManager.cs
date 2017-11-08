@@ -53,7 +53,7 @@ namespace bladeDirectorWCF
                 bladeSpec.spec.iLOIP, Settings.Default.iloUsername, Settings.Default.iloPassword,
                 bladeSpec.spec.iscsiIP, null, null,
                 bladeSpec.spec.currentSnapshot, null,
-                bladeSpec.spec.iLOPort, null);
+                bladeSpec.spec.kernelDebugPort, null);
             return new hypervisor_iLo(iloSpec, clientExecutionMethod.SSHToBASH);
         }
 
@@ -76,7 +76,7 @@ namespace bladeDirectorWCF
                 bladeSpec.spec.iLOIP, Settings.Default.iloUsername, Settings.Default.iloPassword,
                 bladeSpec.spec.iscsiIP, null, null,
                 bladeSpec.spec.currentSnapshot, null,
-                bladeSpec.spec.iLOPort, null);
+                bladeSpec.spec.kernelDebugPort, null);
 
             return new hypervisor_iLo(iloSpec, clientExecutionMethod.smb);
         }

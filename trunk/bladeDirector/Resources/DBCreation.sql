@@ -14,7 +14,7 @@ create table bladeConfiguration(
     iscsiIP unique,
     bladeIP unique,
     iLOIP unique,
-    iLOPort unique,
+    kernelDebugPort unique,
 	currentlyHavingBIOSDeployed,
 	currentlyBeingAVMServer,
 	vmDeployState,

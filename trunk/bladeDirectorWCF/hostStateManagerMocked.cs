@@ -217,7 +217,7 @@ namespace bladeDirectorWCF
         public hypervisor_mocked_ilo(bladeSpec spec, hostStateManagerMocked.mockedExecutionDelegate onMockedExecution)
             : base(null, onMockedExecution)
         {
-            _spec = new hypSpec_iLo(spec.bladeIP, Settings.Default.vmUsername, Settings.Default.vmPassword, spec.iLOIP, Settings.Default.iloUsername, Settings.Default.iloPassword, null, null, null, spec.currentSnapshot, null, spec.iLOPort, null);
+            _spec = new hypSpec_iLo(spec.bladeIP, Settings.Default.vmUsername, Settings.Default.vmPassword, spec.iLOIP, Settings.Default.iloUsername, Settings.Default.iloPassword, null, null, null, spec.currentSnapshot, null, spec.kernelDebugPort, null);
         }
     }
 }

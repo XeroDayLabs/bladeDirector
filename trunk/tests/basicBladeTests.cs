@@ -53,7 +53,7 @@ namespace tests
                     Assert.AreEqual(expected[i].currentlyBeingAVMServer, actual[i].currentlyBeingAVMServer);
                     Assert.AreEqual(expected[i].currentlyHavingBIOSDeployed, actual[i].currentlyHavingBIOSDeployed);
                     Assert.AreEqual(expected[i].iLOIP, actual[i].iLOIP);
-                    Assert.AreEqual(expected[i].iLOPort, actual[i].iLOPort);
+                    Assert.AreEqual(expected[i].kernelDebugPort, actual[i].kernelDebugPort);
                     Assert.AreEqual(expected[i].iLoPassword, actual[i].iLoPassword);
                     Assert.AreEqual(expected[i].iLoUsername, actual[i].iLoUsername);
                     Assert.AreEqual(expected[i].iscsiIP, actual[i].iscsiIP);
@@ -286,7 +286,9 @@ namespace tests
                 string hostipB = "192.168.1.2";
 
                 // Host A requests all the VMs
-                vmHWAndSWSpec toAlloc = new vmHWAndSWSpec(new VMHardwareSpec() { memoryMB = 4, cpuCount = 1 }, new VMSoftwareSpec());
+                vmHWAndSWSpec toAlloc = new vmHWAndSWSpec(
+                    new VMHardwareSpec() { memoryMB = 4, cpuCount = 1 }, 
+                    new VMSoftwareSpec());
 
                 resultAndBladeName[] intialReqs = uut.svcDebug._requestAsManyVMAsPossible(hostipA, toAlloc.hw, toAlloc.sw);
                 for (int index = 0; index < intialReqs.Length; index++)

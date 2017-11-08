@@ -62,13 +62,6 @@ namespace bladeDirectorWCF
         }
         private string _eth1MAC;
         
-        public override string friendlyName
-        {
-            get { checkPermsR("friendlyName"); return _friendlyName; }
-            set { checkPermsW("friendlyName"); _friendlyName = value; }
-        }
-        private string _friendlyName;
-        
         public int indexOnServer
         {
             get { checkPermsR("indexOnServer"); return _indexOnServer; }
@@ -76,30 +69,8 @@ namespace bladeDirectorWCF
         }
         private int _indexOnServer;
 
-        public override ushort kernelDebugPort
-        {
-            get { checkPermsR("kernelDebugPort"); return _kernelDebugPort; }
-            set { checkPermsW("kernelDebugPort"); _kernelDebugPort = value; }
-        }
-        private ushort _kernelDebugPort;
-
-        public override string kernelDebugKey
-        {
-            get { checkPermsR("kernelDebugKey"); return _kernelDebugKey; }
-            set { checkPermsW("kernelDebugKey"); _kernelDebugKey = value; }
-        }
-        private string _kernelDebugKey;
-
-        public override string availableUsersCSV
-        {
-            get { checkPermsR("availableUsersCSV"); return _availableUsersCSV; }
-            set { checkPermsW("availableUsersCSV"); _availableUsersCSV = value; }
-        }
-        private string _availableUsersCSV;
-
         // The kernel debug address is the VM's IP.
         public override string kernelDebugAddress { get { return VMIP; } }
-
 
         public int cpuCount
         {
@@ -129,23 +100,18 @@ namespace bladeDirectorWCF
             // Used for XML de/ser
         }
 
-        public vmSpec(SQLiteConnection conn, bladeLockType readLock, bladeLockType writeLock)
-            : base(conn, readLock, writeLock)
+        public vmSpec(SQLiteConnection conn, string friendlyName, VMSoftwareSpec debugSpec, bladeLockType readLock, bladeLockType writeLock)
+            : base(conn, friendlyName, debugSpec, readLock, writeLock)
         {
             vmConfigKey = null;
-
-            if (permittedAccessRead.HasFlag(bladeLockType.lockVirtualHW))
-                _availableUsersCSV = makeUsersCSV(new[] { new userDesc(Settings.Default.vmUsername, Settings.Default.vmPassword) });
         }
 
-        public vmSpec(SQLiteConnection conn, string IP , bladeLockType readLock, bladeLockType writeLock, bool writeToDBImmediately = true)
-            : base(conn, readLock, writeLock)
+        public vmSpec(SQLiteConnection conn, string IP, 
+            bladeLockType readLock, bladeLockType writeLock, bool writeToDBImmediately = true)
+            : base(conn, IP, 0, "a.b.c.d", readLock, writeLock)
         {
             vmConfigKey = null;
             VMIP = IP;
-
-            if (permittedAccessRead.HasFlag(bladeLockType.lockVirtualHW))
-                _availableUsersCSV = makeUsersCSV(new[] { new userDesc(Settings.Default.vmUsername, Settings.Default.vmPassword) });
 
             if (writeToDBImmediately)
                 createOrUpdateInDB(new List<string>() { "vmConfigKey", "VMIP" });
@@ -155,9 +121,6 @@ namespace bladeDirectorWCF
             : base(conn, reader, readLock, writeLock)
         {
             parseFromDBRow(reader);
-
-            if (permittedAccessRead.HasFlag(bladeLockType.lockVirtualHW))
-                _availableUsersCSV = makeUsersCSV(new[] { new userDesc(Settings.Default.vmUsername, Settings.Default.vmPassword) });
         }
 
         public void parseFromDBRow(SQLiteDataReader reader)
@@ -182,14 +145,8 @@ namespace bladeDirectorWCF
                 _eth0MAC = (string)reader["eth0MAC"];
             if (fieldList.Contains("eth1MAC") && !(reader["eth1MAC"] is DBNull))
                 _eth1MAC = (string)reader["eth1MAC"];
-            if (fieldList.Contains("friendlyName") && !(reader["friendlyName"] is DBNull))
-                _friendlyName = (string)reader["friendlyName"];
             if (fieldList.Contains("kernelDebugPort") && !(reader["kernelDebugPort"] is DBNull))
                 _kernelDebugPort = Convert.ToUInt16(reader["kernelDebugPort"]);
-            if (fieldList.Contains("kernelDebugKey") && !(reader["kernelDebugKey"] is DBNull))
-                _kernelDebugKey = (string)reader["kernelDebugKey"];
-            if (fieldList.Contains("availableUsersCSV") && !(reader["availableUsersCSV"] is DBNull))
-                _availableUsersCSV = (string)reader["availableUsersCSV"];
             if (fieldList.Contains("indexOnServer") && !(reader["indexOnServer"] is DBNull))
                 _indexOnServer = Convert.ToInt32(reader["indexOnServer"]);
             if (fieldList.Contains("memoryMB") && !(reader["memoryMB"] is DBNull))
@@ -245,12 +202,8 @@ namespace bladeDirectorWCF
                 toRet.Add("vmConfigKey");
                 toRet.Add("eth0MAC");
                 toRet.Add("eth1MAC");
-                toRet.Add("friendlyName");
-                toRet.Add("kernelDebugPort");
-                toRet.Add("kernelDebugKey");
                 toRet.Add("cpuCount");
                 toRet.Add("memoryMB");
-                toRet.Add("availableUsersCSV");
             }
             if ((lockType & bladeLockType.lockOwnership) != bladeLockType.lockNone)
             {
@@ -355,10 +308,6 @@ namespace bladeDirectorWCF
                 cmd.Parameters.AddWithValue("$iscsiIP", _iscsiIP);
                 cmd.Parameters.AddWithValue("$eth0MAC", _eth0MAC);
                 cmd.Parameters.AddWithValue("$eth1MAC", _eth1MAC);
-                cmd.Parameters.AddWithValue("$friendlyName", _friendlyName);
-                cmd.Parameters.AddWithValue("$kernelDebugPort", _kernelDebugPort);
-                cmd.Parameters.AddWithValue("$kernelDebugKey", _kernelDebugKey);
-                cmd.Parameters.AddWithValue("$availableUsersCSV", _availableUsersCSV);
                 cmd.Parameters.AddWithValue("$indexOnServer", _indexOnServer);
                 cmd.Parameters.AddWithValue("$isWaitingForResources", _isWaitingForResources);
 

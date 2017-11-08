@@ -44,24 +44,24 @@ namespace bladeDirectorWCF
             services.hostStateManager.initWithBlades(spec);
         }
 
-        public bladeSpec createBladeSpec(string newBladeIP, string newISCSIIP, string newILOIP, ushort newILOPort,
+        public bladeSpec createBladeSpec(string newBladeIP, string newISCSIIP, string newILOIP, ushort newKernelDebugPort,
             bool newCurrentlyHavingBIOSDeployed, VMDeployStatus newvmDeployState, string newCurrentBIOS, string newDebugKey,
             string newFriendlyName,
             bladeLockType permittedAccessRead, bladeLockType permittedAccessWrite)
         {
-            return new bladeSpec(null, newBladeIP, newISCSIIP, newILOIP, newILOPort, newCurrentlyHavingBIOSDeployed,
+            return new bladeSpec(null, newBladeIP, newISCSIIP, newILOIP, newKernelDebugPort, newCurrentlyHavingBIOSDeployed,
                 newvmDeployState, newCurrentBIOS, newDebugKey, newFriendlyName, permittedAccessRead, permittedAccessWrite);
         }
 
         public bladeSpec createBladeSpecForXDLNode(int nodeIndex, string newDebugKey, bladeLockType permittedAccessRead, bladeLockType permittedAccessWrite)
         {
-            string newBladeIP = "172.17.129." + (nodeIndex + 100);
-            string newISCSIIP = "10.0.0." + (nodeIndex + 100);
-            string newILOIP = "172.17.2." + (nodeIndex + 100);
-            ushort newILOPort = (ushort) (59900 + nodeIndex);
-            string newFriendlyName = "blade_" + nodeIndex.ToString("D2");
+            string newBladeIP = xdlClusterNaming.makeBladeIP(nodeIndex);
+            string newISCSIIP = xdlClusterNaming.makeBladeISCSIIP(nodeIndex);
+            string newILOIP = xdlClusterNaming.makeBladeILOIP(nodeIndex);
+            ushort newKernelDebugPort = xdlClusterNaming.makeBladeKernelDebugPort(nodeIndex);
+            string newFriendlyName = xdlClusterNaming.makeBladeFriendlyName(nodeIndex);
 
-            return new bladeSpec(null, newBladeIP, newISCSIIP, newILOIP, newILOPort, false, VMDeployStatus.notBeingDeployed,
+            return new bladeSpec(null, newBladeIP, newISCSIIP, newILOIP, newKernelDebugPort, false, VMDeployStatus.notBeingDeployed,
                 null, newDebugKey, newFriendlyName, permittedAccessRead, permittedAccessWrite);
         }
 

@@ -148,6 +148,7 @@
     <Compile Include="vmSpec.cs" />
     <Compile Include="waitToken.cs" />
     <Compile Include="webServices.cs" />
+    <Compile Include="xdlClusterNaming.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config">

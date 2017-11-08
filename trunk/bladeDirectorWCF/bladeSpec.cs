@@ -10,7 +10,7 @@ using bladeDirectorWCF.Properties;
 namespace bladeDirectorWCF
 {
     [XmlInclude(typeof(bladeOwnership))]
-    public class bladeSpec : bladeOwnership, IDebuggableThing
+    public class bladeSpec : bladeOwnership
     {
         // ReSharper disable UnusedMember.Global
 
@@ -36,48 +36,12 @@ namespace bladeDirectorWCF
         }
         private string _iLOIP;
 
-        // FIXME: is this the windbg port? if so, this is a bad name. :/
-        public ushort iLOPort
-        {
-            get { checkPermsR("iLOPort"); return _iLOPort; }
-            set { checkPermsW("iLOPort"); _iLOPort = value; }
-        }
-        private ushort _iLOPort;
-
-        public override ushort kernelDebugPort
-        {
-            // Just an alias of iLOPort until I sort out silly naming
-            get { checkPermsR("iLOPort"); return _iLOPort; }
-            set { checkPermsW("iLOPort"); _iLOPort = value; }
-        }
-
-        public override string kernelDebugKey
-        {
-            get { checkPermsR("kernelDebugKey"); return _kernelDebugKey; }
-            set { checkPermsW("kernelDebugKey"); _kernelDebugKey = value; }
-        }
-        private string _kernelDebugKey;
-
-        public override string availableUsersCSV
-        {
-            get { checkPermsR("availableUsersCSV"); return _availableUsersCSV; }
-            set { checkPermsW("availableUsersCSV"); _availableUsersCSV = value; }
-        }
-        private string _availableUsersCSV;
-
         public VMDeployStatus vmDeployState
         {
             get { checkPermsR("vmDeployState"); return _vmDeployState; }
             set { checkPermsW("vmDeployState"); _vmDeployState = value; }
         }
         private VMDeployStatus _vmDeployState;
-
-        public override string friendlyName
-        {
-            get { checkPermsR("friendlyName"); return _friendlyName; }
-            set { checkPermsW("friendlyName"); _friendlyName = value; }
-        }
-        private string _friendlyName;
 
         public bool currentlyHavingBIOSDeployed
         {
@@ -144,18 +108,12 @@ namespace bladeDirectorWCF
 
         public bladeSpec(SQLiteConnection conn,
             string newBladeIP, string newISCSIIP,
-            string newILOIP, ushort newILOPort, string newKernelDebugKey = "idk", string newFriendlyName = null)
-            : base(conn, bladeLockType.lockAll, bladeLockType.lockAll)
+            string newILOIP, ushort newKernelDebugPort, string newKernelDebugKey = "idk", string newFriendlyName = null)
+            : base(conn, newFriendlyName, newKernelDebugPort, newKernelDebugKey, bladeLockType.lockAll, bladeLockType.lockAll)
         {
             _iscsiIP = newISCSIIP;
             _bladeIP = newBladeIP;
-            _iLOPort = newILOPort;
             _iLOIP = newILOIP;
-            _kernelDebugKey = newKernelDebugKey;
-            if (newFriendlyName == null)
-                _friendlyName = _bladeIP;
-            else
-                _friendlyName = newFriendlyName;
 
             _currentlyHavingBIOSDeployed = false;
             _lastDeployedBIOS = null;
@@ -165,25 +123,20 @@ namespace bladeDirectorWCF
             ESXiPassword = Settings.Default.esxiPassword;
             iLoUsername = Settings.Default.iloUsername;
             iLoPassword = Settings.Default.iloPassword;
-
-            _availableUsersCSV = makeUsersCSV(new[] { new userDesc(Settings.Default.vmUsername, Settings.Default.vmPassword) });
         }
 
         public bladeSpec(SQLiteConnection conn,
             string newBladeIP, string newISCSIIP, 
-            string newILOIP, ushort newILOPort, 
+            string newILOIP, ushort newKernelDebugPort, 
             bool newCurrentlyHavingBIOSDeployed, 
             VMDeployStatus newvmDeployState, string newCurrentBIOS, 
             string newKernelDebugKey, string newFriendlyName,
             bladeLockType permittedAccessRead, bladeLockType permittedAccessWrite)
-            : base(conn, permittedAccessRead, permittedAccessWrite)
+            : base(conn, newFriendlyName, newKernelDebugPort, newKernelDebugKey, permittedAccessRead, permittedAccessWrite)
         {
             _iscsiIP = newISCSIIP;
             _bladeIP = newBladeIP;
-            _iLOPort = newILOPort;
             _iLOIP = newILOIP;
-            _kernelDebugKey = newKernelDebugKey;
-            _friendlyName = newFriendlyName;
 
             _currentlyHavingBIOSDeployed = newCurrentlyHavingBIOSDeployed;
             _lastDeployedBIOS = newCurrentBIOS;
@@ -194,8 +147,6 @@ namespace bladeDirectorWCF
             iLoUsername = Settings.Default.iloUsername;
             iLoPassword = Settings.Default.iloPassword;
 
-            if (permittedAccessRead.HasFlag(bladeLockType.lockVirtualHW))
-                _availableUsersCSV = makeUsersCSV(new[] { new userDesc(Settings.Default.vmUsername, Settings.Default.vmPassword) });
         }
 
         public bladeSpec(SQLiteConnection conn, SQLiteDataReader reader, bladeLockType permittedAccessRead, bladeLockType permittedAccessWrite)
@@ -207,9 +158,6 @@ namespace bladeDirectorWCF
             ESXiPassword = Settings.Default.esxiPassword;
             iLoUsername = Settings.Default.iloUsername;
             iLoPassword = Settings.Default.iloPassword;
-
-            if (permittedAccessRead.HasFlag(bladeLockType.lockVirtualHW))
-                _availableUsersCSV = makeUsersCSV(new[] { new userDesc(Settings.Default.vmUsername, Settings.Default.vmPassword) });
         }
 
         private void parseFromDBRow(SQLiteDataReader reader)
@@ -224,17 +172,8 @@ namespace bladeDirectorWCF
             if (fieldList.Contains("bladeIP"))
                 _bladeIP = (string)reader["bladeIP"];
 
-            if (fieldList.Contains("kernelDebugKey"))
-                _kernelDebugKey = (string)reader["kernelDebugKey"];
-
-            if (fieldList.Contains("availableUsersCSV"))
-                _availableUsersCSV = (string)reader["availableUsersCSV"];
-
-            if (fieldList.Contains("friendlyName"))
-                _friendlyName = (string)reader["friendlyName"];
-
-            if (fieldList.Contains("iLOPort"))
-                _iLOPort = ushort.Parse(reader["iLOPort"].ToString());
+            if (fieldList.Contains("kernelDebugPort"))
+                _kernelDebugPort = ushort.Parse(reader["kernelDebugPort"].ToString());
 
             if (fieldList.Contains("iLOIP"))
                 _iLOIP = (string)reader["iLOIP"];
@@ -283,7 +222,7 @@ namespace bladeDirectorWCF
                 return false;
             if (iLOIP != compareTo.iLOIP)
                 return false;
-            if (iLOPort != compareTo.iLOPort)
+            if (kernelDebugPort != compareTo.kernelDebugPort)
                 return false;
             if (currentlyHavingBIOSDeployed != compareTo.currentlyHavingBIOSDeployed)
                 return false;
@@ -298,7 +237,7 @@ namespace bladeDirectorWCF
             if (kernelDebugPort != compareTo.kernelDebugPort)
                 return false;
 
-            return true;
+            return base.Equals(obj);
         }
 
         protected override List<string> getPermittedFieldsInclInheritorsR()
@@ -335,29 +274,22 @@ namespace bladeDirectorWCF
         private new static List<string> getPermittedFields(bladeLockType lockType)
         {
             List<string> toRet = new List<string>();
-            if ((lockType & bladeLockType.lockIPAddresses) != bladeLockType.lockNone)
+            if (lockType.HasFlag(bladeLockType.lockIPAddresses))
             {
                 toRet.Add("iscsiIP");
                 toRet.Add("bladeIP");
                 toRet.Add("iLOIP");
-                toRet.Add("iLOPort");
             }
-            if ((lockType & bladeLockType.lockVirtualHW) != bladeLockType.lockNone)
-            {
-                toRet.Add("kernelDebugKey");
-                toRet.Add("friendlyName");
-                toRet.Add("availableUsersCSV");
-            }
-            if ((lockType & bladeLockType.lockvmDeployState) != bladeLockType.lockNone)
+            if (lockType.HasFlag(bladeLockType.lockvmDeployState))
             {
                 toRet.Add("vmDeployState");
             }
-            if ((lockType & bladeLockType.lockBIOS) != bladeLockType.lockNone)
+            if (lockType.HasFlag(bladeLockType.lockBIOS))
             {
                 toRet.Add("currentlyHavingBIOSDeployed");
                 toRet.Add("lastDeployedBIOS");
             }
-            if ((lockType & bladeLockType.lockOwnership) != bladeLockType.lockNone)
+            if (lockType.HasFlag(bladeLockType.lockOwnership))
             {
                 toRet.Add("currentlyBeingAVMServer");
             }
@@ -446,11 +378,8 @@ namespace bladeDirectorWCF
             {
                 cmd.Parameters.AddWithValue("iscsiIP", _iscsiIP);
                 cmd.Parameters.AddWithValue("bladeIP", _bladeIP);
-                cmd.Parameters.AddWithValue("kernelDebugKey", _kernelDebugKey);
-                cmd.Parameters.AddWithValue("friendlyName", _friendlyName);
-                cmd.Parameters.AddWithValue("availableUsersCSV", _availableUsersCSV);
                 cmd.Parameters.AddWithValue("iLOIP", _iLOIP);
-                cmd.Parameters.AddWithValue("iLOPort", _iLOPort);
+                cmd.Parameters.AddWithValue("kernelDebugPort", _kernelDebugPort);
                 cmd.Parameters.AddWithValue("currentlyHavingBIOSDeployed", _currentlyHavingBIOSDeployed ? 1 : 0);
                 cmd.Parameters.AddWithValue("vmDeployState", _vmDeployState);
                 cmd.Parameters.AddWithValue("currentlyBeingAVMServer", _currentlyBeingAVMServer ? 1 : 0);
@@ -489,7 +418,19 @@ namespace bladeDirectorWCF
             if ((permittedAccessRead & bladeLockType.lockVMCreation) == bladeLockType.lockNone)
                 throw new Exception("lockVMCreation is needed when calling .createChildVM");
 
-            vmSpec newVM = new vmSpec(conn, bladeLockType.lockAll, bladeLockType.lockAll);
+            vmserverTotals totals = db.getVMServerTotals(this);
+            int indexOnServer = totals.VMs + 1;
+            string newBladeName = xdlClusterNaming.makeVMName(bladeIP, indexOnServer);
+
+            // If we set the debugger port automatically, make sure we reset it to zero before we return.
+            bool needToResetReqSWDebugPort = false;
+            if (reqsw.debuggerPort == 0)
+            {
+                reqsw.debuggerPort = xdlClusterNaming.makeVMKernelDebugPort(bladeIP, indexOnServer);
+                needToResetReqSWDebugPort = true;
+            }
+
+            vmSpec newVM = new vmSpec(conn, newBladeName, reqsw, bladeLockType.lockAll, bladeLockType.lockAll);
             newVM.parentBladeIP = bladeIP;
             newVM.state = bladeStatus.inUseByDirector;
             newVM.currentOwner = "vmserver"; // We own the blade until we are done setting it up
@@ -497,24 +438,18 @@ namespace bladeDirectorWCF
             newVM.parentBladeID = bladeID.Value;
             newVM.memoryMB = reqhw.memoryMB;
             newVM.cpuCount = reqhw.cpuCount;
-            vmserverTotals totals = db.getVMServerTotals(this);
-            newVM.indexOnServer = totals.VMs + 1;
+            newVM.indexOnServer = indexOnServer;
 
-            byte[] VMServerIPBytes = IPAddress.Parse(bladeIP).GetAddressBytes();
+            newVM.VMIP = xdlClusterNaming.makeVMIP(bladeIP, newVM);
+            newVM.VMIP = xdlClusterNaming.makeiSCSIIP(bladeIP, newVM);
+            newVM.eth0MAC = xdlClusterNaming.makeEth0MAC(bladeIP, newVM);
+            newVM.eth1MAC = xdlClusterNaming.makeEth1MAC(bladeIP, newVM);
 
-            // VM IPs are in 172.17.(128+bladeIndex).vmIndex
-            newVM.VMIP = "172.17." + (28 + VMServerIPBytes[3]) + "." + newVM.indexOnServer;
-            newVM.iscsiIP = "10.0." + (28 + VMServerIPBytes[3]) + "." + newVM.indexOnServer;
-            newVM.eth0MAC = "00:50:56:00:" + (VMServerIPBytes[3] - 100).ToString("D2") + ":" + newVM.indexOnServer.ToString("D2");
-            newVM.eth1MAC = "00:50:56:01:" + (VMServerIPBytes[3] - 100).ToString("D2") + ":" + newVM.indexOnServer.ToString("D2");
-            newVM.friendlyName = "VM_" + (VMServerIPBytes[3] - 100).ToString("D2") + "_" + newVM.indexOnServer.ToString("D2");
-
-            if (reqsw.debuggerPort == 0)
-                reqsw.debuggerPort = (ushort) (50000 + ((VMServerIPBytes[3] - 100)*100) + newVM.indexOnServer);
-            newVM.kernelDebugPort = reqsw.debuggerPort;
-            newVM.kernelDebugKey = reqsw.debuggerKey;
             // VMs always have this implicit snapshot.
             newVM.currentSnapshot = "vm";
+
+            if (needToResetReqSWDebugPort)
+                reqsw.debuggerPort = 0;
 
             lockableVMSpec toRet = new lockableVMSpec(newVM.VMIP, bladeLockType.lockAll, bladeLockType.lockAll);
             toRet.setSpec(newVM);

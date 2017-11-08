@@ -4,7 +4,12 @@ create table bladeOwnership(
 	currentOwner,
 	nextOwner,
 	lastKeepAlive,
-	currentSnapshot);
+	currentSnapshot,
+	friendlyName unique,
+    kernelDebugPort unique,
+    kernelDebugKey,
+	availableUsersCSV
+	);
 
 create table bladeConfiguration(
 	bladeConfigKey integer primary key autoincrement,
@@ -12,14 +17,10 @@ create table bladeConfiguration(
     iscsiIP unique,
     bladeIP unique,
     iLOIP unique,
-    iLOPort unique,
 	currentlyHavingBIOSDeployed,
 	currentlyBeingAVMServer,
 	vmDeployState,
 	lastDeployedBIOS,
-    kernelDebugKey,
-	friendlyName,
-	availableUsersCSV,
 
 	foreign key (ownershipID) references bladeOwnership(ownershipKey)
 	);
@@ -37,11 +38,7 @@ create table VMConfiguration(
 	VMIP,
 	eth0MAC,
 	eth1MAC,
-	friendlyName,
-    kernelDebugPort,
-    kernelDebugKey,
 	isWaitingForResources,
-	availableUsersCSV,
 
 	foreign key (parentBladeID ) references bladeConfiguration(bladeConfigKey),
 	foreign key (ownershipID) references bladeOwnership(ownershipKey)

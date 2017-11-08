@@ -7,6 +7,7 @@ using System.Diagnostics;
 using System.Linq;
 using System.Web.UI.WebControls;
 using System.Xml.Serialization;
+using bladeDirectorWCF.Properties;
 
 namespace bladeDirectorWCF
 {
@@ -19,42 +20,90 @@ namespace bladeDirectorWCF
         public bladeLockType permittedAccessRead;
         public bladeLockType permittedAccessWrite;
 
-        public bladeStatus state { get { checkPermsR("state"); return _state; } set {  checkPermsW("state"); _state = value; } }
+        [XmlIgnore]
+        public bladeStatus state
+        {
+            get { checkPermsR("state"); return _state; } 
+            set { checkPermsW("state"); _state = value; }
+        }
         private bladeStatus _state;
 
-        public string currentOwner { get { checkPermsR("currentOwner"); return _currentOwner; } set { checkPermsW("currentOwner"); _currentOwner = value; } }
+        [XmlIgnore]
+        public string currentOwner
+        {
+            get { checkPermsR("currentOwner"); return _currentOwner; }
+            set { checkPermsW("currentOwner"); _currentOwner = value; }
+        }
         private string _currentOwner;
 
+        [XmlIgnore]
         public string nextOwner
         {
             get { checkPermsR("nextOwner"); return _nextOwner; }
             set { checkPermsW("nextOwner"); _nextOwner = value; }
         }
-
         private string _nextOwner;
 
-        public DateTime lastKeepAlive { get { checkPermsR("lastKeepAlive"); return _lastKeepAlive; } set { checkPermsW("lastKeepAlive"); _lastKeepAlive = value; } }
+        [XmlIgnore]
+        public DateTime lastKeepAlive
+        {
+            get { checkPermsR("lastKeepAlive"); return _lastKeepAlive; } 
+            set { checkPermsW("lastKeepAlive"); _lastKeepAlive = value; }
+        }
         private DateTime _lastKeepAlive;
 
-        public string currentSnapshot { get { checkPermsR("currentSnapshot"); return _currentSnapshot; } set { checkPermsW("currentSnapshot"); _currentSnapshot = value; } }
+        [XmlIgnore]
+        public string currentSnapshot
+        {
+            get { checkPermsR("currentSnapshot"); return _currentSnapshot; } 
+            set { checkPermsW("currentSnapshot"); _currentSnapshot = value; }
+        }
         private string _currentSnapshot;
+
+        [XmlIgnore]
+        public string friendlyName
+        {
+            get { checkPermsR("friendlyName"); return _friendlyName; }
+            set { checkPermsW("friendlyName"); _friendlyName = value; }
+        }
+        private string _friendlyName;
+
+        [XmlIgnore]
+        public ushort kernelDebugPort
+        {
+            get { checkPermsR("kernelDebugPort"); return _kernelDebugPort; }
+            set { checkPermsW("kernelDebugPort"); _kernelDebugPort = value; }
+        }
+        public ushort _kernelDebugPort;
+
+        [XmlIgnore]
+        public string kernelDebugKey
+        {
+            get { checkPermsR("kernelDebugKey"); return _kernelDebugKey; }
+            set { checkPermsW("kernelDebugKey"); _kernelDebugKey = value; }
+        }
+        private string _kernelDebugKey;
+
+        [XmlIgnore]
+        public string availableUsersCSV
+        {
+            get { checkPermsR("availableUsersCSV"); return _availableUsersCSV; }
+            set { checkPermsW("availableUsersCSV"); _availableUsersCSV = value; }
+        }
+        private string _availableUsersCSV;
 
         public long? ownershipRowID;
 
         // These must be public so that the WCF client can access them.
         // ReSharper disable MemberCanBeProtected.Global
         public abstract string kernelDebugAddress { get; }
-        public abstract ushort kernelDebugPort { get; set; }
-        public abstract string kernelDebugKey { get; set; }
-        public abstract string friendlyName { get; set; }
-        public abstract string availableUsersCSV { get; set; }
-        // ReSharper restore MemberCanBeProtected.Global
 
         [XmlIgnore]
-        public userDesc[] getUserList
+        public userDesc[] credentials
         {
             get { return unpackUsersCSV(); }
         }
+        // ReSharper restore MemberCanBeProtected.Global
 
         protected bladeOwnership()
         {
@@ -63,12 +112,23 @@ namespace bladeDirectorWCF
             permittedAccessWrite = bladeLockType.lockAll;
         }
 
-        protected bladeOwnership(SQLiteConnection conn, bladeLockType permittedAccessRead, bladeLockType permittedAccessWrite)
+        protected bladeOwnership(SQLiteConnection conn, string friendlyName, VMSoftwareSpec spec, bladeLockType permittedAccessRead, bladeLockType permittedAccessWrite)
+            : this(conn, friendlyName, spec.debuggerPort, spec.debuggerKey, permittedAccessRead, permittedAccessWrite)
+        {
+        }
+
+        protected bladeOwnership(SQLiteConnection conn, string newFriendlyName, ushort newDebugPort, string newDebugKey, bladeLockType permittedAccessRead, bladeLockType permittedAccessWrite)
         {
             this.conn = conn;
             _state = bladeStatus.unused;
+            _friendlyName = newFriendlyName;
+            _kernelDebugPort = newDebugPort;
+            _kernelDebugKey = newDebugKey;
             this.permittedAccessRead = permittedAccessRead;
             this.permittedAccessWrite = permittedAccessWrite;
+
+            if (permittedAccessRead.HasFlag(bladeLockType.lockVirtualHW))
+                _availableUsersCSV = makeUsersCSV(new[] { new userDesc(Settings.Default.vmUsername, Settings.Default.vmPassword) });
         }
 
         protected bladeOwnership(SQLiteConnection conn, SQLiteDataReader reader, bladeLockType permittedAccessRead, bladeLockType permittedAccessWrite)
@@ -76,6 +136,9 @@ namespace bladeDirectorWCF
             this.conn = conn;
             this.permittedAccessRead = permittedAccessRead ;
             this.permittedAccessWrite = permittedAccessWrite;
+
+            if (permittedAccessRead.HasFlag(bladeLockType.lockVirtualHW))
+                _availableUsersCSV = makeUsersCSV(new[] { new userDesc(Settings.Default.vmUsername, Settings.Default.vmPassword) });
 
             parseFromDBRow(reader);
         }
@@ -93,6 +156,9 @@ namespace bladeDirectorWCF
 
         protected userDesc[] unpackUsersCSV()
         {
+//            if (string.IsNullOrEmpty(availableUsersCSV))
+//                return new userDesc[0];
+
             List<userDesc> toRet = new List<userDesc>();
 
             string[] segments = availableUsersCSV.Split(',');
@@ -119,44 +185,30 @@ namespace bladeDirectorWCF
             for (int i = 0; i < reader.FieldCount; i++)
                 fieldList[i] = reader.GetName(i);
 
-            if (fieldList.Contains("state"))
+            if (fieldList.Contains("kernelDebugKey") && !(reader["kernelDebugKey"] is DBNull))
+                _kernelDebugKey = (string)reader["kernelDebugKey"];
+
+            if (fieldList.Contains("availableUsersCSV") && !(reader["availableUsersCSV"] is DBNull))
+                _availableUsersCSV = (string)reader["availableUsersCSV"];
+
+            if (fieldList.Contains("friendlyName") && !(reader["friendlyName"] is DBNull))
+                _friendlyName = (string)reader["friendlyName"];
+
+            if (fieldList.Contains("state") && !(reader["state"] is DBNull))
             {
-                if (reader["state"] is DBNull)
-                {
-                    _state = bladeStatus.unused;
-                }
-                else
-                {
-                    long enumIdx = (long) reader["state"];
-                    _state = (bladeStatus) ((int) enumIdx);
-                }
+                long enumIdx = (long) reader["state"];
+                _state = (bladeStatus) ((int) enumIdx);
             }
 
             if (fieldList.Contains("ownershipKey"))
                 ownershipRowID = (long?) reader["ownershipKey"];
 
-            if (fieldList.Contains("currentOwner"))
-            {
-                if ((reader["currentOwner"] is DBNull))
-                {
-                    _currentOwner = null;
-                }
-                else
-                {
-                    _currentOwner = (string) reader["currentOwner"];
-                }
-            }
+            if (fieldList.Contains("currentOwner") && !(reader["currentOwner"] is DBNull))
+                _currentOwner = (string) reader["currentOwner"];
 
-            if (fieldList.Contains("nextOwner"))
+            if (fieldList.Contains("nextOwner") && !(reader["nextOwner"] is DBNull))
             {
-                if (reader["nextOwner"] is DBNull)
-                {
-                    _nextOwner = null;
-                }
-                else
-                {
-                    _nextOwner = (string) reader["nextOwner"];
-                }
+                _nextOwner = (string) reader["nextOwner"];
             }
 
             if (fieldList.Contains("currentSnapshot"))
@@ -206,13 +258,23 @@ namespace bladeDirectorWCF
         public List<string> getPermittedFields(bladeLockType lockType)
         {
             List<string> toRet = new List<string>();
-            if ((lockType & bladeLockType.lockOwnership) != bladeLockType.lockNone)
+            if (lockType.HasFlag(bladeLockType.lockIPAddresses))
+            {
+                toRet.Add("kernelDebugPort");
+            }
+            if (lockType.HasFlag(bladeLockType.lockVirtualHW))
+            {
+                toRet.Add("kernelDebugKey");
+                toRet.Add("friendlyName");
+                toRet.Add("availableUsersCSV");
+            }
+            if (lockType.HasFlag(bladeLockType.lockOwnership))
             {
                 toRet.Add("state");
                 toRet.Add("currentOwner");
                 toRet.Add("nextOwner");
             }
-            if ((lockType & bladeLockType.lockSnapshot) != bladeLockType.lockNone)
+            if (lockType.HasFlag(bladeLockType.lockSnapshot))
             {
                 toRet.Add("currentSnapshot");
             }
@@ -370,6 +432,10 @@ namespace bladeDirectorWCF
                 cmd.Parameters.AddWithValue("$nextOwner", _nextOwner);
                 cmd.Parameters.AddWithValue("$lastKeepAlive", _lastKeepAlive);
                 cmd.Parameters.AddWithValue("$currentSnapshot", _currentSnapshot);
+                cmd.Parameters.AddWithValue("$kernelDebugPort", _kernelDebugPort);
+                cmd.Parameters.AddWithValue("$kernelDebugKey", _kernelDebugKey);
+                cmd.Parameters.AddWithValue("$friendlyName", _friendlyName);
+                cmd.Parameters.AddWithValue("$availableUsersCSV", _availableUsersCSV);
                 if (ownershipRowID.HasValue)
                     cmd.Parameters.AddWithValue("$ownershipKey", ownershipRowID);
                 cmd.ExecuteNonQuery();

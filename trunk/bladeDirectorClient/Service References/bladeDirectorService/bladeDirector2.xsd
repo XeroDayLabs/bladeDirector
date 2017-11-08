@@ -152,11 +152,13 @@
   <xs:element name="vmSpec" nillable="true" type="tns:vmSpec" />
   <xs:complexType name="bladeOwnership">
     <xs:sequence>
+      <xs:element minOccurs="0" name="_kernelDebugPort" type="xs:unsignedShort" />
+      <xs:element minOccurs="0" name="availableUsersCSV" nillable="true" type="xs:string" />
       <xs:element xmlns:q1="http://schemas.datacontract.org/2004/07/System.Data.SQLite" minOccurs="0" name="conn" nillable="true" type="q1:SQLiteConnection" />
+      <xs:element minOccurs="0" name="credentials" nillable="true" type="tns:ArrayOfuserDesc" />
       <xs:element minOccurs="0" name="currentOwner" nillable="true" type="xs:string" />
       <xs:element minOccurs="0" name="currentSnapshot" nillable="true" type="xs:string" />
       <xs:element minOccurs="0" name="friendlyName" nillable="true" type="xs:string" />
-      <xs:element minOccurs="0" name="getUserList" nillable="true" type="tns:ArrayOfuserDesc" />
       <xs:element minOccurs="0" name="kernelDebugKey" nillable="true" type="xs:string" />
       <xs:element minOccurs="0" name="kernelDebugPort" type="xs:unsignedShort" />
       <xs:element minOccurs="0" name="lastKeepAlive" type="xs:dateTime" />
@@ -288,7 +290,6 @@
           <xs:element minOccurs="0" name="currentlyBeingAVMServer" type="xs:boolean" />
           <xs:element minOccurs="0" name="currentlyHavingBIOSDeployed" type="xs:boolean" />
           <xs:element minOccurs="0" name="iLOIP" nillable="true" type="xs:string" />
-          <xs:element minOccurs="0" name="iLOPort" type="xs:unsignedShort" />
           <xs:element minOccurs="0" name="iLoPassword" nillable="true" type="xs:string" />
           <xs:element minOccurs="0" name="iLoUsername" nillable="true" type="xs:string" />
           <xs:element minOccurs="0" name="iscsiIP" nillable="true" type="xs:string" />

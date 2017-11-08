@@ -169,7 +169,7 @@ namespace bladeDirector
                 new Label() { Text = "ISCSI IP: "},
                 new Label() { Text = bladeInfo.iscsiIP.ToString() + "<br/>", CssClass = "fixedSize" },
                 new Label() { Text = "Kernel debug port: " },
-                new Label() { Text = bladeInfo.iLOPort.ToString() + "<br/>", CssClass = "fixedSize" },
+                new Label() { Text = bladeInfo.kernelDebugPort.ToString() + "<br/>", CssClass = "fixedSize" },
                 new Label() { Text = "Is currently having BIOS config deployed: " },
                 new Label() { Text = bladeInfo.currentlyHavingBIOSDeployed.ToString() + "<br/>", CssClass = "fixedSize" },
                 new Label() { Text = "Is currently acting as VM server: " },

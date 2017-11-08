@@ -17,7 +17,7 @@ namespace bladeDirectorWCF
         void initWithBladesFromBladeSpec(bladeSpec[] spec, bool useMockedManager, NASFaultInjectionPolicy faultInjection);
 
         [OperationContract]
-        bladeSpec createBladeSpec(string newBladeIP, string newISCSIIP, string newILOIP, ushort newILOPort, 
+        bladeSpec createBladeSpec(string newBladeIP, string newISCSIIP, string newILOIP, ushort newKernelDebugPort, 
             bool newCurrentlyHavingBIOSDeployed, VMDeployStatus newvmDeployState, string newCurrentBIOS, string newDebugKey,
             string newFriendlyName,
             bladeLockType permittedAccessRead, bladeLockType permittedAccessWrite);

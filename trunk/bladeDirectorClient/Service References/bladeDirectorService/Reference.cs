@@ -658,7 +658,16 @@ namespace bladeDirectorClient.bladeDirectorService {
         private System.Runtime.Serialization.ExtensionDataObject extensionDataField;
         
         [System.Runtime.Serialization.OptionalFieldAttribute()]
+        private ushort _kernelDebugPortField;
+        
+        [System.Runtime.Serialization.OptionalFieldAttribute()]
+        private string availableUsersCSVField;
+        
+        [System.Runtime.Serialization.OptionalFieldAttribute()]
         private bladeDirectorClient.bladeDirectorService.SQLiteConnection connField;
+        
+        [System.Runtime.Serialization.OptionalFieldAttribute()]
+        private bladeDirectorClient.bladeDirectorService.userDesc[] credentialsField;
         
         [System.Runtime.Serialization.OptionalFieldAttribute()]
         private string currentOwnerField;
@@ -668,9 +677,6 @@ namespace bladeDirectorClient.bladeDirectorService {
         
         [System.Runtime.Serialization.OptionalFieldAttribute()]
         private string friendlyNameField;
-        
-        [System.Runtime.Serialization.OptionalFieldAttribute()]
-        private bladeDirectorClient.bladeDirectorService.userDesc[] getUserListField;
         
         [System.Runtime.Serialization.OptionalFieldAttribute()]
         private string kernelDebugKeyField;
@@ -707,6 +713,32 @@ namespace bladeDirectorClient.bladeDirectorService {
         }
         
         [System.Runtime.Serialization.DataMemberAttribute()]
+        public ushort _kernelDebugPort {
+            get {
+                return this._kernelDebugPortField;
+            }
+            set {
+                if ((this._kernelDebugPortField.Equals(value) != true)) {
+                    this._kernelDebugPortField = value;
+                    this.RaisePropertyChanged("_kernelDebugPort");
+                }
+            }
+        }
+        
+        [System.Runtime.Serialization.DataMemberAttribute()]
+        public string availableUsersCSV {
+            get {
+                return this.availableUsersCSVField;
+            }
+            set {
+                if ((object.ReferenceEquals(this.availableUsersCSVField, value) != true)) {
+                    this.availableUsersCSVField = value;
+                    this.RaisePropertyChanged("availableUsersCSV");
+                }
+            }
+        }
+        
+        [System.Runtime.Serialization.DataMemberAttribute()]
         public bladeDirectorClient.bladeDirectorService.SQLiteConnection conn {
             get {
                 return this.connField;
@@ -715,6 +747,19 @@ namespace bladeDirectorClient.bladeDirectorService {
                 if ((object.ReferenceEquals(this.connField, value) != true)) {
                     this.connField = value;
                     this.RaisePropertyChanged("conn");
+                }
+            }
+        }
+        
+        [System.Runtime.Serialization.DataMemberAttribute()]
+        public bladeDirectorClient.bladeDirectorService.userDesc[] credentials {
+            get {
+                return this.credentialsField;
+            }
+            set {
+                if ((object.ReferenceEquals(this.credentialsField, value) != true)) {
+                    this.credentialsField = value;
+                    this.RaisePropertyChanged("credentials");
                 }
             }
         }
@@ -754,19 +799,6 @@ namespace bladeDirectorClient.bladeDirectorService {
                 if ((object.ReferenceEquals(this.friendlyNameField, value) != true)) {
                     this.friendlyNameField = value;
                     this.RaisePropertyChanged("friendlyName");
-                }
-            }
-        }
-        
-        [System.Runtime.Serialization.DataMemberAttribute()]
-        public bladeDirectorClient.bladeDirectorService.userDesc[] getUserList {
-            get {
-                return this.getUserListField;
-            }
-            set {
-                if ((object.ReferenceEquals(this.getUserListField, value) != true)) {
-                    this.getUserListField = value;
-                    this.RaisePropertyChanged("getUserList");
                 }
             }
         }
@@ -1064,9 +1096,6 @@ namespace bladeDirectorClient.bladeDirectorService {
         private string iLOIPField;
         
         [System.Runtime.Serialization.OptionalFieldAttribute()]
-        private ushort iLOPortField;
-        
-        [System.Runtime.Serialization.OptionalFieldAttribute()]
         private string iLoPasswordField;
         
         [System.Runtime.Serialization.OptionalFieldAttribute()]
@@ -1168,19 +1197,6 @@ namespace bladeDirectorClient.bladeDirectorService {
                 if ((object.ReferenceEquals(this.iLOIPField, value) != true)) {
                     this.iLOIPField = value;
                     this.RaisePropertyChanged("iLOIP");
-                }
-            }
-        }
-        
-        [System.Runtime.Serialization.DataMemberAttribute()]
-        public ushort iLOPort {
-            get {
-                return this.iLOPortField;
-            }
-            set {
-                if ((this.iLOPortField.Equals(value) != true)) {
-                    this.iLOPortField = value;
-                    this.RaisePropertyChanged("iLOPort");
                 }
             }
         }
@@ -2391,7 +2407,7 @@ namespace bladeDirectorClient.bladeDirectorService {
         void initWithBladesFromBladeSpec(bladeDirectorClient.bladeDirectorService.bladeSpec[] spec, bool useMockedManager, bladeDirectorClient.bladeDirectorService.NASFaultInjectionPolicy faultInjection);
         
         [System.ServiceModel.OperationContractAttribute(Action="http://tempuri.org/IDebugServices/createBladeSpec", ReplyAction="http://tempuri.org/IDebugServices/createBladeSpecResponse")]
-        bladeDirectorClient.bladeDirectorService.bladeSpec createBladeSpec(string newBladeIP, string newISCSIIP, string newILOIP, ushort newILOPort, bool newCurrentlyHavingBIOSDeployed, bladeDirectorClient.bladeDirectorService.VMDeployStatus newvmDeployState, string newCurrentBIOS, string newDebugKey, string newFriendlyName, bladeDirectorClient.bladeDirectorService.bladeLockType permittedAccessRead, bladeDirectorClient.bladeDirectorService.bladeLockType permittedAccessWrite);
+        bladeDirectorClient.bladeDirectorService.bladeSpec createBladeSpec(string newBladeIP, string newISCSIIP, string newILOIP, ushort newKernelDebugPort, bool newCurrentlyHavingBIOSDeployed, bladeDirectorClient.bladeDirectorService.VMDeployStatus newvmDeployState, string newCurrentBIOS, string newDebugKey, string newFriendlyName, bladeDirectorClient.bladeDirectorService.bladeLockType permittedAccessRead, bladeDirectorClient.bladeDirectorService.bladeLockType permittedAccessWrite);
         
         [System.ServiceModel.OperationContractAttribute(Action="http://tempuri.org/IDebugServices/createBladeSpecForXDLNode", ReplyAction="http://tempuri.org/IDebugServices/createBladeSpecForXDLNodeResponse")]
         bladeDirectorClient.bladeDirectorService.bladeSpec createBladeSpecForXDLNode(int nodeIndex, string newDebugKey, bladeDirectorClient.bladeDirectorService.bladeLockType permittedAccessRead, bladeDirectorClient.bladeDirectorService.bladeLockType permittedAccessWrite);
@@ -2488,8 +2504,8 @@ namespace bladeDirectorClient.bladeDirectorService {
             base.Channel.initWithBladesFromBladeSpec(spec, useMockedManager, faultInjection);
         }
         
-        public bladeDirectorClient.bladeDirectorService.bladeSpec createBladeSpec(string newBladeIP, string newISCSIIP, string newILOIP, ushort newILOPort, bool newCurrentlyHavingBIOSDeployed, bladeDirectorClient.bladeDirectorService.VMDeployStatus newvmDeployState, string newCurrentBIOS, string newDebugKey, string newFriendlyName, bladeDirectorClient.bladeDirectorService.bladeLockType permittedAccessRead, bladeDirectorClient.bladeDirectorService.bladeLockType permittedAccessWrite) {
-            return base.Channel.createBladeSpec(newBladeIP, newISCSIIP, newILOIP, newILOPort, newCurrentlyHavingBIOSDeployed, newvmDeployState, newCurrentBIOS, newDebugKey, newFriendlyName, permittedAccessRead, permittedAccessWrite);
+        public bladeDirectorClient.bladeDirectorService.bladeSpec createBladeSpec(string newBladeIP, string newISCSIIP, string newILOIP, ushort newKernelDebugPort, bool newCurrentlyHavingBIOSDeployed, bladeDirectorClient.bladeDirectorService.VMDeployStatus newvmDeployState, string newCurrentBIOS, string newDebugKey, string newFriendlyName, bladeDirectorClient.bladeDirectorService.bladeLockType permittedAccessRead, bladeDirectorClient.bladeDirectorService.bladeLockType permittedAccessWrite) {
+            return base.Channel.createBladeSpec(newBladeIP, newISCSIIP, newILOIP, newKernelDebugPort, newCurrentlyHavingBIOSDeployed, newvmDeployState, newCurrentBIOS, newDebugKey, newFriendlyName, permittedAccessRead, permittedAccessWrite);
         }
         
         public bladeDirectorClient.bladeDirectorService.bladeSpec createBladeSpecForXDLNode(int nodeIndex, string newDebugKey, bladeDirectorClient.bladeDirectorService.bladeLockType permittedAccessRead, bladeDirectorClient.bladeDirectorService.bladeLockType permittedAccessWrite) {
