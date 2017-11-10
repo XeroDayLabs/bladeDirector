@@ -146,7 +146,7 @@ namespace bladeDirectorWCF
         protected string makeUsersCSV(userDesc[] newUsers)
         {
             string toRet = string.Join(",", newUsers.Select(x =>
-                Convert.ToBase64String(System.Text.Encoding.UTF8.GetBytes(x.password))
+                Convert.ToBase64String(System.Text.Encoding.UTF8.GetBytes(x.username))
                 + "," +
                 Convert.ToBase64String(System.Text.Encoding.UTF8.GetBytes(x.password))
                 ).ToArray());
