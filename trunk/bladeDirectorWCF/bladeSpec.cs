@@ -441,7 +441,7 @@ namespace bladeDirectorWCF
             newVM.indexOnServer = indexOnServer;
 
             newVM.VMIP = xdlClusterNaming.makeVMIP(bladeIP, newVM);
-            newVM.VMIP = xdlClusterNaming.makeiSCSIIP(bladeIP, newVM);
+            newVM.iscsiIP = xdlClusterNaming.makeiSCSIIP(bladeIP, newVM);
             newVM.eth0MAC = xdlClusterNaming.makeEth0MAC(bladeIP, newVM);
             newVM.eth1MAC = xdlClusterNaming.makeEth1MAC(bladeIP, newVM);
 
