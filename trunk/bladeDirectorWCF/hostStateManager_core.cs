@@ -1868,7 +1868,7 @@ bladeLockType.lockvmDeployState,  // <-- TODO/FIXME: write perms shuold imply re
             if (itemToAdd.kernelDebugAddress == null || itemToAdd.kernelDebugPort == 0 || itemToAdd.kernelDebugKey == null)
                 args = String.Format("{0}", itemToAdd.friendlyName);
             else
-                args = String.Format("{0} {1} {2} {3}", itemToAdd.friendlyName, itemToAdd.currentOwner, itemToAdd.kernelDebugPort, itemToAdd.kernelDebugKey);
+                args = String.Format("{0} {1} {2} {3}", itemToAdd.friendlyName, itemToAdd.nextOwner, itemToAdd.kernelDebugPort, itemToAdd.kernelDebugKey);
 
             // TODO: timeout
             copyAndRunScript(args, hyp);
