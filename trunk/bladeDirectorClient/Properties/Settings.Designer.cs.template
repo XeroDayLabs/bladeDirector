@@ -25,19 +25,7 @@ namespace bladeDirectorClient.Properties {
         
         [global::System.Configuration.UserScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [global::System.Configuration.DefaultSettingValueAttribute("http://alizbuild.xd.lan/bladeDirector/")]
-        public string bladeDirectorURL {
-            get {
-                return ((string)(this["bladeDirectorURL"]));
-            }
-            set {
-                this["bladeDirectorURL"] = value;
-            }
-        }
-        
-        [global::System.Configuration.UserScopedSettingAttribute()]
-        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [global::System.Configuration.DefaultSettingValueAttribute("0")]
+        [global::System.Configuration.DefaultSettingValueAttribute("1")]
         public int kernelVMCount {
             get {
                 return ((int)(this["kernelVMCount"]));
@@ -49,7 +37,7 @@ namespace bladeDirectorClient.Properties {
         
         [global::System.Configuration.UserScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [global::System.Configuration.DefaultSettingValueAttribute("")]
+        [global::System.Configuration.DefaultSettingValueAttribute("..")]
         public string VMWareVMName {
             get {
                 return ((string)(this["VMWareVMName"]));
@@ -61,7 +49,7 @@ namespace bladeDirectorClient.Properties {
         
         [global::System.Configuration.UserScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [global::System.Configuration.DefaultSettingValueAttribute("0")]
+        [global::System.Configuration.DefaultSettingValueAttribute("..")]
         public ushort VMWareVMPortBase {
             get {
                 return ((ushort)(this["VMWareVMPortBase"]));
@@ -73,7 +61,7 @@ namespace bladeDirectorClient.Properties {
         
         [global::System.Configuration.UserScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [global::System.Configuration.DefaultSettingValueAttribute("")]
+        [global::System.Configuration.DefaultSettingValueAttribute("..")]
         public string VMWareVMServer {
             get {
                 return ((string)(this["VMWareVMServer"]));
@@ -85,7 +73,7 @@ namespace bladeDirectorClient.Properties {
         
         [global::System.Configuration.UserScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [global::System.Configuration.DefaultSettingValueAttribute("")]
+        [global::System.Configuration.DefaultSettingValueAttribute("..")]
         public string VMWareVMServerUsername {
             get {
                 return ((string)(this["VMWareVMServerUsername"]));
@@ -97,7 +85,7 @@ namespace bladeDirectorClient.Properties {
         
         [global::System.Configuration.UserScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [global::System.Configuration.DefaultSettingValueAttribute("")]
+        [global::System.Configuration.DefaultSettingValueAttribute("..")]
         public string VMWareVMServerPassword {
             get {
                 return ((string)(this["VMWareVMServerPassword"]));
@@ -109,7 +97,7 @@ namespace bladeDirectorClient.Properties {
         
         [global::System.Configuration.UserScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [global::System.Configuration.DefaultSettingValueAttribute("")]
+        [global::System.Configuration.DefaultSettingValueAttribute("..")]
         public string VMWareVMUsername {
             get {
                 return ((string)(this["VMWareVMUsername"]));
@@ -121,7 +109,7 @@ namespace bladeDirectorClient.Properties {
         
         [global::System.Configuration.UserScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [global::System.Configuration.DefaultSettingValueAttribute("")]
+        [global::System.Configuration.DefaultSettingValueAttribute("..")]
         public string VMWareVMPassword {
             get {
                 return ((string)(this["VMWareVMPassword"]));
@@ -133,7 +121,7 @@ namespace bladeDirectorClient.Properties {
         
         [global::System.Configuration.UserScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [global::System.Configuration.DefaultSettingValueAttribute("")]
+        [global::System.Configuration.DefaultSettingValueAttribute("..")]
         public string VMWareVMDebugKey {
             get {
                 return ((string)(this["VMWareVMDebugKey"]));
@@ -145,103 +133,19 @@ namespace bladeDirectorClient.Properties {
         
         [global::System.Configuration.UserScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [global::System.Configuration.DefaultSettingValueAttribute("")]
-        public string iloHostUsername {
+        [global::System.Configuration.DefaultSettingValueAttribute("..")]
+        public string bladeDirectorURL {
             get {
-                return ((string)(this["iloHostUsername"]));
+                return ((string)(this["bladeDirectorURL"]));
             }
             set {
-                this["iloHostUsername"] = value;
+                this["bladeDirectorURL"] = value;
             }
         }
         
         [global::System.Configuration.UserScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [global::System.Configuration.DefaultSettingValueAttribute("")]
-        public string iloHostPassword {
-            get {
-                return ((string)(this["iloHostPassword"]));
-            }
-            set {
-                this["iloHostPassword"] = value;
-            }
-        }
-        
-        [global::System.Configuration.UserScopedSettingAttribute()]
-        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [global::System.Configuration.DefaultSettingValueAttribute("")]
-        public string iloUsername {
-            get {
-                return ((string)(this["iloUsername"]));
-            }
-            set {
-                this["iloUsername"] = value;
-            }
-        }
-        
-        [global::System.Configuration.UserScopedSettingAttribute()]
-        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [global::System.Configuration.DefaultSettingValueAttribute("")]
-        public string iloPassword {
-            get {
-                return ((string)(this["iloPassword"]));
-            }
-            set {
-                this["iloPassword"] = value;
-            }
-        }
-        
-        [global::System.Configuration.UserScopedSettingAttribute()]
-        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [global::System.Configuration.DefaultSettingValueAttribute("")]
-        public string iloISCSIIP {
-            get {
-                return ((string)(this["iloISCSIIP"]));
-            }
-            set {
-                this["iloISCSIIP"] = value;
-            }
-        }
-        
-        [global::System.Configuration.UserScopedSettingAttribute()]
-        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [global::System.Configuration.DefaultSettingValueAttribute("")]
-        public string iloISCSIUsername {
-            get {
-                return ((string)(this["iloISCSIUsername"]));
-            }
-            set {
-                this["iloISCSIUsername"] = value;
-            }
-        }
-        
-        [global::System.Configuration.UserScopedSettingAttribute()]
-        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [global::System.Configuration.DefaultSettingValueAttribute("")]
-        public string iloISCSIPassword {
-            get {
-                return ((string)(this["iloISCSIPassword"]));
-            }
-            set {
-                this["iloISCSIPassword"] = value;
-            }
-        }
-        
-        [global::System.Configuration.UserScopedSettingAttribute()]
-        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [global::System.Configuration.DefaultSettingValueAttribute("")]
-        public string iloKernelKey {
-            get {
-                return ((string)(this["iloKernelKey"]));
-            }
-            set {
-                this["iloKernelKey"] = value;
-            }
-        }
-
-        [global::System.Configuration.UserScopedSettingAttribute()]
-        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [global::System.Configuration.DefaultSettingValueAttribute("1")]
+        [global::System.Configuration.DefaultSettingValueAttribute("..")]
         public string XDLClusterBladeList {
             get {
                 return ((string)(this["XDLClusterBladeList"]));
@@ -253,7 +157,7 @@ namespace bladeDirectorClient.Properties {
         
         [global::System.Configuration.UserScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [global::System.Configuration.DefaultSettingValueAttribute("0")]
+        [global::System.Configuration.DefaultSettingValueAttribute("10")]
         public int XDLClusterVMsPerBlade {
             get {
                 return ((int)(this["XDLClusterVMsPerBlade"]));
@@ -261,6 +165,30 @@ namespace bladeDirectorClient.Properties {
             set {
                 this["XDLClusterVMsPerBlade"] = value;
             }
-        }	
+        }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("root")]
+        public string XDLVMServerUsername {
+            get {
+                return ((string)(this["XDLVMServerUsername"]));
+            }
+            set {
+                this["XDLVMServerUsername"] = value;
+            }
+        }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("..")]
+        public string XDLVMServerPassword {
+            get {
+                return ((string)(this["XDLVMServerPassword"]));
+            }
+            set {
+                this["XDLVMServerPassword"] = value;
+            }
+        }
     }
 }

@@ -2,65 +2,47 @@
 <SettingsFile xmlns="http://schemas.microsoft.com/VisualStudio/2004/01/settings" CurrentProfile="(Default)" GeneratedClassNamespace="bladeDirectorClient.Properties" GeneratedClassName="Settings">
   <Profiles />
   <Settings>
-    <Setting Name="bladeDirectorURL" Type="System.String" Scope="User">
-      <Value Profile="(Default)">http://alizbuild.xd.lan/bladeDirector/</Value>
-    </Setting>
     <Setting Name="kernelVMCount" Type="System.Int32" Scope="User">
-      <Value Profile="(Default)">0</Value>
-    </Setting>
-    <Setting Name="VMWareVMName" Type="System.String" Scope="User">
-      <Value Profile="(Default)" />
-    </Setting>
-    <Setting Name="VMWareVMPortBase" Type="System.UInt16" Scope="User">
-      <Value Profile="(Default)">0</Value>
-    </Setting>
-    <Setting Name="VMWareVMServer" Type="System.String" Scope="User">
-      <Value Profile="(Default)" />
-    </Setting>
-    <Setting Name="VMWareVMServerUsername" Type="System.String" Scope="User">
-      <Value Profile="(Default)" />
-    </Setting>
-    <Setting Name="VMWareVMServerPassword" Type="System.String" Scope="User">
-      <Value Profile="(Default)" />
-    </Setting>
-    <Setting Name="VMWareVMUsername" Type="System.String" Scope="User">
-      <Value Profile="(Default)" />
-    </Setting>
-    <Setting Name="VMWareVMPassword" Type="System.String" Scope="User">
-      <Value Profile="(Default)" />
-    </Setting>
-    <Setting Name="VMWareVMDebugKey" Type="System.String" Scope="User">
-      <Value Profile="(Default)" />
-    </Setting>
-    <Setting Name="iloHostUsername" Type="System.String" Scope="User">
-      <Value Profile="(Default)" />
-    </Setting>
-    <Setting Name="iloHostPassword" Type="System.String" Scope="User">
-      <Value Profile="(Default)" />
-    </Setting>
-    <Setting Name="iloUsername" Type="System.String" Scope="User">
-      <Value Profile="(Default)" />
-    </Setting>
-    <Setting Name="iloPassword" Type="System.String" Scope="User">
-      <Value Profile="(Default)" />
-    </Setting>
-    <Setting Name="iloISCSIIP" Type="System.String" Scope="User">
-      <Value Profile="(Default)" />
-    </Setting>
-    <Setting Name="iloISCSIUsername" Type="System.String" Scope="User">
-      <Value Profile="(Default)" />
-    </Setting>
-    <Setting Name="iloISCSIPassword" Type="System.String" Scope="User">
-      <Value Profile="(Default)" />
-    </Setting>
-    <Setting Name="iloKernelKey" Type="System.String" Scope="User">
-      <Value Profile="(Default)" />
-    </Setting>
-    <Setting Name="XDLClusterBladeList" Type="System.String" Scope="User">
       <Value Profile="(Default)">1</Value>
     </Setting>
+    <Setting Name="VMWareVMName" Type="System.String" Scope="User">
+      <Value Profile="(Default)">..</Value>
+    </Setting>
+    <Setting Name="VMWareVMPortBase" Type="System.UInt16" Scope="User">
+      <Value Profile="(Default)">..</Value>
+    </Setting>
+    <Setting Name="VMWareVMServer" Type="System.String" Scope="User">
+      <Value Profile="(Default)">..</Value>
+    </Setting>
+    <Setting Name="VMWareVMServerUsername" Type="System.String" Scope="User">
+      <Value Profile="(Default)">..</Value>
+    </Setting>
+    <Setting Name="VMWareVMServerPassword" Type="System.String" Scope="User">
+      <Value Profile="(Default)">..</Value>
+    </Setting>
+    <Setting Name="VMWareVMUsername" Type="System.String" Scope="User">
+      <Value Profile="(Default)">aliz</Value>
+    </Setting>
+    <Setting Name="VMWareVMPassword" Type="System.String" Scope="User">
+      <Value Profile="(Default)">..</Value>
+    </Setting>
+    <Setting Name="VMWareVMDebugKey" Type="System.String" Scope="User">
+      <Value Profile="(Default)">..</Value>
+    </Setting>
+    <Setting Name="bladeDirectorURL" Type="System.String" Scope="User">
+      <Value Profile="(Default)">http://build.xd.lan/bladedirector-prod/bladedirector</Value>
+    </Setting>
+    <Setting Name="XDLClusterBladeList" Type="System.String" Scope="User">
+      <Value Profile="(Default)">..</Value>
+    </Setting>
     <Setting Name="XDLClusterVMsPerBlade" Type="System.Int32" Scope="User">
-      <Value Profile="(Default)">0</Value>
+      <Value Profile="(Default)">10</Value>
+    </Setting>
+    <Setting Name="XDLVMServerUsername" Type="System.String" Scope="User">
+      <Value Profile="(Default)">root</Value>
+    </Setting>
+    <Setting Name="XDLVMServerPassword" Type="System.String" Scope="User">
+      <Value Profile="(Default)">..</Value>
     </Setting>
   </Settings>
 </SettingsFile>

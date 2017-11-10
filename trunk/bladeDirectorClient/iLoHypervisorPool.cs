@@ -89,25 +89,7 @@ namespace bladeDirectorClient
             }
         }
 
-
         public hypervisorCollection<hypSpec_iLo> requestAsManyHypervisorsAsPossible(string snapshotName)
-        {
-            return requestAsManyHypervisorsAsPossible(
-                Properties.Settings.Default.iloHostUsername,
-                Properties.Settings.Default.iloHostPassword,
-                Properties.Settings.Default.iloUsername,
-                Properties.Settings.Default.iloPassword,
-                Properties.Settings.Default.iloISCSIIP,
-                Properties.Settings.Default.iloISCSIUsername,
-                Properties.Settings.Default.iloISCSIPassword,
-                Properties.Settings.Default.iloKernelKey,
-                snapshotName);
-        }
-
-        public hypervisorCollection<hypSpec_iLo> requestAsManyHypervisorsAsPossible(string iloHostUsername, string iloHostPassword,
-            string iloUsername, string iloPassword,
-            string iloISCSIIP, string iloISCSIUsername, string iloISCSIPassword,
-            string iloKernelKey, string snapshotName)
         {
             initialiseIfNeeded();
             using (BladeDirectorServices director = new BladeDirectorServices(machinePools.bladeDirectorURL))
@@ -128,21 +110,20 @@ namespace bladeDirectorClient
                         director.waitForSuccess(snapRes, TimeSpan.FromMinutes(3));
 
                         snapshotDetails snapshot = director.svc.getCurrentSnapshotDetails(progress.bladeName);
-
+                        userDesc cred = bladeConfig.credentials.First();
+                        NASParams nas = director.svc.getNASParams();
                         hypSpec_iLo spec = new hypSpec_iLo(
-                            bladeConfig.bladeIP, iloHostUsername, iloHostPassword,
-                            bladeConfig.iLOIP, iloUsername, iloPassword,
-                            iloISCSIIP, iloISCSIUsername, iloISCSIPassword,
-                            snapshot.friendlyName, snapshot.path, bladeConfig.kernelDebugPort, iloKernelKey
+                            bladeConfig.bladeIP, cred.username, cred.password,
+                            bladeConfig.iLOIP, bladeConfig.iLoUsername, bladeConfig.iLoPassword,
+                            nas.IP, nas.username, nas.password,
+                            snapshot.friendlyName, snapshot.path, 
+                            bladeConfig.kernelDebugPort, bladeConfig.kernelDebugKey
                             );
 
                         ensurePortIsFree(bladeConfig.kernelDebugPort);
 
                         bladeDirectedHypervisor_iLo newHyp = new bladeDirectedHypervisor_iLo(spec);
                         newHyp.setDisposalCallback(onDestruction);
-
-                        NASAccess nas = new FreeNAS(spec);
-                        freeNASSnapshot.getSnapshotObjectsFromNAS(nas, spec.snapshotFullName);
 
                         if (!toRet.TryAdd(bladeConfig.bladeIP, newHyp))
                             throw new Exception();
@@ -226,24 +207,6 @@ namespace bladeDirectorClient
 
         public bladeDirectedHypervisor_iLo createSingleHypervisor(string snapshotName)
         {
-            return createSingleHypervisor(
-                Properties.Settings.Default.iloHostUsername,
-                Properties.Settings.Default.iloHostPassword,
-                Properties.Settings.Default.iloUsername,
-                Properties.Settings.Default.iloPassword,
-                Properties.Settings.Default.iloISCSIIP,
-                Properties.Settings.Default.iloISCSIUsername,
-                Properties.Settings.Default.iloISCSIPassword,
-                Properties.Settings.Default.iloKernelKey,
-                snapshotName);
-        }
-
-        public bladeDirectedHypervisor_iLo createSingleHypervisor(string iloHostUsername, string iloHostPassword,
-            string iloUsername, string iloPassword,
-            string iloISCSIIP, string iloISCSIUsername, string iloISCSIPassword,
-            string iloKernelKey,
-            string snapshotName)
-        {
             initialiseIfNeeded();
 
             // We request a blade from the blade director, and use them for all our tests, blocking if none are available.
@@ -285,18 +248,19 @@ namespace bladeDirectorClient
                     snapshotDetails currentShot = director.svc.getCurrentSnapshotDetails(allocatedBladeResult.bladeName);
 
                     bladeSpec bladeConfig = director.svc.getBladeByIP_withoutLocking(allocatedBladeResult.bladeName);
+                    snapshotDetails snapshot = director.svc.getCurrentSnapshotDetails(allocatedBladeResult.bladeName);
+                    userDesc cred = bladeConfig.credentials.First();
+                    NASParams nas = director.svc.getNASParams();
 
                     hypSpec_iLo spec = new hypSpec_iLo(
-                        bladeConfig.bladeIP, iloHostUsername, iloHostPassword,
-                        bladeConfig.iLOIP, iloUsername, iloPassword,
-                        iloISCSIIP, iloISCSIUsername, iloISCSIPassword,
-                        currentShot.friendlyName, currentShot.path, bladeConfig.kernelDebugPort, iloKernelKey
+                        bladeConfig.bladeIP, cred.username, cred.password,
+                        bladeConfig.iLOIP, bladeConfig.iLoUsername, bladeConfig.iLoPassword,
+                        nas.IP, nas.username, nas.password,
+                        currentShot.friendlyName, currentShot.path, 
+                        bladeConfig.kernelDebugPort, bladeConfig.kernelDebugKey
                         );
 
                     ensurePortIsFree(bladeConfig.kernelDebugPort);
-
-                    NASAccess nas = new FreeNAS(spec);
-                    freeNASSnapshot.getSnapshotObjectsFromNAS(nas, spec.snapshotFullName);
 
                     bladeDirectedHypervisor_iLo toRet = new bladeDirectedHypervisor_iLo(spec);
                     toRet.setDisposalCallback(onDestruction);
