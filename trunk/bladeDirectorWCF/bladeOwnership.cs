@@ -165,8 +165,8 @@ namespace bladeDirectorWCF
 
             for (int i = 0; i < segments.Length; i+=2)
             {
-                string usernameb64 = segments[i];
-                string passwordb64 = segments[i];
+                string usernameb64 = segments[i + 0];
+                string passwordb64 = segments[i + 1];
 
                 toRet.Add(new userDesc(
                     System.Text.Encoding.UTF8.GetString(Convert.FromBase64String(usernameb64)),
