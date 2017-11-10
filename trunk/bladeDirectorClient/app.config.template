@@ -1,8 +1,8 @@
-﻿<?xml version="1.0" encoding="utf-8" ?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <configuration>
     <configSections>
-        <sectionGroup name="userSettings" type="System.Configuration.UserSettingsGroup, System, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" >
-            <section name="bladeDirectorClient.Properties.Settings" type="System.Configuration.ClientSettingsSection, System, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" allowExeDefinition="MachineToLocalUser" requirePermission="false" />
+        <sectionGroup name="userSettings" type="System.Configuration.UserSettingsGroup, System, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089">
+            <section name="bladeDirectorClient.Properties.Settings" type="System.Configuration.ClientSettingsSection, System, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" allowExeDefinition="MachineToLocalUser" requirePermission="false"/>
         </sectionGroup>
     </configSections>
     <system.serviceModel>
@@ -20,77 +20,56 @@
         <client>
             <endpoint address="http://alizbuild.xd.lan/bladedirector/services.asmx"
                 binding="basicHttpBinding" bindingConfiguration="servicesSoap"
-                contract="bladeDirector.servicesSoap" name="servicesSoap" />
-            <endpoint address="http://alizbuild.xd.lan/bladedirector/services.asmx"
+                contract="bladeDirectorService.servicesSoap" name="servicesSoap" />
+			<endpoint address="http://alizbuild.xd.lan/bladedirector/services.asmx"
                 binding="customBinding" bindingConfiguration="servicesSoap12"
-                contract="bladeDirector.servicesSoap" name="servicesSoap12" />
-        </client>
+                contract="bladeDirectorService.servicesSoap" name="servicesSoap12" />
+		</client>
     </system.serviceModel>
     <userSettings>
         <bladeDirectorClient.Properties.Settings>
-            <setting name="bladeDirectorURL" serializeAs="String">
-                <value>http://alizbuild.xd.lan/bladeDirector/</value>
-            </setting>
             <setting name="kernelVMCount" serializeAs="String">
-                <value>0</value>
+                <value>1</value>
             </setting>
             <setting name="VMWareVMName" serializeAs="String">
-                <value />
-            </setting>
-            <setting name="VMWareVMPortBase" serializeAs="String">
-                <value>0</value>
-            </setting>
-            <setting name="VMWareVMServer" serializeAs="String">
-                <value />
-            </setting>
-            <setting name="VMWareVMServerUsername" serializeAs="String">
-                <value />
-            </setting>
-            <setting name="VMWareVMServerPassword" serializeAs="String">
-                <value />
-            </setting>
-            <setting name="VMWareVMUsername" serializeAs="String">
-                <value />
-            </setting>
-            <setting name="VMWareVMPassword" serializeAs="String">
-                <value />
-            </setting>
-            <setting name="VMWareVMDebugKey" serializeAs="String">
-                <value />
-            </setting>
-            <setting name="iloHostUsername" serializeAs="String">
-                <value />
-            </setting>
-            <setting name="iloHostPassword" serializeAs="String">
-                <value />
-            </setting>
-            <setting name="iloUsername" serializeAs="String">
-                <value />
-            </setting>
-            <setting name="iloPassword" serializeAs="String">
-                <value />
-            </setting>
-            <setting name="iloISCSIIP" serializeAs="String">
-                <value />
-            </setting>
-            <setting name="iloISCSIUsername" serializeAs="String">
-                <value />
-            </setting>
-            <setting name="iloISCSIPassword" serializeAs="String">
-                <value />
-            </setting>
-            <setting name="iloKernelKey" serializeAs="String">
-                <value />
-            </setting>
-            <setting name="bladeDirectorURL" serializeAs="String">
-                <value>http://build.xd.lan/bladedirector/services.asmx</value>
-            </setting>
-            <setting name="XDLClusterBladeList" serializeAs="String">
                 <value></value>
             </setting>
+            <setting name="VMWareVMPortBase" serializeAs="String">
+                <value>..</value>
+            </setting>
+            <setting name="VMWareVMServer" serializeAs="String">
+                <value>vmnodea</value>
+            </setting>
+            <setting name="VMWareVMServerUsername" serializeAs="String">
+                <value>..</value>
+            </setting>
+            <setting name="VMWareVMServerPassword" serializeAs="String">
+                <value>..</value>
+            </setting>
+            <setting name="VMWareVMUsername" serializeAs="String">
+                <value>aliz</value>
+            </setting>
+            <setting name="VMWareVMPassword" serializeAs="String">
+                <value>..</value>
+            </setting>
+            <setting name="VMWareVMDebugKey" serializeAs="String">
+                <value>..</value>
+            </setting>
+            <setting name="bladeDirectorURL" serializeAs="String">
+                <value>http://build.xd.lan/bladedirector-prod/bladedirector</value>
+            </setting>
+            <setting name="XDLClusterBladeList" serializeAs="String">
+                <value>..</value>
+            </setting>
             <setting name="XDLClusterVMsPerBlade" serializeAs="String">
-                <value>0</value>
+                <value>10</value>
+            </setting>
+            <setting name="XDLVMServerUsername" serializeAs="String">
+                <value>root</value>
+            </setting>
+            <setting name="XDLVMServerPassword" serializeAs="String">
+                <value>..</value>
             </setting>
         </bladeDirectorClient.Properties.Settings>
     </userSettings>
-</configuration>
+<startup><supportedRuntime version="v4.0" sku=".NETFramework,Version=v4.5"/></startup></configuration>
