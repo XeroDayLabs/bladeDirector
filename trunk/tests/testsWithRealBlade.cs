@@ -103,14 +103,18 @@ namespace tests
             using (bladeDirectorDebugServices svc = new bladeDirectorDebugServices(basicBladeTests.WCFPath, basicBladeTests.WebURI))
             {
                 string hostip = "1.2.3.4";
-                string debuggerHost = testUtils.getBestRouteTo(IPAddress.Parse("172.17.129.131")).ToString();
 
                 // We will be using this blade for our tests.
                 bladeSpec spec = svc.svcDebug.createBladeSpecForXDLNode(31, "xdl.hacks.the.planet", bladeLockType.lockAll, bladeLockType.lockAll);
-                //bladeSpec spec = svc.svcDebug.createBladeSpec("172.17.129.131", "192.168.129.131", "172.17.2.131", 1234, false, VMDeployStatus.notBeingDeployed, " ... ", "idk", "box", bladeLockType.lockAll, bladeLockType.lockAll);
                 svc.svcDebug.initWithBladesFromBladeSpec(new[] { spec }, false, NASFaultInjectionPolicy.retunSuccessful);
 
-                VMSoftwareSpec sw = new VMSoftwareSpec() { debuggerHost = debuggerHost, debuggerKey = "a.b.c.d", debuggerPort = 10234 };
+                string debuggerHost = testUtils.getBestRouteTo(IPAddress.Parse(spec.bladeIP)).ToString();
+                VMSoftwareSpec sw = new VMSoftwareSpec()
+                {
+                    debuggerHost = debuggerHost, 
+                    debuggerKey = "a.b.c.d", 
+                    debuggerPort = 60234
+                };
                 VMHardwareSpec hw = new VMHardwareSpec() { cpuCount = 1, memoryMB = 4096 };
                 resultAndBladeName res = svc.svcDebug._requestAnySingleVM(hostip, hw, sw);
                 testUtils.waitForSuccess(svc, res, TimeSpan.FromMinutes(15));
@@ -131,8 +135,8 @@ namespace tests
                     Debug.WriteLine("stderr " + bcdEditRes.stderr);
                     Assert.IsTrue(Regex.IsMatch(bcdEditRes.stdout, "key\\s*a.b.c.d"));
                     Assert.IsTrue(Regex.IsMatch(bcdEditRes.stdout, "debugtype\\s*NET"));
-                    Assert.IsTrue(Regex.IsMatch(bcdEditRes.stdout, "hostip\\s*1.2.3.4"));
-                    Assert.IsTrue(Regex.IsMatch(bcdEditRes.stdout, "port\\s*10234"));
+                    Assert.IsTrue(Regex.IsMatch(bcdEditRes.stdout, "hostip\\s*" + hostip));
+                    Assert.IsTrue(Regex.IsMatch(bcdEditRes.stdout, "port\\s*60234"));
 
                     // TODO: verify allocated CPU count and memory size
 
@@ -140,7 +144,7 @@ namespace tests
                     Assert.AreEqual(0, getNameRes.resultCode);
                     Debug.WriteLine("stdout " + getNameRes.stdout);
                     Debug.WriteLine("stderr " + getNameRes.stderr);
-                    Assert.AreSame(getNameRes.stdout.ToLower(), "box".Trim().ToLower());
+                    Assert.AreSame(getNameRes.stdout.ToLower(), "VM_31_01".Trim().ToLower());
                 }
             }
         }
@@ -155,6 +159,7 @@ namespace tests
 
                 // We will be using this blade for our tests.
                 bladeSpec spec = svc.svcDebug.createBladeSpecForXDLNode(31, "xdl.hacks.the.planet", bladeLockType.lockAll, bladeLockType.lockAll);
+                spec.friendlyName = "newBlade";
                 svc.svcDebug.initWithBladesFromBladeSpec(new[] { spec }, false, NASFaultInjectionPolicy.retunSuccessful);
 
                 resultAndBladeName res = svc.svcDebug._RequestAnySingleNode(hostip);

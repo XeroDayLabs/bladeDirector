@@ -675,10 +675,22 @@ namespace bladeDirectorWCF
 
         public resultAndBladeName RequestAnySingleVM(string requestorIP, VMHardwareSpec hwSpec, VMSoftwareSpec swReq )
         {
+            string msg = null;
             if (hwSpec.memoryMB % 4 != 0)
             {
                 // Fun fact: ESXi VM memory size must be a multiple of 4mb.
-                string msg = "Failed VM alloc: memory size " + hwSpec.memoryMB + " is not a multiple of 4MB";
+                msg = "Failed VM alloc: memory size " + hwSpec.memoryMB + " is not a multiple of 4MB";
+            }
+            if (swReq.debuggerPort != 0 && (swReq.debuggerPort < 49152 || swReq.debuggerPort > 65535))
+            {
+                msg = "Failed VM alloc: kernel debug port " + swReq.debuggerPort + " is not between 49152 and 65535";
+            }
+            if (swReq.debuggerKey.Count(x => x == '.') != 3)
+            {
+                msg = "Failed VM alloc: kernel debug key " + swReq.debuggerKey + " is malformed";
+            }
+            if (msg != null)
+            {
                 addLogEvent(msg);
                 return new resultAndBladeName(resultCode.genericFail, null, msg);
             }
@@ -1868,7 +1880,7 @@ bladeLockType.lockvmDeployState,  // <-- TODO/FIXME: write perms shuold imply re
             if (itemToAdd.kernelDebugAddress == null || itemToAdd.kernelDebugPort == 0 || itemToAdd.kernelDebugKey == null)
                 args = String.Format("{0}", itemToAdd.friendlyName);
             else
-                args = String.Format("{0} {1} {2} {3}", itemToAdd.friendlyName, itemToAdd.nextOwner, itemToAdd.kernelDebugPort, itemToAdd.kernelDebugKey);
+                args = String.Format("{0} {1} {2} {3}", itemToAdd.friendlyName, newOwner, itemToAdd.kernelDebugPort, itemToAdd.kernelDebugKey);
 
             // TODO: timeout
             copyAndRunScript(args, hyp);
