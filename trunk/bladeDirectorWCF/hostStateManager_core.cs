@@ -685,7 +685,7 @@ namespace bladeDirectorWCF
             {
                 msg = "Failed VM alloc: kernel debug port " + swReq.debuggerPort + " is not between 49152 and 65535";
             }
-            if (swReq.debuggerKey.Count(x => x == '.') != 3)
+            if (!string.IsNullOrEmpty(swReq.debuggerKey) && swReq.debuggerKey.Count(x => x == '.') != 3)
             {
                 msg = "Failed VM alloc: kernel debug key " + swReq.debuggerKey + " is malformed";
             }
