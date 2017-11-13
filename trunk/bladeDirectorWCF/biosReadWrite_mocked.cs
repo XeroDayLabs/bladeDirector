@@ -134,13 +134,14 @@ namespace bladeDirectorWCF
                 {
                     if (DateTime.Now > param.deadline)
                     {
-                        blade.upgradeLocks(bladeLockType.lockBIOS, bladeLockType.lockBIOS);
-                        
-                        param.parent.markLastKnownBIOS(blade, param.BIOSToWrite);
-                        param.result = new result(resultCode.success);
+                        using (var tmp = new tempLockElevation(blade, bladeLockType.lockBIOS, bladeLockType.lockBIOS))
+                        {
 
-                        blade.downgradeLocks(bladeLockType.lockBIOS, bladeLockType.lockBIOS);
-                        return;
+                            param.parent.markLastKnownBIOS(blade, param.BIOSToWrite);
+                            param.result = new result(resultCode.success);
+
+                            return;
+                        }
                     }
 
                     if (param.isCancelled)

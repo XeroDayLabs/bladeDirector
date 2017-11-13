@@ -311,17 +311,16 @@ namespace bladeDirectorWCF
 
                     foreach (lockableVMSpec allocated in bootingVMs)
                     {
-                        allocated.upgradeLocks(
+                        using (var tmp = new tempLockElevation(allocated,
                             bladeLockType.lockVMCreation | bladeLockType.lockBIOS | bladeLockType.lockSnapshot | bladeLockType.lockNASOperations | bladeLockType.lockvmDeployState | bladeLockType.lockVirtualHW | bladeLockType.lockOwnership,
-                            bladeLockType.lockVMCreation | bladeLockType.lockBIOS | bladeLockType.lockSnapshot | bladeLockType.lockNASOperations | bladeLockType.lockvmDeployState);
-
-                        // Check out double locking before we release.
-                        if (allocated.spec.currentOwner == "vmserver" && 
-                            allocated.spec.nextOwner == login.hostIP)
-                        { 
-                            releaseVM(allocated,
-                                bladeLockType.lockVMCreation | bladeLockType.lockBIOS | bladeLockType.lockSnapshot | bladeLockType.lockNASOperations | bladeLockType.lockvmDeployState | bladeLockType.lockVirtualHW | bladeLockType.lockOwnership,
-                                bladeLockType.lockVMCreation | bladeLockType.lockBIOS | bladeLockType.lockSnapshot | bladeLockType.lockNASOperations | bladeLockType.lockvmDeployState);
+                            bladeLockType.lockVMCreation | bladeLockType.lockBIOS | bladeLockType.lockSnapshot | bladeLockType.lockNASOperations | bladeLockType.lockvmDeployState))
+                        {
+                            // Check out double locking before we release.
+                            if (allocated.spec.currentOwner == "vmserver" &&
+                                allocated.spec.nextOwner == login.hostIP)
+                            {
+                                releaseVM(allocated);
+                            }
                         }
                     }
 
@@ -341,11 +340,12 @@ namespace bladeDirectorWCF
             {
                 foreach (lockableVMSpec allocated in bootingVMs)
                 {
-                    allocated.upgradeLocks(bladeLockType.lockVMCreation | bladeLockType.lockBIOS | bladeLockType.lockSnapshot | bladeLockType.lockNASOperations | bladeLockType.lockvmDeployState | bladeLockType.lockVirtualHW,
-                        bladeLockType.lockVMCreation | bladeLockType.lockBIOS | bladeLockType.lockSnapshot | bladeLockType.lockNASOperations | bladeLockType.lockvmDeployState);
-                    releaseVM(allocated,
-                        bladeLockType.lockVMCreation | bladeLockType.lockBIOS | bladeLockType.lockSnapshot | bladeLockType.lockNASOperations | bladeLockType.lockvmDeployState | bladeLockType.lockVirtualHW,
-                        bladeLockType.lockVMCreation | bladeLockType.lockBIOS | bladeLockType.lockSnapshot | bladeLockType.lockNASOperations | bladeLockType.lockvmDeployState);
+                    using (var tmp = new tempLockElevation(allocated,
+                        bladeLockType.lockVMCreation | bladeLockType.lockBIOS | bladeLockType.lockSnapshot | bladeLockType.lockNASOperations | bladeLockType.lockvmDeployState | bladeLockType.lockVirtualHW | 
+                        bladeLockType.lockOwnership, bladeLockType.lockVMCreation | bladeLockType.lockBIOS | bladeLockType.lockSnapshot | bladeLockType.lockNASOperations | bladeLockType.lockvmDeployState))
+                    {
+                        releaseVM(allocated);
+                    }
                 }
             }
 
@@ -355,11 +355,12 @@ namespace bladeDirectorWCF
             {
                 foreach (lockableBladeSpec allocated in currentlyOwned)
                 {
-                    allocated.upgradeLocks(bladeLockType.lockVMCreation | bladeLockType.lockBIOS | bladeLockType.lockSnapshot | bladeLockType.lockNASOperations | bladeLockType.lockvmDeployState | bladeLockType.lockVirtualHW,
-                        bladeLockType.lockVMCreation | bladeLockType.lockBIOS | bladeLockType.lockSnapshot | bladeLockType.lockNASOperations | bladeLockType.lockvmDeployState);
-                    releaseBlade(allocated);
-                    allocated.downgradeLocks(bladeLockType.lockVMCreation | bladeLockType.lockBIOS | bladeLockType.lockSnapshot | bladeLockType.lockNASOperations | bladeLockType.lockvmDeployState | bladeLockType.lockVirtualHW,
-                        bladeLockType.lockVMCreation | bladeLockType.lockBIOS | bladeLockType.lockSnapshot | bladeLockType.lockNASOperations | bladeLockType.lockvmDeployState);
+                    using (var tmp = new tempLockElevation(allocated,
+                        bladeLockType.lockVMCreation | bladeLockType.lockBIOS | bladeLockType.lockSnapshot | bladeLockType.lockNASOperations | bladeLockType.lockvmDeployState | bladeLockType.lockVirtualHW | bladeLockType.lockOwnership, 
+                        bladeLockType.lockVMCreation | bladeLockType.lockBIOS | bladeLockType.lockSnapshot | bladeLockType.lockNASOperations | bladeLockType.lockvmDeployState))
+                    {
+                        releaseBlade(allocated);
+                    }
                 }
             }
 
@@ -560,13 +561,11 @@ namespace bladeDirectorWCF
                 bladeLockType.lockOwnership | bladeLockType.lockSnapshot | bladeLockType.lockVirtualHW,
                 bladeLockType.lockOwnership))
             {
-                return releaseVM(lockedVM,
-                    bladeLockType.lockOwnership | bladeLockType.lockSnapshot | bladeLockType.lockVirtualHW,
-                    bladeLockType.lockOwnership);
+                return releaseVM(lockedVM);
             }
         }
 
-        private result releaseVM(lockableVMSpec lockedVM, bladeLockType additionalPrivsToDowngradeRead, bladeLockType additionalPrivsToDowngradeWrite)
+        private result releaseVM(lockableVMSpec lockedVM)
         {
             // If we are currently being deployed, we must wait until we are at a point wherby we can abort the deploy. We need
             // to be careful how to lock here, otherwise we risk deadlocking.
@@ -1523,9 +1522,12 @@ bladeLockType.lockvmDeployState,  // <-- TODO/FIXME: write perms shuold imply re
                         {
                             if (childVMsLocked.Count == 0)
                             {
-                                reqBlade.upgradeLocks(bladeLockType.lockNone, bladeLockType.lockBIOS);
-                                releaseBlade(reqBlade);
-                                reqBlade.upgradeLocks(bladeLockType.lockNone, bladeLockType.lockNone);
+                                using (var tmp = new tempLockElevation(reqBlade,
+                                    bladeLockType.lockVMCreation | bladeLockType.lockBIOS | bladeLockType.lockSnapshot | bladeLockType.lockNASOperations | bladeLockType.lockvmDeployState | bladeLockType.lockVirtualHW | bladeLockType.lockOwnership,
+                                    bladeLockType.lockVMCreation | bladeLockType.lockBIOS | bladeLockType.lockSnapshot | bladeLockType.lockNASOperations | bladeLockType.lockvmDeployState))
+                                {
+                                    releaseBlade(reqBlade);
+                                }
                             }
                         }
                     }
