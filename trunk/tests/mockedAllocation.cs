@@ -40,8 +40,8 @@ namespace tests
                 Assert.AreEqual(allocated1, GetBladeStatusResult.notYours);
 
                 // And there should now be one VM allocated to us at present.
-                Assert.AreEqual("172.17.158.1", allocatedBlade.bladeName);
                 vmSpec VMConfig = svc.svc.getVMByIP_withoutLocking(allocatedBlade.bladeName);
+                Assert.AreEqual("172.17.158.1", allocatedBlade.bladeName);
                 Assert.AreEqual("VM_30_01", VMConfig.friendlyName);
                 Assert.AreEqual("172.17.158.1", VMConfig.VMIP);
                 Assert.AreEqual("10.0.158.1", VMConfig.iscsiIP);

@@ -179,19 +179,33 @@ namespace tests
 
                     // Check that debugging has been provisioned correctly
                     executionResult bcdEditRes = foo.startExecutable("bcdedit", "/dbgsettings");
-                    Assert.AreEqual(0, bcdEditRes.resultCode);
-                    //Debug.WriteLine("stdout " + bcdEditRes.stdout);
-                    //Debug.WriteLine("stderr " + bcdEditRes.stderr);
-                    Assert.IsTrue(Regex.IsMatch(bcdEditRes.stdout, "key\\s*xdl.hacks.the.planet"));
-                    Assert.IsTrue(Regex.IsMatch(bcdEditRes.stdout, "debugtype\\s*NET"));
-                    Assert.IsTrue(Regex.IsMatch(bcdEditRes.stdout, "hostip\\s*1.2.3.4"));
-                    Assert.IsTrue(Regex.IsMatch(bcdEditRes.stdout, "port\\s*59812"));
+                    try
+                    {
+                        Assert.AreEqual(0, bcdEditRes.resultCode);
+                        Assert.IsTrue(Regex.IsMatch(bcdEditRes.stdout, "key\\s*xdl.hacks.the.planet"), "bcdedit did not match regex for debug key");
+                        Assert.IsTrue(Regex.IsMatch(bcdEditRes.stdout, "debugtype\\s*NET"), "bcdedit did not match regex for debug type");
+                        Assert.IsTrue(Regex.IsMatch(bcdEditRes.stdout, "hostip\\s*1.2.3.4"), "bcdedit did not match regex for debug host");
+                        Assert.IsTrue(Regex.IsMatch(bcdEditRes.stdout, "port\\s*53101"), "bcdedit did not match regex for debug port");
+                    }
+                    catch (AssertFailedException)
+                    {
+                        Debug.WriteLine("return code " + bcdEditRes.resultCode);
+                        Debug.WriteLine("stdout " + bcdEditRes.stdout);
+                        Debug.WriteLine("stderr " + bcdEditRes.stderr);
+                    }
 
                     executionResult getNameRes = foo.startExecutable("echo %COMPUTERNAME%", "");
-                    Assert.AreEqual(0, getNameRes.resultCode);
-                    //Debug.WriteLine("stdout " + getNameRes.stdout);
-                    //Debug.WriteLine("stderr " + getNameRes.stderr);
-                    Assert.AreSame(getNameRes.stdout.ToLower(), "newBlade".Trim().ToLower());
+                    try
+                    {
+                        Assert.AreEqual(0, getNameRes.resultCode);
+                        Assert.AreSame(getNameRes.stdout.ToLower(), "newBlade".Trim().ToLower(), "machine name was incorrect");
+                    }
+                    catch (AssertFailedException)
+                    {
+                        Debug.WriteLine("return code " + bcdEditRes.resultCode);
+                        Debug.WriteLine("stdout " + bcdEditRes.stdout);
+                        Debug.WriteLine("stderr " + bcdEditRes.stderr);
+                    }
                 }
             }
         }
