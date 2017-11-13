@@ -1,6 +1,8 @@
 @echo on
 REM usage : deployToBlade.bat <computername> [<kernel debug server IP> <kernel debug server port> <kernel debug server key>]
 
+whoami
+
 REM Name the computer according to our parameters
 wmic computersystem where caption='%COMPUTERNAME%' call rename %1
 if %ERRORLEVEL% neq 0 exit /b 1

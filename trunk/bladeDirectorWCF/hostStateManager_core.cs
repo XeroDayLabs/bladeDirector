@@ -2037,11 +2037,11 @@ bladeLockType.lockvmDeployState,  // <-- TODO/FIXME: write perms shuold imply re
 
     public class tempLockElevation : IDisposable
     {
-        private readonly ILockableSpec _blade;
+        private readonly lockableOwnership _blade;
 
         private readonly bladeLocks _permsAdded;
 
-        public tempLockElevation(ILockableSpec blade, bladeLockType newRead, bladeLockType newWrite)
+        public tempLockElevation(lockableOwnership blade, bladeLockType newRead, bladeLockType newWrite)
         {
             _blade = blade;
             _permsAdded = blade.getCurrentLocks();
@@ -2059,11 +2059,11 @@ bladeLockType.lockvmDeployState,  // <-- TODO/FIXME: write perms shuold imply re
 
     public class tempLockDepression : IDisposable
     {
-        private readonly ILockableSpec _blade;
+        private readonly lockableOwnership _blade;
 
         private readonly bladeLocks _permsDropped;
 
-        public tempLockDepression(ILockableSpec blade, bladeLockType toDropRead, bladeLockType toDropWrite)
+        public tempLockDepression(lockableOwnership blade, bladeLockType toDropRead, bladeLockType toDropWrite)
         {
             _blade = blade;
             _permsDropped = blade.getCurrentLocks();

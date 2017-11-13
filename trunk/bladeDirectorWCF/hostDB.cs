@@ -181,7 +181,7 @@ namespace bladeDirectorWCF
             readLock = readLock | bladeLockType.lockvmDeployState;
             readLock = readLock | bladeLockType.lockBIOS;
 
-            lockableBladeSpec toRet = new lockableBladeSpec(conn, IP, readLock, writeLock);
+            lockableBladeSpec toRet = new lockableBladeSpec(IP, readLock, writeLock);
 
             try
             {
