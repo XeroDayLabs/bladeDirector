@@ -7,16 +7,8 @@ using bladeDirectorWCF.Properties;
 
 namespace bladeDirectorWCF
 {
-    public interface IDebuggableThing
-    {
-        string kernelDebugAddress { get; }
-        ushort kernelDebugPort { get; }
-        string kernelDebugKey { get; }
-        string friendlyName { get; }
-    }
-
     [XmlInclude(typeof (bladeOwnership))]
-    public class vmSpec : bladeOwnership, IDebuggableThing
+    public class vmSpec : bladeOwnership
     {
         public long parentBladeID
         {
@@ -248,9 +240,8 @@ namespace bladeDirectorWCF
             if (!vmConfigKey.HasValue)
                 throw new Exception("Cannot reload from DB because we have no row ID");
 
-            string sqlCommand;
-            sqlCommand = "select " + string.Join(",", toWrite) + " from VMConfiguration "
-                         + " where vmConfigKey = $vmConfigKey; ";
+            var sqlCommand = "select " + string.Join(",", toWrite) + " from VMConfiguration "
+                                + " where vmConfigKey = $vmConfigKey; ";
 
             using (SQLiteCommand cmd = new SQLiteCommand(sqlCommand, conn))
             {

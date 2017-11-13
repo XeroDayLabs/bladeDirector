@@ -1,6 +1,7 @@
 using System;
 using System.Diagnostics;
 using System.Threading;
+using bladeDirectorWCF;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using bladeLockType = bladeDirectorWCF.bladeLockType;
 using lockableVMSpec = bladeDirectorWCF.lockableVMSpec;
@@ -62,6 +63,62 @@ namespace tests
 
                     failIfNoThrow(() => { refA.spec.friendlyName = "test data"; });
                     failIfNoThrow(() => { refA.spec.currentOwner = "Dave_Lister"; });
+                }
+            }
+        }
+
+        [TestMethod]
+        public void testDBObjectCanDisposeWhileUpgraded()
+        {
+            using (hostDB db = new hostDB())
+            {
+                bladeDirectorWCF.vmSpec toDB = new bladeDirectorWCF.vmSpec(db.conn, "1.1.1.3", bladeLockType.lockAll, bladeLockType.lockAll);
+                db.addNode(toDB);
+
+                using (lockableVMSpec refA = db.getVMByIP("1.1.1.3", bladeLockType.lockNone, bladeLockType.lockNone))
+                {
+                    using (new tempLockElevation(refA,
+                        bladeLockType.lockVirtualHW ,
+                        bladeLockType.lockOwnership))
+                    {
+                        Assert.AreEqual(bladeLockType.lockIPAddresses | bladeLockType.lockVirtualHW | bladeLockType.lockOwnership, refA.spec.permittedAccessRead);
+                        Assert.AreEqual(bladeLockType.lockOwnership, refA.spec.permittedAccessWrite);
+                    }
+                }
+
+                // As a final check, make sure we can re-acquire the locks. This will make sure we didn't 'leak' any.
+                using (lockableVMSpec refA = db.getVMByIP("1.1.1.3", bladeLockType.lockAll, bladeLockType.lockAll))
+                {
+                    // ..
+                }
+            }
+        }
+
+        [TestMethod]
+        public void testDBObjectCanDoDelayedDisposalWhileUpgraded()
+        {
+            using (hostDB db = new hostDB())
+            {
+                bladeDirectorWCF.vmSpec toDB = new bladeDirectorWCF.vmSpec(db.conn, "1.1.1.3", bladeLockType.lockAll, bladeLockType.lockAll);
+                db.addNode(toDB);
+
+                using (lockableVMSpec refA = db.getVMByIP("1.1.1.3", bladeLockType.lockNone, bladeLockType.lockNone))
+                {
+                    using (new tempLockElevation(refA,
+                        bladeLockType.lockVirtualHW,
+                        bladeLockType.lockOwnership))
+                    {
+                        Assert.AreEqual(bladeLockType.lockIPAddresses | bladeLockType.lockVirtualHW | bladeLockType.lockOwnership,refA.spec.permittedAccessRead);
+                        Assert.AreEqual(bladeLockType.lockOwnership, refA.spec.permittedAccessWrite);
+                        refA.Dispose();
+                        refA.inhibitNextDisposal();
+                    }
+                }
+
+                // As a final check, make sure we can re-acquire the locks. This will make sure we didn't 'leak' any.
+                using (lockableVMSpec refA = db.getVMByIP("1.1.1.3", bladeLockType.lockAll, bladeLockType.lockAll))
+                {
+                    // ..
                 }
             }
         }

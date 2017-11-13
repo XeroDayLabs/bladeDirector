@@ -115,8 +115,7 @@
     <Compile Include="inProgressOperation.cs" />
     <Compile Include="ipUtils.cs" />
     <Compile Include="IServices.cs" />
-    <Compile Include="lockableBladeSpec.cs" />
-    <Compile Include="lockableVMSpec.cs" />
+    <Compile Include="lockableOwnership.cs" />
     <Compile Include="miniDumpUtils.cs" />
     <Compile Include="mockedExecutionHandler.cs" />
     <Compile Include="mockedExecutionHandler_successful.cs" />

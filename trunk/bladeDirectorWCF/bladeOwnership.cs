@@ -12,7 +12,7 @@ using bladeDirectorWCF.Properties;
 namespace bladeDirectorWCF
 {
     [XmlInclude(typeof (bladeSpec))]
-    public abstract class bladeOwnership : IDebuggableThing
+    public abstract class bladeOwnership 
     {
         [XmlIgnore]
         public SQLiteConnection conn;
@@ -95,9 +95,11 @@ namespace bladeDirectorWCF
         public long? ownershipRowID;
 
         // These must be public so that the WCF client can access them.
+        // It must be implimented by the inheritor so that we can use it to key locks, and so it must be available when only
+        // lockIPAddresses is locked.
         // ReSharper disable MemberCanBeProtected.Global
         public abstract string kernelDebugAddress { get; }
-
+        
         [XmlIgnore]
         public userDesc[] credentials
         {
