@@ -691,7 +691,7 @@ namespace bladeDirectorWCF
             if (msg != null)
             {
                 addLogEvent(msg);
-                return new resultAndBladeName(resultCode.genericFail, null, msg);
+                return new resultAndBladeName(resultCode.genericFail, null, msg, null);
             }
 
             lock (_vmDeployState) // lock this since we're accessing the _vmDeployState variable
@@ -700,7 +700,7 @@ namespace bladeDirectorWCF
                 lockableBladeSpec freeVMServer = findAndLockBladeForNewVM(hwSpec, requestorIP, out serverStatus);
                 if (freeVMServer == null)
                 {
-                    return new resultAndBladeName(serverStatus, null, "Cannot find VM server for VM");
+                    return new resultAndBladeName(serverStatus, null, "Cannot find VM server for VM", null);
                 }
                 using (freeVMServer)
                 {
@@ -709,9 +709,11 @@ namespace bladeDirectorWCF
                     // delete it before we add.
                     Thread worker;
                     waitToken waitToken;
+                    string childVMIP;
                     using (lockableVMSpec childVM = freeVMServer.spec.createChildVM(db.conn, db, hwSpec, swReq, requestorIP))
                     {
                         waitToken = new waitToken(handleTypes.DEP, childVM.spec.VMIP.GetHashCode().ToString());
+                        childVMIP = childVM.spec.VMIP;
 
                         if (_vmDeployState.ContainsKey(waitToken))
                         {
@@ -719,7 +721,7 @@ namespace bladeDirectorWCF
                             {
                                 // Oh, a deploy is already in progress for this VM. This should never happen, since .createChildVM
                                 // should never return an already-existing VM.
-                                return new resultAndBladeName(resultCode.bladeInUse, waitToken, "Newly-created blade is already being deployed");
+                                return new resultAndBladeName(resultCode.bladeInUse, waitToken, "Newly-created blade is already being deployed", null);
                             }
                             _vmDeployState.Remove(waitToken);
                         }
@@ -734,13 +736,13 @@ namespace bladeDirectorWCF
                             vmServerIP = freeVMServer.spec.bladeIP,
                             childVMIP = childVM.spec.VMIP,
                             deployDeadline = new cancellableDateTime(),
-                            currentProgress = new resultAndBladeName(resultCode.pending, waitToken, null),
+                            currentProgress = new resultAndBladeName(resultCode.pending, waitToken, null, childVMIP),
                             hwSpec = hwSpec
                         };
                         _vmDeployState.Add(waitToken, deployState);
                     }
                     worker.Start(waitToken);
-                    return new resultAndBladeName(resultCode.pending, waitToken, "Thread created");
+                    return new resultAndBladeName(resultCode.pending, waitToken, "Thread created", childVMIP);
                 }
             }
         }
@@ -1269,7 +1271,7 @@ bladeLockType.lockvmDeployState,  // <-- TODO/FIXME: write perms shuold imply re
                 if (toRet == null)
                 {
                     // Otherwise, all blades have full queues.
-                    return new resultAndBladeName(resultCode.bladeQueueFull, null, "All blades are full");
+                    return new resultAndBladeName(resultCode.bladeQueueFull, null, "All blades are full", null);
                 }
             }
 

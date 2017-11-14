@@ -1,7 +1,9 @@
 #!ipxe
 
-#set 210 boot\x86\local\esxi\/
-#chain tftp://172.17.191.254/\boot\x86\local\esxi\pxelinux.0
+# For Orangeslice
+set 210 boot\x86\local\esxi\/
+chain tftp://172.17.191.254/\boot\x86\local\esxi\pxelinux.0
 
-set 210 boot/x86/local/esxi/
-chain tftp://172.17.191.253/boot/x86/local/esxi/pxelinux.0
+# For temporary fix on Sugarshine
+#set 210 boot/x86/local/esxi/
+#chain tftp://172.17.191.253/boot/x86/local/esxi/pxelinux.0
