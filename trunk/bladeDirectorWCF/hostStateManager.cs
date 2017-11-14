@@ -311,9 +311,10 @@ namespace bladeDirectorWCF
             // For XML de/ser
         }
 
-        public resultAndBladeName(resultCode result, waitToken newWaitToken, string msg)
+        public resultAndBladeName(resultCode result, waitToken newWaitToken, string msg, string newBladeName)
             : base(result, newWaitToken, msg)
         {
+            bladeName = newBladeName;
         }
 
         public resultAndBladeName(result result, waitToken newWaitToken)
