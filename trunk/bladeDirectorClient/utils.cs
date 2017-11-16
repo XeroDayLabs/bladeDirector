@@ -43,6 +43,26 @@ namespace bladeDirectorClient
         bool isResourceReleaseRequested(int bladeID);
     }
 
+    public class bladeOwnershipNull : IBladeOwnershipChecker
+    {
+        public void Dispose()
+        {
+            
+        }
+
+        public TimeSpan pollTime { get { return TimeSpan.FromSeconds(5);} }
+
+        public void beginOperation()
+        {
+            
+        }
+
+        public bool isResourceReleaseRequested(int bladeID)
+        {
+            return false;
+        }
+    }
+
     public class mockedOwnershipChecker : IBladeOwnershipChecker
     {
         private bool hasBegunOperation = false;
