@@ -126,10 +126,12 @@ namespace tests
                 bladeSpec parentBlade = svc.svc.getBladeByIP_withoutLocking(createdBlade.parentBladeIP);
                 snapshotDetails snap = svc.svc.getCurrentSnapshotDetails(VMName);
                 NASParams nas = svc.svc.getNASParams();
-                using (hypervisor_vmware_FreeNAS foo = utils.createHypForVM(createdBlade, parentBlade, snap, nas))
+                using (hypervisor_vmware_FreeNAS hyp = utils.createHypForVM(createdBlade, parentBlade, snap, nas))
                 {
+                    hyp.powerOn(new cancellableDateTime(TimeSpan.FromMinutes(2)));
+
                     // Check that debugging has been provisioned correctly
-                    executionResult bcdEditRes = foo.startExecutable("bcdedit", "/dbgsettings");
+                    executionResult bcdEditRes = hyp.startExecutable("bcdedit", "/dbgsettings");
                     Assert.AreEqual(0, bcdEditRes.resultCode);
                     Debug.WriteLine("stdout " + bcdEditRes.stdout);
                     Debug.WriteLine("stderr " + bcdEditRes.stderr);
@@ -140,7 +142,7 @@ namespace tests
 
                     // TODO: verify allocated CPU count and memory size
 
-                    executionResult getNameRes = foo.startExecutable("echo %COMPUTERNAME%", "");
+                    executionResult getNameRes = hyp.startExecutable("echo %COMPUTERNAME%", "");
                     Assert.AreEqual(0, getNameRes.resultCode);
                     Debug.WriteLine("stdout " + getNameRes.stdout);
                     Debug.WriteLine("stderr " + getNameRes.stderr);
