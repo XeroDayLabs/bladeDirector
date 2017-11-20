@@ -132,21 +132,35 @@ namespace tests
 
                     // Check that debugging has been provisioned correctly
                     executionResult bcdEditRes = hyp.startExecutable("bcdedit", "/dbgsettings");
-                    Assert.AreEqual(0, bcdEditRes.resultCode);
-                    Debug.WriteLine("stdout " + bcdEditRes.stdout);
-                    Debug.WriteLine("stderr " + bcdEditRes.stderr);
-                    Assert.IsTrue(Regex.IsMatch(bcdEditRes.stdout, "key\\s*a.b.c.d"));
-                    Assert.IsTrue(Regex.IsMatch(bcdEditRes.stdout, "debugtype\\s*NET"));
-                    Assert.IsTrue(Regex.IsMatch(bcdEditRes.stdout, "hostip\\s*" + hostip));
-                    Assert.IsTrue(Regex.IsMatch(bcdEditRes.stdout, "port\\s*60234"));
+                    try
+                    {
+                        Assert.AreEqual(0, bcdEditRes.resultCode);
+                        Assert.IsTrue(Regex.IsMatch(bcdEditRes.stdout, "key\\s*a.b.c.d"));
+                        Assert.IsTrue(Regex.IsMatch(bcdEditRes.stdout, "debugtype\\s*NET"));
+                        Assert.IsTrue(Regex.IsMatch(bcdEditRes.stdout, "hostip\\s*" + hostip));
+                        Assert.IsTrue(Regex.IsMatch(bcdEditRes.stdout, "port\\s*60234"));
+                    }
+                    catch (AssertFailedException)
+                    {
+                        Debug.WriteLine("bcdedit stdout " + bcdEditRes.stdout);
+                        Debug.WriteLine("bcdedit stderr " + bcdEditRes.stderr);
+
+                        throw;
+                    }
 
                     // TODO: verify allocated CPU count and memory size
 
                     executionResult getNameRes = hyp.startExecutable("echo %COMPUTERNAME%", "");
-                    Assert.AreEqual(0, getNameRes.resultCode);
-                    Debug.WriteLine("stdout " + getNameRes.stdout);
-                    Debug.WriteLine("stderr " + getNameRes.stderr);
-                    Assert.AreSame(getNameRes.stdout.ToLower(), "VM_31_01".Trim().ToLower());
+                    try
+                    {
+                        Assert.AreEqual(0, getNameRes.resultCode);
+                        Assert.AreSame(getNameRes.stdout.Trim().ToLower(), "VM_31_01".Trim().ToLower(), "VM name '" + getNameRes.stdout + "' incorrect");
+                    }
+                    catch (AssertFailedException)
+                    {
+                        Debug.WriteLine("Get machine name stdout '" + getNameRes.stdout + "'");
+                        Debug.WriteLine("Get machine name stderr '" + getNameRes.stderr + "'");
+                    }
                 }
             }
         }
