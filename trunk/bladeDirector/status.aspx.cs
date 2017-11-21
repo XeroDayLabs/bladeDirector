@@ -14,7 +14,7 @@ namespace bladeDirector
     {
         protected void Page_Load(object sender, EventArgs e)
         {
-            if (getCurrentServerURL() != null)
+            if (getCurrentServerURL(this) != null)
             {
                 logInPrompt.Visible = false;
                 try
@@ -59,7 +59,7 @@ namespace bladeDirector
         private void doLoggedInData()
         {
             // Populate the main page data.
-            lblServerURL.Text = getCurrentServerURL();
+            lblServerURL.Text = getCurrentServerURL(this);
             lblClientIP.Text = Request.UserHostAddress;
             TableRow headerRow = new TableRow();
             headerRow.Cells.Add(new TableHeaderCell() { Text = "" });
@@ -74,7 +74,7 @@ namespace bladeDirector
 
             tblBladeStatus.Rows.Add(headerRow);
 
-            using (BladeDirectorServices services = new BladeDirectorServices(getCurrentServerURL()))
+            using (BladeDirectorServices services = new BladeDirectorServices(getCurrentServerURL(this)))
             {
                 lblServerBaseWebURL.Text = services.svc.getWebSvcURL();
 
@@ -117,7 +117,7 @@ namespace bladeDirector
                     newRow.Cells.Add(new TableCell() { Text = bladeInfo.currentOwner ?? "none" });
                     newRow.Cells.Add(new TableCell() { Text = bladeInfo.nextOwner ?? "none" });
 
-                    string iloURL = String.Format("https://ilo-blade{0}.management.xd.lan/", Int32.Parse(bladeInfo.bladeIP.Split('.')[3]) - 100);
+                    string iloURL = String.Format("iloConsole.aspx?bladeIP={0}", bladeInfo.bladeIP);
                     HyperLink link = new HyperLink() { NavigateUrl = iloURL, Text = "iLo" };
                     TableCell iloURLtableCell = new TableCell();
                     iloURLtableCell.Controls.Add(link);
@@ -144,11 +144,11 @@ namespace bladeDirector
             }            
         }
 
-        private string getCurrentServerURL()
+        public static string getCurrentServerURL(Page thePage)
         {
-            if (Session["serverURL"] == null)
+            if (thePage.Session["serverURL"] == null)
                 return null;
-            return Session["serverURL"].ToString();
+            return thePage.Session["serverURL"].ToString();
         }
 
         private string formatDateTimeForWeb(TimeSpan toshow)
@@ -261,12 +261,12 @@ namespace bladeDirector
             tc.VerticalAlign = VerticalAlign.Middle;
             return tc;
         }
-
-        private void forceRelease(object sender, EventArgs e)
+        
+        private void forceRelease(object sender, EventArgs e) 
         {
             Button clicked = (Button) sender;
 
-            using (BladeDirectorServices services = new BladeDirectorServices(getCurrentServerURL()))
+            using (BladeDirectorServices services = new BladeDirectorServices(getCurrentServerURL(this)))
             {
                 services.svc.ReleaseBladeOrVM(clicked.CommandArgument);
             }
@@ -274,7 +274,7 @@ namespace bladeDirector
         
         protected void cmdAddNode_Click(object sender, EventArgs e)
         {
-            using (BladeDirectorServices services = new BladeDirectorServices(getCurrentServerURL()))
+            using (BladeDirectorServices services = new BladeDirectorServices(getCurrentServerURL(this)))
             {
                 services.svc.addNode(txtNewNodeIP.Text, txtNewISCSI.Text, txtNewIloIP.Text, UInt16.Parse(txtNewPort.Text), "TODO.the.key.here", "name of " + txtNewNodeIP.Text);
             }
