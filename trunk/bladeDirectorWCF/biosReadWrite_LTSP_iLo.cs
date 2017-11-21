@@ -344,8 +344,9 @@ namespace bladeDirectorWCF
 
                     if (DateTime.Now > dumpTime)
                     {
-                        _hostManager.addLogEvent("Cancel has taken more than 30 seconds; writing dump");
-                        miniDumpUtils.dumpSelf(Path.Combine(Settings.Default.internalErrorDumpPath, "slow_bios_" + Guid.NewGuid().ToString() + ".dmp"));
+                        string dumpPath = Path.Combine(Settings.Default.internalErrorDumpPath, "slow_bios_" + Guid.NewGuid().ToString() + ".dmp");
+                        _hostManager.addLogEvent(string.Format("Cancel has taken more than 30 seconds; writing dump '{0}'", dumpPath));
+                        miniDumpUtils.dumpSelf(dumpPath);
 
                         dumpTime = DateTime.MaxValue;
                     }

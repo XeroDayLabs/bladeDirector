@@ -315,7 +315,7 @@ namespace bladeDirectorWCF
                             bladeLockType.lockVMCreation | bladeLockType.lockBIOS | bladeLockType.lockSnapshot | bladeLockType.lockNASOperations | bladeLockType.lockvmDeployState | bladeLockType.lockVirtualHW | bladeLockType.lockOwnership,
                             bladeLockType.lockVMCreation | bladeLockType.lockBIOS | bladeLockType.lockSnapshot | bladeLockType.lockNASOperations | bladeLockType.lockvmDeployState))
                         {
-                            // Check out double locking before we release.
+                            // Check our double locking before we release.
                             if (allocated.spec.currentOwner == "vmserver" &&
                                 allocated.spec.nextOwner == login.hostIP)
                             {
@@ -480,6 +480,12 @@ namespace bladeDirectorWCF
                 }
                 // We don't even care if the cancelled operation fails instead of cancelling, at this point. As long as it's over
                 // we're good.
+                lock (_currentBIOSOperations)
+                {
+                    waitToken waitToken = new waitToken(handleTypes.BOS, toRelease.spec.bladeIP.GetHashCode().ToString());
+                    _currentBIOSOperations[waitToken].isFinished = true;
+                    _currentBIOSOperations[waitToken].status.code = resultCode.cancelled;
+                }
             }
 
             // Reset any VM server the blade may be
@@ -567,66 +573,18 @@ namespace bladeDirectorWCF
 
         private result releaseVM(lockableVMSpec lockedVM)
         {
-            // If we are currently being deployed, we must wait until we are at a point wherby we can abort the deploy. We need
-            // to be careful how to lock here, otherwise we risk deadlocking.
-            bool islocked = false;
-            try
-            {
-                Monitor.Enter(_vmDeployState);
-                islocked = true;
+            bool deploymentOfVMWasCancelled = cancelVMDeployAndWaitUntilFinished(lockedVM);
 
-                waitToken waitToken = new waitToken(handleTypes.DEP, lockedVM.spec.VMIP.GetHashCode().ToString());
-
-                if (_vmDeployState.ContainsKey(waitToken) &&
-                    _vmDeployState[waitToken].currentProgress.result.code == resultCode.pending)
-                {
-                    // Ahh, this VM is currently being deployed. We can't release it until the thread doing the deployment says so.
-                    _vmDeployState[waitToken].deployDeadline.markCancelled();
-
-                    // If we can't cancel within 30 seconds, we write a crashdump so that an operator can work out why.
-                    DateTime dumpTime = DateTime.Now + TimeSpan.FromSeconds(30);
-
-                    while (_vmDeployState[waitToken].currentProgress.result.code == resultCode.pending)
-                    {
-                        addLogEvent("Waiting for VM deploy on " + lockedVM.spec.VMIP + " to cancel");
-
-                        if (DateTime.Now > dumpTime)
-                        {
-                            addLogEvent("VM deploy cancellation has taken more than 30 seconds; writing dump");
-                            miniDumpUtils.dumpSelf(Path.Combine(Settings.Default.internalErrorDumpPath, "slow_vm_cancel_" + Guid.NewGuid().ToString() + ".dmp"));
-
-                            dumpTime = DateTime.MaxValue;
-                        }
-
-                        Monitor.Exit(_vmDeployState);
-                        islocked = false;
-                        // Drop all locks on the VM (except IP address) while we wait for it to release. This will permit  
-                        // allocation to finish.
-                        using ( tempLockDepression tmp = new tempLockDepression(lockedVM, 
-                                ~bladeLockType.lockIPAddresses, bladeLockType.lockAll))
-                        {
-                            Thread.Sleep(TimeSpan.FromSeconds(10));
-                        }
-                        Monitor.Enter(_vmDeployState);
-                        islocked = true;
-                    }
-                }
-            }
-            finally
-            {
-                if (islocked)
-                    Monitor.Exit(_vmDeployState);
-            }
-
-            // Now we can power down the VM
+            // Now we can power down the VM itself.
+            // We don't modify the blade if one or more VMs are assigned to it, so it is safe to specify 
+            // permitAccessDuringDeployment, which will be set only when VMs are assigned.
             using (lockableBladeSpec parentBlade = db.getBladeByIP(lockedVM.spec.parentBladeIP,
                 bladeLockType.lockOwnership | bladeLockType.lockVMCreation, 
-                bladeLockType.lockNone))
+                bladeLockType.lockNone, false, true))
             {
                 using (hypervisor hyp = makeHypervisorForVM(lockedVM, parentBlade))
                 {
-                    // TODO: timeouts
-                    hyp.powerOff();
+                    hyp.powerOff(new cancellableDateTime(TimeSpan.FromSeconds(30)));
                 }
 
                 // Now we dispose the VM, and then specify that the next release of the VM (ie, that done by the parent) should
@@ -654,6 +612,67 @@ namespace bladeDirectorWCF
             }
 
             return new result(resultCode.success);
+        }
+
+        private bool cancelVMDeployAndWaitUntilFinished(lockableVMSpec lockedVM)
+        {
+            // If we are currently being deployed, we must wait until we are at a point wherby we can abort the deploy. We need
+            // to be careful how to lock here, otherwise we risk deadlocking.
+            bool islocked = false;
+            try
+            {
+                Monitor.Enter(_vmDeployState);
+                islocked = true;
+
+                waitToken waitToken = new waitToken(handleTypes.DEP, lockedVM.spec.VMIP.GetHashCode().ToString());
+
+                if (_vmDeployState.ContainsKey(waitToken) &&
+                    _vmDeployState[waitToken].currentProgress.result.code == resultCode.pending)
+                {
+                    // Ahh, this VM is currently being deployed. We can't release it until the thread doing the deployment says so.
+                    _vmDeployState[waitToken].deployDeadline.markCancelled();
+
+                    // If we can't cancel within 30 seconds, we write a crashdump so that an operator can work out why.
+                    DateTime dumpTime = DateTime.Now + TimeSpan.FromSeconds(30);
+
+                    while (_vmDeployState[waitToken].currentProgress.result.code == resultCode.pending)
+                    {
+                        addLogEvent("Waiting for VM deploy on " + lockedVM.spec.VMIP + " to cancel");
+
+                        if (DateTime.Now > dumpTime)
+                        {
+                            string dumpPath = Path.Combine(Settings.Default.internalErrorDumpPath, "slow_vm_cancel_" + Guid.NewGuid().ToString() + ".dmp");
+                            addLogEvent(string.Format("VM deploy cancellation has taken more than 30 seconds; writing dump to '{0}'", dumpPath));
+                            miniDumpUtils.dumpSelf(dumpPath);
+
+                            dumpTime = DateTime.MaxValue;
+                        }
+
+                        Monitor.Exit(_vmDeployState);
+                        islocked = false;
+                        // Drop all locks on the VM (except IP address) while we wait for it to release. This will permit  
+                        // allocation to continue until a cancellable point.
+                        using ( tempLockDepression tmp = new tempLockDepression(lockedVM, 
+                                ~bladeLockType.lockIPAddresses, bladeLockType.lockAll))
+                        {
+                            Thread.Sleep(TimeSpan.FromSeconds(10));
+                        }
+                        Monitor.Enter(_vmDeployState);
+                        islocked = true;
+                    }
+
+                    // Deployment was cancelled.
+                    return true;
+                }
+            }
+            finally
+            {
+                if (islocked)
+                    Monitor.Exit(_vmDeployState);
+            }
+
+            // No need to cancel deployment.
+            return false;
         }
 
         private string getCurrentSnapshotForBladeOrVM(string nodeIp)
@@ -1019,6 +1038,12 @@ bladeLockType.lockvmDeployState,  // <-- TODO/FIXME: write perms shuold imply re
                         {
                             // The BIOS write has failed, or been cancelled.
                             // TODO: handle this correctly by marking the blade server as dead or whatever.
+                            lock (_currentBIOSOperations)
+                            {
+                                _currentBIOSOperations[res.waitToken].isFinished = true;
+                                _currentBIOSOperations[res.waitToken].status.code = resultCode.cancelled;
+                            }
+
                             return progress.result;
                         }
                         hyp.powerOn(threadState.deployDeadline);

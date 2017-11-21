@@ -320,5 +320,35 @@ namespace tests
                 Assert.AreEqual(resultCode.success, newVM.result.code);
             }
         }
+
+        [TestMethod]
+        public void willReAllocateBladesAfterLogonDuringBIOSOperation()
+        {
+            using (bladeDirectorDebugServices svc = new bladeDirectorDebugServices(basicBladeTests.WCFPath))
+            {
+                string hostIP = "1.1.1.1";
+                svc.svcDebug.initWithBladesFromIPList(new[] { "172.17.129.131" }, true, NASFaultInjectionPolicy.retunSuccessful);
+
+                testUtils.doLogin(svc, hostIP);
+                string bladeIP = testUtils.doBladeAllocationForTest(svc, hostIP);
+
+                // Start a 5-minute long BIOS operation, then cancel it by logging in again.
+                svc.svcDebug._setBIOSOperationTimeIfMocked((int)TimeSpan.FromMinutes(5).TotalSeconds);
+                resultAndWaitToken res = svc.svcDebug._rebootAndStartDeployingBIOSToBlade(hostIP, bladeIP, ".... some bios file here ... ");
+                Assert.AreEqual(resultCode.pending, res.result.code);
+
+                Assert.AreEqual(true, svc.svcDebug._isBladeMine(hostIP, bladeIP, true));
+
+                // Now login again, cancelling the BIOS operation.
+                testUtils.doLogin(svc, hostIP);
+
+                // The blade should no longer be ours.
+                Assert.AreEqual(false, svc.svcDebug._isBladeMine(hostIP, bladeIP, false));
+
+                // And after an allocation, our blade should be re-used.
+                string newbladeIP = testUtils.doBladeAllocationForTest(svc, hostIP);
+                Assert.AreEqual(bladeIP, newbladeIP);
+            }
+        }
     }
 }

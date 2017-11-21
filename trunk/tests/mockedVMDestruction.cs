@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Threading;
 using bladeDirectorClient;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using bladeDirectorClient.bladeDirectorService;
@@ -65,25 +66,30 @@ namespace tests
                 string hostIP = "1.1.1.1";
                 svc.svcDebug.initWithBladesFromIPList(new[] { "172.17.129.131" }, true, NASFaultInjectionPolicy.retunSuccessful);
 
-                testUtils.doLogin(svc, hostIP);
-                string bladeIP = testUtils.doBladeAllocationForTest(svc, hostIP);
-                
                 // Start a 5-minute long BIOS operation, then cancel it by logging in again.
-                svc.svcDebug._setBIOSOperationTimeIfMocked((int) TimeSpan.FromMinutes(5).TotalSeconds);
-                resultAndWaitToken res = svc.svcDebug._rebootAndStartDeployingBIOSToBlade(hostIP, bladeIP, ".... some bios file here ... ");
+                svc.svcDebug._setBIOSOperationTimeIfMocked((int)TimeSpan.FromMinutes(5).TotalSeconds);
+
+                testUtils.doLogin(svc, hostIP);
+                
+                // Start to allocate a VM
+                VMHardwareSpec hwspec = new VMHardwareSpec { cpuCount = 1, memoryMB = 1024 * 3 };
+                VMSoftwareSpec swspec = new VMSoftwareSpec();
+
+                resultAndWaitToken res = svc.svcDebug._requestAnySingleVM(hostIP, hwspec, swspec);
                 Assert.AreEqual(resultCode.pending, res.result.code);
 
-                Assert.AreEqual(true, svc.svcDebug._isBladeMine(hostIP, bladeIP, true));
-
+                // The blade director should have assumed ownership of the blade itself, in order to deploy the VM
+                Assert.AreEqual(true, svc.svcDebug._isBladeMine("vmserver", "172.17.129.131", true));
+                
                 // Now login again, cancelling the BIOS operation.
                 testUtils.doLogin(svc, hostIP);
 
-                // The blade should no longer be ours.
-                Assert.AreEqual(false, svc.svcDebug._isBladeMine(hostIP, bladeIP, false));
+                // The blade should no longer be used by the blade director.
+                Assert.AreEqual(false, svc.svcDebug._isBladeMine("vmserver", "172.17.129.131", false));
 
-                // And after an allocation, our blade should be re-used.
-                string newbladeIP = testUtils.doBladeAllocationForTest(svc, hostIP);
-                Assert.AreEqual(bladeIP, newbladeIP);
+                // And after an allocation, our blade should be re-used successfully.
+                svc.svcDebug._setBIOSOperationTimeIfMocked((int)2);
+                testUtils.doVMAllocationForTest(svc, hostIP);
             }
         }
     }
