@@ -26,30 +26,29 @@ reg add "HKLM\Software\Policies\Microsoft\Windows\CurrentVersion\WindowsUpdate" 
 if %ERRORLEVEL% neq 0 exit /b 1
 
 REM now restart the service.
-net stop wuauserv
-if %ERRORLEVEL% neq 0 exit /b 1
+REM net stop wuauserv
+REM if %ERRORLEVEL% neq 0 exit /b 1
 
 REM wait for the service to stop
-:stoploop
-sc query wuauserv | find "STOPPED"
-if errorlevel 1 (
-	timeout 5
-	net stop wuauserv
-	goto stoploop
-)
-
+REM :stoploop
+REM sc query wuauserv | find "STOPPED"
+REM if errorlevel 1 (
+REM 	timeout 5
+REM 	net stop wuauserv
+REM 	goto stoploop
+REM )
 REM and start it again.
-net start wuauserv
-:startloop
-sc query wuauserv | find "RUNNING"
-if errorlevel 1 (
-	timeout 5
-	net stop wuauserv
-	goto startloop
-)
-
-wuauclt.exe /resetauthorization /detectnow
-
+REM net start wuauserv
+REM :startloop
+REM sc query wuauserv | find "RUNNING"
+REM if errorlevel 1 (
+REM 	timeout 5
+REM 	net stop wuauserv
+REM 	goto startloop
+REM )
+REM 
+REM wuauclt.exe /resetauthorization /detectnow
+REM 
 REM Now we must wait for WSUS to do its thing. How do we do that? MSDN says "wait 10 minutes for a detection cycle to finish". :(
 REM Let's just wait for one minute.
 REM timeout 60

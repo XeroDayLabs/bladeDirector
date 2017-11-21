@@ -398,7 +398,6 @@ namespace bladeDirectorWCF
             // We will permit writes of no fields if we don't yet have a row ID.
             if (fieldsToWrite.Length == 0 && ownershipRowID.HasValue)
             {
-                Debug.WriteLine("Nothing to write");
                 return;
             }
 
@@ -425,8 +424,6 @@ namespace bladeDirectorWCF
                 }
             } 
             
-            Debug.WriteLine("SQL " + sqlCommand);
-
             using (SQLiteCommand cmd = new SQLiteCommand(sqlCommand, conn))
             {
                 cmd.Parameters.AddWithValue("$state", _state);
@@ -442,14 +439,7 @@ namespace bladeDirectorWCF
                     cmd.Parameters.AddWithValue("$ownershipKey", ownershipRowID);
                 cmd.ExecuteNonQuery();
                 if (!ownershipRowID.HasValue)
-                {
                     ownershipRowID = (int?)conn.LastInsertRowId;
-                    Debug.WriteLine("New row ID is " + ownershipRowID);
-                }
-                else
-                {
-                    Debug.WriteLine("row ID already generated");
-                }
             }
         }
 
