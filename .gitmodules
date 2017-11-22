@@ -1,8 +1,8 @@
 [submodule "ThirdParty/hypervisors"]
 	path = ThirdParty/hypervisors
 	url = ../hypervisors
-[submodule "thirdparty/sqlite"]
-	path = thirdparty/sqlite
+[submodule "ThirdParty/sqlite"]
+	path = ThirdParty/sqlite
 	url = ../sqlite
 [submodule "ThirdParty/bootMenuSelector"]
 	path = ThirdParty/bootMenuSelector
