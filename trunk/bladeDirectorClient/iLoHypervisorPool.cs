@@ -32,17 +32,23 @@ namespace bladeDirectorClient
 
         private readonly object _connectionLock = new object();
 
-        public hypervisorCollection<hypSpec_vmware> requestVMs(VMSpec[] specs)
+        public hypervisorCollection<hypSpec_vmware> requestVMs(VMSpec[] specs, bool allowPartialAllocation = false)
         {
             initialiseIfNeeded();
 
             using (BladeDirectorServices director = new BladeDirectorServices(machinePools.bladeDirectorURL))
             {
-                DateTime deadline = DateTime.Now + TimeSpan.FromMinutes(15);
+                DateTime deadline = DateTime.Now + TimeSpan.FromMinutes(30);
                 resultAndBladeName[] results = new resultAndBladeName[specs.Length];
                 for (int n = 0; n < specs.Length; n++)
                 {
                     results[n] = director.svc.RequestAnySingleVM(specs[n].hw, specs[n].sw);
+
+                    if (results[n].result.code == resultCode.bladeQueueFull)
+                    {
+                        if (allowPartialAllocation)
+                            break;
+                    }
 
                     if (results[n].result.code != resultCode.success &&
                         results[n].result.code != resultCode.pending)
@@ -54,7 +60,6 @@ namespace bladeDirectorClient
                 hypervisorCollection<hypSpec_vmware> toRet = new hypervisorCollection<hypSpec_vmware>();
                 try
                 {
-                    int idx = 0;
                     foreach (resultAndBladeName res in results)
                     {
                         resultAndBladeName progress = director.waitForSuccess(res, deadline - DateTime.Now);
@@ -72,8 +77,6 @@ namespace bladeDirectorClient
 
                         if (!toRet.TryAdd(vmSpec.VMIP, newVM))
                             throw new Exception();
-
-                        idx++;
                     }
                 }
                 catch (Exception)
