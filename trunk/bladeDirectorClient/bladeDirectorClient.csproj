@@ -70,7 +70,7 @@
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="hypervisors, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>$(SolutionDir)\packages\hypervisors.0.0.1.27\lib\net45\hypervisors.dll</HintPath>
+      <HintPath>$(SolutionDir)\packages\hypervisors.0.0.1.33\lib\net45\hypervisors.dll</HintPath>
       <Private>True</Private>
     </Reference>
     <Reference Include="Microsoft.VisualStudio.QualityTools.UnitTestFramework, Version=10.1.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL" />
@@ -79,7 +79,7 @@
       <Private>True</Private>
     </Reference>
     <Reference Include="Renci.SshNet, Version=2016.1.0.0, Culture=neutral, PublicKeyToken=1cee9f8bde3db106, processorArchitecture=MSIL">
-      <HintPath>$(SolutionDir\packages\SSH.NET.2016.1.0\lib\net40\Renci.SshNet.dll</HintPath>
+      <HintPath>$(SolutionDir)\packages\SSH.NET.2016.1.0\lib\net40\Renci.SshNet.dll</HintPath>
       <Private>True</Private>
     </Reference>
     <Reference Include="System" />
@@ -96,11 +96,11 @@
       <Private>True</Private>
     </Reference>
     <Reference Include="VimService60.XmlSerializers, Version=6.0.0.0, Culture=neutral, PublicKeyToken=10980b081e887e9f, processorArchitecture=MSIL">
-      <HintPath>$(SolutionDir\packages\VMWare.Vim.6.280.0.1\lib\Net45\VimService60.XmlSerializers.dll</HintPath>
+      <HintPath>$(SolutionDir)\packages\VMWare.Vim.6.280.0.1\lib\Net45\VimService60.XmlSerializers.dll</HintPath>
       <Private>True</Private>
     </Reference>
     <Reference Include="VMware.Vim, Version=6.0.0.0, Culture=neutral, PublicKeyToken=10980b081e887e9f, processorArchitecture=MSIL">
-      <HintPath>$(SolutionDir\packages\VMWare.Vim.6.280.0.1\lib\Net45\VMware.Vim.dll</HintPath>
+      <HintPath>$(SolutionDir)\packages\VMWare.Vim.6.280.0.1\lib\Net45\VMware.Vim.dll</HintPath>
       <Private>True</Private>
     </Reference>
   </ItemGroup>
