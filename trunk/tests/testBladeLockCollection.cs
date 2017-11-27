@@ -3,6 +3,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using bladeDirectorClient.bladeDirectorService;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using bladeLockType = bladeDirectorWCF.bladeLockType;
 
 namespace tests
 {
@@ -148,5 +149,31 @@ namespace tests
             uut.release(bladeDirectorWCF.bladeLockType.lockBIOS, bladeDirectorWCF.bladeLockType.lockNone);
             Assert.IsTrue(uut.isUnlocked());
         }
+
+        [TestMethod]
+        public void testWriterLockWontLeaveThingsLockedOnException()
+        {
+            bladeDirectorWCF.bladeLockCollection uut = new bladeDirectorWCF.bladeLockCollection(bladeLockType.lockNone, bladeLockType.lockSnapshot);
+
+            // Attempt to lock for two things - NAS and BIOS. Inject an exception on the NAS exception, which happens _after_ the
+            // BIOS lock. Verify that the BIOS lock is also released.
+            bool didThrow = false;
+            try
+            {
+                uut.faultInjectOnLockOfThis = bladeLockType.lockNASOperations;
+                uut.acquire(bladeLockType.lockNASOperations | bladeLockType.lockBIOS, bladeLockType.lockNASOperations | bladeLockType.lockBIOS);
+            }
+            catch (ApplicationException)
+            {
+                didThrow = true;
+            }
+            Assert.IsTrue(didThrow, "Fault was not injected?");
+            uut.faultInjectOnLockOfThis = 0;
+
+            uut.release(bladeLockType.lockNone, bladeLockType.lockSnapshot);
+            Assert.IsTrue(uut.isUnlocked());
+            uut.assertLocks(bladeLockType.lockNone, bladeLockType.lockNone);
+        }
+    
     }
 }

@@ -180,7 +180,6 @@ namespace bladeDirectorWCF
 
             if (fieldList.Contains("vmDeployState"))
             {
-                Debug.WriteLine(reader["vmDeployState"].GetType());
                 if (reader["vmDeployState"] is DBNull)
                     _vmDeployState = VMDeployStatus.notBeingDeployed;
                 else
@@ -514,7 +513,7 @@ namespace bladeDirectorWCF
     public class VMCapacity
     {
         public int maxVMs = 20;
-        public int maxVMMemoryMB = 1024 * 20;
+        public int maxVMMemoryMB = 1024 * 30;
         public int maxCPUCount = 12;
     }
 

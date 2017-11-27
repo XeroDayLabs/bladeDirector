@@ -256,24 +256,34 @@ namespace bladeDirectorWCF
 
             lockableVMSpec toRet = new lockableVMSpec(bladeName, readLock, writeLock);
 
-            string sqlCommand = "select * from bladeOwnership " +
-                                "join VMConfiguration on ownershipKey = VMConfiguration.ownershipID " +
-                                "where VMConfiguration.VMIP = $VMIP";
-            using (SQLiteCommand cmd = new SQLiteCommand(sqlCommand, conn))
+            try
             {
-                cmd.Parameters.AddWithValue("$VMIP", bladeName);
-                using (SQLiteDataReader reader = cmd.ExecuteReader())
+                string sqlCommand = "select * from bladeOwnership " +
+                                    "join VMConfiguration on ownershipKey = VMConfiguration.ownershipID " +
+                                    "where VMConfiguration.VMIP = $VMIP";
+                using (SQLiteCommand cmd = new SQLiteCommand(sqlCommand, conn))
                 {
-                    if (reader.Read())
+                    cmd.Parameters.AddWithValue("$VMIP", bladeName);
+                    using (SQLiteDataReader reader = cmd.ExecuteReader())
                     {
-                        toRet.setSpec( new vmSpec(conn, reader, readLock, writeLock));
-                        return toRet;
-                    }
+                        if (reader.Read())
+                        {
+                            toRet.setSpec(new vmSpec(conn, reader, readLock, writeLock));
+                            return toRet;
+                        }
 
-                    // No records returned.
-                    toRet.Dispose();
-                    return null;
+                        // No records returned.
+                        toRet.Dispose();
+                        return null;
+                    }
                 }
+
+            }
+            catch (Exception)
+            {
+                toRet.Dispose();
+
+                throw;
             }
         }
 

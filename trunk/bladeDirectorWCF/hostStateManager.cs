@@ -25,6 +25,9 @@ namespace bladeDirectorWCF
 
         private ConcurrentDictionary<string, hostStateDBInProgressTCPConnect> inProgressTCPConnects = new ConcurrentDictionary<string, hostStateDBInProgressTCPConnect>();
 
+        private Object cachedNASLock = new Object();
+        private FreeNASWithCaching cachedNAS;
+
         public hostStateManager(string basePath)
             : base(basePath, new vmServerControl_ESXi(), new biosReadWrite_LTSP_iLo())
         {
@@ -138,7 +141,15 @@ namespace bladeDirectorWCF
 
         protected override NASAccess getNasForDevice(bladeSpec vmServer)
         {
-            return new FreeNAS(Settings.Default.iscsiServerIP, Settings.Default.iscsiServerUsername, Settings.Default.iscsiServerPassword);
+            if (cachedNAS == null)
+            {
+                lock (cachedNASLock)
+                {
+                    if (cachedNAS == null)
+                        cachedNAS = new FreeNASWithCaching(Settings.Default.iscsiServerIP, Settings.Default.iscsiServerUsername, Settings.Default.iscsiServerPassword);
+                }
+            }
+            return cachedNAS;
         }
 
         protected override NASParams getNASParams()

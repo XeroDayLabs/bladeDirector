@@ -47,7 +47,10 @@ namespace bladeDirectorClient
                     if (results[n].result.code == resultCode.bladeQueueFull)
                     {
                         if (allowPartialAllocation)
+                        {
+                            results[n] = null;
                             break;
+                        }
                     }
 
                     if (results[n].result.code != resultCode.success &&
@@ -62,7 +65,18 @@ namespace bladeDirectorClient
                 {
                     foreach (resultAndBladeName res in results)
                     {
-                        resultAndBladeName progress = director.waitForSuccess(res, deadline - DateTime.Now);
+                        if (res == null)
+                            continue;
+
+                        resultAndBladeName progress = director.waitForSuccessWithoutThrowing(res, deadline - DateTime.Now);
+                        if (progress == null)
+                            throw new TimeoutException();
+                        if (progress.result.code == resultCode.bladeQueueFull)
+                        {
+                            if (allowPartialAllocation)
+                                continue;
+                            throw new Exception("Not enough blades available to accomodate new VMs");
+                        }
 
                         vmSpec vmSpec = director.svc.getVMByIP_withoutLocking(progress.bladeName);
                         bladeSpec vmServerSpec = director.svc.getBladeByIP_withoutLocking(vmSpec.parentBladeIP);
@@ -84,7 +98,16 @@ namespace bladeDirectorClient
                     foreach (KeyValuePair<string, hypervisorWithSpec<hypSpec_vmware>> allocedBlades in toRet)
                     {
                         if (allocedBlades.Key != null)
-                            director.svc.ReleaseBladeOrVM(allocedBlades.Key);
+                        {
+                            try
+                            {
+                                director.svc.ReleaseBladeOrVM(allocedBlades.Key);
+                            }
+                            catch (Exception)
+                            {
+                                // ...
+                            }
+                        }
                     }
                     throw;
                 }
