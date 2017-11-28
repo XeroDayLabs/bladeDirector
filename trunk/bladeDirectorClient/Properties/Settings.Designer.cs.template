@@ -23,6 +23,15 @@ namespace bladeDirectorClient.Properties {
             }
         }
         
+        [global::System.Configuration.ApplicationScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("http://alizbuild.xd.lan/bladeDirector")]
+        public string bladeDirectorURL {
+            get {
+                return ((string)(this["bladeDirectorURL"]));
+            }
+        }
+        
         [global::System.Configuration.UserScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
         [global::System.Configuration.DefaultSettingValueAttribute("1")]
@@ -133,30 +142,6 @@ namespace bladeDirectorClient.Properties {
         
         [global::System.Configuration.UserScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [global::System.Configuration.DefaultSettingValueAttribute("..")]
-        public string bladeDirectorURL {
-            get {
-                return ((string)(this["bladeDirectorURL"]));
-            }
-            set {
-                this["bladeDirectorURL"] = value;
-            }
-        }
-        
-        [global::System.Configuration.UserScopedSettingAttribute()]
-        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [global::System.Configuration.DefaultSettingValueAttribute("..")]
-        public string XDLClusterBladeList {
-            get {
-                return ((string)(this["XDLClusterBladeList"]));
-            }
-            set {
-                this["XDLClusterBladeList"] = value;
-            }
-        }
-        
-        [global::System.Configuration.UserScopedSettingAttribute()]
-        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
         [global::System.Configuration.DefaultSettingValueAttribute("10")]
         public int XDLClusterVMsPerBlade {
             get {
@@ -188,6 +173,18 @@ namespace bladeDirectorClient.Properties {
             }
             set {
                 this["XDLVMServerPassword"] = value;
+            }
+        }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("12")]
+        public string XDLClusterBladeList {
+            get {
+                return ((string)(this["XDLClusterBladeList"]));
+            }
+            set {
+                this["XDLClusterBladeList"] = value;
             }
         }
     }
