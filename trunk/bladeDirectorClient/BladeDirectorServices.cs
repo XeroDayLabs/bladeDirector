@@ -71,7 +71,6 @@ namespace bladeDirectorClient
 
         private void connect()
         {
-            machinePools.bladeDirectorURL = servicesURL;
             waitUntilReady(() =>
             {
                 if (svc != null)

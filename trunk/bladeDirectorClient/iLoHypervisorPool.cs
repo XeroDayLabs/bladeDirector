@@ -36,6 +36,8 @@ namespace bladeDirectorClient
         {
             initialiseIfNeeded();
 
+            Stopwatch allocWatch = new Stopwatch();
+
             using (BladeDirectorServices director = new BladeDirectorServices(machinePools.bladeDirectorURL))
             {
                 DateTime deadline = DateTime.Now + TimeSpan.FromMinutes(30);
@@ -111,6 +113,8 @@ namespace bladeDirectorClient
                     }
                     throw;
                 }
+                allocWatch.Stop();
+                Debug.WriteLine("Allocated all VMs, took " + allocWatch.Elapsed.ToString());
                 return toRet;
             }
         }

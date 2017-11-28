@@ -1909,6 +1909,11 @@ bladeLockType.lockvmDeployState,  // <-- TODO/FIXME: write perms shuold imply re
 
             hyp.connect();
             hyp.powerOff(deadline);
+
+            // I'm sometimes seeing a condition whereby VMs boot, and get the correct iPXE script, but can't find the iscsi target
+            // they are meant to connect to. I don't know why this is happening, but I suspect some race condition in either my
+            // cached FreeNAS code client (most likely :)), the server-end FreeNAS code, or ctl itself. The iPXE script will reboot
+            // the VM in this eventuality and the boot will continue.
             hyp.powerOn(deadline);
 
             // Now deploy and execute our deployment script.

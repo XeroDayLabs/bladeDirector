@@ -24,6 +24,7 @@ namespace tests
 
             using (bladeDirectorDebugServices svc = new bladeDirectorDebugServices(basicBladeTests.WCFPath, basicBladeTests.WebURI))
             {
+                machinePools.bladeDirectorURL = svc.servicesURL;
                 string hostip = "1.2.3.4";
 
                 // We will be using this blade for our tests.
@@ -71,6 +72,8 @@ namespace tests
         {
             using (bladeDirectorDebugServices svc = new bladeDirectorDebugServices(basicBladeTests.WCFPath, basicBladeTests.WebURI))
             {
+                machinePools.bladeDirectorURL = svc.servicesURL;
+
                 string hostIP = "1.1.1.1";
                 bladeSpec spec = svc.svcDebug.createBladeSpec("172.17.129.131", "192.168.129.131", "172.17.2.131", 1234, false, VMDeployStatus.notBeingDeployed, " ... ", "idk", "box", bladeLockType.lockAll, bladeLockType.lockAll);
                 svc.svcDebug.initWithBladesFromBladeSpec(new[] { spec }, false, NASFaultInjectionPolicy.retunSuccessful);
@@ -105,6 +108,8 @@ namespace tests
         {
             using (bladeDirectorDebugServices svc = new bladeDirectorDebugServices(basicBladeTests.WCFPath, basicBladeTests.WebURI))
             {
+                machinePools.bladeDirectorURL = svc.servicesURL;
+
                 string hostip = "1.2.3.4";
 
                 // We will be using this blade for our tests.
@@ -204,6 +209,8 @@ namespace tests
         {
             using (bladeDirectorDebugServices svc = new bladeDirectorDebugServices(basicBladeTests.WCFPath, basicBladeTests.WebURI))
             {
+                machinePools.bladeDirectorURL = svc.servicesURL;
+
                 // Create four blades, and request a load of VMs from them.
                 List<bladeSpec> specs = new List<bladeSpec>();
                 for (int bladeID = 28; bladeID < 32; bladeID++)
@@ -366,6 +373,8 @@ namespace tests
         {
             using (bladeDirectorDebugServices svc = new bladeDirectorDebugServices(basicBladeTests.WCFPath, basicBladeTests.WebURI))
             {
+                machinePools.bladeDirectorURL = svc.servicesURL;
+
                 string hostip = "1.2.3.4";
                 //string debuggerHost = testUtils.getBestRouteTo(IPAddress.Parse("172.17.129.131")).ToString();
 
