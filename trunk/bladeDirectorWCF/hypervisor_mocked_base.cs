@@ -112,6 +112,14 @@ namespace bladeDirectorWCF
             return new asycExcecutionResult_mocked(res);
         }
 
+        public override IAsyncExecutionResult startExecutableAsyncInteractively(string cmdExe, string args, string workingDir = null)
+        {
+            events.Add(new mockedCall("startExecutableAsyncInteractively", "toExecute: '" + cmdExe + "' args: '" + args + "'" + " working dir: '" + (workingDir ?? "<null>") + "'"));
+
+            executionResult res = _onMockedExecution.Invoke(this, cmdExe, args, workingDir);
+            return new asycExcecutionResult_mocked(res);
+        }
+
         public override void mkdir(string newDir, cancellableDateTime deadline)
         {
             events.Add(new mockedCall("mkdir", "newDir: '" +  newDir + "'"));
