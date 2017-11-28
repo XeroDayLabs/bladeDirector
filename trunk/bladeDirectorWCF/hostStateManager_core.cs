@@ -599,7 +599,7 @@ namespace bladeDirectorWCF
                 if (VMTotals.VMs == 0)
                 {
                     using (var temp = new tempLockElevation(parentBlade, 
-                        bladeLockType.lockBIOS | bladeLockType.lockvmDeployState,
+                        bladeLockType.lockvmDeployState,
                         bladeLockType.lockBIOS | bladeLockType.lockOwnership))
                     {
                         VMTotals = db.getVMServerTotals(parentBlade.spec);
@@ -693,34 +693,19 @@ namespace bladeDirectorWCF
 
         public resultAndBladeName RequestAnySingleVM(string requestorIP, VMHardwareSpec hwSpec, VMSoftwareSpec swReq )
         {
-            string msg = null;
-            if (hwSpec.memoryMB % 4 != 0)
-            {
-                // Fun fact: ESXi VM memory size must be a multiple of 4mb.
-                msg = "Failed VM alloc: memory size " + hwSpec.memoryMB + " is not a multiple of 4MB";
-            }
-            if (swReq.debuggerPort != 0 && (swReq.debuggerPort < 49152 || swReq.debuggerPort > 65535))
-            {
-                msg = "Failed VM alloc: kernel debug port " + swReq.debuggerPort + " is not between 49152 and 65535";
-            }
-            if (!string.IsNullOrEmpty(swReq.debuggerKey) && swReq.debuggerKey.Count(x => x == '.') != 3)
-            {
-                msg = "Failed VM alloc: kernel debug key " + swReq.debuggerKey + " is malformed";
-            }
-            if (msg != null)
-            {
-                addLogEvent(msg);
-                return new resultAndBladeName(resultCode.genericFail, null, msg, null);
-            }
+            // sanity check the VM
+            resultAndBladeName sanity = sanityCheckVMRequest(hwSpec, swReq);
+            if (sanity != null)
+                return sanity;
+
+            // Find a VM server to put our request on
+            resultCode serverStatus;
+            lockableBladeSpec freeVMServer = findAndLockBladeForNewVM(hwSpec, requestorIP, out serverStatus);
+            if (freeVMServer == null)
+                return new resultAndBladeName(serverStatus, null, "Cannot find VM server for VM", null);
 
             lock (_vmDeployState) // lock this since we're accessing the _vmDeployState variable
             {
-                resultCode serverStatus;
-                lockableBladeSpec freeVMServer = findAndLockBladeForNewVM(hwSpec, requestorIP, out serverStatus);
-                if (freeVMServer == null)
-                {
-                    return new resultAndBladeName(serverStatus, null, "Cannot find VM server for VM", null);
-                }
                 using (freeVMServer)
                 {
                     // Create rows for the child VM in the DB. Before we write it to the database, check we aren't about to add a 
@@ -765,7 +750,34 @@ namespace bladeDirectorWCF
                 }
             }
         }
-        
+
+        private resultAndBladeName sanityCheckVMRequest(VMHardwareSpec hwSpec, VMSoftwareSpec swReq)
+        {
+            string msg = null;
+            if (hwSpec.memoryMB%4 != 0)
+            {
+                // Fun fact: ESXi VM memory size must be a multiple of 4mb.
+                msg = "Failed VM alloc: memory size " + hwSpec.memoryMB + " is not a multiple of 4MB";
+            }
+            if (swReq.debuggerPort != 0 && (swReq.debuggerPort < 49152 || swReq.debuggerPort > 65535))
+            {
+                msg = "Failed VM alloc: kernel debug port " + swReq.debuggerPort + " is not between 49152 and 65535";
+            }
+            if (!string.IsNullOrEmpty(swReq.debuggerKey) && swReq.debuggerKey.Count(x => x == '.') != 3)
+            {
+                // TODO: there are additional constraints here that we don't check. Isn't the key base.. base36 or something?
+                msg = "Failed VM alloc: kernel debug key " + swReq.debuggerKey + " is malformed";
+            }
+            
+            if (msg != null)
+            {
+                addLogEvent(msg);
+                return new resultAndBladeName(resultCode.genericFail, null, msg, null);
+            }
+
+            return null;
+        }
+
         private lockableBladeSpec findAndLockBladeForNewVM(VMHardwareSpec hwSpec, string newOwner, out resultCode res)
         {
             lockableBladeSpec freeVMServer = null;
@@ -1406,7 +1418,6 @@ bladeLockType.lockvmDeployState,  // <-- TODO/FIXME: write perms shuold imply re
                             NASAccess nas = getNasForDevice(blade.spec);
 
                             // TODO: re-use exising image if possible
-                            //repairBladeDeviceNodes(nas, blade.spec);
                             deleteBlade(blade.spec.getCloneName(), nas);
                             // TODO: cancellability
                             configureBladeDisks(nas, blade, "bladeBaseStableSnapshot", null, null, null, requestorIP, new cancellableDateTime());
@@ -1794,19 +1805,7 @@ bladeLockType.lockvmDeployState,  // <-- TODO/FIXME: write perms shuold imply re
                 }
             }
         }
-
-        public static void repairBladeDeviceNodes(NASAccess nas, bladeOwnership toAdd, DateTime deadline = default(DateTime))
-        {
-            if (deadline == default(DateTime))
-                deadline = DateTime.MaxValue;
-
-            if (DateTime.Now > deadline) throw new TimeoutException();
-
-            exportClonesViaiSCSI(nas, toAdd);
-
-            if (DateTime.Now > deadline) throw new TimeoutException();
-        }
-
+        
         public void configureVMDisks(NASAccess nas, 
             lockableBladeSpec parent, lockableVMSpec newVM, 
             string baseSnapshot,
@@ -1837,6 +1836,10 @@ bladeLockType.lockvmDeployState,  // <-- TODO/FIXME: write perms shuold imply re
 
             deadline.throwIfTimedOutOrCancelled();
 
+            nas.waitUntilISCSIConfigFlushed();
+
+            deadline.throwIfTimedOutOrCancelled();
+
             using (hypervisor hyp = makeHypervisorForVM(newVM, parent))
             {
                 prepareCloneImage(newVM.spec, toCloneVolume, additionalScript,
@@ -1844,7 +1847,7 @@ bladeLockType.lockvmDeployState,  // <-- TODO/FIXME: write perms shuold imply re
             }
            
 
-            log("Configured OK.");
+            log("Configured " + newVM.spec.VMIP + " OK.");
         }
 
         public void configureBladeDisks(NASAccess nas, 
@@ -1877,6 +1880,10 @@ bladeLockType.lockvmDeployState,  // <-- TODO/FIXME: write perms shuold imply re
 
             deadline.throwIfTimedOutOrCancelled();
 
+            nas.waitUntilISCSIConfigFlushed();
+
+            deadline.throwIfTimedOutOrCancelled();
+
             log(".. OK");
 
             // Next, we must prepare the clone. 
@@ -1889,7 +1896,7 @@ bladeLockType.lockvmDeployState,  // <-- TODO/FIXME: write perms shuold imply re
             }
 
 
-            log("Configured OK.");
+            log("Configured " + newBlade.spec.bladeIP + " OK.");
         }
 
         public void prepareCloneImage(
@@ -2016,9 +2023,9 @@ bladeLockType.lockvmDeployState,  // <-- TODO/FIXME: write perms shuold imply re
                 hyp.mkdir("c:\\deployment");
                 executionResult res = hyp.startExecutable("cmd.exe", args, "c:\\deployment", deadline: new cancellableDateTime(TimeSpan.FromMinutes(3)));
                 if (res.resultCode != 0)
-                {
                     throw new Exception("deployment batch file returned nonzero: stderr '" + res.stderr + "' stdout '" + res.stdout + "'");
-                }
+                Debug.WriteLine(res.stdout + " / " + res.stderr);
+                log("Deploy script : " + res.stdout + " / " + res.stderr);
             }
         }
 

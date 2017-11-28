@@ -71,6 +71,7 @@ namespace bladeDirectorClient
 
         private void connect()
         {
+            machinePools.bladeDirectorURL = servicesURL;
             waitUntilReady(() =>
             {
                 if (svc != null)
@@ -117,25 +118,38 @@ namespace bladeDirectorClient
 
         public resultAndBladeName waitForSuccess(resultAndBladeName res, TimeSpan timeout)
         {
+            resultAndBladeName toRet = waitForSuccessWithoutThrowing(res, timeout);
+
+            if (toRet == null)
+                throw new TimeoutException();
+
+            if (toRet.result.code == resultCode.success ||
+                toRet.result.code == resultCode.noNeedLah)
+            {
+                return toRet;
+            }
+
+            throw new Exception("Unexpected status during .getProgress: " + res.result.code + " / " + res.result.errMsg);
+        }
+
+        public resultAndBladeName waitForSuccessWithoutThrowing(resultAndBladeName res, TimeSpan timeout)
+        {
             DateTime deadline = DateTime.Now + timeout;
-            while (res.result.code != resultCode.success)
+            while (true)
             {
                 switch (res.result.code)
                 {
-                    case resultCode.success:
-                    case resultCode.noNeedLah:
-                        break;
                     case resultCode.pending:
                         if (DateTime.Now > deadline)
-                            throw new TimeoutException();
+                            return null;
                         res = (resultAndBladeName) this.svc.getProgress(res.waitToken);
-                        continue;
+                        break;
+
                     default:
-                        throw new Exception("Unexpected status during .getProgress: " + res.result.code + " / " + res.result.errMsg);
+                        return res;
                 }
                 Thread.Sleep(TimeSpan.FromSeconds(1));
             }
-            return res;
         }
 
         public resultAndWaitToken waitForSuccess(resultAndWaitToken res, TimeSpan timeout)

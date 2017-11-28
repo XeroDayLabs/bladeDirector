@@ -1,8 +1,11 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Diagnostics;
+using System.Linq;
 using System.Net;
 using System.Text.RegularExpressions;
 using System.Threading;
+using System.Threading.Tasks;
 using bladeDirectorClient;
 using bladeDirectorClient.bladeDirectorService;
 using hypervisors;
@@ -111,8 +114,8 @@ namespace tests
                 string debuggerHost = testUtils.getBestRouteTo(IPAddress.Parse(spec.bladeIP)).ToString();
                 VMSoftwareSpec sw = new VMSoftwareSpec()
                 {
-                    debuggerHost = debuggerHost, 
-                    debuggerKey = "a.b.c.d", 
+                    debuggerHost = debuggerHost,
+                    debuggerKey = "a.b.c.d",
                     debuggerPort = 60234
                 };
                 VMHardwareSpec hw = new VMHardwareSpec() { cpuCount = 1, memoryMB = 4096 };
@@ -148,18 +151,211 @@ namespace tests
                         throw;
                     }
 
-                    // TODO: verify allocated CPU count and memory size
-
-                    executionResult getNameRes = hyp.startExecutable("echo %COMPUTERNAME%", "");
+                    executionResult wmicRes = hyp.startExecutable("wmic", "computersystem get totalPhysicalMemory,name,numberOfLogicalProcessors /format:value");
                     try
                     {
-                        Assert.AreEqual(0, getNameRes.resultCode);
-                        Assert.AreSame(getNameRes.stdout.Trim().ToLower(), "VM_31_01".Trim().ToLower(), "VM name '" + getNameRes.stdout + "' incorrect");
+                        // We expect an response similar to:
+                        //
+                        // Name=ALIZANALYSIS
+                        // NumberOfLogicalProcessors=8
+                        // TotalPhysicalMemory=17119825920
+                        //
+
+                        Assert.AreEqual(0, wmicRes.resultCode);
+                        string[] lines = wmicRes.stdout.Split(new[] { '\n', 'r' }, StringSplitOptions.RemoveEmptyEntries);
+                        foreach (string line in lines)
+                        {
+                            if (line.Trim().Length == 0)
+                                continue;
+
+                            string[] parts = line.Split('=');
+
+                            string name = parts[0].ToLower().Trim();
+                            string value = parts[1].ToLower().Trim();
+
+                            switch (name)
+                            {
+                                case "name":
+                                    Assert.AreEqual("VM_31_01", value, "Name is incorrect");
+                                    break;
+                                case "NumberOfLogicalProcessors":
+                                    Assert.AreEqual("1", value, "CPU count is incorrect");
+                                    break;
+                                case "TotalPhysicalMemory":
+                                    Assert.AreEqual((4096L * 1024L * 1024L).ToString(), value, "RAM size is incorrect");
+                                    break;
+                                default:
+                                    break;
+                            }
+                        }
                     }
                     catch (AssertFailedException)
                     {
-                        Debug.WriteLine("Get machine name stdout '" + getNameRes.stdout + "'");
-                        Debug.WriteLine("Get machine name stderr '" + getNameRes.stderr + "'");
+                        Debug.WriteLine("WMIC reported stdout '" + wmicRes.stdout + "'");
+                        Debug.WriteLine("WMIC reported stderr '" + wmicRes.stderr + "'");
+                    }
+                }
+            }
+        }
+
+        [TestMethod]
+        [TestCategory("requiresBladeDirector")]
+        public void willProvisionManyVM()
+        {
+            using (bladeDirectorDebugServices svc = new bladeDirectorDebugServices(basicBladeTests.WCFPath, basicBladeTests.WebURI))
+            {
+                // Create four blades, and request a load of VMs from them.
+                List<bladeSpec> specs = new List<bladeSpec>();
+                for (int bladeID = 28; bladeID < 32; bladeID++)
+                {
+                    specs.Add(svc.svcDebug.createBladeSpecForXDLNode(bladeID, "xdl.hacks.the.planet", bladeLockType.lockAll, bladeLockType.lockAll));
+                }
+                svc.svcDebug.initWithBladesFromBladeSpec(specs.ToArray(), false, NASFaultInjectionPolicy.retunSuccessful);
+
+                // Ask for lots of VMs. We will get back only those that 'fit' on the cluster.
+                List<VMSpec> requestedVMSpecs = new List<VMSpec>();
+                foreach (bladeSpec thisBlade in specs)
+                {
+                    string debuggerHost = testUtils.getBestRouteTo(IPAddress.Parse(thisBlade.bladeIP)).ToString();
+
+                    // Add ten VMs for each blade.
+                    for (int vmCount = 0; vmCount < 10; vmCount++)
+                    {
+                        requestedVMSpecs.Add(new VMSpec()
+                        {
+                            hw = new VMHardwareSpec() {cpuCount = 1, memoryMB = 2048},
+                            sw = new VMSoftwareSpec()
+                            {
+                                debuggerHost = debuggerHost,
+                                debuggerKey = "a.b.c.d",
+                                debuggerPort = 0    // auto
+                            }
+                        });
+                    }
+                }
+
+                using (hypervisorCollection<hypSpec_vmware> vms = machinePools.ilo.requestVMs(requestedVMSpecs.ToArray(), true))
+                {
+                    // Okay, we have our new VMs allocated now. Lets verify them all. 
+                    // Make a list of the created computer names and debug ports, since they are different for each request, and 
+                    // make sure that they are all different and in the expected range.
+                    List<int> debugPorts = new List<int>();
+                    List<string> displayNames = new List<string>();
+                    // We test each VM in parallel, otherwise things are reaaaally slow.
+                    List<Task> VMTestTasks = new List<Task>(); 
+                    foreach (hypervisorWithSpec<hypSpec_vmware> hyp in vms.Values)
+                    {
+                        Task vmTest = new Task(() =>
+                        {
+                            hyp.powerOn(new cancellableDateTime(TimeSpan.FromMinutes(2)));
+
+                            // Check that debugging has been provisioned correctly
+                            executionResult bcdEditRes = hyp.startExecutable("bcdedit", "/dbgsettings");
+                            try
+                            {
+                                Assert.AreEqual(0, bcdEditRes.resultCode);
+                                Assert.IsTrue(Regex.IsMatch(bcdEditRes.stdout, "key\\s*a.b.c.d"));
+                                Assert.IsTrue(Regex.IsMatch(bcdEditRes.stdout, "debugtype\\s*NET"));
+                                Assert.IsTrue(Regex.IsMatch(bcdEditRes.stdout, "hostip\\s*127.0.0.1"));
+                                // verify port assignment and extract the port 
+                                Match m = Regex.Match(bcdEditRes.stdout, "port\\s*([0-9]+)", RegexOptions.IgnoreCase);
+                                Assert.IsTrue(m.Success);
+                                int port = Int32.Parse(m.Groups[1].Value);
+                                debugPorts.Add(port);
+                            }
+                            catch (AssertFailedException)
+                            {
+                                Debug.WriteLine("bcdedit stdout " + bcdEditRes.stdout);
+                                Debug.WriteLine("bcdedit stderr " + bcdEditRes.stderr);
+
+                                throw;
+                            }
+
+                            executionResult wmicRes = hyp.startExecutable("wmic", "computersystem get totalPhysicalMemory,name,numberOfLogicalProcessors /format:value");
+                            try
+                            {
+                                // We expect an response similar to:
+                                //
+                                // Name=ALIZANALYSIS
+                                // NumberOfLogicalProcessors=8
+                                // TotalPhysicalMemory=17119825920
+                                //
+
+                                Assert.AreEqual(0, wmicRes.resultCode);
+                                string[] lines = wmicRes.stdout.Split(new[] {'\n', '\r'},
+                                    StringSplitOptions.RemoveEmptyEntries);
+                                foreach (string line in lines)
+                                {
+                                    if (line.Trim().Length == 0)
+                                        continue;
+
+                                    string[] parts = line.Split('=');
+
+                                    string name = parts[0].ToLower().Trim();
+                                    string value = parts[1].ToLower().Trim();
+
+                                    switch (name)
+                                    {
+                                        case "name":
+                                            displayNames.Add(value);
+                                            break;
+                                        case "numberoflogicalprocessors":
+                                            Assert.AreEqual("1", value, "CPU count is incorrect");
+                                            break;
+                                        case "totalphysicalmemory":
+                                            Assert.AreEqual("2144903168", value, "RAM size is incorrect");
+                                            break;
+                                        default:
+                                            break;
+                                    }
+                                }
+                            }
+                            catch (AssertFailedException)
+                            {
+                                Debug.WriteLine("WMIC reported stdout '" + wmicRes.stdout + "'");
+                                Debug.WriteLine("WMIC reported stderr '" + wmicRes.stderr + "'");
+                            }
+                        });
+                        VMTestTasks.Add(vmTest);
+                        vmTest.Start();
+                    }
+
+                    // Wait for them all to run
+                    foreach (Task vmtask in VMTestTasks)
+                        vmtask.Wait();
+
+                    // Now we can verify the contents of the name/port arrays we made.
+
+                    try
+                    {
+                        // All computers should have unique names
+                        Assert.AreEqual(displayNames.Count, displayNames.Distinct().Count());
+                        // And should follow this pattern
+                        Assert.IsTrue(displayNames.All(x => x.StartsWith("vm_")));
+                    }
+                    catch (AssertFailedException)
+                    {
+                        foreach (string displayName in displayNames)
+                        {
+                            Debug.WriteLine("Machine name: '" + displayName + "'");
+                        }
+                        throw;
+                    }
+
+                    try
+                    {
+                        // All computers should have unique debug ports
+                        Assert.AreEqual(debugPorts.Count, debugPorts.Distinct().Count());
+                        // And should follow this pattern
+                        Assert.IsTrue(debugPorts.All(x => x > 52800));
+                        Assert.IsTrue(debugPorts.All(x => x < 63200));
+                    }
+                    catch (AssertFailedException)
+                    {
+                        Debug.WriteLine("Machine debug ports:");
+                        foreach (string debugPort in displayNames)
+                            Debug.WriteLine(debugPort);
+                        throw;
                     }
                 }
             }
