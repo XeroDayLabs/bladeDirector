@@ -254,7 +254,7 @@ namespace tests
                     {
                         Task vmTest = new Task(() =>
                         {
-                            hyp.powerOn(new cancellableDateTime(TimeSpan.FromMinutes(4)));
+                            hyp.powerOn(new cancellableDateTime(TimeSpan.FromMinutes(10)));
 
                             // Check that debugging has been provisioned correctly
                             executionResult bcdEditRes = hyp.startExecutable("bcdedit", "/dbgsettings");

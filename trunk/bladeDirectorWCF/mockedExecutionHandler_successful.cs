@@ -39,7 +39,7 @@ namespace bladeDirectorWCF
                 case "bash ~/applyBIOS.sh":
                     return new executionResult("bios stuff", "", 0);
                 case "esxcfg-nas -l":
-                    return new executionResult("esxivms is /mnt/SSDs/esxivms from store.xd.lan mounted available", null, 0);
+                    return new executionResult("esxivms is /mnt/SSDs/esxivms from 10.0.255.254 mounted available", null, 0);
                 case @"C:\windows\system32\cmd /c shutdown -s -f -t 01":
                     sender.powerOff();
                     return new executionResult("", "", 0);

@@ -1006,6 +1006,7 @@ bladeLockType.lockvmDeployState,  // <-- TODO/FIXME: write perms shuold imply re
             // to almost all of the fields. We carefully copy fields we need, and rely on the .getBladeByIP path denying access
             // while .VMDeployStatus is not notBeingDeployed.
             string VMServerBladeIPAddress;
+            string VMServerBladeIPAddress_ISCSI;
 
             bool thisThreadWillPowerUp = false;
             using (lockableBladeSpec VMServer = db.getBladeByIP(vmServerIP,
@@ -1017,6 +1018,7 @@ bladeLockType.lockvmDeployState,  // <-- TODO/FIXME: write perms shuold imply re
                     VMServer.spec.vmDeployState = VMDeployStatus.waitingForPowerUp;
                 }
                 VMServerBladeIPAddress = VMServer.spec.bladeIP;
+                VMServerBladeIPAddress_ISCSI = VMServer.spec.iscsiIP;
             }
             if (thisThreadWillPowerUp)
             {
@@ -1065,7 +1067,7 @@ bladeLockType.lockvmDeployState,  // <-- TODO/FIXME: write perms shuold imply re
                         // Once it's powered up, we ensure the datastore is mounted okay. Sometimes I'm seeing ESXi hosts boot
                         // with an inaccessible NFS datastore, so remount if neccessary. Retry this since it doesn't seem to 
                         // always work first time.
-                        _vmServerControl.mountDataStore(hyp, "esxivms", "store.xd.lan", "/mnt/SSDs/esxivms");
+                        _vmServerControl.mountDataStore(hyp, VMServerBladeIPAddress_ISCSI, "esxivms", "10.0.255.254", "/mnt/SSDs/esxivms");
                     }
                 }
                 catch (Exception)
