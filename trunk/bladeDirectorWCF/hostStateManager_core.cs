@@ -1838,7 +1838,7 @@ bladeLockType.lockvmDeployState,  // <-- TODO/FIXME: write perms shuold imply re
 
             deadline.throwIfTimedOutOrCancelled();
 
-            nas.waitUntilISCSIConfigFlushed();
+            nas.waitUntilISCSIConfigFlushed(false);
 
             deadline.throwIfTimedOutOrCancelled();
 
@@ -2047,22 +2047,24 @@ bladeLockType.lockvmDeployState,  // <-- TODO/FIXME: write perms shuold imply re
             // Now expose each via iSCSI.
             targetGroup tgtGrp = nas.getTargetGroups()[0];
 
-            iscsiTarget toAdd = new iscsiTarget();
-            toAdd.targetAlias = itemToAdd.getCloneName();
-            toAdd.targetName = itemToAdd.getCloneName();
             iscsiTarget newTarget = nas.getISCSITargets().SingleOrDefault(x => x.targetName == itemToAdd.getCloneName());
             if (newTarget == null)
-                newTarget = nas.addISCSITarget(toAdd);
+            {
+                newTarget = nas.addISCSITarget(new iscsiTarget 
+                    {
+                        targetAlias = itemToAdd.getCloneName(),
+                        targetName = itemToAdd.getCloneName()
+                    } );
+            }
 
-            iscsiExtent newExtent = nas.getExtents().SingleOrDefault(x => x.iscsi_target_extent_name == toAdd.targetName);
-
+            iscsiExtent newExtent = nas.getExtents().SingleOrDefault(x => x.iscsi_target_extent_name == newTarget.targetName);
             if (newExtent == null)
             {
-                newExtent = nas.addISCSIExtent(new iscsiExtent()
+                newExtent = nas.addISCSIExtent(new iscsiExtent 
                 {
-                    iscsi_target_extent_name = toAdd.targetName,
+                    iscsi_target_extent_name = newTarget.targetName,
                     iscsi_target_extent_type = "Disk",
-                    iscsi_target_extent_disk = String.Format("zvol/SSDs/{0}", toAdd.targetName)
+                    iscsi_target_extent_disk = String.Format("zvol/SSDs/{0}", newTarget.targetName)
                 });
             }
 
@@ -2072,7 +2074,7 @@ bladeLockType.lockvmDeployState,  // <-- TODO/FIXME: write perms shuold imply re
 
             iscsiTargetToExtentMapping newTToE = nas.getTargetToExtents().SingleOrDefault(x => x.iscsi_target == newTarget.id);
             if (newTToE == null)
-                nas.addISCSITargetToExtent(newTarget.id, newExtent);
+                newTToE = nas.addISCSITargetToExtent(newTarget.id, newExtent);
         }
     }
 
