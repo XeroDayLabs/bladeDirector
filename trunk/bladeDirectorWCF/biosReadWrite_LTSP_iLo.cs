@@ -20,6 +20,7 @@ namespace bladeDirectorWCF
         public bool isStarted;
         public hostStateManager_core parent;
         public string BIOSToWrite;
+        public ManualResetEvent signalOnStart;
     }
 
     /// <summary>
@@ -33,19 +34,19 @@ namespace bladeDirectorWCF
 
         private hostStateManager_core _hostManager;
 
-        public result rebootAndStartReadingBIOSConfiguration(hostStateManager_core hostManager, string bladeIP)
+        public result rebootAndStartReadingBIOSConfiguration(hostStateManager_core hostManager, string bladeIP, ManualResetEvent signalOnStartComplete)
         {
             _hostManager = hostManager;
-            return rebootAndStartPerformingBIOSOperation(bladeIP, null, getBIOS);
+            return rebootAndStartPerformingBIOSOperation(bladeIP, null, getBIOS, signalOnStartComplete);
         }
 
-        public result rebootAndStartWritingBIOSConfiguration(hostStateManager_core hostManager, string bladeIP, string biosXML)
+        public result rebootAndStartWritingBIOSConfiguration(hostStateManager_core hostManager, string bladeIP, string biosXML, ManualResetEvent signalOnStartComplete)
         {
             _hostManager = hostManager;
-            return rebootAndStartPerformingBIOSOperation(bladeIP, biosXML, setBIOS);
+            return rebootAndStartPerformingBIOSOperation(bladeIP, biosXML, setBIOS, signalOnStartComplete);
         }
 
-        private result rebootAndStartPerformingBIOSOperation(string bladeIP, string biosxml, Action<biosThreadState> onCompletion)
+        private result rebootAndStartPerformingBIOSOperation(string bladeIP, string biosxml, Action<biosThreadState> onCompletion, ManualResetEvent signalOnStartComplete)
         {
             //  We need to:
             //  1) set this blade to boot into LTSP
@@ -82,6 +83,7 @@ namespace bladeDirectorWCF
 
             while (!newState.isStarted)
                 Thread.Sleep(TimeSpan.FromMilliseconds(10));
+            signalOnStartComplete.Set(); // ok so this is sync, whatever
 
             return new result(resultCode.pending, "LTSP thread created");
         }

@@ -123,10 +123,10 @@ namespace tests
                 // We should have two VM servers in use.
                 Assert.AreEqual(2, bladesByParent.Length);
 
-                // 5 should be on the first blade, and 3 on the second.
-                Assert.AreEqual(5, bladesByParent[0].Count());
+                // 7 should be on the first blade, and 1 on the second.
+                Assert.AreEqual(7, bladesByParent[0].Count());
                 Assert.AreEqual("172.17.129.130", bladesByParent[0].Key);
-                Assert.AreEqual(3, bladesByParent[1].Count());
+                Assert.AreEqual(1, bladesByParent[1].Count());
                 Assert.AreEqual("172.17.129.131", bladesByParent[1].Key);
 
                 // And release them, checking hardware status after each blade is empty.

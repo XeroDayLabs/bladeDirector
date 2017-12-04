@@ -920,16 +920,13 @@ namespace bladeDirectorWCF
                     reqBlade.spec.currentOwner != requestorIp)
                     return new resultAndWaitToken(resultCode.bladeInUse);
 
+                ManualResetEvent startWait = new ManualResetEvent(false);
                 return doAsync(_currentBIOSOperations, nodeIp, handleTypes.BOS, (op) =>
                 {
-                    biosRWEngine.rebootAndStartWritingBIOSConfiguration(this, nodeIp, biosxml);
+                    biosRWEngine.rebootAndStartWritingBIOSConfiguration(this, nodeIp, biosxml, startWait);
                 }, (op) =>
                 {
-                    // Wait for the new thread to be spawned before we return. This prevents race conditions.
-                    while (!biosRWEngine.hasOperationStarted(nodeIp))
-                    {
-                        Thread.Sleep(TimeSpan.FromMilliseconds(10));
-                    }
+                    startWait.WaitOne();
                 }
                 );
             }
@@ -942,16 +939,14 @@ namespace bladeDirectorWCF
                 if (reqBlade.spec.currentOwner != requestorIp)
                     return new resultAndBIOSConfig(new result(resultCode.bladeInUse, "This blade is not yours"), null);
 
+                ManualResetEvent startWait = new ManualResetEvent(false);
                 return doAsync(_currentBIOSOperations, nodeIp, handleTypes.BOS, (op) =>
                 {
-                    biosRWEngine.rebootAndStartReadingBIOSConfiguration(this, nodeIp);
+                    biosRWEngine.rebootAndStartReadingBIOSConfiguration(this, nodeIp, startWait);
                 }, (op) =>
                 {
                     // Wait for the new thread to be spawned before we return. This prevents race conditions.
-                    while (!biosRWEngine.hasOperationStarted(nodeIp))
-                    {
-                        Thread.Sleep(TimeSpan.FromMilliseconds(10));
-                    }
+                    startWait.WaitOne();
                 }
                 );
             }

@@ -14,7 +14,7 @@ namespace bladeDirectorWCF
             _threads[nodeIP].isCancelled = true;
         }
 
-        public result rebootAndStartWritingBIOSConfiguration(hostStateManager_core parent, string nodeIp, string biosxml)
+        public result rebootAndStartWritingBIOSConfiguration(hostStateManager_core parent, string nodeIp, string biosxml, ManualResetEvent signalOnStartComplete)
         {
             lock (_threads)
             {
@@ -32,7 +32,8 @@ namespace bladeDirectorWCF
                     db = parent.db,
                     parent = parent,
                     BIOSToWrite = biosxml,
-                    deadline = DateTime.Now + biosOperationTime
+                    deadline = DateTime.Now + biosOperationTime,
+                    signalOnStart = signalOnStartComplete
                 };
                 _threads.Add(nodeIp, newParams);
 
@@ -46,7 +47,7 @@ namespace bladeDirectorWCF
             }
         }
 
-        public result rebootAndStartReadingBIOSConfiguration(hostStateManager_core parent, string nodeIp)
+        public result rebootAndStartReadingBIOSConfiguration(hostStateManager_core parent, string nodeIp, ManualResetEvent signalOnStart)
         {
             lock (_threads)
             {
@@ -61,7 +62,8 @@ namespace bladeDirectorWCF
                     isFinished = false,
                     nodeIP = nodeIp,
                     db = parent.db,
-                    deadline = DateTime.Now + biosOperationTime
+                    deadline = DateTime.Now + biosOperationTime,
+                    signalOnStart = signalOnStart
                 };
                 _threads.Add(nodeIp, newParams);
 
@@ -85,16 +87,6 @@ namespace bladeDirectorWCF
                     return _threads[bladeIp].result;
 
                 return new result(resultCode.pending);
-            }
-        }
-
-        public bool hasOperationStarted(string bladeIP)
-        {
-            lock (_threads)
-            {
-                if (_threads.ContainsKey(bladeIP) && _threads[bladeIP].isStarted)
-                    return true;
-                return false;
             }
         }
 
@@ -127,6 +119,7 @@ namespace bladeDirectorWCF
                 blade.spec.currentlyHavingBIOSDeployed = true;
             }
             param.isStarted = true;
+            param.signalOnStart.Set();
 
             using (lockableBladeSpec blade = param.db.getBladeByIP(param.nodeIP, bladeLockType.lockLongRunningBIOS, bladeLockType.lockLongRunningBIOS, true, true))
             {
