@@ -43,27 +43,7 @@ namespace tests
                 var aa = hyp.startExecutable("service", "collectd stop");
                 var bb = hyp.startExecutable("service", "syslog-ng stop");
 
-                // Now copy and install our patched FreeNAS code.
-                // TODO: autodetect freenas version?
-//                hyp.copyToGuest("/root/freenas-xdl.patch", "C:\\code\\hypervisors\\trunk\\hypervisors\\freenas-support-freenas11.patch", new cancellableDateTime(TimeSpan.FromSeconds(10)));
-                hyp.copyToGuest("/root/freenas-xdl.patch", "C:\\code\\hypervisors\\trunk\\hypervisors\\freenas-support-freenas9.patch", new cancellableDateTime(TimeSpan.FromSeconds(10)));
-                executionResult res = hyp.startExecutable("/bin/sh", "-c \"exec /usr/bin/patch --batch --quiet --directory=/usr/local/www < /root/freenas-xdl.patch\"");
-                try
-                {
-                    Assert.AreEqual(0, res.resultCode);
-                }
-                catch (AssertFailedException)
-                {
-                    Debug.WriteLine(res.stdout);
-                    Debug.WriteLine(res.stderr);
-                    Debug.WriteLine(res.resultCode);
-                    throw;
-                }
-                // Then restart nginx and django, which should both restart OK.
-                executionResult nginxRestartRes2 = hyp.startExecutable("service", "nginx restart");
-                Assert.AreEqual(0, nginxRestartRes2.resultCode);
-                executionResult djangoRestartRes2 = hyp.startExecutable("service", "django restart");
-                Assert.AreEqual(0, djangoRestartRes2.resultCode);
+                hyp.patchFreeNASInstallation();
             }
         }
 
