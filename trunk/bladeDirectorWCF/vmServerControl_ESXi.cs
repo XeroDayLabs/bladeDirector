@@ -7,11 +7,11 @@ namespace bladeDirectorWCF
 {
     public class vmServerControl_ESXi : vmServerControl
     {
-        public override void mountDataStore(hypervisor hyp, string srcAddress, string dataStoreName, string serverName, string mountPath)
+        public override void mountDataStore(hypervisor hyp, string srcAddress, string dataStoreName, string serverName, string mountPath, cancellableDateTime deadline)
         {
             while (ensureISCSIInterfaceIsSetUp(hyp, srcAddress) == false)
             {
-                Thread.Sleep(TimeSpan.FromSeconds(3));
+                deadline.doCancellableSleep(TimeSpan.FromSeconds(5));
             }
 
             string expectedLine = String.Format("{0} is {1} from {2} mounted available", dataStoreName, mountPath, serverName);

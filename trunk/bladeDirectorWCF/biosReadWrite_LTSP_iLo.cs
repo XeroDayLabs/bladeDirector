@@ -75,15 +75,14 @@ namespace bladeDirectorWCF
             // Now, go ahead and spin up a new thread to handle this update, and start it.
             newState.onBootFinish = onCompletion;
             newState.onBootFailure = handleReadOrWriteBIOSError;
+            newState.isStarted = signalOnStartComplete;
             newState.rebootThread = new Thread(ltspBootThread)
             {
                 Name = "Booting " + bladeIP + " to LTSP"
             };
             newState.rebootThread.Start(newState);
 
-            while (!newState.isStarted)
-                Thread.Sleep(TimeSpan.FromMilliseconds(10));
-            signalOnStartComplete.Set(); // ok so this is sync, whatever
+            signalOnStartComplete.Set(); // ok so this method is sync, whatever
 
             return new result(resultCode.pending, "LTSP thread created");
         }
@@ -100,19 +99,7 @@ namespace bladeDirectorWCF
 
             return newState.result;
         }
-
-        public bool hasOperationStarted(string bladeIP)
-        {
-            lock (_currentlyDeployingNodes)
-            {
-                if (_currentlyDeployingNodes.ContainsKey(bladeIP) && 
-                    _currentlyDeployingNodes[bladeIP] != null     &&
-                    _currentlyDeployingNodes[bladeIP].isStarted)
-                    return true;
-                return false;
-            }
-        }
-
+        
         private static void handleReadOrWriteBIOSError(biosThreadState state)
         {
             state.result = new result(resultCode.genericFail, "handleReadOrWriteBIOSError called");
@@ -287,7 +274,7 @@ namespace bladeDirectorWCF
                 blade.spec.currentlyHavingBIOSDeployed = true;
             }
             param.connectDeadline = new cancellableDateTime(TimeSpan.FromMinutes(5));
-            param.isStarted = true;
+            param.isStarted.Set();
 
             using (lockableBladeSpec blade = _hostManager.db.getBladeByIP(param.nodeIP,
                 bladeLockType.lockOwnership | bladeLockType.lockSnapshot,

@@ -1,5 +1,6 @@
 ﻿using System;
 using System.IO;
+using System.Runtime.InteropServices;
 using System.ServiceModel;
 using System.ServiceModel.Channels;
 using System.ServiceModel.Configuration;
@@ -43,7 +44,10 @@ namespace bladeDirectorWCF
                 try
                 {
                     if (services.hostStateManager != null)
+                    {
+                        if (!(args.Exception is COMException))
                         services.hostStateManager.addLogEvent("First-chance exception: " + args.Exception.ToString());
+                    }
 
                     string dumpDir = Properties.Settings.Default.internalErrorDumpPath.Trim();
                     if (dumpDir != "")

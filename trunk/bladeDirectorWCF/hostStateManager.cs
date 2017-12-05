@@ -94,8 +94,7 @@ namespace bladeDirectorWCF
                     hyp.powerOff();
                     if (hyp.getPowerStatus() == false)
                         break;
-                    deadline.throwIfTimedOutOrCancelled();
-                    Thread.Sleep(TimeSpan.FromSeconds(5));
+                    deadline.doCancellableSleep(TimeSpan.FromSeconds(5));
                 }
             }
         }
@@ -110,8 +109,7 @@ namespace bladeDirectorWCF
                     hyp.powerOn();
                     if (hyp.getPowerStatus())
                         break;
-                    deadline.throwIfTimedOutOrCancelled();
-                    Thread.Sleep(TimeSpan.FromSeconds(5));
+                    deadline.doCancellableSleep(TimeSpan.FromSeconds(5));
                 }
             }
         }
@@ -207,7 +205,7 @@ namespace bladeDirectorWCF
 
                 if (res.resultCode != 0)
                 {
-                    Thread.Sleep(TimeSpan.FromSeconds(4));
+                    deadline.doCancellableSleep(TimeSpan.FromSeconds(4));
                     continue;
                 }
 
@@ -232,11 +230,12 @@ namespace bladeDirectorWCF
         public string nodeIP;
         public string biosxml;
         public bool isFinished;
-        public bool isStarted;
         public result result;
         public cancellableDateTime connectDeadline;
         public Thread rebootThread;
         public lockableBladeSpec blade;
+
+        public ManualResetEvent isStarted;
 
         public ManualResetEvent onBootFinishEvent = new ManualResetEvent(false);
         public ManualResetEvent onBootFailureEvent = new ManualResetEvent(false);

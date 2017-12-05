@@ -655,7 +655,7 @@ namespace bladeDirectorWCF
                         using ( tempLockDepression tmp = new tempLockDepression(lockedVM, 
                                 ~bladeLockType.lockIPAddresses, bladeLockType.lockAll))
                         {
-                            Thread.Sleep(TimeSpan.FromSeconds(10));
+                            Thread.Sleep(TimeSpan.FromSeconds(2));
                         }
                         Monitor.Enter(_vmDeployState);
                         islocked = true;
@@ -1039,7 +1039,7 @@ bladeLockType.lockvmDeployState,  // <-- TODO/FIXME: write perms shuold imply re
                                 biosRWEngine.cancelOperationsForBlade(VMServerBladeIPAddress);
 
                             // Otherwise, poll for operation finish
-                            Thread.Sleep(TimeSpan.FromSeconds(3));
+                            threadState.deployDeadline.doCancellableSleep(TimeSpan.FromSeconds(3));
                             progress = checkBIOSOperationProgress(res.waitToken);
                         }
                         if (progress.result.code != resultCode.success &&
@@ -1062,7 +1062,7 @@ bladeLockType.lockvmDeployState,  // <-- TODO/FIXME: write perms shuold imply re
                         // Once it's powered up, we ensure the datastore is mounted okay. Sometimes I'm seeing ESXi hosts boot
                         // with an inaccessible NFS datastore, so remount if neccessary. Retry this since it doesn't seem to 
                         // always work first time.
-                        _vmServerControl.mountDataStore(hyp, VMServerBladeIPAddress_ISCSI, "esxivms", "10.0.255.254", "/mnt/SSDs/esxivms");
+                        _vmServerControl.mountDataStore(hyp, VMServerBladeIPAddress_ISCSI, "esxivms", "10.0.255.254", "/mnt/SSDs/esxivms", new cancellableDateTime(TimeSpan.FromMinutes(2)));
                     }
                 }
                 catch (Exception)
@@ -1097,7 +1097,7 @@ bladeLockType.lockvmDeployState,  // <-- TODO/FIXME: write perms shuold imply re
                         if (VMServer.spec.vmDeployState == VMDeployStatus.failed)
                             return new result(resultCode.cancelled, "Cancelled due to failure to configure on hardware blade");
                     }
-                    Thread.Sleep(TimeSpan.FromSeconds(1));
+                    threadState.deployDeadline.doCancellableSleep(TimeSpan.FromSeconds(3));
 
                     if (!threadState.deployDeadline.stillOK)
                         throw new TimeoutException();
@@ -1123,7 +1123,7 @@ bladeLockType.lockvmDeployState,  // <-- TODO/FIXME: write perms shuold imply re
                         }
                     }
                     addLogEvent("Waiting for resources on VM server");
-                    Thread.Sleep(TimeSpan.FromSeconds(5));
+                    threadState.deployDeadline.doCancellableSleep(TimeSpan.FromSeconds(5));
                 }
             }
 
@@ -1180,11 +1180,10 @@ bladeLockType.lockvmDeployState,  // <-- TODO/FIXME: write perms shuold imply re
                 using (lockableVMSpec childVMFromDB = db.getVMByIP(childVM_unsafe.VMIP, 
                     bladeLockType.lockSnapshot | bladeLockType.lockOwnership | bladeLockType.lockVirtualHW, bladeLockType.lockNone))
                 {
-                    using (lockableBladeSpec bladeSpec = db.getBladeByIP(vmServerIP,
-                        bladeLockType.lockNASOperations, bladeLockType.lockNone, true, true))
+                    using (lockableBladeSpec bladeSpec = db.getBladeByIP(vmServerIP, bladeLockType.lockNASOperations, bladeLockType.lockNone, true, true))
                     {
                         NASAccess nas = getNasForDevice(bladeSpec.spec);
-                        deleteBlade(childVMFromDB.spec.getCloneName(), nas);
+                        deleteBlade(childVMFromDB.spec.getCloneName(), nas, new cancellableDateTime(TimeSpan.FromSeconds(30)));
 
                         threadState.deployDeadline.throwIfTimedOutOrCancelled();
                         
@@ -1415,9 +1414,9 @@ bladeLockType.lockvmDeployState,  // <-- TODO/FIXME: write perms shuold imply re
                             NASAccess nas = getNasForDevice(blade.spec);
 
                             // TODO: re-use exising image if possible
-                            deleteBlade(blade.spec.getCloneName(), nas);
-                            // TODO: cancellability
-                            configureBladeDisks(nas, blade, "bladeBaseStableSnapshot", null, null, null, requestorIP, new cancellableDateTime());
+                            deleteBlade(blade.spec.getCloneName(), nas, new cancellableDateTime(TimeSpan.FromMinutes(1)));
+                            // TODO: better cancellability
+                            configureBladeDisks(nas, blade, "bladeBaseStableSnapshot", null, null, null, requestorIP, new cancellableDateTime(TimeSpan.FromMinutes(1)));
 
                             _currentlyRunningSnapshotSets[e.waitToken].status = new result(resultCode.success);
                         }
@@ -1739,17 +1738,17 @@ bladeLockType.lockvmDeployState,  // <-- TODO/FIXME: write perms shuold imply re
                 Console.WriteLine(msg);
         }
 
-        public static void deleteBlade(string cloneName, NASAccess nas)
+        public static void deleteBlade(string cloneName, NASAccess nas, cancellableDateTime deadline)
         {
             List<snapshot> snapshots = nas.getSnapshots();
             List<iscsiTarget> iscsiTargets = nas.getISCSITargets();
             List<iscsiExtent> iscsiExtents = nas.getExtents();
             List<volume> volumes = nas.getVolumes();
 
-            deleteBlade(cloneName, nas, snapshots, iscsiTargets, iscsiExtents, volumes);
+            deleteBlade(cloneName, nas, snapshots, iscsiTargets, iscsiExtents, volumes, deadline);
         }
 
-        public static void deleteBlade(string cloneName, NASAccess nas, List<snapshot> snapshots, List<iscsiTarget> iscsiTargets, List<iscsiExtent> iscsiExtents, List<volume> volumes)
+        public static void deleteBlade(string cloneName, NASAccess nas, List<snapshot> snapshots, List<iscsiTarget> iscsiTargets, List<iscsiExtent> iscsiExtents, List<volume> volumes, cancellableDateTime deadline)
         {
             // Delete target-to-extent, target, and extent
             iscsiTarget tgt = iscsiTargets.SingleOrDefault(x => x.targetName == cloneName);
@@ -1782,7 +1781,6 @@ bladeLockType.lockvmDeployState,  // <-- TODO/FIXME: write perms shuold imply re
             volume vol = nas.findVolumeByName(volumes, cloneName);
             if (vol != null)
             {
-                DateTime deadline = DateTime.Now + TimeSpan.FromMinutes(1);
                 while (true)
                 {
                     try
@@ -1794,10 +1792,8 @@ bladeLockType.lockvmDeployState,  // <-- TODO/FIXME: write perms shuold imply re
                     }
                     catch (Exception e)
                     {
-                        if (DateTime.Now > deadline)
-                            throw;
-                        log("Deleting ZVOL " + vol.name + " failed, will retry in 15s. Exception was " + e.Message);
-                        Thread.Sleep(TimeSpan.FromSeconds(15));
+                        log("Deleting ZVOL " + vol.name + " failed, will retry in 5s. Exception was " + e.Message);
+                        deadline.doCancellableSleep(TimeSpan.FromSeconds(5));
                     }
                 }
             }

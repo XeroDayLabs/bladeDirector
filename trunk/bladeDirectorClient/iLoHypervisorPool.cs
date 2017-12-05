@@ -275,10 +275,8 @@ namespace bladeDirectorClient
                     resultAndWaitToken res = director.svc.selectSnapshotForBladeOrVM(allocatedBladeResult.bladeName, snapshotName);
                     director.waitForSuccess(res, TimeSpan.FromMinutes(5));
 
-                    snapshotDetails currentShot = director.svc.getCurrentSnapshotDetails(allocatedBladeResult.bladeName);
-
                     bladeSpec bladeConfig = director.svc.getBladeByIP_withoutLocking(allocatedBladeResult.bladeName);
-                    snapshotDetails snapshot = director.svc.getCurrentSnapshotDetails(allocatedBladeResult.bladeName);
+                    snapshotDetails currentShot = director.svc.getCurrentSnapshotDetails(allocatedBladeResult.bladeName);
                     userDesc cred = bladeConfig.credentials.First();
                     NASParams nas = director.svc.getNASParams();
 
