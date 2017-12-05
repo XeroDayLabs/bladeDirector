@@ -14,5 +14,26 @@
     <Setting Name="webURL" Type="System.String" Scope="User">
       <Value Profile="(Default)">http://0.0.0.0/bladeDirector-dev</Value>
     </Setting>
+    <Setting Name="NASHostname" Type="System.String" Scope="User">
+      <Value Profile="(Default)"></Value>
+    </Setting>
+    <Setting Name="NASUsername" Type="System.String" Scope="User">
+      <Value Profile="(Default)"></Value>
+    </Setting>
+    <Setting Name="NASPassword" Type="System.String" Scope="User">
+      <Value Profile="(Default)"></Value>
+    </Setting>
+    <Setting Name="NASVMServerHostname" Type="System.String" Scope="User">
+      <Value Profile="(Default)"></Value>
+    </Setting>
+    <Setting Name="NASVMServerUsername" Type="System.String" Scope="User">
+      <Value Profile="(Default)"></Value>
+    </Setting>
+    <Setting Name="NASVMServerPassword" Type="System.String" Scope="User">
+      <Value Profile="(Default)"></Value>
+    </Setting>
+    <Setting Name="NASVMName" Type="System.String" Scope="User">
+      <Value Profile="(Default)"></Value>
+    </Setting>
 </Settings>
 </SettingsFile>

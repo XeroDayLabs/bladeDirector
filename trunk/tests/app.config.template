@@ -44,6 +44,27 @@
             <setting name="webURL" serializeAs="String">
                 <value>http://0.0.0.0/bladeDirector-dev</value>
             </setting>
+            <setting name="NASHostname" serializeAs="String">
+                <value></value>
+            </setting>
+            <setting name="NASUsername" serializeAs="String">
+                <value>root</value>
+            </setting>
+            <setting name="NASPassword" serializeAs="String">
+                <value></value>
+            </setting>
+            <setting name="NASVMServerHostname" serializeAs="String">
+                <value>vmnodea</value>
+            </setting>
+            <setting name="NASVMServerUsername" serializeAs="String">
+                <value></value>
+            </setting>
+            <setting name="NASVMServerPassword" serializeAs="String">
+                <value></value>
+            </setting>
+            <setting name="NASVMName" serializeAs="String">
+                <value></value>
+            </setting>
         </tests.Properties.Settings>
     </userSettings>
 </configuration>

@@ -56,7 +56,8 @@ namespace tests.Properties {
             set {
                 this["repoRoot"] = value;
             }
-        }    
+        }
+        
         [global::System.Configuration.UserScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
         [global::System.Configuration.DefaultSettingValueAttribute("http://0.0.0.0/bladeDirector-dev")]
@@ -68,5 +69,90 @@ namespace tests.Properties {
                 this["webURL"] = value;
             }
         }
-  }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("")]
+        public string NASHostname {
+            get {
+                return ((string)(this["NASHostname"]));
+            }
+            set {
+                this["NASHostname"] = value;
+            }
+        }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("")]
+        public string NASUsername {
+            get {
+                return ((string)(this["NASUsername"]));
+            }
+            set {
+                this["NASUsername"] = value;
+            }
+        }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("")]
+        public string NASPassword {
+            get {
+                return ((string)(this["NASPassword"]));
+            }
+            set {
+                this["NASPassword"] = value;
+            }
+        }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("")]
+        public string NASVMServerHostname {
+            get {
+                return ((string)(this["NASVMServerHostname"]));
+            }
+            set {
+                this["NASVMServerHostname"] = value;
+            }
+        }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("")]
+        public string NASVMServerUsername {
+            get {
+                return ((string)(this["NASVMServerUsername"]));
+            }
+            set {
+                this["NASVMServerUsername"] = value;
+            }
+        }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("")]
+        public string NASVMServerPassword {
+            get {
+                return ((string)(this["NASVMServerPassword"]));
+            }
+            set {
+                this["NASVMServerPassword"] = value;
+            }
+        }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("")]
+        public string NASVMName {
+            get {
+                return ((string)(this["NASVMName"]));
+            }
+            set {
+                this["NASVMName"] = value;
+            }
+        }
+        
+    }
 }
