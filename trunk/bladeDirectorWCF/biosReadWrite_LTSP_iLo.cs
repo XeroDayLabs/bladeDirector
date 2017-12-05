@@ -82,7 +82,7 @@ namespace bladeDirectorWCF
             };
             newState.rebootThread.Start(newState);
 
-            signalOnStartComplete.Set(); // ok so this method is sync, whatever
+            signalOnStartComplete.WaitOne(); // ok so this method is sync, whatever
 
             return new result(resultCode.pending, "LTSP thread created");
         }
