@@ -79,6 +79,12 @@ namespace bladeDirectorClient
                                 continue;
                             throw new Exception("Not enough blades available to accomodate new VMs");
                         }
+                        if (progress.result.code != resultCode.success)
+                        {
+                            if (allowPartialAllocation)
+                                continue;
+                            throw new Exception("Unexpected status while allocing: " + progress.result.code);
+                        }
 
                         vmSpec vmSpec = director.svc.getVMByIP_withoutLocking(progress.bladeName);
                         bladeSpec vmServerSpec = director.svc.getBladeByIP_withoutLocking(vmSpec.parentBladeIP);
