@@ -580,7 +580,7 @@ namespace bladeDirectorWCF
             // permitAccessDuringDeployment, which will be set only when VMs are assigned.
             using (lockableBladeSpec parentBlade = db.getBladeByIP(lockedVM.spec.parentBladeIP,
                 bladeLockType.lockOwnership | bladeLockType.lockVMCreation, 
-                bladeLockType.lockNone, false, true))
+                bladeLockType.lockNone, true, true))
             {
                 using (hypervisor hyp = makeHypervisorForVM(lockedVM, parentBlade))
                 {
@@ -972,14 +972,7 @@ namespace bladeDirectorWCF
             {
                 string msg = "VMServer boot thread fatal exception: " + formatWithInner(e);
                 addLogEvent(msg);
-                
-                using (lockableBladeSpec VMServer = db.getBladeByIP(threadState.vmServerIP,
-//                    bladeLockType.lockvmDeployState | bladeLockType.lockOwnership,
-bladeLockType.lockvmDeployState,  // <-- TODO/FIXME: write perms shuold imply read perms, but everything breaks if we don't specify a read lockOwnership here!
-                    bladeLockType.lockvmDeployState | bladeLockType.lockOwnership, true, true))
-                {
-                }
-                
+
                 threadState.currentProgress.result = new result(resultCode.genericFail, msg);
             }
             finally
@@ -1030,30 +1023,40 @@ bladeLockType.lockvmDeployState,  // <-- TODO/FIXME: write perms shuold imply re
                         if (res.result.code != resultCode.pending)
                             return res.result;
 
-                        resultAndBIOSConfig progress = checkBIOSOperationProgress(res.waitToken);
-                        while ( progress.result.code == resultCode.pending || 
-                                progress.result.code == resultCode.unknown   )
+                        // If anything goes wrong during BIOS deployment, we must ensure that the _currentBIOSDeployment is set
+                        // correctly (ie, .isfinished and status code). If we timeout the VM deployment here, we must also cancel
+                        // the BIOS deployment.
+                        try
                         {
-                            // If we timeout or are cancelled, tell the bios operation we are cancelling
-                            if (!threadState.deployDeadline.stillOK)
-                                biosRWEngine.cancelOperationsForBlade(VMServerBladeIPAddress);
 
-                            // Otherwise, poll for operation finish
-                            threadState.deployDeadline.doCancellableSleep(TimeSpan.FromSeconds(3));
-                            progress = checkBIOSOperationProgress(res.waitToken);
+                            resultAndBIOSConfig progress = checkBIOSOperationProgress(res.waitToken);
+                            while (progress.result.code == resultCode.pending ||
+                                   progress.result.code == resultCode.unknown)
+                            {
+                                // Poll for operation finish
+                                threadState.deployDeadline.doCancellableSleep(TimeSpan.FromSeconds(3));
+                                progress = checkBIOSOperationProgress(res.waitToken);
+                            }
+
+                            if (progress.result.code != resultCode.success)
+                            {
+                                // The BIOS write has failed, or been cancelled.
+                                throw new TimeoutException();
+                            }
                         }
-                        if (progress.result.code != resultCode.success &&
-                            progress.result.code != resultCode.pending)
+                        catch (TimeoutException)
                         {
-                            // The BIOS write has failed, or been cancelled.
-                            // TODO: handle this correctly by marking the blade server as dead or whatever.
+                            // If we timeout or are cancelled, we must also tell the bios operation we are cancelling.
+                            biosRWEngine.cancelOperationsForBlade(VMServerBladeIPAddress);
+
+                            // And ensure that the bios operation is marked as finished.
                             lock (_currentBIOSOperations)
                             {
                                 _currentBIOSOperations[res.waitToken].isFinished = true;
                                 _currentBIOSOperations[res.waitToken].status.code = resultCode.cancelled;
                             }
 
-                            return progress.result;
+                            throw;
                         }
                         hyp.powerOn(threadState.deployDeadline);
 
@@ -1413,10 +1416,9 @@ bladeLockType.lockvmDeployState,  // <-- TODO/FIXME: write perms shuold imply re
                             }
                             NASAccess nas = getNasForDevice(blade.spec);
 
-                            // TODO: re-use exising image if possible
-                            deleteBlade(blade.spec.getCloneName(), nas, new cancellableDateTime(TimeSpan.FromMinutes(1)));
+                            deleteBlade(blade.spec.getCloneName(), nas, new cancellableDateTime(TimeSpan.FromMinutes(2)));
                             // TODO: better cancellability
-                            configureBladeDisks(nas, blade, "bladeBaseStableSnapshot", null, null, null, requestorIP, new cancellableDateTime(TimeSpan.FromMinutes(1)));
+                            configureBladeDisks(nas, blade, "bladeBaseStableSnapshot", null, null, null, requestorIP, new cancellableDateTime(TimeSpan.FromMinutes(5)));
 
                             _currentlyRunningSnapshotSets[e.waitToken].status = new result(resultCode.success);
                         }

@@ -84,8 +84,9 @@ namespace tests
                 // Now login again, cancelling the BIOS operation.
                 testUtils.doLogin(svc, hostIP);
 
-                // The blade should no longer be used by the blade director.
+                // The blade should no longer be used by the blade director, nor by us
                 Assert.AreEqual(false, svc.svcDebug._isBladeMine("vmserver", "172.17.129.131", false));
+                Assert.AreEqual(false, svc.svcDebug._isBladeMine(hostIP, "172.17.129.131", false));
 
                 // And after an allocation, our blade should be re-used successfully.
                 svc.svcDebug._setBIOSOperationTimeIfMocked((int)2);
