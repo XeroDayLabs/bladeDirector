@@ -1186,7 +1186,7 @@ namespace bladeDirectorWCF
                     using (lockableBladeSpec bladeSpec = db.getBladeByIP(vmServerIP, bladeLockType.lockNASOperations, bladeLockType.lockNone, true, true))
                     {
                         NASAccess nas = getNasForDevice(bladeSpec.spec);
-                        deleteBlade(childVMFromDB.spec.getCloneName(), nas, new cancellableDateTime(TimeSpan.FromSeconds(30)));
+                        deleteBlade(childVMFromDB.spec.getCloneName(), nas, new cancellableDateTime(TimeSpan.FromMinutes(2)));
 
                         threadState.deployDeadline.throwIfTimedOutOrCancelled();
                         
