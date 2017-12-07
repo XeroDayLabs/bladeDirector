@@ -21,7 +21,7 @@ namespace bladeDirectorClient
         private readonly Object hypervisorSpecLock = new Object();
         private ConcurrentDictionary<hypSpec_vmware, bool> hypervisorSpecs = null;
 
-        public hypervisor_vmware createHypervisorForNextFreeVMOrWait(string snapshotName = "clean", clientExecutionMethod execType = clientExecutionMethod.smb)
+        public hypervisor_vmware createHypervisorForNextFreeVMOrWait(string snapshotName = "clean", clientExecutionMethod execType = clientExecutionMethod.smbWithWMI)
         {
             while (true)
             {
@@ -33,7 +33,7 @@ namespace bladeDirectorClient
             }
         }
 
-        public hypervisorCollection<hypSpec_vmware> createAsManyVMSAsPossible(string snapshotName = "clean", clientExecutionMethod execType = clientExecutionMethod.smb, VMSource src = VMSource.configuredServer)
+        public hypervisorCollection<hypSpec_vmware> createAsManyVMSAsPossible(string snapshotName = "clean", clientExecutionMethod execType = clientExecutionMethod.smbWithWMI, VMSource src = VMSource.configuredServer)
         {
             hypervisorCollection<hypSpec_vmware> hyps = new hypervisorCollection<hypSpec_vmware>();
 
@@ -48,7 +48,7 @@ namespace bladeDirectorClient
             return hyps;
         }
 
-        public hypervisor_vmware createHypervisorForNextFreeVMOrNull(string snapshotName = "clean", clientExecutionMethod execType = clientExecutionMethod.smb, VMSource src = VMSource.configuredServer)
+        public hypervisor_vmware createHypervisorForNextFreeVMOrNull(string snapshotName = "clean", clientExecutionMethod execType = clientExecutionMethod.smbWithWMI, VMSource src = VMSource.configuredServer)
         {
             lock (hypervisorSpecLock)
             {

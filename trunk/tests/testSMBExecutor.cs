@@ -7,27 +7,53 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 namespace tests
 {
     [TestClass]
-    public class testSMBExecutor
+    public class testSMBExecutorWithPSExec
     {
         [TestMethod]
         public void testSMBExecutorReturnsStdOutErrAndRetCode()
         {
-            doExecTest(clientExecutionMethod.smb);
+            testSMBExecutor.doExecTest(clientExecutionMethod.smb);
         }
 
         [TestMethod]
         public void testSMBExecutorReturnsStdOutErrAndRetCodeAsync()
         {
-            doExecTestAsync(clientExecutionMethod.smb);
+            testSMBExecutor.doExecTestAsync(clientExecutionMethod.smb);
         }
 
         [TestMethod]
         public void testSMBExecutorWillSetWorkingDirectoryCorrectly()
         {
-            doWorkingDirTest(clientExecutionMethod.smb, "C:\\");
-            doWorkingDirTest(clientExecutionMethod.smb, "C:\\Windows");
+            testSMBExecutor.doWorkingDirTest(clientExecutionMethod.smb, "C:\\");
+            testSMBExecutor.doWorkingDirTest(clientExecutionMethod.smb, "C:\\Windows");
+        }
+    }
+
+    [TestClass]
+    public class testSMBExecutorWithWMI
+    {
+        [TestMethod]
+        public void testSMBExecutorReturnsStdOutErrAndRetCode()
+        {
+            testSMBExecutor.doExecTest(clientExecutionMethod.smbWithWMI);
         }
 
+        [TestMethod]
+        public void testSMBExecutorReturnsStdOutErrAndRetCodeAsync()
+        {
+            testSMBExecutor.doExecTestAsync(clientExecutionMethod.smbWithWMI);
+        }
+
+        [TestMethod]
+        public void testSMBExecutorWillSetWorkingDirectoryCorrectly()
+        {
+            testSMBExecutor.doWorkingDirTest(clientExecutionMethod.smbWithWMI, "C:\\");
+            testSMBExecutor.doWorkingDirTest(clientExecutionMethod.smbWithWMI, "C:\\Windows");
+        }
+    }
+
+    public class testSMBExecutor
+    {
         public static void doExecTestAsync(clientExecutionMethod exec)
         {
             using (hypervisor_vmware hyp = machinePools.vmware.createHypervisorForNextFreeVMOrWait(execType: exec))

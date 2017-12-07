@@ -21,7 +21,7 @@ namespace bladeDirectorClient
                 blade.kernelDebugPort, blade.kernelDebugKey));
         }
 
-        public static hypervisor_vmware_FreeNAS createHypForVM(vmSpec vmSpec, bladeSpec vmServerSpec, snapshotDetails snapshotInfo, bladeDirectorService.NASParams nas, clientExecutionMethod exec = clientExecutionMethod.smb)
+        public static hypervisor_vmware_FreeNAS createHypForVM(vmSpec vmSpec, bladeSpec vmServerSpec, snapshotDetails snapshotInfo, bladeDirectorService.NASParams nas, clientExecutionMethod exec = clientExecutionMethod.smbWithWMI)
         {
             userDesc usernameToUse = vmSpec.credentials.First();
 

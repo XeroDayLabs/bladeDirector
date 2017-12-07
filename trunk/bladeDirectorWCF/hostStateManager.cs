@@ -46,7 +46,7 @@ namespace bladeDirectorWCF
                 Settings.Default.vmUsername, Settings.Default.vmPassword, null, null,
                 vm.spec.kernelDebugPort, vm.spec.kernelDebugKey, vm.spec.VMIP);
 
-            return new hypervisor_vmware(spec, clientExecutionMethod.smb);
+            return new hypervisor_vmware(spec, clientExecutionMethod.smbWithWMI);
         }
 
         public override hypervisor makeHypervisorForBlade_LTSP(lockableBladeSpec bladeSpec)
@@ -81,7 +81,7 @@ namespace bladeDirectorWCF
                 bladeSpec.spec.currentSnapshot, null,
                 bladeSpec.spec.kernelDebugPort, null);
 
-            return new hypervisor_iLo(iloSpec, clientExecutionMethod.smb);
+            return new hypervisor_iLo(iloSpec, clientExecutionMethod.smbWithWMI);
         }
 
         public override void startBladePowerOff(lockableBladeSpec nodeSpec, cancellableDateTime deadline)
@@ -144,7 +144,7 @@ namespace bladeDirectorWCF
                 lock (cachedNASLock)
                 {
                     if (cachedNAS == null)
-                        cachedNAS = new FreeNASWithCaching(Settings.Default.iscsiServerIP, Settings.Default.iscsiServerUsername, Settings.Default.iscsiServerPassword);
+                        cachedNAS = FreeNasGroup.getOrMake(Settings.Default.iscsiServerIP, Settings.Default.iscsiServerUsername, Settings.Default.iscsiServerPassword);
                 }
             }
             return cachedNAS;
