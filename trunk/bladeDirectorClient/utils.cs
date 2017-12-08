@@ -16,7 +16,7 @@ namespace bladeDirectorClient
             return new hypervisor_iLo(new hypSpec_iLo(
                 blade.bladeIP, usernameToUse.username, usernameToUse.password,
                 blade.iLOIP, blade.iLoUsername, blade.iLoPassword,
-                blade.iscsiIP, nas.username, nas.password,
+                nas.IP, nas.username, nas.password,
                 snap.friendlyName, snap.path,
                 blade.kernelDebugPort, blade.kernelDebugKey));
         }
