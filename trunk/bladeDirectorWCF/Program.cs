@@ -1,5 +1,6 @@
 ﻿using System;
 using System.IO;
+using System.Linq;
 using System.Runtime.InteropServices;
 using System.ServiceModel;
 using System.ServiceModel.Channels;
@@ -45,8 +46,13 @@ namespace bladeDirectorWCF
                 {
                     if (services.hostStateManager != null)
                     {
-                        if (!(args.Exception is COMException))
-                        services.hostStateManager.addLogEvent("First-chance exception: " + args.Exception.ToString());
+                        // We don't care about this kind of exception. It happens very frequently during normal use of the WMI
+                        // executor.
+                        if (!(args.Exception is COMException) &&
+                            !(args.Exception is AggregateException && ((AggregateException)args.Exception).InnerExceptions.All(x => x is COMException)) )
+                        {
+                            services.hostStateManager.addLogEvent("First-chance exception: " + args.Exception.ToString());
+                        }
                     }
 
                     string dumpDir = Properties.Settings.Default.internalErrorDumpPath.Trim();
