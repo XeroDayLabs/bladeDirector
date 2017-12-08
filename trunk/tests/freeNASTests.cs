@@ -83,7 +83,7 @@ namespace tests
             for (int filecount = 1; filecount < 100; filecount += 10)
             {
                 clearAll();
-                TimeSpan reloadTime = canAddExportNewFilesQuickly(testPrefix, 10);
+                TimeSpan reloadTime = canExportNewFilesQuickly(testPrefix, 10);
                 reloadTimesByFileCount.Add(filecount, reloadTime);
             }
 
@@ -242,7 +242,7 @@ namespace tests
             int extentcount = 50;
             try
             {
-                TimeSpan reloadTime = canAddExportNewFilesQuickly(testPrefix, extentcount);
+                TimeSpan reloadTime = canExportNewFilesQuickly(testPrefix, extentcount);
                 Debug.WriteLine("Reloading config took " + reloadTime + " ms");
                 Assert.IsTrue(reloadTime < TimeSpan.FromSeconds(7));
             }
@@ -252,7 +252,7 @@ namespace tests
             }
         }
 
-        public TimeSpan canAddExportNewFilesQuickly(string testPrefix, int newExportsCount)
+        public TimeSpan canExportNewFilesQuickly(string testPrefix, int newExportsCount)
         {
             // FIXME: use testprefix for filenames
 
@@ -320,7 +320,7 @@ namespace tests
         }
 
         [TestMethod]
-        public void canAddExportAFile()
+        public void canExportAFile()
         {
             string testPrefix = Guid.NewGuid().ToString();
 
@@ -332,7 +332,7 @@ namespace tests
                 exec.startExecutable("touch", nastempspace + "/testfile");
             }
             // Add some targets, extents, target-to-extents, and watch the time taken.
-            iscsiTarget tgt = foo.addISCSITarget(new iscsiTarget() { targetName = testPrefix, targetAlias = "idk lol" });
+            iscsiTarget tgt = foo.addISCSITarget(new iscsiTarget() { targetName = testPrefix, targetAlias = testPrefix });
             foo.createTargetGroup(foo.getPortals()[0], tgt);
             iscsiExtent ext = foo.addISCSIExtent(new iscsiExtent()
             {
@@ -353,6 +353,66 @@ namespace tests
                 string[] lines = res.stdout.Split('\n');
                 Assert.AreEqual(1, lines.Count(x => x.Contains(testPrefix + ",")));
             }
+        }
+
+        [TestMethod]
+        public void canInvalidateThings()
+        {
+            // Here, we use a second FreeNAS instance to modify data on the server. We then invalidate the first, and ensure that
+            // the differences are seen.
+            string testPrefix = Guid.NewGuid().ToString();
+
+            FreeNASWithCaching uut = new FreeNASWithCaching(nashostname, nasusername, naspassword);
+            FreeNAS directNAS = new FreeNAS(nashostname, nasusername, naspassword);
+
+            // Make a test file to export
+            using (SSHExecutor exec = new SSHExecutor(nashostname, nasusername, naspassword))
+            {
+                exec.startExecutable("touch", nastempspace + "/testfile");
+            }
+            // Add a targets, extents, and target-to-extents
+            iscsiTarget tgt = directNAS.addISCSITarget(new iscsiTarget() { targetName = testPrefix, targetAlias = "idk lol" });
+            directNAS.createTargetGroup(directNAS.getPortals()[0], tgt);
+            iscsiExtent ext = directNAS.addISCSIExtent(new iscsiExtent()
+            {
+                iscsi_target_extent_name = testPrefix,
+                iscsi_target_extent_type = "File",
+                iscsi_target_extent_path = nastempspace + "/testfile"
+            });
+
+            directNAS.addISCSITargetToExtent(tgt.id, ext);
+            directNAS.waitUntilISCSIConfigFlushed();
+
+            // The uut should now be out-of-date
+            Assert.AreNotEqual(uut.getExtents().Count, directNAS.getExtents().Count);
+            Assert.AreNotEqual(uut.getISCSITargets().Count, directNAS.getISCSITargets().Count);
+            Assert.AreNotEqual(uut.getTargetToExtents().Count, directNAS.getTargetToExtents().Count);
+
+            // Invalidate the uut and check that it is then up-to-date.
+            uut.invalidateExtents();
+            Assert.AreEqual(uut.getExtents().Count, directNAS.getExtents().Count);
+            uut.invalidateTargets();
+            Assert.AreEqual(uut.getISCSITargets().Count, directNAS.getISCSITargets().Count);
+            uut.invalidateTargetToExtents();
+            Assert.AreEqual(uut.getTargetToExtents().Count, directNAS.getTargetToExtents().Count);
+        }
+
+        [TestMethod]
+        public void canCloningSnapshots()
+        {
+            string testPrefix = Guid.NewGuid().ToString();
+
+            FreeNASWithCaching foo = new FreeNASWithCaching(nashostname, nasusername, naspassword);
+
+            // Make a test datastore to export
+            using (SSHExecutor exec = new SSHExecutor(nashostname, nasusername, naspassword))
+            {
+                exec.startExecutable("zfs", "create -V 10MB test/" + testPrefix);
+            }
+
+            snapshot snap = foo.createSnapshot("test/" + testPrefix, "snapshot-of-" + testPrefix);
+            Assert.AreEqual(1, foo.getSnapshots().Count(x => x.id == snap.id ));
+            foo.cloneSnapshot(snap, "test/clone-of-" + testPrefix);
         }
 
         [TestMethod]

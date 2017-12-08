@@ -44,7 +44,7 @@ namespace bladeDirectorWCF
                 case NASFaultInjectionPolicy.failSnapshotDeletionOnFirstSnapshot:
                     nas = new mockedNASWithFailure();
                     // TODO: add this from the test
-                    nas.addISCSITarget(new iscsiTarget() { id = 0x1337b33f, targetAlias = "dunno", targetName = "172.17.158.1-1.1.1.1-vm" });
+                    nas.addISCSITarget(new iscsiTarget() { id = "1337b33f", targetAlias = "dunno", targetName = "172.17.158.1-1.1.1.1-vm" });
                     break;
                 default:
                     throw new ArgumentOutOfRangeException("newPolicy", newPolicy, null);
@@ -53,7 +53,7 @@ namespace bladeDirectorWCF
             // Taken from real FreeNAS system, these are the snapshots required to use Discord.
             volume newVol = new volume
             {
-                id = 1,
+                id = "1",
                 avail = "1.8 TiB",
                 compression = "inherit (lz4)",
                 compressratio = "1.47x",
@@ -85,7 +85,7 @@ namespace bladeDirectorWCF
             targetGroup tgtGrp = new targetGroup
             {
                 id = "13",
-                iscsi_target = 13,
+                iscsi_target = "13",
                 iscsi_target_authgroup = "null",
                 iscsi_target_authtype = "None",
                 iscsi_target_initialdigest = "Auto",
@@ -181,11 +181,11 @@ namespace bladeDirectorWCF
 
     public class mockedNASWithFailure : mockedNAS
     {
-        private int? idToFail = null;
+        private string idToFail = null;
 
         public override void deleteISCSITarget(iscsiTarget tgt)
         {
-            if (!idToFail.HasValue)
+            if (idToFail == null)
                 idToFail = tgt.id;
 
             if (tgt.id == idToFail)
