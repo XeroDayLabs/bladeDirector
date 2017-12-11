@@ -9,7 +9,7 @@ namespace bladeDirectorWCF
     {
         public override void mountDataStore(hypervisor hyp, string srcAddress, string dataStoreName, string serverName, string mountPath, cancellableDateTime deadline)
         {
-            while (ensureISCSIInterfaceIsSetUp(hyp, srcAddress) == false)
+            while (ensureISCSIInterfaceIsSetUp(hyp, srcAddress, deadline) == false)
             {
                 deadline.doCancellableSleep(TimeSpan.FromSeconds(5));
             }

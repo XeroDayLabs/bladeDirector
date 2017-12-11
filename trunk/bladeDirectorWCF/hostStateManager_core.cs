@@ -1402,7 +1402,7 @@ namespace bladeDirectorWCF
             foreach (KeyValuePair<int, logEntryCollection> kvp in _logEvents)
                 toRet.AddRange(kvp.Value);
 
-            return toRet.OrderByDescending(x => x.timestamp).Take(maximum).ToList();
+            return toRet.OrderBy(x => x.timestamp).Take(maximum).ToList();
         }
 
         public resultAndWaitToken selectSnapshotForBladeOrVM(string requestorIP, string bladeName, string newShot)
