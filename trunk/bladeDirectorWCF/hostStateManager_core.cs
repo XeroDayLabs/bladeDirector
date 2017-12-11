@@ -29,6 +29,12 @@ namespace bladeDirectorWCF
     {
         public logEntry lastEntry = null;
         public int dupeCount = 0;
+        public string threadName;
+
+        public logEntryCollection()
+        {
+            threadName = Thread.CurrentThread.Name;
+        }
     }
 
     /// <summary>
@@ -123,7 +129,8 @@ namespace bladeDirectorWCF
             else
             {
                 // Add this entry to this thread's log list
-                var newEntry = new logEntry(newLogMessage);
+                logEntry newEntry = new logEntry(newLogMessage);
+                newEntry.threadName = _logEvents[tid].threadName;
                 _logEvents[tid].Add(newEntry);
                 _logEvents[tid].lastEntry = newEntry;
 
@@ -612,7 +619,17 @@ namespace bladeDirectorWCF
             {
                 using (hypervisor hyp = makeHypervisorForVM(lockedVM, parentBlade))
                 {
-                    hyp.powerOff(new cancellableDateTime(TimeSpan.FromSeconds(30)));
+                    // We swallow all exceptions here.
+                    // This is because, sicne we have interrupted deployment, the VM may be in a weird state (or may never have
+                    // been created at all).
+                    try
+                    {
+                        hyp.powerOff(new cancellableDateTime(TimeSpan.FromSeconds(30)));
+                    }
+                    catch (Exception e)
+                    {
+                        log("While powering off in-deployment VM " + lockedVM.spec.VMIP + " : " + e.Message);
+                    }
                 }
 
                 // Now we dispose the VM, and then specify that the next release of the VM (ie, that done by the parent) should
@@ -761,7 +778,7 @@ namespace bladeDirectorWCF
                         // Now start a new thread, which will ensure the VM server is powered up and will then add the child VMs.
                         worker = new Thread(VMServerBootThread)
                         {
-                            Name = "VMAllocationThread for VM " + childVM.spec.VMIP + " on server " + freeVMServer.spec.bladeIP
+                            Name = "Deploy VM " + childVM.spec.VMIP + " on " + freeVMServer.spec.bladeIP
                         };
                         VMThreadState deployState = new VMThreadState
                         {
@@ -1402,7 +1419,7 @@ namespace bladeDirectorWCF
             foreach (KeyValuePair<int, logEntryCollection> kvp in _logEvents)
                 toRet.AddRange(kvp.Value);
 
-            return toRet.OrderBy(x => x.timestamp).Take(maximum).ToList();
+            return toRet.OrderByDescending(x => x.timestamp).Take(maximum).ToList();
         }
 
         public resultAndWaitToken selectSnapshotForBladeOrVM(string requestorIP, string bladeName, string newShot)
@@ -2116,6 +2133,7 @@ namespace bladeDirectorWCF
         public string msg;
         public DateTime timestamp;
         public int dupesSuppressed;
+        public string threadName;
 
         public logEntry()
         {
