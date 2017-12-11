@@ -8,7 +8,6 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Microsoft.Win32;
 using bladeDirectorClient;
 using bladeDirectorClient.bladeDirectorService;
-using mockedCall = bladeDirectorClient.bladeDirectorService.mockedCall;
 
 namespace tests
 {

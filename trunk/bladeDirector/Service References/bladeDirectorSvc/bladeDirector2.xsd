@@ -108,13 +108,22 @@
   </xs:complexType>
   <xs:element name="ArrayOfuserAddRequest" nillable="true" type="tns:ArrayOfuserAddRequest" />
   <xs:complexType name="userAddRequest">
+    <xs:complexContent mixed="false">
+      <xs:extension base="tns:userDesc">
+        <xs:sequence>
+          <xs:element minOccurs="0" name="isAdministrator" type="xs:boolean" />
+        </xs:sequence>
+      </xs:extension>
+    </xs:complexContent>
+  </xs:complexType>
+  <xs:element name="userAddRequest" nillable="true" type="tns:userAddRequest" />
+  <xs:complexType name="userDesc">
     <xs:sequence>
-      <xs:element minOccurs="0" name="isAdministrator" type="xs:boolean" />
       <xs:element minOccurs="0" name="password" nillable="true" type="xs:string" />
       <xs:element minOccurs="0" name="username" nillable="true" type="xs:string" />
     </xs:sequence>
   </xs:complexType>
-  <xs:element name="userAddRequest" nillable="true" type="tns:userAddRequest" />
+  <xs:element name="userDesc" nillable="true" type="tns:userDesc" />
   <xs:complexType name="ArrayOfresultAndBladeName">
     <xs:sequence>
       <xs:element minOccurs="0" maxOccurs="unbounded" name="resultAndBladeName" nillable="true" type="tns:resultAndBladeName" />
@@ -135,8 +144,6 @@
           <xs:element minOccurs="0" name="memoryMB" type="xs:int" />
           <xs:element minOccurs="0" name="parentBladeID" type="xs:long" />
           <xs:element minOccurs="0" name="parentBladeIP" nillable="true" type="xs:string" />
-          <xs:element minOccurs="0" name="password" nillable="true" type="xs:string" />
-          <xs:element minOccurs="0" name="username" nillable="true" type="xs:string" />
           <xs:element minOccurs="0" name="vmConfigKey" nillable="true" type="xs:long" />
         </xs:sequence>
       </xs:extension>
@@ -145,7 +152,10 @@
   <xs:element name="vmSpec" nillable="true" type="tns:vmSpec" />
   <xs:complexType name="bladeOwnership">
     <xs:sequence>
+      <xs:element minOccurs="0" name="_kernelDebugPort" type="xs:unsignedShort" />
+      <xs:element minOccurs="0" name="availableUsersCSV" nillable="true" type="xs:string" />
       <xs:element xmlns:q1="http://schemas.datacontract.org/2004/07/System.Data.SQLite" minOccurs="0" name="conn" nillable="true" type="q1:SQLiteConnection" />
+      <xs:element minOccurs="0" name="credentials" nillable="true" type="tns:ArrayOfuserDesc" />
       <xs:element minOccurs="0" name="currentOwner" nillable="true" type="xs:string" />
       <xs:element minOccurs="0" name="currentSnapshot" nillable="true" type="xs:string" />
       <xs:element minOccurs="0" name="friendlyName" nillable="true" type="xs:string" />
@@ -160,6 +170,12 @@
     </xs:sequence>
   </xs:complexType>
   <xs:element name="bladeOwnership" nillable="true" type="tns:bladeOwnership" />
+  <xs:complexType name="ArrayOfuserDesc">
+    <xs:sequence>
+      <xs:element minOccurs="0" maxOccurs="unbounded" name="userDesc" nillable="true" type="tns:userDesc" />
+    </xs:sequence>
+  </xs:complexType>
+  <xs:element name="ArrayOfuserDesc" nillable="true" type="tns:ArrayOfuserDesc" />
   <xs:simpleType name="bladeLockType">
     <xs:list>
       <xs:simpleType>
@@ -274,7 +290,6 @@
           <xs:element minOccurs="0" name="currentlyBeingAVMServer" type="xs:boolean" />
           <xs:element minOccurs="0" name="currentlyHavingBIOSDeployed" type="xs:boolean" />
           <xs:element minOccurs="0" name="iLOIP" nillable="true" type="xs:string" />
-          <xs:element minOccurs="0" name="iLOPort" type="xs:unsignedShort" />
           <xs:element minOccurs="0" name="iLoPassword" nillable="true" type="xs:string" />
           <xs:element minOccurs="0" name="iLoUsername" nillable="true" type="xs:string" />
           <xs:element minOccurs="0" name="iscsiIP" nillable="true" type="xs:string" />
@@ -301,6 +316,20 @@
     </xs:sequence>
   </xs:complexType>
   <xs:element name="ArrayOfvmSpec" nillable="true" type="tns:ArrayOfvmSpec" />
+  <xs:complexType name="ArrayOflogEntry">
+    <xs:sequence>
+      <xs:element minOccurs="0" maxOccurs="unbounded" name="logEntry" nillable="true" type="tns:logEntry" />
+    </xs:sequence>
+  </xs:complexType>
+  <xs:element name="ArrayOflogEntry" nillable="true" type="tns:ArrayOflogEntry" />
+  <xs:complexType name="logEntry">
+    <xs:sequence>
+      <xs:element minOccurs="0" name="dupesSuppressed" type="xs:int" />
+      <xs:element minOccurs="0" name="msg" nillable="true" type="xs:string" />
+      <xs:element minOccurs="0" name="timestamp" type="xs:dateTime" />
+    </xs:sequence>
+  </xs:complexType>
+  <xs:element name="logEntry" nillable="true" type="tns:logEntry" />
   <xs:complexType name="vmServerCredentials">
     <xs:sequence>
       <xs:element minOccurs="0" name="password" nillable="true" type="xs:string" />

@@ -70,7 +70,6 @@ namespace bladeDirector
             headerRow.Cells.Add(new TableHeaderCell() { Text = "Current owner" });
             headerRow.Cells.Add(new TableHeaderCell() { Text = "Next owner" });
             headerRow.Cells.Add(new TableHeaderCell() { Text = "Links" });
-            headerRow.Cells.Add(new TableHeaderCell() { Text = "Actions" });
 
             tblBladeStatus.Rows.Add(headerRow);
 
@@ -123,14 +122,6 @@ namespace bladeDirector
                     iloURLtableCell.Controls.Add(link);
                     newRow.Cells.Add(iloURLtableCell);
 
-                    Button btnRelease = new Button
-                    {
-                        Text = "Force release",
-                        CommandArgument = bladeInfo.bladeIP
-                    };
-                    btnRelease.Click += forceRelease;
-
-                    newRow.Cells.Add(makeTableCell(btnRelease));
                     tblBladeStatus.Rows.Add(newRow);
 
                     // Then populate the invisible-until-expanded details row.
@@ -138,9 +129,35 @@ namespace bladeDirector
                 }
 
                 // Finally, populate any log events.
-                string[] logEvents = services.svc.getLogEvents();
-                foreach (string logEvent in logEvents)
-                    lstLog.Items.Add(logEvent);
+                logEntry[] logEvents = services.svc.getLogEvents(100);
+                int logID = 0;
+                foreach (logEntry logEvent in logEvents)
+                {
+                    // Make the expandable row, with a little bit of info
+                    TableRow tumbRow = new TableRow();
+                    tumbRow.Cells.Add(makeTableCell(new ImageButton()
+                    {
+                        ImageUrl = "images/collapsed.png",
+                        AlternateText = "Details",
+                        OnClientClick = "javascript:toggleDetail($(this),  null); return false;"
+                    }));
+
+                    tumbRow.Cells.Add(new TableCell() { Text = logEvent.timestamp.ToString() });
+                    string thumbtext = logEvent.msg.Split('\n')[0];
+                    if (thumbtext.Length > 50)
+                        thumbtext = thumbtext.Substring(0, 50) + "...";
+                    tumbRow.Cells.Add(new TableCell() { Text = thumbtext });
+                    tblLogTable.Rows.Add(tumbRow);
+
+                    // and then the full detail row.
+                    TableRow detailRow = new TableRow();
+                    detailRow.Cells.Add(new TableCell());
+                    detailRow.Cells.Add(new TableCell() { Text = logEvent.msg, ColumnSpan = 2});
+                    detailRow.Style.Add("display", "none");
+                    tblLogTable.Rows.Add(detailRow);
+
+                    logID++;
+                }
             }            
         }
 
@@ -260,16 +277,6 @@ namespace bladeDirector
                 tc.Controls.Add(control);
             tc.VerticalAlign = VerticalAlign.Middle;
             return tc;
-        }
-        
-        private void forceRelease(object sender, EventArgs e) 
-        {
-            Button clicked = (Button) sender;
-
-            using (BladeDirectorServices services = new BladeDirectorServices(getCurrentServerURL(this)))
-            {
-                services.svc.ReleaseBladeOrVM(clicked.CommandArgument);
-            }
         }
         
         protected void cmdAddNode_Click(object sender, EventArgs e)

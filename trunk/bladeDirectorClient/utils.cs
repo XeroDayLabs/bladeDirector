@@ -5,11 +5,12 @@ using System.Threading;
 using System.Threading.Tasks;
 using bladeDirectorClient.bladeDirectorService;
 using hypervisors;
+
 namespace bladeDirectorClient
 {
     public static class utils
     {
-        public static hypervisor_iLo createHypForBlade(bladeSpec blade, snapshotDetails snap, bladeDirectorService.NASParams nas)
+        public static hypervisor_iLo createHypForBlade(bladeSpec blade, snapshotDetails snap, NASParams nas)
         {
             userDesc usernameToUse = blade.credentials.First();
 
@@ -21,7 +22,7 @@ namespace bladeDirectorClient
                 blade.kernelDebugPort, blade.kernelDebugKey));
         }
 
-        public static hypervisor_vmware_FreeNAS createHypForVM(vmSpec vmSpec, bladeSpec vmServerSpec, snapshotDetails snapshotInfo, bladeDirectorService.NASParams nas, clientExecutionMethod exec = clientExecutionMethod.smbWithWMI)
+        public static hypervisor_vmware_FreeNAS createHypForVM(vmSpec vmSpec, bladeSpec vmServerSpec, snapshotDetails snapshotInfo, NASParams nas, clientExecutionMethod exec = clientExecutionMethod.smbWithWMI)
         {
             userDesc usernameToUse = vmSpec.credentials.First();
 

@@ -97,7 +97,7 @@ namespace bladeDirectorWCF
         vmSpec[] getVMByVMServerIP_nolocking(string bladeIP);
 
         [OperationContract]
-        string[] getLogEvents();
+        logEntry[] getLogEvents(int maximum);
 
         [OperationContract]
         vmServerCredentials getCredentialsForVMServerByVMIP(string VMIP);

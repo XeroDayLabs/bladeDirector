@@ -1,8 +1,10 @@
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Linq.Expressions;
 using System.Net;
 using System.Net.Sockets;
 using System.Runtime.Serialization;
@@ -23,12 +25,18 @@ namespace bladeDirectorWCF
         SHT, // Setting a blade snapshot
     }
 
+    public class logEntryCollection : List<logEntry>
+    {
+        public logEntry lastEntry = null;
+        public int dupeCount = 0;
+    }
+
     /// <summary>
     /// Almost all main program logic. Note that the inheritor is expected to define the type of hypervisor we'll be working on.
     /// </summary>
     public abstract class hostStateManager_core
     {
-        private List<string> _logEvents = new List<string>();
+        private readonly ConcurrentDictionary<int, logEntryCollection> _logEvents = new ConcurrentDictionary<int, logEntryCollection>();
 
         public IBiosReadWrite biosRWEngine { get; private set; }
         public TimeSpan keepAliveTimeout = TimeSpan.FromMinutes(1);
@@ -95,13 +103,33 @@ namespace bladeDirectorWCF
             return keepAliveTimeout;
         }
 
-        public void addLogEvent(string newEntry)
+        public void addLogEvent(string newLogMessage)
         {
-            Debug.WriteLine(newEntry);
-            Console.WriteLine(newEntry);
-            lock (_logEvents)
+            Debug.WriteLine(newLogMessage);
+            Console.WriteLine(newLogMessage);
+
+            // If this thread has never logged anything before, add a list for its entries
+            int tid = Thread.CurrentThread.ManagedThreadId;
+            if (!_logEvents.ContainsKey(tid))
+                _logEvents.TryAdd(tid, new logEntryCollection());
+
+            // Is this the same entry as we just added previously? If so, note the dupe down, and ignore it.
+            // Otherwise, check if there were dupes previously, and log them if so.
+            if (_logEvents[tid].lastEntry != null &&
+                _logEvents[tid].lastEntry.msg == newLogMessage)
             {
-                _logEvents.Add(DateTime.Now + " : " + newEntry);
+                _logEvents[tid].lastEntry.dupesSuppressed++;
+            }
+            else
+            {
+                // Add this entry to this thread's log list
+                var newEntry = new logEntry(newLogMessage);
+                _logEvents[tid].Add(newEntry);
+                _logEvents[tid].lastEntry = newEntry;
+
+                // Clear out any too-old log entries, otherwise our collection may get huge and consume all available RAM.
+                DateTime lastAcceptableLogEntryTimestamp = DateTime.Now - TimeSpan.FromHours(2);
+                _logEvents[tid].RemoveAll(x => x.timestamp < lastAcceptableLogEntryTimestamp);
             }
         }
 
@@ -1367,13 +1395,14 @@ namespace bladeDirectorWCF
             }
         }
 
-        public List<string> getLogEvents()
+        public List<logEntry> getLogEvents(int maximum)
         {
-            lock (_logEvents)
+            List<logEntry> toRet = new List<logEntry>();
+            foreach (KeyValuePair<int, logEntryCollection> kvp in _logEvents)
             {
-                List<string> toRet = new List<string>(_logEvents);
-                return toRet;
+                toRet.AddRange( kvp.Value.OrderBy(x => x.timestamp).Take(maximum));
             }
+            return toRet;
         }
 
         public resultAndWaitToken selectSnapshotForBladeOrVM(string requestorIP, string bladeName, string newShot)
@@ -2080,6 +2109,25 @@ namespace bladeDirectorWCF
             if (newTToE == null)
                 newTToE = nas.addISCSITargetToExtent(newTarget.id, newExtent);
         }
+    }
+
+    public class logEntry
+    {
+        public string msg;
+        public DateTime timestamp;
+        public int dupesSuppressed;
+
+        public logEntry()
+        {
+            
+        }
+
+        public logEntry(string newEntry)
+        {
+            msg = newEntry;
+            timestamp = DateTime.Now;
+        }
+
     }
 
     public class tempLockElevation : IDisposable

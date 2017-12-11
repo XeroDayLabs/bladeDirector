@@ -32,7 +32,6 @@
             rowToHide.slideToggle();
         }
 
-
         function toggleConfigBox(elem, url) {
             var parentCell = $(elem[0]).parent('td')[0];
             var textControl = $(parentCell).children('div')[0];
@@ -123,12 +122,16 @@
             <div>
                 <table class="settingGroup">
                     <tr>
-                        <th>Log events</th>
+                        <th>Log events (max 100)</th>
                     </tr>
-                    <tr style="min-height: 10px">
-                        <td>
-                            <asp:ListBox ID="lstLog" runat="server" style="width: 100%"> </asp:ListBox>
-                        </td>
+                    <tr style="width: 100%">
+                        <asp:Table ID="tblLogTable" runat="server"  style="border-style: solid; width: 100%">
+                            <asp:TableRow>
+                                    <asp:TableHeaderCell Width="10px"> </asp:TableHeaderCell>
+                                    <asp:TableHeaderCell >Timestamp</asp:TableHeaderCell>
+                                    <asp:TableHeaderCell>Message</asp:TableHeaderCell>
+                            </asp:TableRow>
+                        </asp:Table>
                     </tr>
                 </table>
             </div>
@@ -142,7 +145,7 @@
                     </th>
                     <tr>
                         <td>Node IP</td>
-                        <td style="width: 25%" ><asp:TextBox ID="txtNewNodeIP" style="width: 100%" runat="server" onkeyup="recalcNewBlade()">172.17.129.</asp:TextBox></td>
+                        <td style="width: 25%" ><asp:TextBox ID="txtNewNodeIP" style="width: 100%" runat="server" onkeyup="recalcNewBlade()" onblur="recalcNewBlade()">172.17.129.</asp:TextBox></td>
                     </tr>
                     <tr>
                         <td>iLo IP</td>
