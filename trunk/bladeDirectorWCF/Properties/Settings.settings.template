@@ -33,7 +33,13 @@
       <Value Profile="(Default)">root</Value>
     </Setting>
     <Setting Name="iscsiServerPassword" Type="System.String" Scope="User">
-      <Value Profile="(Default)">...</Value>
+      <Value Profile="(Default)">..</Value>
+    </Setting>
+    <Setting Name="internalErrorDumpPath" Type="System.String" Scope="User">
+      <Value Profile="(Default)">c:\dumps</Value>
+    </Setting>
+    <Setting Name="defaultBladesByXDLClusterID" Type="System.String" Scope="User">
+      <Value Profile="(Default)">1,2,10-20</Value>
     </Setting>
   </Settings>
 </SettingsFile>

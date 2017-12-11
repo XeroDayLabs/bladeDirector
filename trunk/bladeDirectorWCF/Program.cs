@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
@@ -115,15 +116,16 @@ namespace bladeDirectorWCF
                         }
                         else
                         {
-                            string[] bladeIDs = parsedArgs.bladeList.Split(new [] {","}, StringSplitOptions.RemoveEmptyEntries);
+                            int[] bladeIDs = parsedArgs.bladeList.Split(new [] {","}, StringSplitOptions.RemoveEmptyEntries).Select(x => Int32.Parse(x)).ToArray();
+                            if (bladeIDs.Length == 0)
+                                bladeIDs = getBladeIDsFromSettings();
                             if (bladeIDs.Length > 0)
                             { 
                                 Console.WriteLine("Adding blades...");
                                 using (bladeDirectorDebugServices conn = new bladeDirectorDebugServices(debugServiceURL.ToString(), baseServiceURL.ToString()))
                                 {
-                                    foreach (string idStr in bladeIDs)
+                                    foreach (int id in bladeIDs)
                                     {
-                                        int id = Int32.Parse(idStr.Trim());
                                         string bladeName = xdlClusterNaming.makeBladeFriendlyName(id);
                                         string bladeIP = xdlClusterNaming.makeBladeIP(id);
                                         string iloIP = xdlClusterNaming.makeBladeILOIP(id);
@@ -146,6 +148,34 @@ namespace bladeDirectorWCF
                     }
                 }
             }
+        }
+
+        private static int[] getBladeIDsFromSettings()
+        {
+            // We accept comma-delimited or ranges here, for example:
+            // 1,2,4-6,9
+            List<int> toRet = new List<int>();
+
+            string[] bladeParts = Properties.Settings.Default.defaultBladesByXDLClusterID.Split(',');
+            for (int n = 0; n < bladeParts.Length; n++)
+            {
+                string bladePart = bladeParts[n];
+
+                int start;
+                int end;
+                if (bladePart.Contains('-'))
+                {
+                    start = Int32.Parse(bladePart.Split('-')[0]);
+                    end = Int32.Parse(bladePart.Split('-')[1]);
+                    toRet.AddRange(Enumerable.Range(start, (end-start) + 1));
+                }
+                else
+                {
+                    toRet.Add(Int32.Parse(bladePart));
+                }
+            }
+
+            return toRet.ToArray();
         }
 
         private static void configureService(ServiceHost svc, Type contractInterfaceType)
