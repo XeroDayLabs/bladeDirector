@@ -1140,8 +1140,7 @@ namespace bladeDirectorWCF
                     string destDirDatastoreType = "[esxivms] " + VMServerBladeIPAddress + "_" + childVM_unsafe.vmConfigKey;
                     string vmxPath = destDir + "/PXETemplate.vmx";
 
-                    if (!threadState.deployDeadline.stillOK)
-                        throw new TimeoutException();
+                    threadState.deployDeadline.throwIfTimedOutOrCancelled("After mounting NAS");
 
                     // Remove the VM if it's already there. We don't mind if these commands fail - which they will, if the VM doesn't
                     // exist. We power off by directory and also by name, just in case a previous provision has left the VM hanging around.
@@ -1169,14 +1168,14 @@ namespace bladeDirectorWCF
                     doCmdAndCheckSuccess(hyp, "sed", " -e 's/uuid.location[= ].*//g' -i " + vmxPath, threadState.deployDeadline);
                     // doCmdAndCheckSuccess(hyp, "sed", " -e 's/serial0.fileName[= ].*/" + "serial0.fileName = \"telnet://:" + (1000 + threadState.childVM.vmSpecID) + "\"/g' -i " + vmxPath), threadState.deployDeadline);
 
+                    threadState.deployDeadline.throwIfTimedOutOrCancelled("After customising VM");
+
                     // Now add that VM to ESXi, and the VM is ready to use.
                     // We do this with a retry, because I'm seeing it fail occasionally >_<
                     hypervisor.doWithRetryOnSomeExceptions(() => doCmdAndCheckSuccess(hyp, "vim-cmd", " solo/registervm " + vmxPath, threadState.deployDeadline));
+
+                    threadState.deployDeadline.throwIfTimedOutOrCancelled("After registering VM");
                 }
-
-                //itemToAdd itm = childVM_unsafe.toItemToAdd(true);
-
-                threadState.deployDeadline.throwIfTimedOutOrCancelled();
 
                 // Now we can select the new snapshot. We must be very careful and do this quickly, with the appropriate write lock
                 // held, because it will block the ipxe script creation until we unlock.
@@ -1188,15 +1187,15 @@ namespace bladeDirectorWCF
                         NASAccess nas = getNasForDevice(bladeSpec.spec);
                         deleteBlade(childVMFromDB.spec.getCloneName(), nas, new cancellableDateTime(TimeSpan.FromMinutes(2)));
 
-                        threadState.deployDeadline.throwIfTimedOutOrCancelled();
+                        threadState.deployDeadline.throwIfTimedOutOrCancelled("After deleting old NAS objects");
                         
                         // Now create the disks, and customise the VM by naming it appropriately.
                         configureVMDisks(nas, bladeSpec, childVMFromDB,
                             "bladebasestable-esxi", null, null, null, childVM_unsafe.nextOwner, threadState.deployDeadline);
+
+                        threadState.deployDeadline.throwIfTimedOutOrCancelled("After configuring VM disks");
                     }
                     // TODO: Ability to deploy transportDriver
-
-                    threadState.deployDeadline.throwIfTimedOutOrCancelled();
 
                     // All done. We can mark the blade as in use. Again, we are careful to hold write locks for as short a time as is
                     // possible, to avoid blocking the PXE-script generation.
@@ -1825,15 +1824,15 @@ namespace bladeDirectorWCF
             // and clone it
             createClones(nas, toClone, toCloneVolume, newVM.spec);
 
-            deadline.throwIfTimedOutOrCancelled();
+            deadline.throwIfTimedOutOrCancelled("After creating clones");
 
             exportClonesViaiSCSI(nas, newVM.spec);
 
-            deadline.throwIfTimedOutOrCancelled();
+            deadline.throwIfTimedOutOrCancelled("After creating exports");
 
             nas.waitUntilISCSIConfigFlushed(false);
 
-            deadline.throwIfTimedOutOrCancelled();
+            deadline.throwIfTimedOutOrCancelled("After waiting for NAS to flush");
 
             using (hypervisor hyp = makeHypervisorForVM(newVM, parent))
             {
@@ -1900,16 +1899,28 @@ namespace bladeDirectorWCF
             hypervisor hyp, NASAccess nas, userAddRequest[] usersToAdd, string newOwner,
             cancellableDateTime deadline)
         {
-            // TODO: handle that cancellableDateTime better
-
             hyp.connect();
-            hyp.powerOff(deadline);
+            // We try to power the new VM up. Note that if we fail this, we will retry it a couple times, since it is a relatively
+            // fast operation and I do see occasional failures, perhaps due to FreeNAS being strange.
+            while (true)
+            {
+                cancellableDateTime powerUpDateTime = new cancellableDateTime(TimeSpan.FromMinutes(2), deadline);
+                deadline.throwIfTimedOutOrCancelled("Powering up VM");
 
-            // I'm sometimes seeing a condition whereby VMs boot, and get the correct iPXE script, but can't find the iscsi target
-            // they are meant to connect to. I don't know why this is happening, but I suspect some race condition in either my
-            // cached FreeNAS code client (most likely :)), the server-end FreeNAS code, or ctl itself. The iPXE script will reboot
-            // the VM in this eventuality and the boot will continue.
-            hyp.powerOn(deadline);
+                try
+                {
+                    hyp.powerOff(powerUpDateTime);
+                    hyp.powerOn(powerUpDateTime);
+
+                    break;
+                }
+                catch (TimeoutException)
+                {
+                    log("Powering up node timed out, retrying..");
+                    deadline.doCancellableSleep(TimeSpan.FromSeconds(10));
+                    continue;
+                }
+            }
 
             // Now deploy and execute our deployment script.
             string args;
