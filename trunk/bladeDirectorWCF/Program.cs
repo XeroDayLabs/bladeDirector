@@ -159,12 +159,13 @@ namespace bladeDirectorWCF
             {
                 string bladePart = bladeParts[n];
 
-                int start;
-                int end;
+                if (bladePart == "")
+                    continue;
+
                 if (bladePart.Contains('-'))
                 {
-                    start = Int32.Parse(bladePart.Split('-')[0]);
-                    end = Int32.Parse(bladePart.Split('-')[1]);
+                    var start = Int32.Parse(bladePart.Split('-')[0]);
+                    var end = Int32.Parse(bladePart.Split('-')[1]);
                     toRet.AddRange(Enumerable.Range(start, (end-start) + 1));
                 }
                 else

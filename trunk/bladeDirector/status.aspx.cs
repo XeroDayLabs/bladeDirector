@@ -143,6 +143,7 @@ namespace bladeDirector
                     }));
 
                     tumbRow.Cells.Add(new TableCell() { Text = logEvent.timestamp.ToString() });
+                    tumbRow.Cells.Add(new TableCell() { Text = logEvent.threadName ?? "(unknown)" });
                     string thumbtext = logEvent.msg.Split('\n')[0];
                     if (thumbtext.Length > 50)
                         thumbtext = thumbtext.Substring(0, 50) + "...";
@@ -151,8 +152,7 @@ namespace bladeDirector
 
                     // and then the full detail row.
                     TableRow detailRow = new TableRow();
-                    detailRow.Cells.Add(new TableCell());
-                    detailRow.Cells.Add(new TableCell() { Text = logEvent.msg, ColumnSpan = 2});
+                    detailRow.Cells.Add(new TableCell() { Text = logEvent.msg, ColumnSpan = 4});
                     detailRow.Style.Add("display", "none");
                     tblLogTable.Rows.Add(detailRow);
 
@@ -194,41 +194,25 @@ namespace bladeDirector
             ));
             detailTable.Rows.Add(miscTR);
 
-            TableRow pxeScriptRow = new TableRow();
-            pxeScriptRow.Cells.Add(makeTableCell(
-                makeImageButton("show", "images/collapsed.png", string.Format(@"javascript:toggleConfigBox($(this), ""{1}/generateIPXEScript?hostip={0}""); return false;", bladeInfo.bladeIP, svc.svc.getWebSvcURL())),
-                new Label() { Text = "Current PXE script" },
-                makeInvisibleDiv()
-                ));
-            detailTable.Rows.Add(pxeScriptRow);
-
             // And add rows for any VMs.
             vmSpec[] VMs = svc.svc.getVMByVMServerIP_nolocking(bladeInfo.bladeIP);
             if (VMs.Length > 0)
             {
                 TableRow VMHeaderRow = new TableRow();
-                VMHeaderRow.Cells.Add(new TableHeaderCell() { Text = "" });
-                VMHeaderRow.Cells.Add(new TableHeaderCell() { Text = "Child VM name" });
-                VMHeaderRow.Cells.Add(new TableHeaderCell() { Text = "Child VM IP" });
-                VMHeaderRow.Cells.Add(new TableHeaderCell() { Text = "iSCSI IP" });
+                VMHeaderRow.Cells.Add(new TableHeaderCell() { Text = "VM name" });
+                VMHeaderRow.Cells.Add(new TableHeaderCell() { Text = "Time since last keepalive" });
+                VMHeaderRow.Cells.Add(new TableHeaderCell() { Text = "VM IP" });
                 VMHeaderRow.Cells.Add(new TableHeaderCell() { Text = "Current owner" });
                 VMHeaderRow.Cells.Add(new TableHeaderCell() { Text = "Kernel debug info" });
-                //VMHeaderRow.Cells.Add(new TableHeaderCell() { Text = "Current snapshot" });
                 detailTable.Rows.Add(VMHeaderRow);
             }
             foreach (vmSpec vmInfo in VMs)
             {
                 TableRow thisVMRow = new TableRow();
 
-                thisVMRow.Cells.Add(makeTableCell(
-                    makeImageButton("show", "images/collapsed.png", string.Format(@"javascript:toggleConfigBox($(this), ""getIPXEScript.aspx?hostip={0}""); return false;", vmInfo.VMIP)),
-                    new Label() { Text = "Current PXE script" },
-                    makeInvisibleDiv()
-                    ));
-
                 thisVMRow.Cells.Add(new TableCell() { Text = vmInfo.friendlyName });
+                thisVMRow.Cells.Add(new TableCell() { Text = formatDateTimeForWeb((DateTime.Now - vmInfo.lastKeepAlive)) });
                 thisVMRow.Cells.Add(new TableCell() { Text = vmInfo.VMIP });
-                thisVMRow.Cells.Add(new TableCell() { Text = vmInfo.iscsiIP });
                 thisVMRow.Cells.Add(new TableCell() { Text = vmInfo.currentOwner });
                 string dbgStr = String.Format("Port {0} key \"{1}\"", vmInfo.kernelDebugPort, vmInfo.kernelDebugKey) ;
                 thisVMRow.Cells.Add(new TableCell() { Text = dbgStr });

@@ -1797,12 +1797,16 @@ namespace bladeDirectorWCF
 
         public static void deleteBlade(string cloneName, NASAccess nas, List<snapshot> snapshots, List<iscsiTarget> iscsiTargets, List<iscsiExtent> iscsiExtents, List<volume> volumes, cancellableDateTime deadline)
         {
-            // Delete target-to-extent, target, and extent
+            // Delete target and extent. FreeNAS will delete any orphaned target-to-extent.
             iscsiTarget tgt = iscsiTargets.SingleOrDefault(x => x.targetName == cloneName);
             if (tgt != null)
             {
                 log("Deleting iSCSI target " + tgt.targetName + " ... ");
-                nas.deleteISCSITarget(tgt);
+                try
+                {
+                    nas.deleteISCSITarget(tgt);
+                }
+                catch (nasNotFoundException) { }
                 log("Deleting iSCSI target " + tgt.targetName + " complete.");
             }
 
@@ -1810,7 +1814,11 @@ namespace bladeDirectorWCF
             if (ext != null)
             {
                 log("Deleting iSCSI extent " + ext.iscsi_target_extent_path + " ... ");
-                nas.deleteISCSIExtent(ext);
+                try
+                {
+                    nas.deleteISCSIExtent(ext);
+                }
+                catch (nasNotFoundException) { }
                 log("Deleting iSCSI extent " + ext.iscsi_target_extent_path + " complete.");
             }
 
@@ -1819,7 +1827,11 @@ namespace bladeDirectorWCF
             if (toDelete != null)
             {
                 log("Deleting ZFS snapshot " + toDelete.fullname + " ... ");
-                nas.deleteSnapshot(toDelete);
+                try
+                {
+                    nas.deleteSnapshot(toDelete);
+                }
+                catch (nasNotFoundException) { }
                 log("Deleting ZFS snapshot " + toDelete.fullname + " complete.");
             }
 
@@ -1833,7 +1845,11 @@ namespace bladeDirectorWCF
                     try
                     {
                         log("Deleting ZVOL " + vol.name + " ... ");
-                        nas.deleteZVol(vol);
+                        try
+                        {
+                            nas.deleteZVol(vol);
+                        }
+                        catch (nasNotFoundException) { }
                         log("Deleting ZVOL " + vol.name + " complete. ");
                         break;
                     }

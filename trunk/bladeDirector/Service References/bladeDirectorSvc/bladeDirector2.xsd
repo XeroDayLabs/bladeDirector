@@ -326,6 +326,7 @@
     <xs:sequence>
       <xs:element minOccurs="0" name="dupesSuppressed" type="xs:int" />
       <xs:element minOccurs="0" name="msg" nillable="true" type="xs:string" />
+      <xs:element minOccurs="0" name="threadName" nillable="true" type="xs:string" />
       <xs:element minOccurs="0" name="timestamp" type="xs:dateTime" />
     </xs:sequence>
   </xs:complexType>

@@ -91,10 +91,16 @@
     <Content Include="Service References\bladeDirectorSvc\bladeDirector.bladeDirectorSvc.logEntry.datasource">
       <DependentUpon>Reference.svcmap</DependentUpon>
     </Content>
+    <Content Include="Service References\bladeDirectorSvc\bladeDirector.bladeDirectorSvc.MemoryStream.datasource">
+      <DependentUpon>Reference.svcmap</DependentUpon>
+    </Content>
     <None Include="Service References\bladeDirectorSvc\bladeDirector.xsd">
       <SubType>Designer</SubType>
     </None>
     <None Include="Service References\bladeDirectorSvc\bladeDirector1.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="Service References\bladeDirectorSvc\bladeDirector10.xsd">
       <SubType>Designer</SubType>
     </None>
     <None Include="Service References\bladeDirectorSvc\bladeDirector2.xsd">

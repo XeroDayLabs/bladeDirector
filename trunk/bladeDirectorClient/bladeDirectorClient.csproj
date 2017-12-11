@@ -142,6 +142,9 @@
     <None Include="Service References\bladeDirectorService\bladeDirector1.xsd">
       <SubType>Designer</SubType>
     </None>
+    <None Include="Service References\bladeDirectorService\bladeDirector10.xsd">
+      <SubType>Designer</SubType>
+    </None>
     <None Include="Service References\bladeDirectorService\bladeDirector2.xsd">
       <SubType>Designer</SubType>
     </None>
@@ -173,6 +176,9 @@
       <DependentUpon>Reference.svcmap</DependentUpon>
     </None>
     <None Include="Service References\bladeDirectorService\bladeDirectorClient.bladeDirectorService.logEntry.datasource">
+      <DependentUpon>Reference.svcmap</DependentUpon>
+    </None>
+    <None Include="Service References\bladeDirectorService\bladeDirectorClient.bladeDirectorService.MemoryStream.datasource">
       <DependentUpon>Reference.svcmap</DependentUpon>
     </None>
     <None Include="Service References\bladeDirectorService\bladeDirectorClient.bladeDirectorService.resultAndBladeName.datasource">

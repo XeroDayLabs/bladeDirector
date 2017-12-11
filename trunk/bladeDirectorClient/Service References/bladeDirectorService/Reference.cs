@@ -1439,6 +1439,8 @@ namespace bladeDirectorClient.bladeDirectorService {
     [System.CodeDom.Compiler.GeneratedCodeAttribute("System.Runtime.Serialization", "4.0.0.0")]
     [System.Runtime.Serialization.DataContractAttribute(Name="MarshalByRefObject", Namespace="http://schemas.datacontract.org/2004/07/System")]
     [System.SerializableAttribute()]
+    [System.Runtime.Serialization.KnownTypeAttribute(typeof(bladeDirectorClient.bladeDirectorService.Stream))]
+    [System.Runtime.Serialization.KnownTypeAttribute(typeof(bladeDirectorClient.bladeDirectorService.MemoryStream))]
     [System.Runtime.Serialization.KnownTypeAttribute(typeof(bladeDirectorClient.bladeDirectorService.Component))]
     [System.Runtime.Serialization.KnownTypeAttribute(typeof(bladeDirectorClient.bladeDirectorService.DbConnection))]
     [System.Runtime.Serialization.KnownTypeAttribute(typeof(bladeDirectorClient.bladeDirectorService.SQLiteConnection))]
@@ -1520,6 +1522,156 @@ namespace bladeDirectorClient.bladeDirectorService {
     
     [System.Diagnostics.DebuggerStepThroughAttribute()]
     [System.CodeDom.Compiler.GeneratedCodeAttribute("System.Runtime.Serialization", "4.0.0.0")]
+    [System.Runtime.Serialization.DataContractAttribute(Name="Stream", Namespace="http://schemas.datacontract.org/2004/07/System.IO")]
+    [System.SerializableAttribute()]
+    [System.Runtime.Serialization.KnownTypeAttribute(typeof(bladeDirectorClient.bladeDirectorService.MemoryStream))]
+    public partial class Stream : bladeDirectorClient.bladeDirectorService.MarshalByRefObject {
+    }
+    
+    [System.Diagnostics.DebuggerStepThroughAttribute()]
+    [System.CodeDom.Compiler.GeneratedCodeAttribute("System.Runtime.Serialization", "4.0.0.0")]
+    [System.Runtime.Serialization.DataContractAttribute(Name="MemoryStream", Namespace="http://schemas.datacontract.org/2004/07/System.IO")]
+    [System.SerializableAttribute()]
+    public partial class MemoryStream : bladeDirectorClient.bladeDirectorService.Stream {
+        
+        private byte[] _bufferField;
+        
+        private int _capacityField;
+        
+        private bool _expandableField;
+        
+        private bool _exposableField;
+        
+        private bool _isOpenField;
+        
+        private int _lengthField;
+        
+        private int _originField;
+        
+        private int _positionField;
+        
+        private bool _writableField;
+        
+        [System.Runtime.Serialization.DataMemberAttribute(IsRequired=true)]
+        public byte[] _buffer {
+            get {
+                return this._bufferField;
+            }
+            set {
+                if ((object.ReferenceEquals(this._bufferField, value) != true)) {
+                    this._bufferField = value;
+                    this.RaisePropertyChanged("_buffer");
+                }
+            }
+        }
+        
+        [System.Runtime.Serialization.DataMemberAttribute(IsRequired=true)]
+        public int _capacity {
+            get {
+                return this._capacityField;
+            }
+            set {
+                if ((this._capacityField.Equals(value) != true)) {
+                    this._capacityField = value;
+                    this.RaisePropertyChanged("_capacity");
+                }
+            }
+        }
+        
+        [System.Runtime.Serialization.DataMemberAttribute(IsRequired=true)]
+        public bool _expandable {
+            get {
+                return this._expandableField;
+            }
+            set {
+                if ((this._expandableField.Equals(value) != true)) {
+                    this._expandableField = value;
+                    this.RaisePropertyChanged("_expandable");
+                }
+            }
+        }
+        
+        [System.Runtime.Serialization.DataMemberAttribute(IsRequired=true)]
+        public bool _exposable {
+            get {
+                return this._exposableField;
+            }
+            set {
+                if ((this._exposableField.Equals(value) != true)) {
+                    this._exposableField = value;
+                    this.RaisePropertyChanged("_exposable");
+                }
+            }
+        }
+        
+        [System.Runtime.Serialization.DataMemberAttribute(IsRequired=true)]
+        public bool _isOpen {
+            get {
+                return this._isOpenField;
+            }
+            set {
+                if ((this._isOpenField.Equals(value) != true)) {
+                    this._isOpenField = value;
+                    this.RaisePropertyChanged("_isOpen");
+                }
+            }
+        }
+        
+        [System.Runtime.Serialization.DataMemberAttribute(IsRequired=true)]
+        public int _length {
+            get {
+                return this._lengthField;
+            }
+            set {
+                if ((this._lengthField.Equals(value) != true)) {
+                    this._lengthField = value;
+                    this.RaisePropertyChanged("_length");
+                }
+            }
+        }
+        
+        [System.Runtime.Serialization.DataMemberAttribute(IsRequired=true)]
+        public int _origin {
+            get {
+                return this._originField;
+            }
+            set {
+                if ((this._originField.Equals(value) != true)) {
+                    this._originField = value;
+                    this.RaisePropertyChanged("_origin");
+                }
+            }
+        }
+        
+        [System.Runtime.Serialization.DataMemberAttribute(IsRequired=true)]
+        public int _position {
+            get {
+                return this._positionField;
+            }
+            set {
+                if ((this._positionField.Equals(value) != true)) {
+                    this._positionField = value;
+                    this.RaisePropertyChanged("_position");
+                }
+            }
+        }
+        
+        [System.Runtime.Serialization.DataMemberAttribute(IsRequired=true)]
+        public bool _writable {
+            get {
+                return this._writableField;
+            }
+            set {
+                if ((this._writableField.Equals(value) != true)) {
+                    this._writableField = value;
+                    this.RaisePropertyChanged("_writable");
+                }
+            }
+        }
+    }
+    
+    [System.Diagnostics.DebuggerStepThroughAttribute()]
+    [System.CodeDom.Compiler.GeneratedCodeAttribute("System.Runtime.Serialization", "4.0.0.0")]
     [System.Runtime.Serialization.DataContractAttribute(Name="Component", Namespace="http://schemas.datacontract.org/2004/07/System.ComponentModel")]
     [System.SerializableAttribute()]
     [System.Runtime.Serialization.KnownTypeAttribute(typeof(bladeDirectorClient.bladeDirectorService.DbConnection))]
@@ -1554,6 +1706,8 @@ namespace bladeDirectorClient.bladeDirectorService {
     [System.Runtime.Serialization.KnownTypeAttribute(typeof(bladeDirectorClient.bladeDirectorService.vmServerCredentials))]
     [System.Runtime.Serialization.KnownTypeAttribute(typeof(bladeDirectorClient.bladeDirectorService.snapshotDetails))]
     [System.Runtime.Serialization.KnownTypeAttribute(typeof(bladeDirectorClient.bladeDirectorService.DbType))]
+    [System.Runtime.Serialization.KnownTypeAttribute(typeof(bladeDirectorClient.bladeDirectorService.MemoryStream))]
+    [System.Runtime.Serialization.KnownTypeAttribute(typeof(bladeDirectorClient.bladeDirectorService.Stream))]
     [System.Runtime.Serialization.KnownTypeAttribute(typeof(string[]))]
     [System.Runtime.Serialization.KnownTypeAttribute(typeof(bladeDirectorClient.bladeDirectorService.SQLiteConnectionFlags))]
     [System.Runtime.Serialization.KnownTypeAttribute(typeof(hypervisors.mockedCall[]))]
@@ -1640,6 +1794,9 @@ namespace bladeDirectorClient.bladeDirectorService {
         private string msgField;
         
         [System.Runtime.Serialization.OptionalFieldAttribute()]
+        private string threadNameField;
+        
+        [System.Runtime.Serialization.OptionalFieldAttribute()]
         private System.DateTime timestampField;
         
         [global::System.ComponentModel.BrowsableAttribute(false)]
@@ -1674,6 +1831,19 @@ namespace bladeDirectorClient.bladeDirectorService {
                 if ((object.ReferenceEquals(this.msgField, value) != true)) {
                     this.msgField = value;
                     this.RaisePropertyChanged("msg");
+                }
+            }
+        }
+        
+        [System.Runtime.Serialization.DataMemberAttribute()]
+        public string threadName {
+            get {
+                return this.threadNameField;
+            }
+            set {
+                if ((object.ReferenceEquals(this.threadNameField, value) != true)) {
+                    this.threadNameField = value;
+                    this.RaisePropertyChanged("threadName");
                 }
             }
         }
@@ -2177,6 +2347,9 @@ namespace bladeDirectorClient.bladeDirectorService {
         
         [System.ServiceModel.OperationContractAttribute(Action="http://tempuri.org/IServices/selectSnapshotForBladeOrVM", ReplyAction="http://tempuri.org/IServices/selectSnapshotForBladeOrVMResponse")]
         bladeDirectorClient.bladeDirectorService.resultAndWaitToken selectSnapshotForBladeOrVM(string bladeName, string newShot);
+        
+        [System.ServiceModel.OperationContractAttribute(Action="http://tempuri.org/IServices/getDump", ReplyAction="http://tempuri.org/IServices/getDumpResponse")]
+        bladeDirectorClient.bladeDirectorService.MemoryStream getDump();
     }
     
     [System.CodeDom.Compiler.GeneratedCodeAttribute("System.ServiceModel", "4.0.0.0")]
@@ -2320,6 +2493,10 @@ namespace bladeDirectorClient.bladeDirectorService {
         
         public bladeDirectorClient.bladeDirectorService.resultAndWaitToken selectSnapshotForBladeOrVM(string bladeName, string newShot) {
             return base.Channel.selectSnapshotForBladeOrVM(bladeName, newShot);
+        }
+        
+        public bladeDirectorClient.bladeDirectorService.MemoryStream getDump() {
+            return base.Channel.getDump();
         }
     }
     

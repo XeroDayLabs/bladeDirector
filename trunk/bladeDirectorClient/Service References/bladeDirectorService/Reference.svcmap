@@ -32,6 +32,7 @@
     <MetadataFile FileName="bladeDirector4.xsd" MetadataType="Schema" ID="f2646bd7-d999-4826-8d74-d623b0c922d5" SourceId="1" SourceUrl="http://127.0.0.1/bladeDirector?xsd=xsd6" />
     <MetadataFile FileName="bladeDirector5.xsd" MetadataType="Schema" ID="6b8efb60-6927-4c52-8ca4-e1703be31d43" SourceId="1" SourceUrl="http://127.0.0.1/bladeDirector?xsd=xsd0" />
     <MetadataFile FileName="bladeDirector6.xsd" MetadataType="Schema" ID="ff2bfadf-f904-4ec5-a92e-557eaeac379b" SourceId="1" SourceUrl="http://127.0.0.1/bladeDirector?xsd=xsd9" />
+    <MetadataFile FileName="bladeDirector10.xsd" MetadataType="Schema" ID="1550d39b-f608-4b83-8a84-379fc50a48e4" SourceId="1" SourceUrl="http://127.0.0.1/bladeDirector?xsd=xsd10" />
     <MetadataFile FileName="bladeDirector7.xsd" MetadataType="Schema" ID="c72bbf87-d397-4403-a6eb-8a81b45e5c14" SourceId="1" SourceUrl="http://127.0.0.1/bladeDirector?xsd=xsd4" />
     <MetadataFile FileName="bladeDirector8.xsd" MetadataType="Schema" ID="e248e05d-fbb6-4ecb-b67a-e06ccb0482a0" SourceId="1" SourceUrl="http://127.0.0.1/bladeDirector?xsd=xsd7" />
     <MetadataFile FileName="services.wsdl" MetadataType="Wsdl" ID="409ab6e4-a36d-47c0-b7d2-bda97014e2ec" SourceId="1" SourceUrl="http://127.0.0.1/bladeDirector?wsdl" />

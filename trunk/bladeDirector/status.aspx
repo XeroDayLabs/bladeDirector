@@ -128,7 +128,8 @@
                         <asp:Table ID="tblLogTable" runat="server"  style="border-style: solid; width: 100%">
                             <asp:TableRow>
                                     <asp:TableHeaderCell Width="10px"> </asp:TableHeaderCell>
-                                    <asp:TableHeaderCell >Timestamp</asp:TableHeaderCell>
+                                    <asp:TableHeaderCell>Timestamp</asp:TableHeaderCell>
+                                    <asp:TableHeaderCell>Thread</asp:TableHeaderCell>
                                     <asp:TableHeaderCell>Message</asp:TableHeaderCell>
                             </asp:TableRow>
                         </asp:Table>
