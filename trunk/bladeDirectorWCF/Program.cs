@@ -110,31 +110,31 @@ namespace bladeDirectorWCF
                             }
                         }
 
+                        int[] bladeIDs = getBladeIDsFromString(parsedArgs.bladeList);
+                        if (bladeIDs.Length > 0)
+                        {
+                            using (bladeDirectorDebugServices conn = new bladeDirectorDebugServices(debugServiceURL.ToString(), baseServiceURL.ToString()))
+                            {
+                                foreach (int id in bladeIDs)
+                                {
+                                    string bladeName = xdlClusterNaming.makeBladeFriendlyName(id);
+                                    string bladeIP = xdlClusterNaming.makeBladeIP(id);
+                                    string iloIP = xdlClusterNaming.makeBladeILOIP(id);
+                                    string iSCSIIP = xdlClusterNaming.makeBladeISCSIIP(id);
+                                    ushort debugPort = xdlClusterNaming.makeBladeKernelDebugPort(id);
+                                    string debugKey = "the.default.key.here";
+//                                    Console.WriteLine("Creating node {0}: IP {1}, ilo {2}, iSCSI IP {3}, debug port {4}, debug key {5}", id, bladeIP, iloIP, iSCSIIP, debugPort, debugKey);
+                                    conn.svc.addNode(bladeIP, iSCSIIP, iloIP, debugPort, debugKey, bladeName);
+                                }
+                            }
+                        }
+
                         if (parsedArgs.stopEvent != null)
                         {
                             parsedArgs.stopEvent.WaitOne();
                         }
                         else
                         {
-                            int[] bladeIDs = getBladeIDsFromString(parsedArgs.bladeList);
-                            if (bladeIDs.Length > 0)
-                            { 
-                                Console.WriteLine("Adding blades...");
-                                using (bladeDirectorDebugServices conn = new bladeDirectorDebugServices(debugServiceURL.ToString(), baseServiceURL.ToString()))
-                                {
-                                    foreach (int id in bladeIDs)
-                                    {
-                                        string bladeName = xdlClusterNaming.makeBladeFriendlyName(id);
-                                        string bladeIP = xdlClusterNaming.makeBladeIP(id);
-                                        string iloIP = xdlClusterNaming.makeBladeILOIP(id);
-                                        string iSCSIIP = xdlClusterNaming.makeBladeISCSIIP(id);
-                                        ushort debugPort = xdlClusterNaming.makeBladeKernelDebugPort(id);
-                                        string debugKey = "some.test.key.here";
-                                        Console.WriteLine("Creating node {0}: IP {1}, ilo {2}, iSCSI IP {3}, debug port {4}, debug key {5}", id, bladeIP, iloIP, iSCSIIP, debugPort, debugKey);
-                                        conn.svc.addNode(bladeIP, iSCSIIP, iloIP, debugPort, debugKey, bladeName);
-                                    }
-                                }
-                            }
                             Console.WriteLine("BladeDirector ready.");
                             Console.WriteLine("Listening at main endpoint:  " + baseServiceURL.ToString());
                             if (!parsedArgs.disableWebPort)
