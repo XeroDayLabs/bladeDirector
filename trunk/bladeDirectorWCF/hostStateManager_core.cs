@@ -1093,7 +1093,7 @@ namespace bladeDirectorWCF
                         // Once it's powered up, we ensure the datastore is mounted okay. Sometimes I'm seeing ESXi hosts boot
                         // with an inaccessible NFS datastore, so remount if neccessary. Retry this since it doesn't seem to 
                         // always work first time.
-                        _vmServerControl.mountDataStore(hyp, VMServerBladeIPAddress_ISCSI, "esxivms", "10.0.255.254", "/mnt/SSDs/esxivms", new cancellableDateTime(TimeSpan.FromMinutes(2)));
+                        _vmServerControl.mountDataStore(hyp, VMServerBladeIPAddress_ISCSI, "esxivms", "10.0.255.254", "/mnt/SSDs/esxivms", new cancellableDateTime(TimeSpan.FromMinutes(2), threadState.deployDeadline));
                     }
                 }
                 catch (Exception)
@@ -1398,11 +1398,11 @@ namespace bladeDirectorWCF
         public List<logEntry> getLogEvents(int maximum)
         {
             List<logEntry> toRet = new List<logEntry>();
+            
             foreach (KeyValuePair<int, logEntryCollection> kvp in _logEvents)
-            {
-                toRet.AddRange( kvp.Value.OrderBy(x => x.timestamp).Take(maximum));
-            }
-            return toRet;
+                toRet.AddRange(kvp.Value);
+
+            return toRet.OrderByDescending(x => x.timestamp).Take(maximum).ToList();
         }
 
         public resultAndWaitToken selectSnapshotForBladeOrVM(string requestorIP, string bladeName, string newShot)

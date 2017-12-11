@@ -13,23 +13,25 @@ namespace bladeDirectorWCF
             {
                 deadline.doCancellableSleep(TimeSpan.FromSeconds(5));
             }
-
+            
             string expectedLine = String.Format("{0} is {1} from {2} mounted available", dataStoreName, mountPath, serverName);
 
             string[] nfsMounts = hypervisor.doWithRetryOnSomeExceptions(() => hyp.startExecutable("esxcfg-nas", "-l")).stdout.Split(new[] { "\n", "\r" }, StringSplitOptions.RemoveEmptyEntries);
             string foundMount = nfsMounts.SingleOrDefault(x => x.Contains(expectedLine));
             while (foundMount == null)
             {
-                hypervisor.doWithRetryOnSomeExceptions(() => hyp.startExecutable("esxcfg-nas", "-d " + dataStoreName));
-                hypervisor.doWithRetryOnSomeExceptions(() => hyp.startExecutable("esxcfg-nas", "-a --host " + serverName + " --share " + mountPath + " " + dataStoreName));
-                hypervisor.doWithRetryOnSomeExceptions(() => hyp.startExecutable("esxcfg-rescan", "--all"));
+                hypervisor.doWithRetryOnSomeExceptions(() => hyp.startExecutable("esxcfg-nas", "-d " + dataStoreName, deadline: deadline));
+                hypervisor.doWithRetryOnSomeExceptions(() => hyp.startExecutable("esxcfg-nas", "-a --host " + serverName + " --share " + mountPath + " " + dataStoreName, deadline: deadline));
+                hypervisor.doWithRetryOnSomeExceptions(() => hyp.startExecutable("esxcfg-rescan", "--all", deadline: deadline));
 
-                nfsMounts = hypervisor.doWithRetryOnSomeExceptions(() => hyp.startExecutable("esxcfg-nas", "-l")).stdout.Split(new[] { "\n", "\r" }, StringSplitOptions.RemoveEmptyEntries);
+                nfsMounts = hypervisor.doWithRetryOnSomeExceptions(() => hyp.startExecutable("esxcfg-nas", "-l", deadline: deadline)).stdout.Split(new[] { "\n", "\r" }, StringSplitOptions.RemoveEmptyEntries);
                 foundMount = nfsMounts.SingleOrDefault(x => x.Contains(expectedLine));
+
+                deadline.throwIfTimedOutOrCancelled("While trying to mount NFS");
             }
         }
 
-        private bool ensureISCSIInterfaceIsSetUp(hypervisor hyp, string srcAddress)
+        private bool ensureISCSIInterfaceIsSetUp(hypervisor hyp, string srcAddress, cancellableDateTime deadline)
         {
             executionResult res;
 
@@ -39,12 +41,12 @@ namespace bladeDirectorWCF
                 return false;
             // And then give the portgroup an address.
             res = hypervisor.doWithRetryOnSomeExceptions(() => hyp.startExecutable(
-                "esxcfg-vmknic", "--add --ip " + srcAddress + " --netmask 255.255.0.0 vlan11_iscsi"));
+                "esxcfg-vmknic", "--add --ip " + srcAddress + " --netmask 255.255.0.0 vlan11_iscsi", deadline: deadline));
             if (res.resultCode != 0)
                 return false;
 
             // Finally, tag it for management traffic. For this, we'll need to get the adaptor name for this portgroup.
-            res = hypervisor.doWithRetryOnSomeExceptions(() => hyp.startExecutable( "esxcfg-vmknic", "--list"));
+            res = hypervisor.doWithRetryOnSomeExceptions(() => hyp.startExecutable("esxcfg-vmknic", "--list", deadline: deadline));
             if (res.resultCode != 0)
                 return false;
             string[] lines = res.stdout.Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries);
@@ -62,7 +64,7 @@ namespace bladeDirectorWCF
                 return false;
 
             res = hypervisor.doWithRetryOnSomeExceptions(() => hyp.startExecutable(
-                "esxcli", "network ip interface tag add -i " + adaptorName + " -t Management"));
+                "esxcli", "network ip interface tag add -i " + adaptorName + " -t Management", deadline: deadline));
             if (res.resultCode != 0)
                 return false;
 
