@@ -16,6 +16,9 @@
             <setting name="baseURLWeb" serializeAs="String">
                 <value>http://0.0.0.0:81</value>
             </setting>
+            <setting name="bladeList" serializeAs="String">
+                <value></value>
+            </setting>
         </bladeDirectorService.Properties.Settings>
     </userSettings>
 </configuration>

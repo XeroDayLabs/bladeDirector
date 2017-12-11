@@ -28,6 +28,7 @@ namespace bladeDirectorService
             wcfargs.baseURL = Properties.Settings.Default.baseURLAPI;
             wcfargs.webURL = Properties.Settings.Default.baseURLWeb;
             wcfargs.stopEvent = stopEvent;
+            wcfargs.bladeList = Properties.Settings.Default.bladeList;
 
             mainTask = new Task(() => bladeDirectorWCF.Program._Main(wcfargs));
             mainTask.Start();

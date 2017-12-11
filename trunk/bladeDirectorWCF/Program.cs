@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
@@ -115,15 +116,14 @@ namespace bladeDirectorWCF
                         }
                         else
                         {
-                            string[] bladeIDs = parsedArgs.bladeList.Split(new [] {","}, StringSplitOptions.RemoveEmptyEntries);
+                            int[] bladeIDs = getBladeIDsFromString(parsedArgs.bladeList);
                             if (bladeIDs.Length > 0)
                             { 
                                 Console.WriteLine("Adding blades...");
                                 using (bladeDirectorDebugServices conn = new bladeDirectorDebugServices(debugServiceURL.ToString(), baseServiceURL.ToString()))
                                 {
-                                    foreach (string idStr in bladeIDs)
+                                    foreach (int id in bladeIDs)
                                     {
-                                        int id = Int32.Parse(idStr.Trim());
                                         string bladeName = xdlClusterNaming.makeBladeFriendlyName(id);
                                         string bladeIP = xdlClusterNaming.makeBladeIP(id);
                                         string iloIP = xdlClusterNaming.makeBladeILOIP(id);
@@ -146,6 +146,34 @@ namespace bladeDirectorWCF
                     }
                 }
             }
+        }
+
+        private static int[] getBladeIDsFromString(string spec)
+        {
+            // We accept comma-delimited or ranges here, for example:
+            // 1,2,4-6,9
+            List<int> toRet = new List<int>();
+
+            string[] bladeParts = spec.Split(',');
+            for (int n = 0; n < bladeParts.Length; n++)
+            {
+                string bladePart = bladeParts[n];
+
+                int start;
+                int end;
+                if (bladePart.Contains('-'))
+                {
+                    start = Int32.Parse(bladePart.Split('-')[0]);
+                    end = Int32.Parse(bladePart.Split('-')[1]);
+                    toRet.AddRange(Enumerable.Range(start, (end-start) + 1));
+                }
+                else
+                {
+                    toRet.Add(Int32.Parse(bladePart));
+                }
+            }
+
+            return toRet.ToArray();
         }
 
         private static void configureService(ServiceHost svc, Type contractInterfaceType)
@@ -200,7 +228,7 @@ namespace bladeDirectorWCF
         [Option('w', "webURL", Required = false, DefaultValue = "http://0.0.0.0:81/", HelpText = "URL to provide HTTP services to IPXE on")]
         public string webURL { get; set; }
 
-        [Option('l', "bladeList", Required = false, DefaultValue = "", HelpText = "A list of comma-seperated blade IDs in the XDL cluster to use (eg, '1,2,3,7,9')")]
+        [Option('l', "bladeList", Required = false, DefaultValue = "", HelpText = "A list of comma-seperated blade IDs in the XDL cluster to use. You can also use a hyphen to denote a range (eg, '1,2,3,10-20')")]
         public string bladeList { get; set; }
 
         [Option("no-web", Required = false, DefaultValue = false, HelpText = "Do not listen on port 81 (PXE boot will not function)")]
