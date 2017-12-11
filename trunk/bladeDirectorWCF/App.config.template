@@ -46,6 +46,9 @@
             <setting name="internalErrorDumpPath" serializeAs="String">
                 <value>c:\code</value>
             </setting>
+            <setting name="defaultBladesByXDLClusterID" serializeAs="String">
+                <value>1,2,10-20</value>
+            </setting>
         </bladeDirectorWCF.Properties.Settings>
     </userSettings>
     <system.serviceModel>

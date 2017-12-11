@@ -154,5 +154,29 @@ namespace bladeDirectorWCF.Properties {
                 this["iscsiServerPassword"] = value;
             }
         }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("c:\\dumps")]
+        public string internalErrorDumpPath {
+            get {
+                return ((string)(this["internalErrorDumpPath"]));
+            }
+            set {
+                this["internalErrorDumpPath"] = value;
+            }
+        }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("1,2,10-20")]
+        public string defaultBladesByXDLClusterID {
+            get {
+                return ((string)(this["defaultBladesByXDLClusterID"]));
+            }
+            set {
+                this["defaultBladesByXDLClusterID"] = value;
+            }
+        }
     }
 }
