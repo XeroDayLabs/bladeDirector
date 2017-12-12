@@ -136,9 +136,9 @@ namespace bladeDirectorWCF
             return hostStateManager.getVMByVMServerIP_nolocking(bladeIP);
         }
 
-        private string[] _getLogEvents()
+        private logEntry[] _getLogEvents(int maximum)
         {
-            return hostStateManager.getLogEvents().ToArray();
+            return hostStateManager.getLogEvents(maximum).ToArray();
         }
 
         public vmServerCredentials _getCredentialsForVMServerByVMIP(string VMIP)
@@ -284,9 +284,9 @@ namespace bladeDirectorWCF
             return _getVMByVMServerIP_nolocking(bladeIP);
         }
 
-        public string[] getLogEvents()
+        public logEntry[] getLogEvents(int maximum)
         {
-            return _getLogEvents();
+            return _getLogEvents(maximum);
         }
 
         public vmServerCredentials getCredentialsForVMServerByVMIP(string VMIP)

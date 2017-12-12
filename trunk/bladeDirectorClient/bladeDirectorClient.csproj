@@ -130,6 +130,8 @@
   <ItemGroup>
     <None Include="app.config" />
     <None Include="packages.config" />
+    <None Include="Properties\DataSources\hypervisors.mockedCall.datasource" />
+    <None Include="Properties\DataSources\hypervisors.NASParams.datasource" />
     <None Include="Properties\Settings.settings">
       <Generator>SettingsSingleFileGenerator</Generator>
       <LastGenOutput>Settings.Designer.cs</LastGenOutput>
@@ -138,6 +140,9 @@
       <SubType>Designer</SubType>
     </None>
     <None Include="Service References\bladeDirectorService\bladeDirector1.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="Service References\bladeDirectorService\bladeDirector10.xsd">
       <SubType>Designer</SubType>
     </None>
     <None Include="Service References\bladeDirectorService\bladeDirector2.xsd">
@@ -170,10 +175,10 @@
     <None Include="Service References\bladeDirectorService\bladeDirectorClient.bladeDirectorService.GetBladeStatusResult.datasource">
       <DependentUpon>Reference.svcmap</DependentUpon>
     </None>
-    <None Include="Service References\bladeDirectorService\bladeDirectorClient.bladeDirectorService.mockedCall.datasource">
+    <None Include="Service References\bladeDirectorService\bladeDirectorClient.bladeDirectorService.logEntry.datasource">
       <DependentUpon>Reference.svcmap</DependentUpon>
     </None>
-    <None Include="Service References\bladeDirectorService\bladeDirectorClient.bladeDirectorService.NASParams.datasource">
+    <None Include="Service References\bladeDirectorService\bladeDirectorClient.bladeDirectorService.MemoryStream.datasource">
       <DependentUpon>Reference.svcmap</DependentUpon>
     </None>
     <None Include="Service References\bladeDirectorService\bladeDirectorClient.bladeDirectorService.resultAndBladeName.datasource">

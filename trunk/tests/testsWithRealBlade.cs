@@ -10,7 +10,6 @@ using bladeDirectorClient;
 using bladeDirectorClient.bladeDirectorService;
 using hypervisors;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using NASParams = bladeDirectorClient.bladeDirectorService.NASParams;
 
 namespace tests
 {
@@ -45,12 +44,12 @@ namespace tests
                 Assert.IsTrue(resultAndReadBack.BIOSConfig.Contains("<Section name=\"NumLock\">On</Section>"));
 
                 resultAndWaitToken relRes = svc.svcDebug._ReleaseBladeOrVM(hostip, res.bladeName, false);
-                while (relRes.result.code == bladeDirectorClient.bladeDirectorService.resultCode.pending)
+                while (relRes.result.code == resultCode.pending)
                 {
                     Thread.Sleep(TimeSpan.FromSeconds(3));
                     relRes = svc.svc.getProgress(relRes.waitToken);
                 }
-                Assert.AreEqual(bladeDirectorClient.bladeDirectorService.resultCode.success, relRes.result.code);
+                Assert.AreEqual(resultCode.success, relRes.result.code);
             }
         }
 

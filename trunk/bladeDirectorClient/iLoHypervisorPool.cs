@@ -13,7 +13,6 @@ using System.Threading;
 using bladeDirectorClient.bladeDirectorService;
 using hypervisors;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using NASParams = bladeDirectorClient.bladeDirectorService.NASParams;
 
 namespace bladeDirectorClient
 {

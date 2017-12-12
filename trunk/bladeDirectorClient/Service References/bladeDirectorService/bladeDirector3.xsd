@@ -4,6 +4,7 @@
   <xs:import schemaLocation="http://127.0.0.1/bladeDirector?xsd=xsd3" namespace="http://schemas.datacontract.org/2004/07/hypervisors" />
   <xs:import schemaLocation="http://127.0.0.1/bladeDirector?xsd=xsd4" namespace="http://schemas.microsoft.com/2003/10/Serialization/Arrays" />
   <xs:import schemaLocation="http://127.0.0.1/bladeDirector?xsd=xsd0" namespace="http://schemas.microsoft.com/2003/10/Serialization/" />
+  <xs:import schemaLocation="http://127.0.0.1/bladeDirector?xsd=xsd10" namespace="http://schemas.datacontract.org/2004/07/System.IO" />
   <xs:element name="keepAlive">
     <xs:complexType>
       <xs:sequence />
@@ -342,13 +343,15 @@
   </xs:element>
   <xs:element name="getLogEvents">
     <xs:complexType>
-      <xs:sequence />
+      <xs:sequence>
+        <xs:element minOccurs="0" name="maximum" type="xs:int" />
+      </xs:sequence>
     </xs:complexType>
   </xs:element>
   <xs:element name="getLogEventsResponse">
     <xs:complexType>
       <xs:sequence>
-        <xs:element xmlns:q26="http://schemas.microsoft.com/2003/10/Serialization/Arrays" minOccurs="0" name="getLogEventsResult" nillable="true" type="q26:ArrayOfstring" />
+        <xs:element xmlns:q26="http://schemas.datacontract.org/2004/07/bladeDirectorWCF" minOccurs="0" name="getLogEventsResult" nillable="true" type="q26:ArrayOflogEntry" />
       </xs:sequence>
     </xs:complexType>
   </xs:element>
@@ -392,6 +395,18 @@
     <xs:complexType>
       <xs:sequence>
         <xs:element xmlns:q29="http://schemas.datacontract.org/2004/07/bladeDirectorWCF" minOccurs="0" name="selectSnapshotForBladeOrVMResult" nillable="true" type="q29:resultAndWaitToken" />
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="getDump">
+    <xs:complexType>
+      <xs:sequence />
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="getDumpResponse">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element xmlns:q30="http://schemas.datacontract.org/2004/07/System.IO" minOccurs="0" name="getDumpResult" nillable="true" type="q30:MemoryStream" />
       </xs:sequence>
     </xs:complexType>
   </xs:element>

@@ -1,5 +1,7 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Runtime.InteropServices;
 using System.ServiceModel;
 using System.ServiceModel.Channels;
@@ -45,8 +47,13 @@ namespace bladeDirectorWCF
                 {
                     if (services.hostStateManager != null)
                     {
-                        if (!(args.Exception is COMException))
-                        services.hostStateManager.addLogEvent("First-chance exception: " + args.Exception.ToString());
+                        // We don't care about this kind of exception. It happens very frequently during normal use of the WMI
+                        // executor.
+                        if (!(args.Exception is COMException) &&
+                            !(args.Exception is AggregateException && ((AggregateException)args.Exception).InnerExceptions.All(x => x is COMException)) )
+                        {
+                            services.hostStateManager.addLogEvent("First-chance exception: " + args.Exception.ToString());
+                        }
                     }
 
                     string dumpDir = Properties.Settings.Default.internalErrorDumpPath.Trim();
@@ -103,32 +110,31 @@ namespace bladeDirectorWCF
                             }
                         }
 
+                        int[] bladeIDs = getBladeIDsFromString(parsedArgs.bladeList);
+                        if (bladeIDs.Length > 0)
+                        {
+                            using (bladeDirectorDebugServices conn = new bladeDirectorDebugServices(debugServiceURL.ToString(), baseServiceURL.ToString()))
+                            {
+                                foreach (int id in bladeIDs)
+                                {
+                                    string bladeName = xdlClusterNaming.makeBladeFriendlyName(id);
+                                    string bladeIP = xdlClusterNaming.makeBladeIP(id);
+                                    string iloIP = xdlClusterNaming.makeBladeILOIP(id);
+                                    string iSCSIIP = xdlClusterNaming.makeBladeISCSIIP(id);
+                                    ushort debugPort = xdlClusterNaming.makeBladeKernelDebugPort(id);
+                                    string debugKey = "the.default.key.here";
+//                                    Console.WriteLine("Creating node {0}: IP {1}, ilo {2}, iSCSI IP {3}, debug port {4}, debug key {5}", id, bladeIP, iloIP, iSCSIIP, debugPort, debugKey);
+                                    conn.svc.addNode(bladeIP, iSCSIIP, iloIP, debugPort, debugKey, bladeName);
+                                }
+                            }
+                        }
+
                         if (parsedArgs.stopEvent != null)
                         {
                             parsedArgs.stopEvent.WaitOne();
                         }
                         else
                         {
-                            string[] bladeIDs = parsedArgs.bladeList.Split(new [] {","}, StringSplitOptions.RemoveEmptyEntries);
-                            if (bladeIDs.Length > 0)
-                            { 
-                                Console.WriteLine("Adding blades...");
-                                using (bladeDirectorDebugServices conn = new bladeDirectorDebugServices(debugServiceURL.ToString(), baseServiceURL.ToString()))
-                                {
-                                    foreach (string idStr in bladeIDs)
-                                    {
-                                        int id = Int32.Parse(idStr.Trim());
-                                        string bladeName = xdlClusterNaming.makeBladeFriendlyName(id);
-                                        string bladeIP = xdlClusterNaming.makeBladeIP(id);
-                                        string iloIP = xdlClusterNaming.makeBladeILOIP(id);
-                                        string iSCSIIP = xdlClusterNaming.makeBladeISCSIIP(id);
-                                        ushort debugPort = xdlClusterNaming.makeBladeKernelDebugPort(id);
-                                        string debugKey = "some.test.key.here";
-                                        Console.WriteLine("Creating node {0}: IP {1}, ilo {2}, iSCSI IP {3}, debug port {4}, debug key {5}", id, bladeIP, iloIP, iSCSIIP, debugPort, debugKey);
-                                        conn.svc.addNode(bladeIP, iSCSIIP, iloIP, debugPort, debugKey, bladeName);
-                                    }
-                                }
-                            }
                             Console.WriteLine("BladeDirector ready.");
                             Console.WriteLine("Listening at main endpoint:  " + baseServiceURL.ToString());
                             if (!parsedArgs.disableWebPort)
@@ -140,6 +146,35 @@ namespace bladeDirectorWCF
                     }
                 }
             }
+        }
+
+        private static int[] getBladeIDsFromString(string spec)
+        {
+            // We accept comma-delimited or ranges here, for example:
+            // 1,2,4-6,9
+            List<int> toRet = new List<int>();
+
+            string[] bladeParts = spec.Split(',');
+            for (int n = 0; n < bladeParts.Length; n++)
+            {
+                string bladePart = bladeParts[n];
+
+                if (bladePart == "")
+                    continue;
+
+                if (bladePart.Contains('-'))
+                {
+                    var start = Int32.Parse(bladePart.Split('-')[0]);
+                    var end = Int32.Parse(bladePart.Split('-')[1]);
+                    toRet.AddRange(Enumerable.Range(start, (end-start) + 1));
+                }
+                else
+                {
+                    toRet.Add(Int32.Parse(bladePart));
+                }
+            }
+
+            return toRet.ToArray();
         }
 
         private static void configureService(ServiceHost svc, Type contractInterfaceType)
@@ -194,7 +229,7 @@ namespace bladeDirectorWCF
         [Option('w', "webURL", Required = false, DefaultValue = "http://0.0.0.0:81/", HelpText = "URL to provide HTTP services to IPXE on")]
         public string webURL { get; set; }
 
-        [Option('l', "bladeList", Required = false, DefaultValue = "", HelpText = "A list of comma-seperated blade IDs in the XDL cluster to use (eg, '1,2,3,7,9')")]
+        [Option('l', "bladeList", Required = false, DefaultValue = "", HelpText = "A list of comma-seperated blade IDs in the XDL cluster to use. You can also use a hyphen to denote a range (eg, '1,2,3,10-20')")]
         public string bladeList { get; set; }
 
         [Option("no-web", Required = false, DefaultValue = false, HelpText = "Do not listen on port 81 (PXE boot will not function)")]

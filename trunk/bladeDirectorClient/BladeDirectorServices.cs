@@ -179,8 +179,8 @@ namespace bladeDirectorClient
             try
             {
                 Debug.WriteLine("Log entries from bladeDirector:");
-                foreach (string msg in svc.getLogEvents())
-                    Debug.WriteLine(msg);
+                foreach (logEntry msg in svc.getLogEvents(100))
+                    Debug.WriteLine(msg.msg);
             }
             catch (Exception) { }
 

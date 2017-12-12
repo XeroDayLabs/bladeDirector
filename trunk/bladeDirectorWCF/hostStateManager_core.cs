@@ -1,8 +1,10 @@
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Linq.Expressions;
 using System.Net;
 using System.Net.Sockets;
 using System.Runtime.Serialization;
@@ -23,12 +25,24 @@ namespace bladeDirectorWCF
         SHT, // Setting a blade snapshot
     }
 
+    public class logEntryCollection : List<logEntry>
+    {
+        public logEntry lastEntry = null;
+        public int dupeCount = 0;
+        public string threadName;
+
+        public logEntryCollection()
+        {
+            threadName = Thread.CurrentThread.Name;
+        }
+    }
+
     /// <summary>
     /// Almost all main program logic. Note that the inheritor is expected to define the type of hypervisor we'll be working on.
     /// </summary>
     public abstract class hostStateManager_core
     {
-        private List<string> _logEvents = new List<string>();
+        private readonly ConcurrentDictionary<int, logEntryCollection> _logEvents = new ConcurrentDictionary<int, logEntryCollection>();
 
         public IBiosReadWrite biosRWEngine { get; private set; }
         public TimeSpan keepAliveTimeout = TimeSpan.FromMinutes(1);
@@ -95,13 +109,34 @@ namespace bladeDirectorWCF
             return keepAliveTimeout;
         }
 
-        public void addLogEvent(string newEntry)
+        public void addLogEvent(string newLogMessage)
         {
-            Debug.WriteLine(newEntry);
-            Console.WriteLine(newEntry);
-            lock (_logEvents)
+            Debug.WriteLine(newLogMessage);
+            Console.WriteLine(newLogMessage);
+
+            // If this thread has never logged anything before, add a list for its entries
+            int tid = Thread.CurrentThread.ManagedThreadId;
+            if (!_logEvents.ContainsKey(tid))
+                _logEvents.TryAdd(tid, new logEntryCollection());
+
+            // Is this the same entry as we just added previously? If so, note the dupe down, and ignore it.
+            // Otherwise, check if there were dupes previously, and log them if so.
+            if (_logEvents[tid].lastEntry != null &&
+                _logEvents[tid].lastEntry.msg == newLogMessage)
             {
-                _logEvents.Add(DateTime.Now + " : " + newEntry);
+                _logEvents[tid].lastEntry.dupesSuppressed++;
+            }
+            else
+            {
+                // Add this entry to this thread's log list
+                logEntry newEntry = new logEntry(newLogMessage);
+                newEntry.threadName = _logEvents[tid].threadName;
+                _logEvents[tid].Add(newEntry);
+                _logEvents[tid].lastEntry = newEntry;
+
+                // Clear out any too-old log entries, otherwise our collection may get huge and consume all available RAM.
+                DateTime lastAcceptableLogEntryTimestamp = DateTime.Now - TimeSpan.FromHours(2);
+                _logEvents[tid].RemoveAll(x => x.timestamp < lastAcceptableLogEntryTimestamp);
             }
         }
 
@@ -584,7 +619,17 @@ namespace bladeDirectorWCF
             {
                 using (hypervisor hyp = makeHypervisorForVM(lockedVM, parentBlade))
                 {
-                    hyp.powerOff(new cancellableDateTime(TimeSpan.FromSeconds(30)));
+                    // We swallow all exceptions here.
+                    // This is because, sicne we have interrupted deployment, the VM may be in a weird state (or may never have
+                    // been created at all).
+                    try
+                    {
+                        hyp.powerOff(new cancellableDateTime(TimeSpan.FromSeconds(30)));
+                    }
+                    catch (Exception e)
+                    {
+                        log("While powering off in-deployment VM " + lockedVM.spec.VMIP + " : " + e.Message);
+                    }
                 }
 
                 // Now we dispose the VM, and then specify that the next release of the VM (ie, that done by the parent) should
@@ -733,7 +778,7 @@ namespace bladeDirectorWCF
                         // Now start a new thread, which will ensure the VM server is powered up and will then add the child VMs.
                         worker = new Thread(VMServerBootThread)
                         {
-                            Name = "VMAllocationThread for VM " + childVM.spec.VMIP + " on server " + freeVMServer.spec.bladeIP
+                            Name = "Deploy VM " + childVM.spec.VMIP + " on " + freeVMServer.spec.bladeIP
                         };
                         VMThreadState deployState = new VMThreadState
                         {
@@ -1065,7 +1110,7 @@ namespace bladeDirectorWCF
                         // Once it's powered up, we ensure the datastore is mounted okay. Sometimes I'm seeing ESXi hosts boot
                         // with an inaccessible NFS datastore, so remount if neccessary. Retry this since it doesn't seem to 
                         // always work first time.
-                        _vmServerControl.mountDataStore(hyp, VMServerBladeIPAddress_ISCSI, "esxivms", "10.0.255.254", "/mnt/SSDs/esxivms", new cancellableDateTime(TimeSpan.FromMinutes(2)));
+                        _vmServerControl.mountDataStore(hyp, VMServerBladeIPAddress_ISCSI, "esxivms", "10.0.255.254", "/mnt/SSDs/esxivms", new cancellableDateTime(TimeSpan.FromMinutes(2), threadState.deployDeadline));
                     }
                 }
                 catch (Exception)
@@ -1140,8 +1185,7 @@ namespace bladeDirectorWCF
                     string destDirDatastoreType = "[esxivms] " + VMServerBladeIPAddress + "_" + childVM_unsafe.vmConfigKey;
                     string vmxPath = destDir + "/PXETemplate.vmx";
 
-                    if (!threadState.deployDeadline.stillOK)
-                        throw new TimeoutException();
+                    threadState.deployDeadline.throwIfTimedOutOrCancelled("After mounting NAS");
 
                     // Remove the VM if it's already there. We don't mind if these commands fail - which they will, if the VM doesn't
                     // exist. We power off by directory and also by name, just in case a previous provision has left the VM hanging around.
@@ -1169,14 +1213,14 @@ namespace bladeDirectorWCF
                     doCmdAndCheckSuccess(hyp, "sed", " -e 's/uuid.location[= ].*//g' -i " + vmxPath, threadState.deployDeadline);
                     // doCmdAndCheckSuccess(hyp, "sed", " -e 's/serial0.fileName[= ].*/" + "serial0.fileName = \"telnet://:" + (1000 + threadState.childVM.vmSpecID) + "\"/g' -i " + vmxPath), threadState.deployDeadline);
 
+                    threadState.deployDeadline.throwIfTimedOutOrCancelled("After customising VM");
+
                     // Now add that VM to ESXi, and the VM is ready to use.
                     // We do this with a retry, because I'm seeing it fail occasionally >_<
                     hypervisor.doWithRetryOnSomeExceptions(() => doCmdAndCheckSuccess(hyp, "vim-cmd", " solo/registervm " + vmxPath, threadState.deployDeadline));
+
+                    threadState.deployDeadline.throwIfTimedOutOrCancelled("After registering VM");
                 }
-
-                //itemToAdd itm = childVM_unsafe.toItemToAdd(true);
-
-                threadState.deployDeadline.throwIfTimedOutOrCancelled();
 
                 // Now we can select the new snapshot. We must be very careful and do this quickly, with the appropriate write lock
                 // held, because it will block the ipxe script creation until we unlock.
@@ -1188,15 +1232,15 @@ namespace bladeDirectorWCF
                         NASAccess nas = getNasForDevice(bladeSpec.spec);
                         deleteBlade(childVMFromDB.spec.getCloneName(), nas, new cancellableDateTime(TimeSpan.FromMinutes(2)));
 
-                        threadState.deployDeadline.throwIfTimedOutOrCancelled();
+                        threadState.deployDeadline.throwIfTimedOutOrCancelled("After deleting old NAS objects");
                         
                         // Now create the disks, and customise the VM by naming it appropriately.
                         configureVMDisks(nas, bladeSpec, childVMFromDB,
                             "bladebasestable-esxi", null, null, null, childVM_unsafe.nextOwner, threadState.deployDeadline);
+
+                        threadState.deployDeadline.throwIfTimedOutOrCancelled("After configuring VM disks");
                     }
                     // TODO: Ability to deploy transportDriver
-
-                    threadState.deployDeadline.throwIfTimedOutOrCancelled();
 
                     // All done. We can mark the blade as in use. Again, we are careful to hold write locks for as short a time as is
                     // possible, to avoid blocking the PXE-script generation.
@@ -1368,13 +1412,14 @@ namespace bladeDirectorWCF
             }
         }
 
-        public List<string> getLogEvents()
+        public List<logEntry> getLogEvents(int maximum)
         {
-            lock (_logEvents)
-            {
-                List<string> toRet = new List<string>(_logEvents);
-                return toRet;
-            }
+            List<logEntry> toRet = new List<logEntry>();
+            
+            foreach (KeyValuePair<int, logEntryCollection> kvp in _logEvents)
+                toRet.AddRange(kvp.Value);
+
+            return toRet.OrderByDescending(x => x.timestamp).Take(maximum).ToList();
         }
 
         public resultAndWaitToken selectSnapshotForBladeOrVM(string requestorIP, string bladeName, string newShot)
@@ -1752,12 +1797,16 @@ namespace bladeDirectorWCF
 
         public static void deleteBlade(string cloneName, NASAccess nas, List<snapshot> snapshots, List<iscsiTarget> iscsiTargets, List<iscsiExtent> iscsiExtents, List<volume> volumes, cancellableDateTime deadline)
         {
-            // Delete target-to-extent, target, and extent
+            // Delete target and extent. FreeNAS will delete any orphaned target-to-extent.
             iscsiTarget tgt = iscsiTargets.SingleOrDefault(x => x.targetName == cloneName);
             if (tgt != null)
             {
                 log("Deleting iSCSI target " + tgt.targetName + " ... ");
-                nas.deleteISCSITarget(tgt);
+                try
+                {
+                    nas.deleteISCSITarget(tgt);
+                }
+                catch (nasNotFoundException) { }
                 log("Deleting iSCSI target " + tgt.targetName + " complete.");
             }
 
@@ -1765,7 +1814,11 @@ namespace bladeDirectorWCF
             if (ext != null)
             {
                 log("Deleting iSCSI extent " + ext.iscsi_target_extent_path + " ... ");
-                nas.deleteISCSIExtent(ext);
+                try
+                {
+                    nas.deleteISCSIExtent(ext);
+                }
+                catch (nasNotFoundException) { }
                 log("Deleting iSCSI extent " + ext.iscsi_target_extent_path + " complete.");
             }
 
@@ -1774,7 +1827,11 @@ namespace bladeDirectorWCF
             if (toDelete != null)
             {
                 log("Deleting ZFS snapshot " + toDelete.fullname + " ... ");
-                nas.deleteSnapshot(toDelete);
+                try
+                {
+                    nas.deleteSnapshot(toDelete);
+                }
+                catch (nasNotFoundException) { }
                 log("Deleting ZFS snapshot " + toDelete.fullname + " complete.");
             }
 
@@ -1788,7 +1845,11 @@ namespace bladeDirectorWCF
                     try
                     {
                         log("Deleting ZVOL " + vol.name + " ... ");
-                        nas.deleteZVol(vol);
+                        try
+                        {
+                            nas.deleteZVol(vol);
+                        }
+                        catch (nasNotFoundException) { }
                         log("Deleting ZVOL " + vol.name + " complete. ");
                         break;
                     }
@@ -1825,15 +1886,15 @@ namespace bladeDirectorWCF
             // and clone it
             createClones(nas, toClone, toCloneVolume, newVM.spec);
 
-            deadline.throwIfTimedOutOrCancelled();
+            deadline.throwIfTimedOutOrCancelled("After creating clones");
 
             exportClonesViaiSCSI(nas, newVM.spec);
 
-            deadline.throwIfTimedOutOrCancelled();
+            deadline.throwIfTimedOutOrCancelled("After creating exports");
 
             nas.waitUntilISCSIConfigFlushed(false);
 
-            deadline.throwIfTimedOutOrCancelled();
+            deadline.throwIfTimedOutOrCancelled("After waiting for NAS to flush");
 
             using (hypervisor hyp = makeHypervisorForVM(newVM, parent))
             {
@@ -1900,16 +1961,28 @@ namespace bladeDirectorWCF
             hypervisor hyp, NASAccess nas, userAddRequest[] usersToAdd, string newOwner,
             cancellableDateTime deadline)
         {
-            // TODO: handle that cancellableDateTime better
-
             hyp.connect();
-            hyp.powerOff(deadline);
+            // We try to power the new VM up. Note that if we fail this, we will retry it a couple times, since it is a relatively
+            // fast operation and I do see occasional failures, perhaps due to FreeNAS being strange.
+            while (true)
+            {
+                cancellableDateTime powerUpDateTime = new cancellableDateTime(TimeSpan.FromMinutes(2), deadline);
+                deadline.throwIfTimedOutOrCancelled("Powering up VM");
 
-            // I'm sometimes seeing a condition whereby VMs boot, and get the correct iPXE script, but can't find the iscsi target
-            // they are meant to connect to. I don't know why this is happening, but I suspect some race condition in either my
-            // cached FreeNAS code client (most likely :)), the server-end FreeNAS code, or ctl itself. The iPXE script will reboot
-            // the VM in this eventuality and the boot will continue.
-            hyp.powerOn(deadline);
+                try
+                {
+                    hyp.powerOff(powerUpDateTime);
+                    hyp.powerOn(powerUpDateTime);
+
+                    break;
+                }
+                catch (TimeoutException)
+                {
+                    log("Powering up node timed out, retrying..");
+                    deadline.doCancellableSleep(TimeSpan.FromSeconds(10));
+                    continue;
+                }
+            }
 
             // Now deploy and execute our deployment script.
             string args;
@@ -2069,6 +2142,26 @@ namespace bladeDirectorWCF
             if (newTToE == null)
                 newTToE = nas.addISCSITargetToExtent(newTarget.id, newExtent);
         }
+    }
+
+    public class logEntry
+    {
+        public string msg;
+        public DateTime timestamp;
+        public int dupesSuppressed;
+        public string threadName;
+
+        public logEntry()
+        {
+            
+        }
+
+        public logEntry(string newEntry)
+        {
+            msg = newEntry;
+            timestamp = DateTime.Now;
+        }
+
     }
 
     public class tempLockElevation : IDisposable

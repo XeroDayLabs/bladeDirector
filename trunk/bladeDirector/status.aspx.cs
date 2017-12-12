@@ -70,7 +70,6 @@ namespace bladeDirector
             headerRow.Cells.Add(new TableHeaderCell() { Text = "Current owner" });
             headerRow.Cells.Add(new TableHeaderCell() { Text = "Next owner" });
             headerRow.Cells.Add(new TableHeaderCell() { Text = "Links" });
-            headerRow.Cells.Add(new TableHeaderCell() { Text = "Actions" });
 
             tblBladeStatus.Rows.Add(headerRow);
 
@@ -123,14 +122,6 @@ namespace bladeDirector
                     iloURLtableCell.Controls.Add(link);
                     newRow.Cells.Add(iloURLtableCell);
 
-                    Button btnRelease = new Button
-                    {
-                        Text = "Force release",
-                        CommandArgument = bladeInfo.bladeIP
-                    };
-                    btnRelease.Click += forceRelease;
-
-                    newRow.Cells.Add(makeTableCell(btnRelease));
                     tblBladeStatus.Rows.Add(newRow);
 
                     // Then populate the invisible-until-expanded details row.
@@ -138,9 +129,35 @@ namespace bladeDirector
                 }
 
                 // Finally, populate any log events.
-                string[] logEvents = services.svc.getLogEvents();
-                foreach (string logEvent in logEvents)
-                    lstLog.Items.Add(logEvent);
+                logEntry[] logEvents = services.svc.getLogEvents(100);
+                int logID = 0;
+                foreach (logEntry logEvent in logEvents)
+                {
+                    // Make the expandable row, with a little bit of info
+                    TableRow tumbRow = new TableRow();
+                    tumbRow.Cells.Add(makeTableCell(new ImageButton()
+                    {
+                        ImageUrl = "images/collapsed.png",
+                        AlternateText = "Details",
+                        OnClientClick = "javascript:toggleDetail($(this),  null); return false;"
+                    }));
+
+                    tumbRow.Cells.Add(new TableCell() { Text = logEvent.timestamp.ToString() });
+                    tumbRow.Cells.Add(new TableCell() { Text = logEvent.threadName ?? "(unknown)" });
+                    string thumbtext = logEvent.msg.Split('\n')[0];
+                    if (thumbtext.Length > 50)
+                        thumbtext = thumbtext.Substring(0, 50) + "...";
+                    tumbRow.Cells.Add(new TableCell() { Text = thumbtext });
+                    tblLogTable.Rows.Add(tumbRow);
+
+                    // and then the full detail row.
+                    TableRow detailRow = new TableRow();
+                    detailRow.Cells.Add(new TableCell() { Text = logEvent.msg, ColumnSpan = 4});
+                    detailRow.Style.Add("display", "none");
+                    tblLogTable.Rows.Add(detailRow);
+
+                    logID++;
+                }
             }            
         }
 
@@ -177,41 +194,25 @@ namespace bladeDirector
             ));
             detailTable.Rows.Add(miscTR);
 
-            TableRow pxeScriptRow = new TableRow();
-            pxeScriptRow.Cells.Add(makeTableCell(
-                makeImageButton("show", "images/collapsed.png", string.Format(@"javascript:toggleConfigBox($(this), ""{1}/generateIPXEScript?hostip={0}""); return false;", bladeInfo.bladeIP, svc.svc.getWebSvcURL())),
-                new Label() { Text = "Current PXE script" },
-                makeInvisibleDiv()
-                ));
-            detailTable.Rows.Add(pxeScriptRow);
-
             // And add rows for any VMs.
             vmSpec[] VMs = svc.svc.getVMByVMServerIP_nolocking(bladeInfo.bladeIP);
             if (VMs.Length > 0)
             {
                 TableRow VMHeaderRow = new TableRow();
-                VMHeaderRow.Cells.Add(new TableHeaderCell() { Text = "" });
-                VMHeaderRow.Cells.Add(new TableHeaderCell() { Text = "Child VM name" });
-                VMHeaderRow.Cells.Add(new TableHeaderCell() { Text = "Child VM IP" });
-                VMHeaderRow.Cells.Add(new TableHeaderCell() { Text = "iSCSI IP" });
+                VMHeaderRow.Cells.Add(new TableHeaderCell() { Text = "VM name" });
+                VMHeaderRow.Cells.Add(new TableHeaderCell() { Text = "Time since last keepalive" });
+                VMHeaderRow.Cells.Add(new TableHeaderCell() { Text = "VM IP" });
                 VMHeaderRow.Cells.Add(new TableHeaderCell() { Text = "Current owner" });
                 VMHeaderRow.Cells.Add(new TableHeaderCell() { Text = "Kernel debug info" });
-                //VMHeaderRow.Cells.Add(new TableHeaderCell() { Text = "Current snapshot" });
                 detailTable.Rows.Add(VMHeaderRow);
             }
             foreach (vmSpec vmInfo in VMs)
             {
                 TableRow thisVMRow = new TableRow();
 
-                thisVMRow.Cells.Add(makeTableCell(
-                    makeImageButton("show", "images/collapsed.png", string.Format(@"javascript:toggleConfigBox($(this), ""getIPXEScript.aspx?hostip={0}""); return false;", vmInfo.VMIP)),
-                    new Label() { Text = "Current PXE script" },
-                    makeInvisibleDiv()
-                    ));
-
                 thisVMRow.Cells.Add(new TableCell() { Text = vmInfo.friendlyName });
+                thisVMRow.Cells.Add(new TableCell() { Text = formatDateTimeForWeb((DateTime.Now - vmInfo.lastKeepAlive)) });
                 thisVMRow.Cells.Add(new TableCell() { Text = vmInfo.VMIP });
-                thisVMRow.Cells.Add(new TableCell() { Text = vmInfo.iscsiIP });
                 thisVMRow.Cells.Add(new TableCell() { Text = vmInfo.currentOwner });
                 string dbgStr = String.Format("Port {0} key \"{1}\"", vmInfo.kernelDebugPort, vmInfo.kernelDebugKey) ;
                 thisVMRow.Cells.Add(new TableCell() { Text = dbgStr });
@@ -260,16 +261,6 @@ namespace bladeDirector
                 tc.Controls.Add(control);
             tc.VerticalAlign = VerticalAlign.Middle;
             return tc;
-        }
-        
-        private void forceRelease(object sender, EventArgs e) 
-        {
-            Button clicked = (Button) sender;
-
-            using (BladeDirectorServices services = new BladeDirectorServices(getCurrentServerURL(this)))
-            {
-                services.svc.ReleaseBladeOrVM(clicked.CommandArgument);
-            }
         }
         
         protected void cmdAddNode_Click(object sender, EventArgs e)

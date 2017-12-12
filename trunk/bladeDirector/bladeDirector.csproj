@@ -88,10 +88,19 @@
     <Content Include="Service References\bladeDirectorSvc\bladeDirector.bladeDirectorSvc.NASParams.datasource">
       <DependentUpon>Reference.svcmap</DependentUpon>
     </Content>
+    <Content Include="Service References\bladeDirectorSvc\bladeDirector.bladeDirectorSvc.logEntry.datasource">
+      <DependentUpon>Reference.svcmap</DependentUpon>
+    </Content>
+    <Content Include="Service References\bladeDirectorSvc\bladeDirector.bladeDirectorSvc.MemoryStream.datasource">
+      <DependentUpon>Reference.svcmap</DependentUpon>
+    </Content>
     <None Include="Service References\bladeDirectorSvc\bladeDirector.xsd">
       <SubType>Designer</SubType>
     </None>
     <None Include="Service References\bladeDirectorSvc\bladeDirector1.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="Service References\bladeDirectorSvc\bladeDirector10.xsd">
       <SubType>Designer</SubType>
     </None>
     <None Include="Service References\bladeDirectorSvc\bladeDirector2.xsd">
@@ -215,10 +224,6 @@
     <ProjectReference Include="..\bladeDirectorClient\bladeDirectorClient.csproj">
       <Project>{4abb1cc9-0c59-48f3-be95-0fa21c420055}</Project>
       <Name>bladeDirectorClient</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\createDisks\createDisks.csproj">
-      <Project>{40dadae3-e73b-4b87-90a8-ec315d0aed76}</Project>
-      <Name>createDisks</Name>
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
