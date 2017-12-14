@@ -10,18 +10,12 @@ using System.Runtime.InteropServices;
 using System.ServiceModel;
 using System.ServiceModel.Channels;
 using System.Threading;
-using bladeDirectorClient.bladeDirectorService;
+using bladeDirectorWCF;
 using hypervisors;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace bladeDirectorClient
 {
-    public class VMSpec
-    {
-        public VMHardwareSpec hw;
-        public VMSoftwareSpec sw;
-    }
-
     public class iLoHypervisorPool
     {
         private readonly object keepaliveThreadLock = new object();
@@ -92,7 +86,7 @@ namespace bladeDirectorClient
 
                         hypervisor_vmware_FreeNAS newVM = utils.createHypForVM(vmSpec, vmServerSpec, snapshotInfo, nasParams);
 
-                        ensurePortIsFree(vmSpec.kernelDebugPort);
+                        ipUtils.ensurePortIsFree(vmSpec.kernelDebugPort);
 
                         newVM.setDisposalCallback(onDestruction);
 
@@ -155,7 +149,7 @@ namespace bladeDirectorClient
                             bladeConfig.kernelDebugPort, bladeConfig.kernelDebugKey
                             );
 
-                        ensurePortIsFree(bladeConfig.kernelDebugPort);
+                        ipUtils.ensurePortIsFree(bladeConfig.kernelDebugPort);
 
                         bladeDirectedHypervisor_iLo newHyp = new bladeDirectedHypervisor_iLo(spec);
                         newHyp.setDisposalCallback(onDestruction);
@@ -173,72 +167,6 @@ namespace bladeDirectorClient
             }
         }
 
-        [DllImport("iphlpapi.dll", SetLastError = true)]
-        private static extern int GetExtendedUdpTable(IntPtr pUdpTable, out int dwOutBufLen, bool sort, int ipVersion, int tblClass, int reserved);
-
-        private const int UDP_TABLE_OWNER_PID = 1;
-
-        public static void ensurePortIsFree(UInt16 port)
-        {
-            MIB_UDPTABLE_OWNER_PID[] tableContents = getCurrentUDPListeners();
-            MIB_UDPTABLE_OWNER_PID portUse = tableContents.SingleOrDefault(x => x.localPort == port);
-            if (portUse == null)
-                return;
-
-            using (Process p = Process.GetProcessById((int) portUse.ownerPID))
-            {
-                p.Kill();
-                p.WaitForExit((int) TimeSpan.FromSeconds(5).TotalMilliseconds);
-                if (!p.HasExited)
-                    throw new Exception("Unable to kill PID " + portUse.ownerPID + " which is using needed port " + portUse.localPort);
-            }
-        }
-
-        private static MIB_UDPTABLE_OWNER_PID[] getCurrentUDPListeners()
-        {
-            int buflen;
-            MIB_UDPTABLE_OWNER_PID[] tableContents;
-            int res = GetExtendedUdpTable(IntPtr.Zero, out buflen, false, 2, UDP_TABLE_OWNER_PID, 0);
-            if (res != 122) // error_more_data
-                throw new Win32Exception(res, "GetExtendedUdpTable (first) failed");
-            IntPtr tableBuffer = Marshal.AllocHGlobal(buflen);
-            try
-            {
-                res = GetExtendedUdpTable(tableBuffer, out buflen, false, 2, UDP_TABLE_OWNER_PID, 0);
-                if (res != 0)
-                    throw new Win32Exception(res, "GetExtendedUdpTable (second) failed");
-                UDP_TABLE_CLASS table = (UDP_TABLE_CLASS) Marshal.PtrToStructure(tableBuffer, typeof (UDP_TABLE_CLASS));
-                tableContents = new MIB_UDPTABLE_OWNER_PID[(buflen - Marshal.SizeOf(typeof (UDP_TABLE_CLASS)))/Marshal.SizeOf(typeof (MIB_UDPTABLE_OWNER_PID))];
-
-                for (int rowIndex = 0; rowIndex < tableContents.Length; rowIndex++)
-                {
-                    IntPtr pos = tableBuffer +
-                                 Marshal.SizeOf(typeof (UDP_TABLE_CLASS)) +
-                                 ((Marshal.SizeOf(typeof (MIB_UDPTABLE_OWNER_PID)))*rowIndex);
-                    MIB_UDPTABLE_OWNER_PID row = (MIB_UDPTABLE_OWNER_PID) Marshal.PtrToStructure(pos, typeof (MIB_UDPTABLE_OWNER_PID));
-
-                    row.localPort = byteswap((UInt16) row.localPort);
-
-                    tableContents[rowIndex] = row;
-                }
-            }
-            finally
-            {
-                Marshal.FreeHGlobal(tableBuffer);
-            }
-
-            return tableContents;
-        }
-
-        private static UInt16 byteswap(UInt16 localPort)
-        {
-            UInt16 toRet = 0;
-
-            toRet |= (UInt16) ((localPort & 0x00ff) << 8);
-            toRet |= (UInt16) ((localPort & 0xff00) >> 8);
-
-            return toRet;
-        }
 
         public bladeDirectedHypervisor_iLo createSingleHypervisor(string snapshotName)
         {
@@ -293,7 +221,7 @@ namespace bladeDirectorClient
                         bladeConfig.kernelDebugPort, bladeConfig.kernelDebugKey
                         );
 
-                    ensurePortIsFree(bladeConfig.kernelDebugPort);
+                    ipUtils.ensurePortIsFree(bladeConfig.kernelDebugPort);
 
                     bladeDirectedHypervisor_iLo toRet = new bladeDirectedHypervisor_iLo(spec);
                     toRet.setDisposalCallback(onDestruction);
@@ -417,20 +345,6 @@ namespace bladeDirectorClient
         {
             return "Blade allocation service returned code " + _code;
         }
-    }
-
-    [StructLayout(LayoutKind.Sequential, Pack = 0)]
-    public class UDP_TABLE_CLASS
-    {
-        public UInt32 numberOfEntries;
-    }
-
-    [StructLayout(LayoutKind.Sequential, Pack = 0)]
-    public class MIB_UDPTABLE_OWNER_PID
-    {
-        public UInt32 localAddr;
-        public UInt32 localPort;
-        public UInt32 ownerPID;
     }
 
     public class bladeDirectedHypervisor_iLo : hypervisor_iLo

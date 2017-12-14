@@ -27,4 +27,10 @@ namespace bladeDirectorWCF
                 cpuCount = Convert.ToInt32((long)reader["cpuCount"]);
         }
     }
+
+    public class VMSpec
+    {
+        public VMHardwareSpec hw;
+        public VMSoftwareSpec sw;
+    }
 }

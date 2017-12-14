@@ -6,6 +6,7 @@ using System.Net;
 using System.Net.NetworkInformation;
 using System.Text.RegularExpressions;
 using System.Threading;
+using bladeDirectorWCF;
 using hypervisors;
 
 namespace bladeDirectorClient
@@ -142,7 +143,7 @@ namespace bladeDirectorClient
                         hypervisorSpecs[hyps[i - 1]] = false;
 
                         // Check the relevant port isn't already in use
-                        iLoHypervisorPool.ensurePortIsFree(vmPort);
+                        ipUtils.ensurePortIsFree(vmPort);
                     }
                 }
                 catch (Exception)
@@ -202,7 +203,7 @@ namespace bladeDirectorClient
                             hypervisorSpecs[newHyp] = false;
 
                             // Check the relevant port isn't already in use
-                            iLoHypervisorPool.ensurePortIsFree(vmPort);
+                            ipUtils.ensurePortIsFree(vmPort);
                         }
                     }
                 }

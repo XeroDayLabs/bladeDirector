@@ -4,9 +4,8 @@ using System.IO;
 using System.Linq;
 using System.ServiceModel;
 using System.Threading;
-using bladeDirectorClient;
+using bladeDirectorWCF;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using bladeDirectorClient.bladeDirectorService;
 
 namespace tests
 {
@@ -83,7 +82,7 @@ namespace tests
         {
             using (bladeDirectorDebugServices uut = new bladeDirectorDebugServices(WCFPath, new[] { "1.1.1.1" }))
             {
-                uut.svc.setResourceSharingModel(fairnessCheckerfairnessType.allowAny);
+                uut.svc.setResourceSharingModel(fairnessChecker.fairnessType.allowAny);
 
                 string hostip = "192.168.1.1";
 
@@ -114,7 +113,7 @@ namespace tests
         {
             using (bladeDirectorDebugServices uut = new bladeDirectorDebugServices(WCFPath, new[] { "1.1.1.1" }))
             {
-                uut.svc.setResourceSharingModel(fairnessCheckerfairnessType.allowAny);
+                uut.svc.setResourceSharingModel(fairnessChecker.fairnessType.allowAny);
 
                 uut.svcDebug.setKeepAliveTimeout(10);
 
@@ -182,7 +181,7 @@ namespace tests
         {
             using (bladeDirectorDebugServices uut = new bladeDirectorDebugServices(WCFPath, new[] { "1.1.1.1", "1.1.1.2" }))
             {
-                uut.svc.setResourceSharingModel(fairnessCheckerfairnessType.fair);
+                uut.svc.setResourceSharingModel(fairnessChecker.fairnessType.fair);
 
                 string hostipA = "192.168.1.1";
                 string hostipB = "192.168.1.2";

@@ -83,6 +83,7 @@
     </Reference>
     <Reference Include="System.Runtime.Serialization" />
     <Reference Include="System.ServiceModel" />
+    <Reference Include="System.ServiceModel.Channels" />
     <Reference Include="System.Web.Services" />
     <Reference Include="System.Xml" />
   </ItemGroup>
@@ -102,7 +103,6 @@
     <Compile Include="databaseConcurrencyTests_blades.cs" />
     <Compile Include="databaseConcurrencyTests_VMs.cs" />
     <Compile Include="freeNASTests.cs" />
-    <Compile Include="keepalive.cs" />
     <Compile Include="mockedAllocation.cs" />
     <Compile Include="mockedDestruction.cs">
       <SubType>Code</SubType>

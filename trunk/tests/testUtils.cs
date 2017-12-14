@@ -3,14 +3,8 @@ using System.ComponentModel;
 using System.Net;
 using System.Runtime.InteropServices;
 using System.Threading;
-using bladeDirectorClient;
-using bladeDirectorClient.bladeDirectorService;
+using bladeDirectorWCF;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using resultAndBladeName = bladeDirectorClient.bladeDirectorService.resultAndBladeName;
-using resultAndWaitToken = bladeDirectorClient.bladeDirectorService.resultAndWaitToken;
-using resultCode = bladeDirectorClient.bladeDirectorService.resultCode;
-using VMHardwareSpec = bladeDirectorClient.bladeDirectorService.VMHardwareSpec;
-using VMSoftwareSpec = bladeDirectorClient.bladeDirectorService.VMSoftwareSpec;
 
 namespace tests
 {

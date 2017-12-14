@@ -6,12 +6,4 @@ using hypervisors;
 
 namespace bladeDirectorClient
 {
-    public class hypervisorCollection<T> : ConcurrentDictionary<string, hypervisorWithSpec<T>>, IDisposable
-    {
-        public void Dispose()
-        {
-            foreach (hypervisorWithSpec<T> hyp in this.Values)
-                hyp.Dispose();
-        }
-    }
 }

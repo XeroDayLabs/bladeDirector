@@ -61,73 +61,6 @@
     <Content Include="deploy\conrep" />
     <None Include="deploy\getBIOS.sh" />
     <None Include="Resources\ipxeTemplateForBIOS.txt" />
-    <Content Include="Service References\bladeDirectorSvc\bladeDirector.bladeDirectorSvc.bladeSpec.datasource">
-      <DependentUpon>Reference.svcmap</DependentUpon>
-    </Content>
-    <Content Include="Service References\bladeDirectorSvc\bladeDirector.bladeDirectorSvc.GetBladeStatusResult.datasource">
-      <DependentUpon>Reference.svcmap</DependentUpon>
-    </Content>
-    <Content Include="Service References\bladeDirectorSvc\bladeDirector.bladeDirectorSvc.resultAndBladeName.datasource">
-      <DependentUpon>Reference.svcmap</DependentUpon>
-    </Content>
-    <Content Include="Service References\bladeDirectorSvc\bladeDirector.bladeDirectorSvc.resultAndWaitToken.datasource">
-      <DependentUpon>Reference.svcmap</DependentUpon>
-    </Content>
-    <Content Include="Service References\bladeDirectorSvc\bladeDirector.bladeDirectorSvc.resultCode.datasource">
-      <DependentUpon>Reference.svcmap</DependentUpon>
-    </Content>
-    <Content Include="Service References\bladeDirectorSvc\bladeDirector.bladeDirectorSvc.snapshotDetails.datasource">
-      <DependentUpon>Reference.svcmap</DependentUpon>
-    </Content>
-    <Content Include="Service References\bladeDirectorSvc\bladeDirector.bladeDirectorSvc.vmServerCredentials.datasource">
-      <DependentUpon>Reference.svcmap</DependentUpon>
-    </Content>
-    <Content Include="Service References\bladeDirectorSvc\bladeDirector.bladeDirectorSvc.vmSpec.datasource">
-      <DependentUpon>Reference.svcmap</DependentUpon>
-    </Content>
-    <Content Include="Service References\bladeDirectorSvc\bladeDirector.bladeDirectorSvc.NASParams.datasource">
-      <DependentUpon>Reference.svcmap</DependentUpon>
-    </Content>
-    <Content Include="Service References\bladeDirectorSvc\bladeDirector.bladeDirectorSvc.logEntry.datasource">
-      <DependentUpon>Reference.svcmap</DependentUpon>
-    </Content>
-    <Content Include="Service References\bladeDirectorSvc\bladeDirector.bladeDirectorSvc.MemoryStream.datasource">
-      <DependentUpon>Reference.svcmap</DependentUpon>
-    </Content>
-    <None Include="Service References\bladeDirectorSvc\bladeDirector.xsd">
-      <SubType>Designer</SubType>
-    </None>
-    <None Include="Service References\bladeDirectorSvc\bladeDirector1.xsd">
-      <SubType>Designer</SubType>
-    </None>
-    <None Include="Service References\bladeDirectorSvc\bladeDirector10.xsd">
-      <SubType>Designer</SubType>
-    </None>
-    <None Include="Service References\bladeDirectorSvc\bladeDirector2.xsd">
-      <SubType>Designer</SubType>
-    </None>
-    <None Include="Service References\bladeDirectorSvc\bladeDirector3.xsd">
-      <SubType>Designer</SubType>
-    </None>
-    <None Include="Service References\bladeDirectorSvc\bladeDirector4.xsd">
-      <SubType>Designer</SubType>
-    </None>
-    <None Include="Service References\bladeDirectorSvc\bladeDirector5.xsd">
-      <SubType>Designer</SubType>
-    </None>
-    <None Include="Service References\bladeDirectorSvc\bladeDirector6.xsd">
-      <SubType>Designer</SubType>
-    </None>
-    <None Include="Service References\bladeDirectorSvc\bladeDirector7.xsd">
-      <SubType>Designer</SubType>
-    </None>
-    <None Include="Service References\bladeDirectorSvc\bladeDirector8.xsd">
-      <SubType>Designer</SubType>
-    </None>
-    <None Include="Service References\bladeDirectorSvc\bladeDirector9.xsd">
-      <SubType>Designer</SubType>
-    </None>
-    <None Include="Service References\bladeDirectorSvc\services.wsdl" />
     <None Include="Service References\bootMenuWCF\bootMenuController.disco" />
     <None Include="Service References\bootMenuWCF\configuration91.svcinfo" />
     <None Include="Service References\bootMenuWCF\configuration.svcinfo" />
@@ -138,13 +71,6 @@
     <Content Include="Resources\ipxeTemplateForESXi.txt" />
     <None Include="Resources\VMServerBIOS.xml">
       <SubType>Designer</SubType>
-    </None>
-    <None Include="Service References\bladeDirectorSvc\bladeDirector.disco" />
-    <None Include="Service References\bladeDirectorSvc\configuration91.svcinfo" />
-    <None Include="Service References\bladeDirectorSvc\configuration.svcinfo" />
-    <None Include="Service References\bladeDirectorSvc\Reference.svcmap">
-      <Generator>WCF Proxy Generator</Generator>
-      <LastGenOutput>Reference.cs</LastGenOutput>
     </None>
     <None Include="Resources\ipxeTemplate.txt" />
     <Content Include="status.aspx" />
@@ -172,11 +98,6 @@
       <AutoGen>True</AutoGen>
       <DesignTimeSharedInput>True</DesignTimeSharedInput>
       <DependentUpon>Settings.settings</DependentUpon>
-    </Compile>
-    <Compile Include="Service References\bladeDirectorSvc\Reference.cs">
-      <AutoGen>True</AutoGen>
-      <DesignTime>True</DesignTime>
-      <DependentUpon>Reference.svcmap</DependentUpon>
     </Compile>
     <Compile Include="Service References\bootMenuWCF\Reference.cs">
       <AutoGen>True</AutoGen>
@@ -221,9 +142,9 @@
       <Project>{47995DD9-9F78-4313-809D-55C515EAF89E}</Project>
       <Name>hypervisors</Name>
     </ProjectReference>
-    <ProjectReference Include="..\bladeDirectorClient\bladeDirectorClient.csproj">
-      <Project>{4abb1cc9-0c59-48f3-be95-0fa21c420055}</Project>
-      <Name>bladeDirectorClient</Name>
+    <ProjectReference Include="..\bladeDirectorWCF\bladeDirectorWCF.csproj">
+      <Project>{EEAEC90D-5AB7-4948-B37C-E0E3AD003F1E}</Project>
+      <Name>bladeDirectorWCF</Name>
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
@@ -233,7 +154,6 @@
     <WCFMetadata Include="Service References\" />
   </ItemGroup>
   <ItemGroup>
-    <WCFMetadataStorage Include="Service References\bladeDirectorSvc\" />
     <WCFMetadataStorage Include="Service References\bootMenuWCF\" />
   </ItemGroup>
   <PropertyGroup>

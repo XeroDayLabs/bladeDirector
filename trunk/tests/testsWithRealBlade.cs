@@ -7,7 +7,7 @@ using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
 using bladeDirectorClient;
-using bladeDirectorClient.bladeDirectorService;
+using bladeDirectorWCF;
 using hypervisors;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
@@ -436,11 +436,11 @@ namespace tests
             testUtils.waitForSuccess(svc, result, TimeSpan.FromMinutes(5));
 
             // Now check it wrote OK by reading it back and comparing the numlock key state.
-            Assert.AreEqual(bladeDirectorClient.bladeDirectorService.resultCode.pending, svc.svcDebug._rebootAndStartReadingBIOSConfiguration(hostIP, bladeIP).result.code);
+            Assert.AreEqual(resultCode.pending, svc.svcDebug._rebootAndStartReadingBIOSConfiguration(hostIP, bladeIP).result.code);
             result = testUtils.waitForSuccess(svc, result, TimeSpan.FromMinutes(5));
 
             // We should definitely have written the config, so we don't permit the 'no need' code here.
-            Assert.AreEqual(bladeDirectorClient.bladeDirectorService.resultCode.success, result.result.code);
+            Assert.AreEqual(resultCode.success, result.result.code);
 
             return (resultAndBIOSConfig)result;
         }

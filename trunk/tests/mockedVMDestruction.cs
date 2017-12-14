@@ -1,9 +1,8 @@
 using System;
 using System.Collections.Generic;
 using System.Threading;
-using bladeDirectorClient;
+using bladeDirectorWCF;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using bladeDirectorClient.bladeDirectorService;
 
 namespace tests
 {

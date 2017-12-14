@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Threading;
 using System.Threading.Tasks;
-using bladeDirectorClient.bladeDirectorService;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using bladeLockType = bladeDirectorWCF.bladeLockType;
 

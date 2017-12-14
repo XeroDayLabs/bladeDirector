@@ -114,6 +114,8 @@
     <Compile Include="asycExcecutionResult_mocked.cs" />
     <Compile Include="biosReadWrite_LTSP_iLo.cs" />
     <Compile Include="biosReadWrite_mocked.cs" />
+    <Compile Include="bladeDirectorDebugServices.cs" />
+    <Compile Include="BladeDirectorServices.cs" />
     <Compile Include="bladeLockCollection.cs" />
     <Compile Include="bladeLockType.cs" />
     <Compile Include="bladeNotFoundException.cs" />
@@ -127,6 +129,7 @@
     <Compile Include="hostStateManager.cs" />
     <Compile Include="hostStateManagerMocked.cs" />
     <Compile Include="hostStateManager_core.cs" />
+    <Compile Include="hypervisorCollection.cs" />
     <Compile Include="hypervisor_mocked_base.cs" />
     <Compile Include="IBiosReadWrite.cs" />
     <Compile Include="IDebugServices.cs" />
@@ -156,6 +159,7 @@
       <DependentUpon>Reference.svcmap</DependentUpon>
     </Compile>
     <Compile Include="services.cs" />
+    <Compile Include="utils.cs" />
     <Compile Include="VMHardwareSpec.cs" />
     <Compile Include="vmServerControl.cs" />
     <Compile Include="vmServerControl_ESXi.cs" />
@@ -193,10 +197,6 @@
     <ProjectReference Include="..\..\thirdparty\hypervisors\trunk\hypervisors\hypervisors.csproj">
       <Project>{47995dd9-9f78-4313-809d-55c515eaf89e}</Project>
       <Name>hypervisors</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\bladeDirectorClient\bladeDirectorClient.csproj">
-      <Project>{4abb1cc9-0c59-48f3-be95-0fa21c420055}</Project>
-      <Name>bladeDirectorClient</Name>
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>

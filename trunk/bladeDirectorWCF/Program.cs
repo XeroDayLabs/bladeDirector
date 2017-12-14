@@ -11,7 +11,6 @@ using System.ServiceModel.Dispatcher;
 using System.ServiceModel.Web;
 using System.Text;
 using System.Threading;
-using bladeDirectorClient;
 using CommandLine;
 using CommandLine.Text;
 

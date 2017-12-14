@@ -6,8 +6,7 @@ using System.Threading;
 using hypervisors;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Microsoft.Win32;
-using bladeDirectorClient;
-using bladeDirectorClient.bladeDirectorService;
+using bladeDirectorWCF;
 
 namespace tests
 {

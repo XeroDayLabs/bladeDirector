@@ -5,8 +5,7 @@ using System.Web;
 using System.Web.UI;
 using System.Web.UI.HtmlControls;
 using System.Web.UI.WebControls;
-using bladeDirectorClient;
-using bladeDirectorClient.bladeDirectorService;
+using bladeDirectorWCF;
 
 namespace bladeDirector
 {

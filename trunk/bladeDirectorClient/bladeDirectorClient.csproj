@@ -69,10 +69,6 @@
     <CodeAnalysisRuleSet>MinimumRecommendedRules.ruleset</CodeAnalysisRuleSet>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="hypervisors, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>$(SolutionDir)\packages\hypervisors.0.0.1.49\lib\net45\hypervisors.dll</HintPath>
-      <Private>True</Private>
-    </Reference>
     <Reference Include="Microsoft.VisualStudio.QualityTools.UnitTestFramework, Version=10.1.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL" />
     <Reference Include="Newtonsoft.Json, Version=9.0.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed, processorArchitecture=MSIL">
       <HintPath>$(SolutionDir)\packages\Newtonsoft.Json.9.0.1\lib\net45\Newtonsoft.Json.dll</HintPath>
@@ -105,8 +101,6 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="bladeDirectorDebugServices.cs" />
-    <Compile Include="BladeDirectorServices.cs" />
     <Compile Include="hypervisorCollection.cs" />
     <Compile Include="iLoHypervisorPool.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
@@ -116,11 +110,6 @@
       <DependentUpon>Settings.settings</DependentUpon>
     </Compile>
     <Compile Include="machinePools.cs" />
-    <Compile Include="Service References\bladeDirectorService\Reference.cs">
-      <AutoGen>True</AutoGen>
-      <DesignTime>True</DesignTime>
-      <DependentUpon>Reference.svcmap</DependentUpon>
-    </Compile>
     <Compile Include="utils.cs" />
     <Compile Include="VMWareHypervisorPool.cs" />
   </ItemGroup>
@@ -136,122 +125,16 @@
       <Generator>SettingsSingleFileGenerator</Generator>
       <LastGenOutput>Settings.Designer.cs</LastGenOutput>
     </None>
-    <None Include="Service References\bladeDirectorService\bladeDirector.xsd">
-      <SubType>Designer</SubType>
-    </None>
-    <None Include="Service References\bladeDirectorService\bladeDirector1.xsd">
-      <SubType>Designer</SubType>
-    </None>
-    <None Include="Service References\bladeDirectorService\bladeDirector10.xsd">
-      <SubType>Designer</SubType>
-    </None>
-    <None Include="Service References\bladeDirectorService\bladeDirector2.xsd">
-      <SubType>Designer</SubType>
-    </None>
-    <None Include="Service References\bladeDirectorService\bladeDirector3.xsd">
-      <SubType>Designer</SubType>
-    </None>
-    <None Include="Service References\bladeDirectorService\bladeDirector4.xsd">
-      <SubType>Designer</SubType>
-    </None>
-    <None Include="Service References\bladeDirectorService\bladeDirector5.xsd">
-      <SubType>Designer</SubType>
-    </None>
-    <None Include="Service References\bladeDirectorService\bladeDirector6.xsd">
-      <SubType>Designer</SubType>
-    </None>
-    <None Include="Service References\bladeDirectorService\bladeDirector7.xsd">
-      <SubType>Designer</SubType>
-    </None>
-    <None Include="Service References\bladeDirectorService\bladeDirector8.xsd">
-      <SubType>Designer</SubType>
-    </None>
-    <None Include="Service References\bladeDirectorService\bladeDirector9.xsd">
-      <SubType>Designer</SubType>
-    </None>
-    <None Include="Service References\bladeDirectorService\bladeDirectorClient.bladeDirectorService.bladeSpec.datasource">
-      <DependentUpon>Reference.svcmap</DependentUpon>
-    </None>
-    <None Include="Service References\bladeDirectorService\bladeDirectorClient.bladeDirectorService.GetBladeStatusResult.datasource">
-      <DependentUpon>Reference.svcmap</DependentUpon>
-    </None>
-    <None Include="Service References\bladeDirectorService\bladeDirectorClient.bladeDirectorService.logEntry.datasource">
-      <DependentUpon>Reference.svcmap</DependentUpon>
-    </None>
-    <None Include="Service References\bladeDirectorService\bladeDirectorClient.bladeDirectorService.MemoryStream.datasource">
-      <DependentUpon>Reference.svcmap</DependentUpon>
-    </None>
-    <None Include="Service References\bladeDirectorService\bladeDirectorClient.bladeDirectorService.resultAndBladeName.datasource">
-      <DependentUpon>Reference.svcmap</DependentUpon>
-    </None>
-    <None Include="Service References\bladeDirectorService\bladeDirectorClient.bladeDirectorService.resultAndWaitToken.datasource">
-      <DependentUpon>Reference.svcmap</DependentUpon>
-    </None>
-    <None Include="Service References\bladeDirectorService\bladeDirectorClient.bladeDirectorService.resultCode.datasource">
-      <DependentUpon>Reference.svcmap</DependentUpon>
-    </None>
-    <None Include="Service References\bladeDirectorService\bladeDirectorClient.bladeDirectorService.snapshotDetails.datasource">
-      <DependentUpon>Reference.svcmap</DependentUpon>
-    </None>
-    <None Include="Service References\bladeDirectorService\bladeDirectorClient.bladeDirectorService.vmServerCredentials.datasource">
-      <DependentUpon>Reference.svcmap</DependentUpon>
-    </None>
-    <None Include="Service References\bladeDirectorService\bladeDirectorClient.bladeDirectorService.vmSpec.datasource">
-      <DependentUpon>Reference.svcmap</DependentUpon>
-    </None>
-    <None Include="Service References\bladeDirectorService\bladeDirectorDebug.xsd">
-      <SubType>Designer</SubType>
-    </None>
-    <None Include="Service References\bladeDirectorService\bladeDirectorDebug1.xsd">
-      <SubType>Designer</SubType>
-    </None>
-    <None Include="Service References\bladeDirectorService\bladeDirectorDebug2.xsd">
-      <SubType>Designer</SubType>
-    </None>
-    <None Include="Service References\bladeDirectorService\bladeDirectorDebug3.xsd">
-      <SubType>Designer</SubType>
-    </None>
-    <None Include="Service References\bladeDirectorService\bladeDirectorDebug4.xsd">
-      <SubType>Designer</SubType>
-    </None>
-    <None Include="Service References\bladeDirectorService\bladeDirectorDebug5.xsd">
-      <SubType>Designer</SubType>
-    </None>
-    <None Include="Service References\bladeDirectorService\bladeDirectorDebug6.xsd">
-      <SubType>Designer</SubType>
-    </None>
-    <None Include="Service References\bladeDirectorService\bladeDirectorDebug7.xsd">
-      <SubType>Designer</SubType>
-    </None>
-    <None Include="Service References\bladeDirectorService\bladeDirectorDebug8.xsd">
-      <SubType>Designer</SubType>
-    </None>
-    <None Include="Service References\bladeDirectorService\bladeDirectorDebug9.xsd">
-      <SubType>Designer</SubType>
-    </None>
-    <None Include="Service References\bladeDirectorService\debugServices.wsdl" />
-    <None Include="Service References\bladeDirectorService\services.wsdl" />
   </ItemGroup>
   <ItemGroup>
-    <WCFMetadataStorage Include="Service References\bladeDirectorService\" />
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="Service References\bladeDirectorService\bladeDirector.disco" />
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="Service References\bladeDirectorService\configuration91.svcinfo" />
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="Service References\bladeDirectorService\configuration.svcinfo" />
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="Service References\bladeDirectorService\Reference.svcmap">
-      <Generator>WCF Proxy Generator</Generator>
-      <LastGenOutput>Reference.cs</LastGenOutput>
-    </None>
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="Service References\bladeDirectorService\bladeDirectorDebug.disco" />
+    <ProjectReference Include="..\..\thirdparty\hypervisors\trunk\hypervisors\hypervisors.csproj">
+      <Project>{47995dd9-9f78-4313-809d-55c515eaf89e}</Project>
+      <Name>hypervisors</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\bladeDirectorWCF\bladeDirectorWCF.csproj">
+      <Project>{EEAEC90D-5AB7-4948-B37C-E0E3AD003F1E}</Project>
+      <Name>bladeDirectorWCF</Name>
+    </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>

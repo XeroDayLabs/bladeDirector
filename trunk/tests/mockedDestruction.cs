@@ -4,8 +4,7 @@ using System.Linq;
 using System.Net;
 using System.Threading;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using bladeDirectorClient;
-using bladeDirectorClient.bladeDirectorService;
+using bladeDirectorWCF;
 
 namespace tests
 {

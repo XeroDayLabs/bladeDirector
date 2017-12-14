@@ -1,5 +1,7 @@
 using System;
 using System.ComponentModel;
+using System.Diagnostics;
+using System.Linq;
 using System.Net;
 using System.Runtime.InteropServices;
 
@@ -38,6 +40,87 @@ namespace bladeDirectorWCF
             dst |= (src >> 8) << 24;
 
             return dst;
+        }
+
+        [DllImport("iphlpapi.dll", SetLastError = true)]
+        private static extern int GetExtendedUdpTable(IntPtr pUdpTable, out int dwOutBufLen, bool sort, int ipVersion, int tblClass, int reserved);
+
+        private const int UDP_TABLE_OWNER_PID = 1;
+
+        [StructLayout(LayoutKind.Sequential, Pack = 0)]
+        public class UDP_TABLE_CLASS
+        {
+            public UInt32 numberOfEntries;
+        }
+
+        [StructLayout(LayoutKind.Sequential, Pack = 0)]
+        public class MIB_UDPTABLE_OWNER_PID
+        {
+            public UInt32 localAddr;
+            public UInt32 localPort;
+            public UInt32 ownerPID;
+        }
+
+        public static void ensurePortIsFree(UInt16 port)
+        {
+            MIB_UDPTABLE_OWNER_PID[] tableContents = getCurrentUDPListeners();
+            MIB_UDPTABLE_OWNER_PID portUse = tableContents.SingleOrDefault(x => x.localPort == port);
+            if (portUse == null)
+                return;
+
+            using (Process p = Process.GetProcessById((int)portUse.ownerPID))
+            {
+                p.Kill();
+                p.WaitForExit((int)TimeSpan.FromSeconds(5).TotalMilliseconds);
+                if (!p.HasExited)
+                    throw new Exception("Unable to kill PID " + portUse.ownerPID + " which is using needed port " + portUse.localPort);
+            }
+        }
+
+        private static MIB_UDPTABLE_OWNER_PID[] getCurrentUDPListeners()
+        {
+            int buflen;
+            MIB_UDPTABLE_OWNER_PID[] tableContents;
+            int res = GetExtendedUdpTable(IntPtr.Zero, out buflen, false, 2, UDP_TABLE_OWNER_PID, 0);
+            if (res != 122) // error_more_data
+                throw new Win32Exception(res, "GetExtendedUdpTable (first) failed");
+            IntPtr tableBuffer = Marshal.AllocHGlobal(buflen);
+            try
+            {
+                res = GetExtendedUdpTable(tableBuffer, out buflen, false, 2, UDP_TABLE_OWNER_PID, 0);
+                if (res != 0)
+                    throw new Win32Exception(res, "GetExtendedUdpTable (second) failed");
+                UDP_TABLE_CLASS table = (UDP_TABLE_CLASS)Marshal.PtrToStructure(tableBuffer, typeof(UDP_TABLE_CLASS));
+                tableContents = new MIB_UDPTABLE_OWNER_PID[(buflen - Marshal.SizeOf(typeof(UDP_TABLE_CLASS))) / Marshal.SizeOf(typeof(MIB_UDPTABLE_OWNER_PID))];
+
+                for (int rowIndex = 0; rowIndex < tableContents.Length; rowIndex++)
+                {
+                    IntPtr pos = tableBuffer +
+                                 Marshal.SizeOf(typeof(UDP_TABLE_CLASS)) +
+                                 ((Marshal.SizeOf(typeof(MIB_UDPTABLE_OWNER_PID))) * rowIndex);
+                    MIB_UDPTABLE_OWNER_PID row = (MIB_UDPTABLE_OWNER_PID)Marshal.PtrToStructure(pos, typeof(MIB_UDPTABLE_OWNER_PID));
+
+                    row.localPort = byteswap((UInt16)row.localPort);
+
+                    tableContents[rowIndex] = row;
+                }
+            }
+            finally
+            {
+                Marshal.FreeHGlobal(tableBuffer);
+            }
+
+            return tableContents;
+        }
+
+        private static UInt16 byteswap(UInt16 localPort)
+        {
+            UInt16 toRet = 0;
+
+            toRet |= (UInt16)((localPort & 0x00ff) << 8);
+            toRet |= (UInt16)((localPort & 0xff00) >> 8);
+
+            return toRet;
         }
 
 
