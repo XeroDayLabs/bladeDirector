@@ -90,14 +90,18 @@
     <RunPostBuildEvent>OnBuildSuccess</RunPostBuildEvent>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="CommandLine">
-      <HintPath>..\..\thirdparty\commandline\CommandLine.dll</HintPath>
+    <Reference Include="CommandLine, Version=1.9.71.2, Culture=neutral, PublicKeyToken=de6f01bd326f8c32, processorArchitecture=MSIL">
+      <HintPath>$(SolutionDir)\..\Trunk\packages\CommandLineParser.1.9.71\lib\net45\CommandLine.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="hypervisors">
+      <HintPath>$(SolutionDir)\..\Trunk\packages\hypervisors.0.0.1.56\lib\net45\hypervisors.dll</HintPath>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
     <Reference Include="System.Data.SQLite, Version=1.0.105.2, Culture=neutral, PublicKeyToken=db937bc2d44ff139, processorArchitecture=AMD64">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\thirdparty\sqlite\dotnet4.5\x64\System.Data.SQLite.dll</HintPath>
+      <HintPath>$(SolutionDir)\..\thirdparty\sqlite\dotnet4.5\x64\System.Data.SQLite.dll</HintPath>
     </Reference>
     <Reference Include="System.Runtime.Serialization" />
     <Reference Include="System.ServiceModel" />
@@ -175,6 +179,7 @@
     <None Include="App.config">
       <SubType>Designer</SubType>
     </None>
+    <None Include="packages.config" />
     <None Include="Properties\Settings.settings">
       <Generator>SettingsSingleFileGenerator</Generator>
       <LastGenOutput>Settings.Designer.cs</LastGenOutput>
@@ -192,12 +197,6 @@
       <SubType>Designer</SubType>
     </None>
     <None Include="Service References\bootMenuController\bootMenuWCF.wsdl" />
-  </ItemGroup>
-  <ItemGroup>
-    <ProjectReference Include="..\..\thirdparty\hypervisors\trunk\hypervisors\hypervisors.csproj">
-      <Project>{47995dd9-9f78-4313-809d-55c515eaf89e}</Project>
-      <Name>hypervisors</Name>
-    </ProjectReference>
   </ItemGroup>
   <ItemGroup>
     <EmbeddedResource Include="Properties\Resources.resx">
