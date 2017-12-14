@@ -131,10 +131,6 @@
     </None>
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\..\thirdparty\hypervisors\trunk\hypervisors\hypervisors.csproj">
-      <Project>{47995dd9-9f78-4313-809d-55c515eaf89e}</Project>
-      <Name>hypervisors</Name>
-    </ProjectReference>
     <ProjectReference Include="..\bladeDirectorWCF\bladeDirectorWCF.csproj">
       <Project>{EEAEC90D-5AB7-4948-B37C-E0E3AD003F1E}</Project>
       <Name>bladeDirectorWCF</Name>
