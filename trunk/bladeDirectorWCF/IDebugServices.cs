@@ -11,6 +11,9 @@ namespace bladeDirectorWCF
         string ping();
 
         [OperationContract]
+        void lockAndSleep(string bladeToLock);
+
+        [OperationContract]
         void initWithBladesFromIPList(string[] bladeIPs, bool useMockedManager, NASFaultInjectionPolicy faultInjection);
 
         [OperationContract]

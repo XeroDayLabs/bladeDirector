@@ -10,6 +10,11 @@ namespace bladeDirectorWCF
             return "pong";
         }
 
+        public void lockAndSleep(string bladeToLock)
+        {
+            services._lockAndSleep(bladeToLock);
+        }
+
         public void initWithBladesFromIPList(string[] bladeIPs, bool useMockedManager, NASFaultInjectionPolicy faultInjection)
         {
             if (useMockedManager)

@@ -82,6 +82,21 @@ namespace bladeDirectorWCF
             };
         }
 
+        public override void setReceiveTimeout(TimeSpan newTimeout)
+        {
+            base.setReceiveTimeout(newTimeout);
+
+            this.debugBinding.ReceiveTimeout = newTimeout;
+            this.debugBinding.ReliableSession.InactivityTimeout = newTimeout;
+            connect();
+        }
+
+        public override void reconnect()
+        {
+            base.reconnect();
+            connect();
+        }
+
         public override void Dispose()
         {
             // FIXME: why this cast?
@@ -91,5 +106,6 @@ namespace bladeDirectorWCF
 
             base.Dispose();
         }
+
     }
 }

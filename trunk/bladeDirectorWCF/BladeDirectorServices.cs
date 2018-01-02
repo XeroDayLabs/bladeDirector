@@ -67,6 +67,14 @@ namespace bladeDirectorWCF
             };
         }
 
+        public virtual void setReceiveTimeout(TimeSpan newTimeout)
+        {
+            this.baseBinding.ReceiveTimeout = newTimeout;
+            this.baseBinding.ReliableSession.InactivityTimeout = newTimeout;
+
+            connect();
+        }
+
         private void connect()
         {
             waitUntilReady(() =>
@@ -200,6 +208,11 @@ namespace bladeDirectorWCF
 
                 _bladeDirectorProcess.Dispose();
             }
+        }
+
+        public virtual void reconnect()
+        {
+            connect();
         }
     }
 }

@@ -349,5 +349,33 @@ namespace tests
                 Assert.AreEqual(bladeIP, newbladeIP);
             }
         }
+
+
+        [TestMethod]
+        public void wontLeakOnConnectionErrors()
+        {
+            using (bladeDirectorDebugServices uut = new bladeDirectorDebugServices(WCFPath, new[] {"1.1.1.1"}))
+            {
+                uut.setReceiveTimeout(TimeSpan.FromSeconds(4));
+
+                // This will cause an exception..
+                bool didExcept = false;
+                try
+                {
+                    uut.svcDebug.lockAndSleep("1.1.1.1");
+                }
+                catch (CommunicationException)
+                {
+                    didExcept = true;
+                }
+                Assert.IsTrue(didExcept);
+                uut.setReceiveTimeout(TimeSpan.FromSeconds(10));
+                uut.reconnect();
+
+                // But if we re-connect, locks should be untaken.
+                uut.svcDebug._isBladeMine("127.0.0.1", "1.1.1.1", false);
+            }
+        }
+
     }
 }

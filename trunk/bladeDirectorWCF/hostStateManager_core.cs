@@ -2142,6 +2142,22 @@ namespace bladeDirectorWCF
             if (newTToE == null)
                 newTToE = nas.addISCSITargetToExtent(newTarget.id, newExtent);
         }
+
+        public void lockAndSleep(string bladeToLock)
+        {
+            using (db.getBladeByIP(bladeToLock, bladeLockType.lockAll, bladeLockType.lockAll))
+            {
+                Thread t = Thread.CurrentThread;
+                Task foo = new Task(() =>
+                {
+                    Thread.Sleep(TimeSpan.FromSeconds(1));
+                    t.Abort(); 
+                }
+                );
+                foo.Start();
+                Thread.Sleep(TimeSpan.FromSeconds(10));
+            }
+        }
     }
 
     public class logEntry

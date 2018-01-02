@@ -16,6 +16,11 @@ namespace bladeDirectorWCF
             hostStateManager.keepAlive(sanitizeAddress(srcIP));
         }
 
+        public static void _lockAndSleep(string bladeToLock)
+        {
+            hostStateManager.lockAndSleep(bladeToLock);
+        }
+
         public static resultAndWaitToken _logIn(string requestorIP)
         {
             return hostStateManager.logIn(sanitizeAddress(requestorIP));
