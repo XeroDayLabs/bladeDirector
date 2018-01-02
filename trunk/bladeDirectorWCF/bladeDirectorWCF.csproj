@@ -94,8 +94,15 @@
       <HintPath>$(SolutionDir)\..\Trunk\packages\CommandLineParser.1.9.71\lib\net45\CommandLine.dll</HintPath>
       <Private>True</Private>
     </Reference>
-    <Reference Include="hypervisors">
-      <HintPath>$(SolutionDir)\..\Trunk\packages\hypervisors.0.0.1.56\lib\net45\hypervisors.dll</HintPath>
+    <Reference Include="hypervisors, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>$(SolutionDir)\packages\hypervisors.0.0.1.77\lib\net45\hypervisors.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="Newtonsoft.Json">
+      <HintPath>$(SolutionDir)\packages\Newtonsoft.Json.9.0.1\lib\net45\Newtonsoft.Json.dll</HintPath>
+    </Reference>
+    <Reference Include="Renci.SshNet">
+      <HintPath>$(SolutionDir)\packages\SSH.NET.2016.1.0\lib\net40\Renci.SshNet.dll</HintPath>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
@@ -113,6 +120,15 @@
     <Reference Include="Microsoft.CSharp" />
     <Reference Include="System.Data" />
     <Reference Include="System.Xml" />
+    <Reference Include="VimService60">
+      <HintPath>$(SolutionDir)\packages\VMware.Vim.6.280.0.1\lib\Net45\VimService60.dll</HintPath>
+    </Reference>
+    <Reference Include="VimService60.XmlSerializers">
+      <HintPath>$(SolutionDir)\packages\VMware.Vim.6.280.0.1\lib\Net45\VimService60.XmlSerializers.dll</HintPath>
+    </Reference>
+    <Reference Include="VMware.Vim">
+      <HintPath>$(SolutionDir)\packages\VMware.Vim.6.280.0.1\lib\Net45\VMware.Vim.dll</HintPath>
+    </Reference>
   </ItemGroup>
   <ItemGroup>
     <Compile Include="asycExcecutionResult_mocked.cs" />
