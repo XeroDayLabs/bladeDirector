@@ -115,7 +115,7 @@ namespace tests
                 bladeSpec spec = svc.svcDebug.createBladeSpecForXDLNode(31, "xdl.hacks.the.planet", bladeLockType.lockAll, bladeLockType.lockAll);
                 svc.svcDebug.initWithBladesFromBladeSpec(new[] { spec }, false, NASFaultInjectionPolicy.retunSuccessful);
 
-                string debuggerHost = testUtils.getBestRouteTo(IPAddress.Parse(spec.bladeIP)).ToString();
+                string debuggerHost = ipUtils.getBestRouteTo(IPAddress.Parse(spec.bladeIP)).ToString();
                 VMSoftwareSpec sw = new VMSoftwareSpec()
                 {
                     debuggerHost = debuggerHost,
@@ -222,7 +222,7 @@ namespace tests
                 List<VMSpec> requestedVMSpecs = new List<VMSpec>();
                 foreach (bladeSpec thisBlade in specs)
                 {
-                    string debuggerHost = testUtils.getBestRouteTo(IPAddress.Parse(thisBlade.bladeIP)).ToString();
+                    string debuggerHost = ipUtils.getBestRouteTo(IPAddress.Parse(thisBlade.bladeIP)).ToString();
 
                     // Add ten VMs for each blade.
                     for (int vmCount = 0; vmCount < 10; vmCount++)

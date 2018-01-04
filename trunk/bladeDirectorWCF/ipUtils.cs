@@ -11,7 +11,7 @@ namespace bladeDirectorWCF
     {
         [DllImport("iphlpapi.dll", SetLastError = true, CallingConvention = CallingConvention.StdCall)]
         private static extern int GetBestRoute2(IntPtr InterfaceLUID, int InterfaceIndex, IntPtr SourceAddress,
-            sockaddr_inet destAddress, UInt32 AddresssortOptions, ref mib_ipforward_row2 bestRoute,
+            ref sockaddr_inet destAddress, UInt32 AddresssortOptions, ref mib_ipforward_row2 bestRoute,
             ref sockaddr_inet bestSourceAddress);
 
         public static IPAddress getBestRouteTo(IPAddress destIPAddress)
@@ -23,7 +23,7 @@ namespace bladeDirectorWCF
 
             mib_ipforward_row2 bestRoute = new mib_ipforward_row2();
             sockaddr_inet bestSrc = new sockaddr_inet();
-            int res = GetBestRoute2(IntPtr.Zero, 0, IntPtr.Zero, dest, 0, ref bestRoute, ref bestSrc);
+            int res = GetBestRoute2(IntPtr.Zero, 0, IntPtr.Zero, ref dest, 0, ref bestRoute, ref bestSrc);
             if (res != 0)
                 throw new Win32Exception(res);
 
