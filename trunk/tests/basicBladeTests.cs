@@ -12,7 +12,7 @@ namespace tests
     [TestClass]
     public class basicBladeTests
     {
-        public static readonly string WCFPath = Path.Combine(Properties.Settings.Default.repoRoot, "trunk\\bladeDirectorWCF\\bin\\x64\\Debug\\bladeDirectorWCF.exe");
+        public static readonly string WCFPath = Path.Combine(Properties.Settings.Default.repoRoot, "trunk\\bladeDirectorWCF\\bin\\Debug\\bladeDirectorWCF.exe");
         public static readonly Uri WebURI = new Uri(Properties.Settings.Default.webURL);
 
         [TestMethod]

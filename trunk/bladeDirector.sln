@@ -5,10 +5,6 @@ VisualStudioVersion = 12.0.40629.0
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "tests", "tests\tests.csproj", "{84741AEF-36FB-4A50-9098-9AA07D618EA4}"
 EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "thirdparty", "thirdparty", "{6C6808C2-C6C4-4AE7-8309-12312E9D2B83}"
-EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "hypervisors", "..\thirdparty\hypervisors\trunk\hypervisors\hypervisors.csproj", "{47995DD9-9F78-4313-809D-55C515EAF89E}"
-EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{FC044D82-66F4-4B0B-800D-12484BFBC4B8}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "bladeDirectorClient", "bladeDirectorClient\bladeDirectorClient.csproj", "{4ABB1CC9-0C59-48F3-BE95-0FA21C420055}"
@@ -29,9 +25,6 @@ Global
 		{84741AEF-36FB-4A50-9098-9AA07D618EA4}.Debug|AnyCPU.Build.0 = Debug|Any CPU
 		{84741AEF-36FB-4A50-9098-9AA07D618EA4}.Release|AnyCPU.ActiveCfg = Release|x64
 		{84741AEF-36FB-4A50-9098-9AA07D618EA4}.Release|AnyCPU.Build.0 = Release|x64
-		{47995DD9-9F78-4313-809D-55C515EAF89E}.Debug|AnyCPU.ActiveCfg = Debug|Any CPU
-		{47995DD9-9F78-4313-809D-55C515EAF89E}.Debug|AnyCPU.Build.0 = Debug|Any CPU
-		{47995DD9-9F78-4313-809D-55C515EAF89E}.Release|AnyCPU.ActiveCfg = Release|Any CPU
 		{4ABB1CC9-0C59-48F3-BE95-0FA21C420055}.Debug|AnyCPU.ActiveCfg = Debug|Any CPU
 		{4ABB1CC9-0C59-48F3-BE95-0FA21C420055}.Debug|AnyCPU.Build.0 = Debug|Any CPU
 		{4ABB1CC9-0C59-48F3-BE95-0FA21C420055}.Release|AnyCPU.ActiveCfg = Release|Any CPU
@@ -48,8 +41,5 @@ Global
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
-	EndGlobalSection
-	GlobalSection(NestedProjects) = preSolution
-		{47995DD9-9F78-4313-809D-55C515EAF89E} = {6C6808C2-C6C4-4AE7-8309-12312E9D2B83}
 	EndGlobalSection
 EndGlobal

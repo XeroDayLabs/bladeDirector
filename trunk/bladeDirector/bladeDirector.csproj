@@ -22,9 +22,18 @@
     <TargetFrameworkProfile />
   </PropertyGroup>
   <ItemGroup>
+    <Reference Include="hypervisors, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>$(SolutionDir)\packages\hypervisors.0.0.1.77\lib\net45\hypervisors.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
     <Reference Include="Microsoft.CSharp" />
-    <Reference Include="Renci.SshNet">
-      <HintPath>..\..\thirdparty\sshnet\Renci.SshNet.dll</HintPath>
+    <Reference Include="Newtonsoft.Json, Version=9.0.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed, processorArchitecture=MSIL">
+      <HintPath>$(SolutionDir)\packages\Newtonsoft.Json.9.0.1\lib\net45\Newtonsoft.Json.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="Renci.SshNet, Version=2016.1.0.0, Culture=neutral, PublicKeyToken=1cee9f8bde3db106, processorArchitecture=MSIL">
+      <HintPath>$(SolutionDir)\packages\SSH.NET.2016.1.0\lib\net40\Renci.SshNet.dll</HintPath>
+      <Private>True</Private>
     </Reference>
     <Reference Include="System.Data.DataSetExtensions" />
     <Reference Include="System.Runtime.Serialization" />
@@ -44,12 +53,20 @@
     <Reference Include="System.Web.Services" />
     <Reference Include="System.EnterpriseServices" />
     <Reference Include="System.Xml.Linq" />
+    <Reference Include="VimService60, Version=6.0.0.0, Culture=neutral, PublicKeyToken=10980b081e887e9f, processorArchitecture=MSIL">
+      <HintPath>$(SolutionDir)\packages\VMware.Vim.6.280.0.1\lib\Net45\VimService60.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="VimService60.XmlSerializers, Version=6.0.0.0, Culture=neutral, PublicKeyToken=10980b081e887e9f, processorArchitecture=MSIL">
+      <HintPath>$(SolutionDir)\packages\VMware.Vim.6.280.0.1\lib\Net45\VimService60.XmlSerializers.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="VMware.Vim, Version=6.0.0.0, Culture=neutral, PublicKeyToken=10980b081e887e9f, processorArchitecture=MSIL">
+      <HintPath>$(SolutionDir)\packages\VMware.Vim.6.280.0.1\lib\Net45\VMware.Vim.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
   </ItemGroup>
   <ItemGroup>
-    <Content Include="$(Solutiondir)\..\thirdparty\sqlite\SQLite.Interop.dll">
-      <Link>SQLite.Interop.dll</Link>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
     <Content Include="deploy\conrep.xml" />
     <Content Include="Global.asax" />
     <Content Include="iloConsole.aspx" />
@@ -60,6 +77,7 @@
     <Content Include="deploy\applyBIOS.sh" />
     <Content Include="deploy\conrep" />
     <None Include="deploy\getBIOS.sh" />
+    <Content Include="packages.config" />
     <None Include="Resources\ipxeTemplateForBIOS.txt" />
     <None Include="Service References\bootMenuWCF\bootMenuController.disco" />
     <None Include="Service References\bootMenuWCF\configuration91.svcinfo" />
@@ -138,10 +156,6 @@
     </EmbeddedResource>
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\..\thirdparty\hypervisors\trunk\hypervisors\hypervisors.csproj">
-      <Project>{47995DD9-9F78-4313-809D-55C515EAF89E}</Project>
-      <Name>hypervisors</Name>
-    </ProjectReference>
     <ProjectReference Include="..\bladeDirectorWCF\bladeDirectorWCF.csproj">
       <Project>{EEAEC90D-5AB7-4948-B37C-E0E3AD003F1E}</Project>
       <Name>bladeDirectorWCF</Name>

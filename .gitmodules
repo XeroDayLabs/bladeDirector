@@ -1,6 +1,0 @@
-[submodule "ThirdParty/hypervisors"]
-	path = ThirdParty/hypervisors
-	url = ../hypervisors
-[submodule "ThirdParty/sqlite"]
-	path = ThirdParty/sqlite
-	url = ../sqlite
