@@ -155,7 +155,12 @@ namespace bladeDirectorWCF
 
         protected override NASParams getNASParams()
         {
-            return new NASParams();
+            return new NASParams()
+            {
+                IP = Settings.Default.iscsiServerIP,
+                username = Settings.Default.iscsiServerUsername,
+                password = Settings.Default.iscsiServerPassword
+            };
         }
 
         public void setExecutionResults(mockedExecutionResponses respType)
