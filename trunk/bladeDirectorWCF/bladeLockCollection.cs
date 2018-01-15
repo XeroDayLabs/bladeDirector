@@ -170,7 +170,7 @@ namespace bladeDirectorWCF
                 return;
 
             if (readRequested && writeAlreadyTaken)
-                throw new Exception("oh no");
+                throw new Exception("Read lock requested, but this owner already has a write on this lock");
 
             debugmsg(singleLockToTake + " requested " + readRequested + "/" + writeRequested + " : current access " + readAlreadyTaken + "/" + writeAlreadyTaken);
 

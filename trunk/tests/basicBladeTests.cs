@@ -2,8 +2,12 @@
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Net;
+using System.Net.Sockets;
 using System.ServiceModel;
+using System.Text;
 using System.Threading;
+using System.Threading.Tasks;
 using bladeDirectorWCF;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
@@ -350,7 +354,6 @@ namespace tests
             }
         }
 
-
         [TestMethod]
         public void wontLeakOnConnectionErrors()
         {
@@ -377,5 +380,93 @@ namespace tests
             }
         }
 
+        [TestMethod]
+        public void wontLeakOnHTTPErrors()
+        {
+            Uri webURL = new Uri("http://localhost/" + Guid.NewGuid());
+            using (bladeDirectorDebugServices uut = new bladeDirectorDebugServices(WCFPath, new[] { "127.0.0.1" }, false, webURL))
+            {
+                for (int attempt = 0; attempt < 100; attempt++)
+                {
+                    uut.svcDebug._isBladeMine("127.0.0.1", "127.0.0.1", false);
+
+                    Socket connSock = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.IP);
+                    connSock.Connect("localhost", 80);
+                    Byte[] buf = Encoding.ASCII.GetBytes("GET http://localhost/test_wontLeakOnHTTPErrors/generateIPXEScript HTTP/1.1\n\n");
+                    connSock.Send(buf);
+                    connSock.Disconnect(true);
+
+                    uut.svcDebug._isBladeMine("127.0.0.1", "127.0.0.1", false);
+                }
+            }
+        }
+
+
+        [TestMethod]
+        public void canGenerateIPXEScriptForUnknownBlade()
+        {
+            Uri webURL = new Uri("http://localhost/" + Guid.NewGuid());
+            using (bladeDirectorDebugServices uut = new bladeDirectorDebugServices(WCFPath, new[] { "1.1.1.1" }, false, webURL))
+            {
+                WebRequest request = WebRequest.Create(webURL + "/generateIPXEScript");
+                using (WebResponse response = request.GetResponse())
+                {
+                    using (Stream respStream = response.GetResponseStream())
+                    {
+                        using (StreamReader respStreamReader = new StreamReader(respStream))
+                        {
+                            string responseText = respStreamReader.ReadToEnd();
+                            Assert.AreEqual("No blade at this IP address", responseText);
+                        }
+                    }
+                }
+            }
+        }
+
+        [TestMethod]
+        public void canGenerateIPXEScriptWithoutCrashing()
+        {
+            Uri webURL = new Uri("http://localhost/" + Guid.NewGuid());
+            using (bladeDirectorDebugServices uut = new bladeDirectorDebugServices(WCFPath, new[] { "127.0.0.1" }, false, webURL))
+            {
+                WebRequest request = WebRequest.Create(webURL + "/generateIPXEScript");
+                using (WebResponse response = request.GetResponse())
+                {
+                    using (Stream respStream = response.GetResponseStream())
+                    {
+                        using (StreamReader respStreamReader = new StreamReader(respStream))
+                        {
+                            string responseText = respStreamReader.ReadToEnd();
+                            Assert.IsTrue(responseText.Contains("Blade does not have any owner"),
+                                "text 'Blade does not have any owner' not found in response '" + responseText + "'");
+                        }
+                    }
+                }
+            }
+        }
+
+        [TestMethod]
+        public void wontLeakOnUsingOwnershipTransfer()
+        {
+            // See bugzilla #101.
+            // Here we are testing that resources won't leak, even when an asynchronous exception is thrown after the 
+            // lockableBladeSpec is constructed, but _before_ the using has been entered.
+            using (bladeDirectorDebugServices uut = new bladeDirectorDebugServices(WCFPath, new[] { "1.1.1.1" }))
+            {
+                uut.svcDebug._isBladeMine("127.0.0.1", "1.1.1.1", false);
+                uut.svcDebug._isBladeMine("127.0.0.1", "1.1.1.1", false);
+                uut.svcDebug._isBladeMine("127.0.0.1", "1.1.1.1", false);
+                uut.setReceiveTimeout(TimeSpan.FromSeconds(4));
+
+                // >:)
+                uut.svcDebug.lockAndNeverRelease("1.1.1.1");
+
+                uut.setReceiveTimeout(TimeSpan.FromSeconds(10));
+                uut.reconnect();
+
+                // But if we re-connect, locks should be untaken.
+                uut.svcDebug._isBladeMine("127.0.0.1", "1.1.1.1", false);
+            }
+        }
     }
 }

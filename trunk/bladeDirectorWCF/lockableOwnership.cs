@@ -99,6 +99,9 @@ namespace bladeDirectorWCF
 
         public void Dispose()
         {
+            if (_isDisposed)
+                return;
+
             if (specOwnership != null)
             {
                 if (disposalInhibition != 0)

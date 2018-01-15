@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -203,7 +204,8 @@ namespace bladeDirectorWCF
                 },
                 Security = new WSHttpSecurity() { Mode = SecurityMode.None }
             };
-            svc.AddServiceEndpoint(contractInterfaceType, baseBinding, "");
+            ServiceEndpoint ep = svc.AddServiceEndpoint(contractInterfaceType, baseBinding, "");
+            ep.Behaviors.Add(new leakCheckerBehavior());
             
             ServiceBehaviorAttribute svcBehav = svc.Description.Behaviors.Find<ServiceBehaviorAttribute>();
             svcBehav.IncludeExceptionDetailInFaults = true;
@@ -216,6 +218,79 @@ namespace bladeDirectorWCF
                 a.ErrorHandlers.Add(new foo());
             }
         }
+    }
+
+    public class leakCheckerBehavior : IEndpointBehavior
+    {
+        public void Validate(ServiceEndpoint endpoint)
+        {
+            
+        }
+
+        public void AddBindingParameters(ServiceEndpoint endpoint, BindingParameterCollection bindingParameters)
+        {
+            
+        }
+
+        public void ApplyDispatchBehavior(ServiceEndpoint endpoint, EndpointDispatcher endpointDispatcher)
+        {
+            endpointDispatcher.DispatchRuntime.MessageInspectors.Add(new leakCheckerInspector());
+        }
+
+        public void ApplyClientBehavior(ServiceEndpoint endpoint, ClientRuntime clientRuntime)
+        {
+            
+        }
+    }
+
+    public class leakCheckerInspector : IDispatchMessageInspector
+    {
+        private static readonly ConcurrentDictionary<string, List<IDisposable>> disposablesByID = new ConcurrentDictionary<string, List<IDisposable>>();
+
+        public object AfterReceiveRequest(ref Message request, IClientChannel channel, InstanceContext instanceContext)
+        {
+            string sessionID = OperationContext.Current.SessionId;
+            disposablesByID.TryAdd(sessionID, new List<IDisposable>());
+
+            return null;
+        }
+
+        public void BeforeSendReply(ref Message reply, object correlationState)
+        {
+            string sessionID = OperationContext.Current.SessionId;
+
+            foreach (var disposable in disposablesByID[sessionID])
+                disposable.Dispose();
+
+            List<IDisposable> dummy;
+            disposablesByID.TryRemove(sessionID, out dummy);
+        }
+
+        public static void monitorDisposable(lockableBladeSpec tomonitor)
+        {
+            if (!hasContext())
+                return;
+
+            string sessionID = OperationContext.Current.SessionId;
+            
+            disposablesByID[sessionID].Add(tomonitor);
+        }
+
+        public static void unmonitorDisposable(lockableBladeSpec tomonitor)
+        {
+            if (!hasContext())
+                return;
+
+            string sessionID = OperationContext.Current.SessionId;
+
+            disposablesByID[sessionID].Remove(tomonitor);
+        }
+
+        private static bool hasContext()
+        {
+            return OperationContext.Current != null && OperationContext.Current.SessionId != null;
+        }
+
     }
 
     public class bladeDirectorArgs

@@ -14,6 +14,9 @@ namespace bladeDirectorWCF
         void lockAndSleep(string bladeToLock);
 
         [OperationContract]
+        void lockAndNeverRelease(string bladeToLock);
+        
+        [OperationContract]
         void initWithBladesFromIPList(string[] bladeIPs, bool useMockedManager, NASFaultInjectionPolicy faultInjection);
 
         [OperationContract]

@@ -21,6 +21,11 @@ namespace bladeDirectorWCF
             hostStateManager.lockAndSleep(bladeToLock);
         }
 
+        public static void _lockAndNeverRelease(string bladeToLock)
+        {
+            hostStateManager.lockAndNeverRelease(bladeToLock);
+        }
+
         public static resultAndWaitToken _logIn(string requestorIP)
         {
             return hostStateManager.logIn(sanitizeAddress(requestorIP));
@@ -321,9 +326,13 @@ namespace bladeDirectorWCF
 
         public static string sanitizeAddress(string toSanitize)
         {
-            // The ipv6 loopback, ::1, gets used sometimes during VM provisioning. Because of that, we escape the colons into
-            // something that can be present in clone/target/extent names.
-            return toSanitize.Replace(":", "-");
+            // The ipv6 loopback, ::1, gets used sometimes during VM provisioning. This causes confusion since we use the IP in
+            // the iSCSI target/extent name, but also looks confusing in our code - therefore we cheat here and transform it into
+            // the ipv4 loopback. >:)
+            if (toSanitize == "::1")
+                return "127.0.0.1";
+
+            return toSanitize;
         }
 #endregion
     }

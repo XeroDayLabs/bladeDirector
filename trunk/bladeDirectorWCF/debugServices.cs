@@ -1,4 +1,5 @@
 ﻿using System;
+using System.ServiceModel;
 using hypervisors;
 
 namespace bladeDirectorWCF
@@ -13,6 +14,11 @@ namespace bladeDirectorWCF
         public void lockAndSleep(string bladeToLock)
         {
             services._lockAndSleep(bladeToLock);
+        }
+
+        public void lockAndNeverRelease(string bladeToLock)
+        {
+            services._lockAndNeverRelease(bladeToLock);
         }
 
         public void initWithBladesFromIPList(string[] bladeIPs, bool useMockedManager, NASFaultInjectionPolicy faultInjection)

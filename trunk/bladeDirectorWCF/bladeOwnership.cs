@@ -458,6 +458,7 @@ namespace bladeDirectorWCF
         {
             if (state == bladeStatus.unused)
             {
+                // We must return something including the string "Blade does not have any owner" because a unit test checks this.
                 return  "#!ipxe\r\n" +
                         "prompt Blade does not have any owner! Hit [enter] to reboot\r\n" +
                         "reboot\r\n";

@@ -4,6 +4,7 @@ using System.Data.SQLite;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.ServiceModel;
 using System.Threading;
 using bladeDirectorWCF.Properties;
 
@@ -181,10 +182,11 @@ namespace bladeDirectorWCF
             readLock = readLock | bladeLockType.lockvmDeployState;
             readLock = readLock | bladeLockType.lockBIOS;
 
-            lockableBladeSpec toRet = new lockableBladeSpec(IP, readLock, writeLock);
-
+            lockableBladeSpec toRet = null;
             try
             {
+                toRet = new lockableBladeSpec(IP, readLock, writeLock);
+
                 string sqlCommand = "select * from bladeOwnership " +
                                     "join bladeConfiguration on ownershipKey = bladeConfiguration.ownershipID " +
                                     "where bladeIP = $bladeIP";
@@ -214,6 +216,7 @@ namespace bladeDirectorWCF
                                 (writeLock & bladeLockType.lockBIOS) == 0)
                                 toRet.downgradeLocks(bladeLockType.lockBIOS, bladeLockType.lockNone);
 
+                            leakCheckerInspector.monitorDisposable(toRet);
                             return toRet;
                         }
                         // No records returned.
@@ -223,7 +226,8 @@ namespace bladeDirectorWCF
             }
             catch (Exception)
             {
-                toRet.Dispose();
+                if (toRet != null)
+                    toRet.Dispose();
                 throw;
             }
         }

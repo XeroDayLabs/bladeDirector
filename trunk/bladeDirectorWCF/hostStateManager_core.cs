@@ -1677,7 +1677,10 @@ namespace bladeDirectorWCF
                 using (lockableVMSpec vmState = db.getVMByIP(srcIP, bladeLockType.lockOwnership | bladeLockType.lockSnapshot, bladeLockType.lockNone))
                 {
                     if (vmState == null)
+                    {
+                        // This string is checked by a unit test, so don't change it without checking that.
                         return "No blade at this IP address";
+                    }
                     return vmState.spec.generateIPXEScript();
                 }
             }
@@ -1899,7 +1902,7 @@ namespace bladeDirectorWCF
             using (hypervisor hyp = makeHypervisorForVM(newVM, parent))
             {
                 prepareCloneImage(newVM.spec, toCloneVolume, additionalScript,
-                    additionalDeploymentItem, hyp, nas, usersToAdd, newOwner, deadline);
+                    additionalDeploymentItem, hyp, nas, usersToAdd, newOwner, deadline, TimeSpan.FromMinutes(2));
             }
            
 
@@ -1948,7 +1951,8 @@ namespace bladeDirectorWCF
             using (hypervisor hyp = makeHypervisorForBlade_windows(newBlade))
             {
                 prepareCloneImage(newBlade.spec, toCloneVolume, additionalScript,
-                    additionalDeploymentItem, hyp, nas, usersToAdd, newOwner, deadline);
+                    additionalDeploymentItem, hyp, nas, usersToAdd, newOwner, deadline, 
+                    TimeSpan.FromMinutes(5));
             }
 
 
@@ -1959,14 +1963,14 @@ namespace bladeDirectorWCF
             bladeOwnership itemToAdd, string toCloneVolume, 
             string additionalScript, string[] additionalDeploymentItem, 
             hypervisor hyp, NASAccess nas, userAddRequest[] usersToAdd, string newOwner,
-            cancellableDateTime deadline)
+            cancellableDateTime deadline, TimeSpan powerOnTimeout)
         {
             hyp.connect();
             // We try to power the new VM up. Note that if we fail this, we will retry it a couple times, since it is a relatively
             // fast operation and I do see occasional failures, perhaps due to FreeNAS being strange.
             while (true)
             {
-                cancellableDateTime powerUpDateTime = new cancellableDateTime(TimeSpan.FromMinutes(2), deadline);
+                cancellableDateTime powerUpDateTime = new cancellableDateTime(powerOnTimeout, deadline);
                 deadline.throwIfTimedOutOrCancelled("Powering up VM");
 
                 try
@@ -1979,7 +1983,6 @@ namespace bladeDirectorWCF
                 catch (TimeoutException)
                 {
                     log("Powering up node timed out, retrying..");
-                    deadline.doCancellableSleep(TimeSpan.FromSeconds(10));
                     continue;
                 }
             }
@@ -2111,8 +2114,6 @@ namespace bladeDirectorWCF
         private static void exportClonesViaiSCSI(NASAccess nas, bladeOwnership itemToAdd)
         {
             // Now expose each via iSCSI.
-            targetGroup tgtGrp = nas.getTargetGroups()[0];
-
             iscsiTarget newTarget = nas.getISCSITargets().SingleOrDefault(x => x.targetName == itemToAdd.getCloneName());
             if (newTarget == null)
             {
@@ -2121,6 +2122,11 @@ namespace bladeDirectorWCF
                         targetAlias = itemToAdd.getCloneName(),
                         targetName = itemToAdd.getCloneName()
                     } );
+
+                // If the target has no portal group associated with it, then associate it with the first portal on the server
+                targetGroup newTgtGroup = nas.getTargetGroups().SingleOrDefault(x => x.iscsi_target == newTarget.id);
+                if (newTgtGroup == null)
+                    nas.createTargetGroup(nas.getPortals().First(), newTarget);
             }
 
             iscsiExtent newExtent = nas.getExtents().SingleOrDefault(x => x.iscsi_target_extent_name == newTarget.targetName);
@@ -2133,10 +2139,6 @@ namespace bladeDirectorWCF
                     iscsi_target_extent_disk = String.Format("zvol/SSDs/{0}", newTarget.targetName)
                 });
             }
-
-            targetGroup newTgtGroup = nas.getTargetGroups().SingleOrDefault(x => x.iscsi_target == newTarget.id);
-            if (newTgtGroup == null)
-                nas.addTargetGroup(tgtGrp, newTarget);
 
             iscsiTargetToExtentMapping newTToE = nas.getTargetToExtents().SingleOrDefault(x => x.iscsi_target == newTarget.id);
             if (newTToE == null)
@@ -2157,6 +2159,11 @@ namespace bladeDirectorWCF
                 foo.Start();
                 Thread.Sleep(TimeSpan.FromSeconds(10));
             }
+        }
+
+        public void lockAndNeverRelease(string bladeToLock)
+        {
+            db.getBladeByIP(bladeToLock, bladeLockType.lockAll, bladeLockType.lockAll);
         }
     }
 
