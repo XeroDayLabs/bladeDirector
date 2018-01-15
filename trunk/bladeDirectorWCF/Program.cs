@@ -17,18 +17,6 @@ using CommandLine.Text;
 
 namespace bladeDirectorWCF
 {
-    public class foo : IErrorHandler
-    {
-        public void ProvideFault(Exception error, MessageVersion version, ref Message fault)
-        {
-        }
-
-        public bool HandleError(Exception error)
-        {
-            return true;
-        }
-    }
-
     public static class Program
     {
         public static void Main(string[] args)
@@ -88,7 +76,9 @@ namespace bladeDirectorWCF
 
             using (WebServiceHost WebSvc = new WebServiceHost(typeof (webServices), baseServiceURL))
             {
-                WebSvc.AddServiceEndpoint(typeof(IWebServices), new WebHttpBinding(), webServiceURL);
+                ServiceEndpoint ep = WebSvc.AddServiceEndpoint(typeof(IWebServices), new WebHttpBinding(), webServiceURL);
+                ep.Behaviors.Add(new leakCheckerBehavior());
+                
                 if (!parsedArgs.disableWebPort)
                     WebSvc.Open();
 
@@ -209,14 +199,6 @@ namespace bladeDirectorWCF
             
             ServiceBehaviorAttribute svcBehav = svc.Description.Behaviors.Find<ServiceBehaviorAttribute>();
             svcBehav.IncludeExceptionDetailInFaults = true;
-
-            foreach (ChannelDispatcherBase channelDispatcherBase in svc.ChannelDispatchers)
-            {
-                ChannelDispatcher a = channelDispatcherBase as ChannelDispatcher;
-                if (a == null)
-                    continue;
-                a.ErrorHandlers.Add(new foo());
-            }
         }
     }
 
@@ -249,7 +231,8 @@ namespace bladeDirectorWCF
 
         public object AfterReceiveRequest(ref Message request, IClientChannel channel, InstanceContext instanceContext)
         {
-            string sessionID = OperationContext.Current.SessionId;
+            string sessionID = getSessionID();
+
             disposablesByID.TryAdd(sessionID, new List<IDisposable>());
 
             return null;
@@ -257,7 +240,7 @@ namespace bladeDirectorWCF
 
         public void BeforeSendReply(ref Message reply, object correlationState)
         {
-            string sessionID = OperationContext.Current.SessionId;
+            string sessionID = getSessionID();
 
             foreach (var disposable in disposablesByID[sessionID])
                 disposable.Dispose();
@@ -268,29 +251,35 @@ namespace bladeDirectorWCF
 
         public static void monitorDisposable(lockableBladeSpec tomonitor)
         {
-            if (!hasContext())
+            string sessionID = getSessionID();
+            if (sessionID == null)
                 return;
 
-            string sessionID = OperationContext.Current.SessionId;
-            
             disposablesByID[sessionID].Add(tomonitor);
         }
 
         public static void unmonitorDisposable(lockableBladeSpec tomonitor)
         {
-            if (!hasContext())
+            string sessionID = getSessionID();
+            if (sessionID == null)
                 return;
-
-            string sessionID = OperationContext.Current.SessionId;
 
             disposablesByID[sessionID].Remove(tomonitor);
         }
 
         private static bool hasContext()
         {
-            return OperationContext.Current != null && OperationContext.Current.SessionId != null;
+            return OperationContext.Current != null;
         }
 
+        private static string getSessionID()
+        {
+            string sessionID = OperationContext.Current.SessionId;
+            if (sessionID == null)
+                sessionID = services.getSrcIPAndPort();
+
+            return sessionID;
+        }
     }
 
     public class bladeDirectorArgs

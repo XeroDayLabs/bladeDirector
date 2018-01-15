@@ -14,9 +14,13 @@ namespace bladeDirectorWCF
         [OperationContract]
         [WebGet(ResponseFormat = WebMessageFormat.Xml, BodyStyle = WebMessageBodyStyle.Bare)]
         Stream generateIPXEScript();
+
+        [OperationContract]
+        [WebGet(ResponseFormat = WebMessageFormat.Xml, BodyStyle = WebMessageBodyStyle.Bare)]
+        string lockAndReturn();
     }
 
-    [ServiceContract]
+    [ServiceContract(SessionMode = SessionMode.Required)]
     [ServiceKnownType(typeof(resultAndBladeName))]
     [ServiceKnownType(typeof(resultAndBIOSConfig))]
     public interface IServices

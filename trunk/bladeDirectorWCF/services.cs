@@ -324,6 +324,15 @@ namespace bladeDirectorWCF
             return sanitizeAddress(IP);
         }
 
+        public static string getSrcIPAndPort()
+        {
+            OperationContext ctx = OperationContext.Current;
+            MessageProperties props = ctx.IncomingMessageProperties;
+            RemoteEndpointMessageProperty ep = props[RemoteEndpointMessageProperty.Name] as RemoteEndpointMessageProperty;
+
+            return sanitizeAddress(ep.Address) + "_" + ep.Port;
+        }
+
         public static string sanitizeAddress(string toSanitize)
         {
             // The ipv6 loopback, ::1, gets used sometimes during VM provisioning. This causes confusion since we use the IP in

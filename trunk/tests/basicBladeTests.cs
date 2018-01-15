@@ -381,6 +381,29 @@ namespace tests
         }
 
         [TestMethod]
+        public void wontLeakOnWebLeak()
+        {
+            Uri webURL = new Uri("http://localhost/" + Guid.NewGuid());
+            using (bladeDirectorDebugServices uut = new bladeDirectorDebugServices(WCFPath, new[] { "127.0.0.1" }, false, webURL))
+            {
+                //uut.setReceiveTimeout(TimeSpan.FromSeconds(10));
+
+                // This will leak a blade
+                WebRequest request = WebRequest.Create(webURL + "/lockAndReturn");
+                using (WebResponse response = request.GetResponse())
+                {
+                    using (Stream respStream = response.GetResponseStream())
+                    {
+                        using (StreamReader respStreamReader = new StreamReader(respStream)) { }
+                    }
+                }
+
+                // But if we re-connect, locks should be untaken.
+                uut.svcDebug._isBladeMine("127.0.0.1", "127.0.0.1", false);
+            }
+        }
+
+        [TestMethod]
         public void wontLeakOnHTTPErrors()
         {
             Uri webURL = new Uri("http://localhost/" + Guid.NewGuid());

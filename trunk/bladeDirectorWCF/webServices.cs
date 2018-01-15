@@ -1,4 +1,6 @@
-﻿using System.IO;
+﻿using System;
+using System.Diagnostics;
+using System.IO;
 using System.ServiceModel.Web;
 using System.Text;
 
@@ -23,6 +25,20 @@ namespace bladeDirectorWCF
             WebOperationContext.Current.OutgoingResponse.ContentType = "text/plain";
             string toRet = services._generateIPXEScript(srcIP);
             return new MemoryStream(Encoding.ASCII.GetBytes(toRet));
+        }
+
+        public string lockAndReturn()
+        {
+            string srcIP = services.getSrcIP();
+
+            if (WebOperationContext.Current.IncomingRequest.UriTemplateMatch.QueryParameters["hostip"] != null)
+            {
+                srcIP = services.sanitizeAddress(WebOperationContext.Current.IncomingRequest.UriTemplateMatch.QueryParameters["hostip"]);
+            }
+
+            services._lockAndNeverRelease(srcIP);
+
+            return srcIP;
         }
     }
 }
