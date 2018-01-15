@@ -100,27 +100,32 @@ namespace bladeDirectorWCF
         public void Dispose()
         {
             if (_isDisposed)
-                return;
-
-            if (specOwnership != null)
             {
-                if (disposalInhibition != 0)
+                // Eeeek, we're a ghost! spooooky
+                return;
+            }
+
+            if (disposalInhibition != 0)
+            {
+                // refuse to die!
+                disposalInhibition--;
+            }
+            else
+            {
+                if (specOwnership != null)
                 {
-                    disposalInhibition--;
-                }
-                else
-                {
+                    // Actually dispose the class.
                     if (deleteOnRelease)
                         specOwnership.deleteInDB();
                     else
                         specOwnership.createOrUpdateInDB();
 
                     _bladeLockStatus[specOwnership.kernelDebugAddress].release(_readLocks, _writeLocks);
+
+                    _isDisposed = true;
+                    GC.SuppressFinalize(this);
                 }
             }
-
-            _isDisposed = true;
-            GC.SuppressFinalize(this);
         }
 
         ~lockableOwnership()

@@ -93,6 +93,12 @@ namespace bladeDirectorWCF
                 iscsi_target_portalgroup = "1"
             };
             nas.addTargetGroup(tgtGrp, null);
+
+            iscsiPortal portal = new iscsiPortal()
+            {
+                id = "1"
+            };
+            nas.addPortal(portal);
         }
 
         public List<mockedCall> getNASEvents()

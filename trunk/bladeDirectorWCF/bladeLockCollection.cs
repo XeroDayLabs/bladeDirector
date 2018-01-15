@@ -142,11 +142,11 @@ namespace bladeDirectorWCF
                     // will undo the _current_ call if it throws. 
                     foreach (string lockToRelease in getLockNames())
                     {
-                        if (!succededLocks.Contains(lockToRelease))
+                        if (!succededLocks.Contains(lockToRelease) || lockTypeName == lockToRelease)
                         {
                             // We did not set this one, so clear it from the collection.
-                            readTypes &= ~((bladeLockType) (Enum.Parse(typeof(bladeLockType), lockTypeName)));
-                            writeTypes &= ~((bladeLockType) (Enum.Parse(typeof(bladeLockType), lockTypeName)));
+                            readTypes &= ~((bladeLockType)(Enum.Parse(typeof(bladeLockType), lockToRelease)));
+                            writeTypes &= ~((bladeLockType)(Enum.Parse(typeof(bladeLockType), lockToRelease)));
                         }
                     }
                     release(readTypes, writeTypes);
