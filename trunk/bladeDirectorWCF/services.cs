@@ -327,6 +327,8 @@ namespace bladeDirectorWCF
         public static string getSrcIPAndPort()
         {
             OperationContext ctx = OperationContext.Current;
+            if (ctx == null)
+                return null;
             MessageProperties props = ctx.IncomingMessageProperties;
             RemoteEndpointMessageProperty ep = props[RemoteEndpointMessageProperty.Name] as RemoteEndpointMessageProperty;
 

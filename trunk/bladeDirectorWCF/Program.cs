@@ -274,11 +274,11 @@ namespace bladeDirectorWCF
 
         private static string getSessionID()
         {
-            string sessionID = OperationContext.Current.SessionId;
-            if (sessionID == null)
-                sessionID = services.getSrcIPAndPort();
+            string sessionID = null;
+            if (OperationContext.Current != null && OperationContext.Current.SessionId != null)
+                return OperationContext.Current.SessionId;
 
-            return sessionID;
+            return services.getSrcIPAndPort();
         }
     }
 
