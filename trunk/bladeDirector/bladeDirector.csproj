@@ -32,7 +32,7 @@
       <Private>True</Private>
     </Reference>
     <Reference Include="hypervisors, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>$(SolutionDir)\packages\hypervisors.0.0.1.77\lib\net45\hypervisors.dll</HintPath>
+      <HintPath>$(SolutionDir)\packages\hypervisors.0.0.1.83\lib\net45\hypervisors.dll</HintPath>
       <Private>True</Private>
     </Reference>
     <Reference Include="Microsoft.CSharp" />
