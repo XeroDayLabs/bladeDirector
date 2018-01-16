@@ -174,58 +174,5 @@ namespace tests
             Assert.IsTrue(uut.isUnlocked());
             uut.assertLocks(bladeLockType.lockNone, bladeLockType.lockNone);
         }
-
-        [TestMethod]
-        public void testTrickyDeadlockSituation()
-        {
-            bladeDirectorWCF.bladeLockCollection uut = new bladeDirectorWCF.bladeLockCollection(bladeLockType.lockNone, bladeLockType.lockNone);
-
-            int threadCount = 2;
-            int counts = 1000;
-            Exception[] exceptions = new Exception[threadCount];
-            Thread[] threads = new Thread[threadCount];
-
-            for (int i = 0; i < threadCount; i++)
-            {
-                int idx = i;
-                threads[idx] = new Thread(() =>
-                {
-                    try
-                    {
-                        for (int n = 0; n < counts; n++)
-                        {
-                            if (idx%2 == 0)
-                            {
-                                uut.acquire(bladeLockType.lockBIOS, bladeLockType.lockOwnership);
-                                uut.release(bladeLockType.lockBIOS, bladeLockType.lockOwnership);
-                            }
-                            else
-                            {
-                                uut.acquire(bladeLockType.lockOwnership, bladeLockType.lockBIOS);
-                                uut.release(bladeLockType.lockOwnership, bladeLockType.lockBIOS);
-                            }
-                        }
-                    }
-                    catch (Exception e)
-                    {
-                        exceptions[idx] = e;
-                    }
-                });
-            }
-
-            foreach (Thread t in threads)
-                t.Start();
-            foreach (Thread t in threads)
-                t.Join();
-
-            foreach (Exception e in exceptions)
-            {
-                if (e != null)
-                    throw e;
-            }
-
-            uut.release(bladeLockType.lockNone, bladeLockType.lockNone);
-            Assert.IsTrue(uut.isUnlocked());
-        }
     }
 }
