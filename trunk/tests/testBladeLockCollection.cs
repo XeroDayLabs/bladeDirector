@@ -12,14 +12,14 @@ namespace tests
         [TestMethod]
         public void testLockingBlocksWriterOnWrite()
         {
-            bladeDirectorWCF.bladeLockCollection uut = new bladeDirectorWCF.bladeLockCollection(bladeDirectorWCF.bladeLockType.lockNone, bladeDirectorWCF.bladeLockType.lockIPAddresses);
+            bladeDirectorWCF.bladeLockCollection uut = new bladeDirectorWCF.bladeLockCollection(bladeLockType.lockNone, bladeLockType.lockIPAddresses);
 
             bool failed = false;
 
             bool resourceInUse = true;
             Thread testLockThread = new Thread(() =>
             {
-                uut.acquire(bladeDirectorWCF.bladeLockType.lockNone, bladeDirectorWCF.bladeLockType.lockIPAddresses);
+                uut.acquire(bladeLockType.lockNone, bladeLockType.lockIPAddresses);
                 if (resourceInUse)
                     failed = true;
             });
@@ -27,7 +27,7 @@ namespace tests
 
             Thread.Sleep(TimeSpan.FromSeconds(1));
             resourceInUse = false;
-            uut.release(bladeDirectorWCF.bladeLockType.lockNone, bladeDirectorWCF.bladeLockType.lockIPAddresses);
+            uut.release(bladeLockType.lockNone, bladeLockType.lockIPAddresses);
 
             Assert.IsFalse(failed);
         }
@@ -35,14 +35,14 @@ namespace tests
         [TestMethod]
         public void testLockingBlocksReaderOnWrite()
         {
-            bladeDirectorWCF.bladeLockCollection uut = new bladeDirectorWCF.bladeLockCollection(bladeDirectorWCF.bladeLockType.lockBIOS, bladeDirectorWCF.bladeLockType.lockIPAddresses);
+            bladeDirectorWCF.bladeLockCollection uut = new bladeDirectorWCF.bladeLockCollection(bladeLockType.lockBIOS, bladeLockType.lockIPAddresses);
 
             bool failed = false;
 
             bool resourceInUse = true;
             Thread testLockThread = new Thread(() =>
             {
-                uut.acquire(bladeDirectorWCF.bladeLockType.lockIPAddresses, bladeDirectorWCF.bladeLockType.lockNone);
+                uut.acquire(bladeLockType.lockIPAddresses, bladeLockType.lockNone);
                 if (resourceInUse)
                     failed = true;
             });
@@ -50,7 +50,7 @@ namespace tests
 
             Thread.Sleep(TimeSpan.FromSeconds(1));
             resourceInUse = false;
-            uut.release(bladeDirectorWCF.bladeLockType.lockBIOS, bladeDirectorWCF.bladeLockType.lockIPAddresses);
+            uut.release(bladeLockType.lockBIOS, bladeLockType.lockIPAddresses);
 
             Assert.IsFalse(failed);
         }
@@ -58,14 +58,14 @@ namespace tests
         [TestMethod]
         public void testLockingDoesNotBlockOnMultipleReaders()
         {
-            bladeDirectorWCF.bladeLockCollection uut = new bladeDirectorWCF.bladeLockCollection(bladeDirectorWCF.bladeLockType.lockBIOS, bladeDirectorWCF.bladeLockType.lockNone);
+            bladeDirectorWCF.bladeLockCollection uut = new bladeDirectorWCF.bladeLockCollection(bladeLockType.lockBIOS, bladeLockType.lockNone);
 
             bool failed = true;
 
             bool resourceInUse = true;
             Thread testLockThread = new Thread(() =>
             {
-                uut.acquire(bladeDirectorWCF.bladeLockType.lockBIOS, bladeDirectorWCF.bladeLockType.lockNone);
+                uut.acquire(bladeLockType.lockBIOS, bladeLockType.lockNone);
                 if (resourceInUse)
                     failed = false;
             });
@@ -73,7 +73,7 @@ namespace tests
 
             Thread.Sleep(TimeSpan.FromSeconds(1));
             resourceInUse = false;
-            uut.release(bladeDirectorWCF.bladeLockType.lockBIOS, bladeDirectorWCF.bladeLockType.lockNone);
+            uut.release(bladeLockType.lockBIOS, bladeLockType.lockNone);
 
             Assert.IsFalse(failed);
         }
@@ -81,24 +81,24 @@ namespace tests
         [TestMethod]
         public void testLockingWritesImplyReads()
         {
-            bladeDirectorWCF.bladeLockCollection uut = new bladeDirectorWCF.bladeLockCollection(bladeDirectorWCF.bladeLockType.lockNone, bladeDirectorWCF.bladeLockType.lockBIOS);
+            bladeDirectorWCF.bladeLockCollection uut = new bladeDirectorWCF.bladeLockCollection(bladeLockType.lockNone, bladeLockType.lockBIOS);
 
-            uut.release(bladeDirectorWCF.bladeLockType.lockNone, bladeDirectorWCF.bladeLockType.lockBIOS);
+            uut.release(bladeLockType.lockNone, bladeLockType.lockBIOS);
 
-            Assert.IsFalse(uut.assertLocks(bladeDirectorWCF.bladeLockType.lockNone, bladeDirectorWCF.bladeLockType.lockNone));
+            Assert.IsFalse(uut.assertLocks(bladeLockType.lockNone, bladeLockType.lockNone));
         }
 
         [TestMethod]
         public void testReaderLockCanBeUpgradedAndThenReleased()
         {
-            bladeDirectorWCF.bladeLockCollection uut = new bladeDirectorWCF.bladeLockCollection(bladeDirectorWCF.bladeLockType.lockBIOS, bladeDirectorWCF.bladeLockType.lockNone);
+            bladeDirectorWCF.bladeLockCollection uut = new bladeDirectorWCF.bladeLockCollection(bladeLockType.lockBIOS, bladeLockType.lockNone);
 
-            uut.acquire(bladeDirectorWCF.bladeLockType.lockNone, bladeDirectorWCF.bladeLockType.lockBIOS);
-            uut.release(bladeDirectorWCF.bladeLockType.lockNone, bladeDirectorWCF.bladeLockType.lockBIOS);
+            uut.acquire(bladeLockType.lockNone, bladeLockType.lockBIOS);
+            uut.release(bladeLockType.lockNone, bladeLockType.lockBIOS);
 
-            Assert.IsTrue(uut.assertLocks(bladeDirectorWCF.bladeLockType.lockBIOS, bladeDirectorWCF.bladeLockType.lockNone));
+            Assert.IsTrue(uut.assertLocks(bladeLockType.lockBIOS, bladeLockType.lockNone));
 
-            uut.release(bladeDirectorWCF.bladeLockType.lockBIOS, bladeDirectorWCF.bladeLockType.lockNone);
+            uut.release(bladeLockType.lockBIOS, bladeLockType.lockNone);
 
             Assert.IsTrue(uut.isUnlocked());
         }
@@ -106,46 +106,47 @@ namespace tests
         [TestMethod]
         public void testLockCanBeUpgradedAndThenReleased()
         {
-            bladeDirectorWCF.bladeLockCollection uut = new bladeDirectorWCF.bladeLockCollection(bladeDirectorWCF.bladeLockType.lockNone, bladeDirectorWCF.bladeLockType.lockNone);
-            uut.acquire(bladeDirectorWCF.bladeLockType.lockOwnership, bladeDirectorWCF.bladeLockType.lockBIOS);
-            uut.release(bladeDirectorWCF.bladeLockType.lockOwnership | bladeDirectorWCF.bladeLockType.lockBIOS, bladeDirectorWCF.bladeLockType.lockBIOS);
+            bladeDirectorWCF.bladeLockCollection uut = new bladeDirectorWCF.bladeLockCollection(bladeLockType.lockNone, bladeLockType.lockNone);
+            uut.acquire(bladeLockType.lockOwnership, bladeLockType.lockBIOS);
+            uut.release(bladeLockType.lockOwnership | bladeLockType.lockBIOS, bladeLockType.lockBIOS);
             Assert.IsTrue(uut.isUnlocked());
         }
 
         [TestMethod]
         public void testWriterLockCanBeDowngradedAndThenReleased()
         {
-            bladeDirectorWCF.bladeLockCollection uut = new bladeDirectorWCF.bladeLockCollection(bladeDirectorWCF.bladeLockType.lockNone, bladeDirectorWCF.bladeLockType.lockSnapshot);
-            uut.release(bladeDirectorWCF.bladeLockType.lockNone, bladeDirectorWCF.bladeLockType.lockSnapshot);
+            bladeDirectorWCF.bladeLockCollection uut = new bladeDirectorWCF.bladeLockCollection(bladeLockType.lockNone, bladeLockType.lockSnapshot);
+            uut.release(bladeLockType.lockNone, bladeLockType.lockSnapshot);
             
             // Downgrade should've happened.
-            Assert.IsTrue(uut.assertLocks(bladeDirectorWCF.bladeLockType.lockSnapshot, bladeDirectorWCF.bladeLockType.lockNone));
+            Assert.IsTrue(uut.assertLocks(bladeLockType.lockSnapshot, bladeLockType.lockNone));
 
-            uut.release(bladeDirectorWCF.bladeLockType.lockSnapshot, bladeDirectorWCF.bladeLockType.lockNone);
+            uut.release(bladeLockType.lockSnapshot, bladeLockType.lockNone);
             Assert.IsTrue(uut.isUnlocked());
         }
 
         [TestMethod]
         public void testReaderLockCanBeUpgradedAndDowngradedRepeatedlyAndThenReleased()
         {
-            bladeDirectorWCF.bladeLockCollection uut = new bladeDirectorWCF.bladeLockCollection(bladeDirectorWCF.bladeLockType.lockBIOS, bladeDirectorWCF.bladeLockType.lockNone);
+            bladeDirectorWCF.bladeLockCollection uut = new bladeDirectorWCF.bladeLockCollection(bladeLockType.lockBIOS, bladeLockType.lockNone);
 
-            uut.acquire(bladeDirectorWCF.bladeLockType.lockNone, bladeDirectorWCF.bladeLockType.lockBIOS);
-            Assert.IsTrue(uut.assertLocks(bladeDirectorWCF.bladeLockType.lockBIOS, bladeDirectorWCF.bladeLockType.lockBIOS));
-            uut.release(bladeDirectorWCF.bladeLockType.lockNone, bladeDirectorWCF.bladeLockType.lockBIOS);
-            Assert.IsTrue(uut.assertLocks(bladeDirectorWCF.bladeLockType.lockBIOS, bladeDirectorWCF.bladeLockType.lockNone));
+            Assert.IsTrue(uut.assertLocks(bladeLockType.lockBIOS, bladeLockType.lockNone));
+            uut.acquire(bladeLockType.lockNone, bladeLockType.lockBIOS);
+            Assert.IsTrue(uut.assertLocks(bladeLockType.lockBIOS, bladeLockType.lockBIOS));
+            uut.release(bladeLockType.lockNone, bladeLockType.lockBIOS);
+            Assert.IsTrue(uut.assertLocks(bladeLockType.lockBIOS, bladeLockType.lockNone));
 
-            uut.acquire(bladeDirectorWCF.bladeLockType.lockNone, bladeDirectorWCF.bladeLockType.lockBIOS);
-            Assert.IsTrue(uut.assertLocks(bladeDirectorWCF.bladeLockType.lockBIOS, bladeDirectorWCF.bladeLockType.lockBIOS));
-            uut.release(bladeDirectorWCF.bladeLockType.lockNone, bladeDirectorWCF.bladeLockType.lockBIOS);
-            Assert.IsTrue(uut.assertLocks(bladeDirectorWCF.bladeLockType.lockBIOS, bladeDirectorWCF.bladeLockType.lockNone));
+            uut.acquire(bladeLockType.lockNone, bladeLockType.lockBIOS);
+            Assert.IsTrue(uut.assertLocks(bladeLockType.lockBIOS, bladeLockType.lockBIOS));
+            uut.release(bladeLockType.lockNone, bladeLockType.lockBIOS);
+            Assert.IsTrue(uut.assertLocks(bladeLockType.lockBIOS, bladeLockType.lockNone));
 
-            uut.acquire(bladeDirectorWCF.bladeLockType.lockNone, bladeDirectorWCF.bladeLockType.lockBIOS);
-            Assert.IsTrue(uut.assertLocks(bladeDirectorWCF.bladeLockType.lockBIOS, bladeDirectorWCF.bladeLockType.lockBIOS));
-            uut.release(bladeDirectorWCF.bladeLockType.lockNone, bladeDirectorWCF.bladeLockType.lockBIOS);
-            Assert.IsTrue(uut.assertLocks(bladeDirectorWCF.bladeLockType.lockBIOS, bladeDirectorWCF.bladeLockType.lockNone));
+            uut.acquire(bladeLockType.lockNone, bladeLockType.lockBIOS);
+            Assert.IsTrue(uut.assertLocks(bladeLockType.lockBIOS, bladeLockType.lockBIOS));
+            uut.release(bladeLockType.lockNone, bladeLockType.lockBIOS);
+            Assert.IsTrue(uut.assertLocks(bladeLockType.lockBIOS, bladeLockType.lockNone));
 
-            uut.release(bladeDirectorWCF.bladeLockType.lockBIOS, bladeDirectorWCF.bladeLockType.lockNone);
+            uut.release(bladeLockType.lockBIOS, bladeLockType.lockNone);
             Assert.IsTrue(uut.isUnlocked());
         }
 
@@ -173,6 +174,58 @@ namespace tests
             Assert.IsTrue(uut.isUnlocked());
             uut.assertLocks(bladeLockType.lockNone, bladeLockType.lockNone);
         }
-    
+
+        [TestMethod]
+        public void testTrickyDeadlockSituation()
+        {
+            bladeDirectorWCF.bladeLockCollection uut = new bladeDirectorWCF.bladeLockCollection(bladeLockType.lockNone, bladeLockType.lockNone);
+
+            int threadCount = 2;
+            int counts = 1000;
+            Exception[] exceptions = new Exception[threadCount];
+            Thread[] threads = new Thread[threadCount];
+
+            for (int i = 0; i < threadCount; i++)
+            {
+                int idx = i;
+                threads[idx] = new Thread(() =>
+                {
+                    try
+                    {
+                        for (int n = 0; n < counts; n++)
+                        {
+                            if (idx%2 == 0)
+                            {
+                                uut.acquire(bladeLockType.lockBIOS, bladeLockType.lockOwnership);
+                                uut.release(bladeLockType.lockBIOS, bladeLockType.lockOwnership);
+                            }
+                            else
+                            {
+                                uut.acquire(bladeLockType.lockOwnership, bladeLockType.lockBIOS);
+                                uut.release(bladeLockType.lockOwnership, bladeLockType.lockBIOS);
+                            }
+                        }
+                    }
+                    catch (Exception e)
+                    {
+                        exceptions[idx] = e;
+                    }
+                });
+            }
+
+            foreach (Thread t in threads)
+                t.Start();
+            foreach (Thread t in threads)
+                t.Join();
+
+            foreach (Exception e in exceptions)
+            {
+                if (e != null)
+                    throw e;
+            }
+
+            uut.release(bladeLockType.lockNone, bladeLockType.lockNone);
+            Assert.IsTrue(uut.isUnlocked());
+        }
     }
 }

@@ -329,8 +329,7 @@ namespace bladeDirectorWCF
 
         private void _logInBlocking(inProgressOperation login)
         {
-            // Kill off VMs first, and then physical blades.
-            // TODO: lock properly, so that no new VMs can be created before we destroy the physical blades
+            // Kill off VMs first, and then maybe physical blades, if we can.
 
             // Destroy any VMs currently being deployed. Bear in mind that the deployment process may modify the ownership, and we
             // should be careful not to hold a write lock on ownership for a long time anyway since it will block PXE-script gen,

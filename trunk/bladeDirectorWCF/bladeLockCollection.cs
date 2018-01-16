@@ -18,8 +18,8 @@ namespace bladeDirectorWCF
     public class bladeLockCollection
     {
         private readonly string _name;
-        private ConcurrentDictionary<string, ReaderWriterLock> locksForThisBlade = new ConcurrentDictionary<string, ReaderWriterLock>();
-        private ConcurrentDictionary<string, LockCookie> lockCookiesForThisBlade = new ConcurrentDictionary<string, LockCookie>();
+        private ConcurrentDictionary<string, nonDeadlockingRWLock> locksForThisBlade = new ConcurrentDictionary<string, nonDeadlockingRWLock>();
+//        private ConcurrentDictionary<string, LockCookie> lockCookiesForThisBlade = new ConcurrentDictionary<string, LockCookie>();
         private ConcurrentDictionary<string, ConcurrentDictionary<int, takenLockInfo>> _readTakenList = new ConcurrentDictionary<string, ConcurrentDictionary<int, takenLockInfo>>();
         private ConcurrentDictionary<string, takenLockInfo> _writeTakenList = new ConcurrentDictionary<string, takenLockInfo>();
 
@@ -39,7 +39,7 @@ namespace bladeDirectorWCF
             _name = name;
             foreach (string lockTypeName in getLockNames())
             {
-                locksForThisBlade.TryAdd(lockTypeName, new ReaderWriterLock());
+                locksForThisBlade.TryAdd(lockTypeName, new nonDeadlockingRWLock());
                 _readTakenList.TryAdd(lockTypeName, new ConcurrentDictionary<int, takenLockInfo>());
                 _writeTakenList.TryAdd(lockTypeName, new takenLockInfo());
             }
@@ -85,10 +85,8 @@ namespace bladeDirectorWCF
                     {
                         // We are releasing the whole lock.
 
-                        LockCookie lockCookie;
-                        lockCookiesForThisBlade.TryRemove(lockTypeName, out lockCookie);
                         debugmsg(Thread.CurrentThread.ManagedThreadId + " bladeLockCollection release for blade " + _name + lockTypeName + " downgrading");
-                        locksForThisBlade[lockTypeName].DowngradeFromWriterLock(ref lockCookie);
+                        locksForThisBlade[lockTypeName].DowngradeFromWriterLock();
                         debugmsg(Thread.CurrentThread.ManagedThreadId + " bladeLockCollection release for blade " + _name + lockTypeName + " releasing reader lock");
                         locksForThisBlade[lockTypeName].ReleaseReaderLock();
 
@@ -98,10 +96,8 @@ namespace bladeDirectorWCF
                     }
                     else
                     {
-                        LockCookie lockCookie;
-                        lockCookiesForThisBlade.TryRemove(lockTypeName, out lockCookie);
                         debugmsg(Thread.CurrentThread.ManagedThreadId + " bladeLockCollection release for blade " + _name + lockTypeName + " downgrading (!willReleaseReaderLock)");
-                        locksForThisBlade[lockTypeName].DowngradeFromWriterLock(ref lockCookie);
+                        locksForThisBlade[lockTypeName].DowngradeFromWriterLock();
 
                         takenLockInfo tmp;
                         _readTakenList[lockTypeName].TryRemove(Thread.CurrentThread.ManagedThreadId, out tmp);
@@ -125,17 +121,38 @@ namespace bladeDirectorWCF
 
         public void acquire(bladeLockType readTypes, bladeLockType writeTypes)
         {
+            if (!tryAcquire(readTypes, writeTypes))
+                throw new Exception("..");
+            return;
+
             debugmsg(Thread.CurrentThread.ManagedThreadId + " bladeLockCollection for blade " + _name + " acquiring " + readTypes + " / " + writeTypes);
             debugmsg(Thread.CurrentThread.ManagedThreadId + Environment.StackTrace);
 
+            DateTime deadline = DateTime.Now + TimeSpan.FromSeconds(10); 
+            while (true)
+            {
+                if (tryAcquire(readTypes, writeTypes))
+                    break;
+
+                if (DateTime.Now > deadline)
+                    throw new ApplicationException("can't lock");
+                Thread.Sleep(TimeSpan.FromSeconds(1));
+            }
+
+            debugmsg(Thread.CurrentThread.ManagedThreadId + " bladeLockCollection acquisition for blade " + _name + " finished");
+        }
+
+        private bool tryAcquire(bladeLockType readTypes, bladeLockType writeTypes)
+        {
             List<string> succededLocks = new List<string>();
             foreach (string lockTypeName in getLockNames())
             {
+                bool didTake;
                 try
                 {
-                    attemptToTakeSingleLock(readTypes, writeTypes, lockTypeName);
+                    didTake = attemptToTakeSingleLock(readTypes, writeTypes, lockTypeName);
                 }
-                catch (Exception)
+                catch (Exception e)
                 {
                     // this is a little tricky, because we need to release any locks we have taken before we return, but since
                     // attemptToTakeSingleLock failed, we have not taken all requested locks. Note that attemptToTakeSingleLock
@@ -145,20 +162,25 @@ namespace bladeDirectorWCF
                         if (!succededLocks.Contains(lockToRelease) || lockTypeName == lockToRelease)
                         {
                             // We did not set this one, so clear it from the collection.
-                            readTypes &= ~((bladeLockType)(Enum.Parse(typeof(bladeLockType), lockToRelease)));
-                            writeTypes &= ~((bladeLockType)(Enum.Parse(typeof(bladeLockType), lockToRelease)));
+                            readTypes &= ~((bladeLockType) (Enum.Parse(typeof(bladeLockType), lockToRelease)));
+                            writeTypes &= ~((bladeLockType) (Enum.Parse(typeof(bladeLockType), lockToRelease)));
                         }
                     }
                     release(readTypes, writeTypes);
 
+                    //if (e is ApplicationException)
+                    //    return false;
+
                     throw;
                 }
-                succededLocks.Add(lockTypeName);
+                if (didTake)
+                    succededLocks.Add(lockTypeName);
             }
-            debugmsg(Thread.CurrentThread.ManagedThreadId + " bladeLockCollection acquisition for blade " + _name + " finished");
+
+            return true;
         }
 
-        private void attemptToTakeSingleLock(bladeLockType readTypes, bladeLockType writeTypes, string singleLockToTake)
+        private bool attemptToTakeSingleLock(bladeLockType readTypes, bladeLockType writeTypes, string singleLockToTake)
         {
             int lockBitMask = (int) Enum.Parse(typeof(bladeLockType), singleLockToTake);
             bool readRequested = ((int) readTypes & lockBitMask) != 0;
@@ -167,7 +189,7 @@ namespace bladeDirectorWCF
             bool writeAlreadyTaken = locksForThisBlade[singleLockToTake].IsWriterLockHeld;
 
             if (!readRequested && !writeRequested)
-                return;
+                return false;
 
             if (readRequested && writeAlreadyTaken)
                 throw new Exception("Read lock requested, but this owner already has a write on this lock");
@@ -228,7 +250,7 @@ namespace bladeDirectorWCF
                 try
                 {
                     debugmsg(Thread.CurrentThread.ManagedThreadId + " bladeLockCollection for blade " + _name + singleLockToTake + " UpgradeToWriterLock");
-                    lockCookiesForThisBlade[singleLockToTake] = locksForThisBlade[singleLockToTake].UpgradeToWriterLock(TimeSpan.FromSeconds(10));
+                    locksForThisBlade[singleLockToTake].UpgradeToWriterLock(TimeSpan.FromSeconds(10));
                 }
                 catch (ApplicationException)
                 {
@@ -247,6 +269,8 @@ namespace bladeDirectorWCF
                 _writeTakenList[singleLockToTake].threadID = Thread.CurrentThread.ManagedThreadId;
                 _writeTakenList[singleLockToTake].stackTrace = Environment.StackTrace;
             }
+
+            return true;
         }
 
         private string makeAcquireFailMsgForRead(string lockTypeName)
@@ -338,6 +362,167 @@ namespace bladeDirectorWCF
             }
 
             return true;
+        }
+    }
+
+    public class nonDeadlockingRWLock
+    {
+        private readonly List<int> readers = new List<int>();
+        private readonly List<int> writers = new List<int>();
+
+        private readonly ConcurrentDictionary<int, bool> IsReaderLockHeldForThread = new ConcurrentDictionary<int, bool>();
+        private readonly ConcurrentDictionary<int, bool> IsWriterLockHeldForThread = new ConcurrentDictionary<int, bool>();
+
+        private int TID { get { return Thread.CurrentThread.ManagedThreadId; }}
+
+        public nonDeadlockingRWLock()
+        {
+
+        }
+
+        public bool IsReaderLockHeld
+        {
+            get
+            {
+                bool val;
+                if (!IsReaderLockHeldForThread.TryGetValue(TID, out val))
+                    return false;
+                return val;
+            }
+        }
+
+        public bool IsWriterLockHeld
+        {
+            get
+            {
+                bool val;
+                if (!IsWriterLockHeldForThread.TryGetValue(TID, out val))
+                    return false;
+                return val;
+            }
+        }
+
+        public void ReleaseReaderLock()
+        {
+            lock (readers)
+            {
+                readers.RemoveAll(x => x == TID);
+                bool foo;
+                IsReaderLockHeldForThread.TryRemove(TID, out foo);
+            }
+        }
+
+        public void AcquireReaderLock(TimeSpan lockTimeout)
+        {
+            DateTime deadline = DateTime.Now + lockTimeout;
+            while (true)
+            {
+                using (var lockedw = attemptLock(writers, TimeSpan.FromMilliseconds(100)))
+                {
+                    if (!lockedw.failed)
+                    {
+                        using (var lockedr = attemptLock(readers, TimeSpan.FromMilliseconds(100)))
+                        {
+                            if (!lockedr.failed)
+                            {
+                                if (lockedr.o.Count(x => x == TID) != 0)
+                                    throw new Exception("Acquisition requested on already-owned read lock");
+
+                                if (lockedw.o.Count == 0)
+                                {
+                                    lockedr.o.Add(TID);
+                                    bool foo;
+                                    IsReaderLockHeldForThread.TryRemove(TID, out foo);
+                                    IsReaderLockHeldForThread.TryAdd(TID, true);
+                                    return;
+                                }
+                            }
+                        }
+                    }
+
+                    if (DateTime.Now > deadline)
+                        throw new unableToLockException();
+                }
+            }
+        }
+
+        private attemptedLock<T> attemptLock<T>(T toLock, TimeSpan timeout)
+        {
+            if (!Monitor.TryEnter(toLock, timeout))
+                return new attemptedLock<T>() { failed = true };
+            return new attemptedLock<T>() { o = toLock };
+        }
+
+        public void DowngradeFromWriterLock()
+        {
+            using (var lockedw = attemptLock(writers, TimeSpan.FromMilliseconds(100)))
+            {
+                if (!lockedw.failed)
+                {
+                    var toRemove = writers.SingleOrDefault(x => x == TID);
+                    if (toRemove == default(int))
+                        throw new Exception("Downgrade attempted on unlocked lock");
+//                    IsReaderLockHeldForThread.TryUpdate(TID, true, false);
+
+                    bool foo;
+                    IsWriterLockHeldForThread.TryRemove(TID, out foo);
+
+                    writers.RemoveAll(x => x == TID);
+                }
+            }
+        }
+
+        public void UpgradeToWriterLock(TimeSpan lockTimeout)
+        {
+            DateTime deadline = DateTime.Now + lockTimeout;
+            while (true)
+            {
+                using (var locked = attemptLock(readers, TimeSpan.FromMilliseconds(100)))
+                {
+                    if (!locked.failed)
+                    {
+                        var toRemove = readers.SingleOrDefault(x => x == TID);
+                        if (toRemove == default(int))
+                            throw new Exception("Upgrade attempted on unlocked lock");
+
+                        if (readers.All(x => x == TID))
+                        {
+                            using (var lockedw = attemptLock(writers, TimeSpan.FromMilliseconds(100)))
+                            {
+                                if (!lockedw.failed)
+                                {
+                                    lockedw.o.Add(TID);
+
+                                    bool foo;
+                                    IsWriterLockHeldForThread.TryRemove(TID, out foo);
+                                    IsWriterLockHeldForThread.TryAdd(TID, true);
+
+                                    break;
+                                }
+                            }
+                        }
+                    }
+                }
+
+                if (DateTime.Now > deadline)
+                    throw new unableToLockException();
+            }
+        }
+    }
+
+    public class unableToLockException : Exception
+    {
+    }
+
+    public class attemptedLock<T> :IDisposable
+    {
+        public T o;
+        public bool failed;
+
+        public void Dispose()
+        {
+            if (!failed)
+                Monitor.Exit(o);
         }
     }
 }
