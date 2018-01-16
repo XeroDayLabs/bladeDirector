@@ -92,7 +92,7 @@ namespace bladeDirectorClient
 
         private bool _isDisposed = false;
 
-        private readonly Task _updateTask;
+        private readonly Thread _updateThread;
 
         public bladeOwnershipChecker(string baseURL, string[] bladeIPs)
         {
@@ -108,7 +108,7 @@ namespace bladeDirectorClient
                 });
             }
 
-            _updateTask = new Task(() =>
+            _updateThread = new Thread(() =>
             {
                 updateEvent.WaitOne(updateTime);
                 if (_isDisposed)
@@ -157,7 +157,7 @@ namespace bladeDirectorClient
         {
             _isDisposed = true;
             updateEvent.Set();
-            _updateTask.Wait();
+            _updateThread.Join();
         }
     }
 }

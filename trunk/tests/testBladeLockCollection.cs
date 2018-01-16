@@ -17,13 +17,13 @@ namespace tests
             bool failed = false;
 
             bool resourceInUse = true;
-            Task testLockTask = new Task(() =>
+            Thread testLockThread = new Thread(() =>
             {
                 uut.acquire(bladeDirectorWCF.bladeLockType.lockNone, bladeDirectorWCF.bladeLockType.lockIPAddresses);
                 if (resourceInUse)
                     failed = true;
             });
-            testLockTask.Start();
+            testLockThread.Start();
 
             Thread.Sleep(TimeSpan.FromSeconds(1));
             resourceInUse = false;
@@ -40,13 +40,13 @@ namespace tests
             bool failed = false;
 
             bool resourceInUse = true;
-            Task testLockTask = new Task(() =>
+            Thread testLockThread = new Thread(() =>
             {
                 uut.acquire(bladeDirectorWCF.bladeLockType.lockIPAddresses, bladeDirectorWCF.bladeLockType.lockNone);
                 if (resourceInUse)
                     failed = true;
             });
-            testLockTask.Start();
+            testLockThread.Start();
 
             Thread.Sleep(TimeSpan.FromSeconds(1));
             resourceInUse = false;
@@ -63,13 +63,13 @@ namespace tests
             bool failed = true;
 
             bool resourceInUse = true;
-            Task testLockTask = new Task(() =>
+            Thread testLockThread = new Thread(() =>
             {
                 uut.acquire(bladeDirectorWCF.bladeLockType.lockBIOS, bladeDirectorWCF.bladeLockType.lockNone);
                 if (resourceInUse)
                     failed = false;
             });
-            testLockTask.Start();
+            testLockThread.Start();
 
             Thread.Sleep(TimeSpan.FromSeconds(1));
             resourceInUse = false;

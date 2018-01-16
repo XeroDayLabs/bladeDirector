@@ -248,10 +248,10 @@ namespace tests
                     List<int> debugPorts = new List<int>();
                     List<string> displayNames = new List<string>();
                     // We test each VM in parallel, otherwise things are reaaaally slow.
-                    List<Task> VMTestTasks = new List<Task>(); 
+                    List<Thread> VMTestThreads = new List<Thread>(); 
                     foreach (hypervisorWithSpec<hypSpec_vmware> hyp in vms.Values)
                     {
-                        Task vmTest = new Task(() =>
+                        Thread vmTest = new Thread(() =>
                         {
                             hyp.powerOn(new cancellableDateTime(TimeSpan.FromMinutes(10)));
 
@@ -322,13 +322,13 @@ namespace tests
                                 Debug.WriteLine("WMIC reported stderr '" + wmicRes.stderr + "'");
                             }
                         });
-                        VMTestTasks.Add(vmTest);
+                        VMTestThreads.Add(vmTest);
                         vmTest.Start();
                     }
 
                     // Wait for them all to run
-                    foreach (Task vmtask in VMTestTasks)
-                        vmtask.Wait();
+                    foreach (Thread vmtask in VMTestThreads)
+                        vmtask.Join();
 
                     // Now we can verify the contents of the name/port arrays we made.
 
@@ -342,9 +342,7 @@ namespace tests
                     catch (AssertFailedException)
                     {
                         foreach (string displayName in displayNames)
-                        {
                             Debug.WriteLine("Machine name: '" + displayName + "'");
-                        }
                         throw;
                     }
 

@@ -262,7 +262,14 @@ namespace bladeDirectorWCF
 
                 currentlyRunning.Add(waitToken, newOperation);
 
-                Task loginTask = new Task(() => { taskCreator(newOperation); });
+                // Unfortunately we can't use Task<T> here :(
+                // This is because the blade/VM locking class uses the managed thread ID to identify each request. I did try 
+                // specifying TaskCreationOptions.LongRunning, which works fine - but it's just waiting for someone to use 
+                // 'await' which will cause the parent thread to be destroyed until the wait is satisfied, so I'm going back 
+                // to manual threads.
+
+                Thread loginTask = new Thread( () => { taskCreator(newOperation); });
+                loginTask.Name = "Async operation for handle " + waitToken + " on " + hostIP;
                 loginTask.Start();
 
                 if (taskAfterStart != null)
@@ -620,7 +627,7 @@ namespace bladeDirectorWCF
                 using (hypervisor hyp = makeHypervisorForVM(lockedVM, parentBlade))
                 {
                     // We swallow all exceptions here.
-                    // This is because, sicne we have interrupted deployment, the VM may be in a weird state (or may never have
+                    // This is because, since we have interrupted deployment, the VM may be in a weird state (or may never have
                     // been created at all).
                     try
                     {
@@ -2149,14 +2156,13 @@ namespace bladeDirectorWCF
         {
             using (db.getBladeByIP(bladeToLock, bladeLockType.lockAll, bladeLockType.lockAll))
             {
-                Thread t = Thread.CurrentThread;
-                Task foo = new Task(() =>
+                Thread requestThread = Thread.CurrentThread;
+                Thread abortingThread = new Thread( () =>
                 {
                     Thread.Sleep(TimeSpan.FromSeconds(1));
-                    t.Abort(); 
-                }
-                );
-                foo.Start();
+                    requestThread.Abort(); 
+                });
+                abortingThread.Start();
                 Thread.Sleep(TimeSpan.FromSeconds(10));
             }
         }

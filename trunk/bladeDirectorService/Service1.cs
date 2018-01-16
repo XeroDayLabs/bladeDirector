@@ -14,8 +14,8 @@ namespace bladeDirectorService
 {
     public partial class Service1 : ServiceBase
     {
-        private  ManualResetEvent stopEvent = new ManualResetEvent(false);
-        private Task mainTask;
+        private ManualResetEvent stopEvent = new ManualResetEvent(false);
+        private Thread mainThread;
 
         public Service1()
         {
@@ -30,14 +30,14 @@ namespace bladeDirectorService
             wcfargs.stopEvent = stopEvent;
             wcfargs.bladeList = Properties.Settings.Default.bladeList;
 
-            mainTask = new Task(() => bladeDirectorWCF.Program._Main(wcfargs));
-            mainTask.Start();
+            mainThread = new Thread(() => bladeDirectorWCF.Program._Main(wcfargs));
+            mainThread.Start();
         }
 
         protected override void OnStop()
         {
             stopEvent.Set();
-            mainTask.Wait();
+            mainThread.Join();
         }
     }
 }
