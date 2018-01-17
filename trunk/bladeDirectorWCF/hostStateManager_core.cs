@@ -2128,12 +2128,12 @@ namespace bladeDirectorWCF
                         targetAlias = itemToAdd.getCloneName(),
                         targetName = itemToAdd.getCloneName()
                     } );
-
-                // If the target has no portal group associated with it, then associate it with the first portal on the server
-                targetGroup newTgtGroup = nas.getTargetGroups().SingleOrDefault(x => x.iscsi_target == newTarget.id);
-                if (newTgtGroup == null)
-                    nas.createTargetGroup(nas.getPortals().First(), newTarget);
             }
+
+            // If the target has no portal group associated with it, then associate it with the first portal on the server
+            targetGroup newTgtGroup = nas.getTargetGroups().SingleOrDefault(x => x.iscsi_target == newTarget.id);
+            if (newTgtGroup == null)
+                nas.createTargetGroup(nas.getPortals().First(), newTarget);
 
             iscsiExtent newExtent = nas.getExtents().SingleOrDefault(x => x.iscsi_target_extent_name == newTarget.targetName);
             if (newExtent == null)
