@@ -790,7 +790,7 @@ namespace bladeDirectorWCF
                         {
                             vmServerIP = freeVMServer.spec.bladeIP,
                             childVMIP = childVM.spec.VMIP,
-                            deployDeadline = new cancellableDateTime(),
+                            deployDeadline = new cancellableDateTime(TimeSpan.FromMinutes(25)),
                             currentProgress = new resultAndBladeName(resultCode.pending, waitToken, null, childVMIP),
                             hwSpec = hwSpec
                         };
@@ -1878,9 +1878,6 @@ namespace bladeDirectorWCF
             userAddRequest[] usersToAdd, string newOwner,
             cancellableDateTime deadline = null)
         {
-            if (deadline == null)
-                deadline = new cancellableDateTime();
-
             deadline.throwIfTimedOutOrCancelled();
 
             log("Creating disk clones..");
@@ -1922,9 +1919,6 @@ namespace bladeDirectorWCF
             userAddRequest[] usersToAdd, string newOwner,
             cancellableDateTime deadline = null)
         {
-            if (deadline == null)
-                deadline = new cancellableDateTime();
-
             deadline.throwIfTimedOutOrCancelled();
 
             log("Creating disk clones..");
