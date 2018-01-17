@@ -144,7 +144,6 @@
   <ItemGroup>
     <Compile Include="databaseConcurrencyTests_blades.cs" />
     <Compile Include="databaseConcurrencyTests_VMs.cs" />
-    <Compile Include="freeNASTests.cs" />
     <Compile Include="mockedAllocation.cs" />
     <Compile Include="mockedDestruction.cs">
       <SubType>Code</SubType>
