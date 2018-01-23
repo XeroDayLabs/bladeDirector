@@ -22,11 +22,11 @@ namespace bladeDirectorClient
         private readonly Object hypervisorSpecLock = new Object();
         private ConcurrentDictionary<hypSpec_vmware, bool> hypervisorSpecs = null;
 
-        public hypervisor_vmware createHypervisorForNextFreeVMOrWait(string snapshotName = "clean", clientExecutionMethod execType = clientExecutionMethod.smbWithWMI)
+        public hypervisor_vmware createHypervisorForNextFreeVMOrWait(string snapshotName = "clean", clientExecutionMethod execType = clientExecutionMethod.smbWithWMI, string bladeID = null)
         {
             while (true)
             {
-                hypervisor_vmware toRet = createHypervisorForNextFreeVMOrNull(snapshotName, execType);
+                hypervisor_vmware toRet = createHypervisorForNextFreeVMOrNull(snapshotName, execType, bladeID: bladeID);
                 if (toRet != null)
                     return toRet;
 
@@ -34,13 +34,13 @@ namespace bladeDirectorClient
             }
         }
 
-        public hypervisorCollection<hypSpec_vmware> createAsManyVMSAsPossible(string snapshotName = "clean", clientExecutionMethod execType = clientExecutionMethod.smbWithWMI, VMSource src = VMSource.configuredServer)
+        public hypervisorCollection<hypSpec_vmware> createAsManyVMSAsPossible(string snapshotName = "clean", clientExecutionMethod execType = clientExecutionMethod.smbWithWMI, VMSource src = VMSource.configuredServer, string bladeID = null)
         {
             hypervisorCollection<hypSpec_vmware> hyps = new hypervisorCollection<hypSpec_vmware>();
 
             while (true)
             {
-                hypervisor_vmware thisHyp = machinePools.vmware.createHypervisorForNextFreeVMOrNull(snapshotName, execType, src);
+                hypervisor_vmware thisHyp = machinePools.vmware.createHypervisorForNextFreeVMOrNull(snapshotName, execType, src, bladeID);
                 if (thisHyp == null)
                     break;
                 hyps.TryAdd(thisHyp.getConnectionSpec().kernelDebugIPOrHostname, thisHyp);
@@ -49,7 +49,7 @@ namespace bladeDirectorClient
             return hyps;
         }
 
-        public hypervisor_vmware createHypervisorForNextFreeVMOrNull(string snapshotName = "clean", clientExecutionMethod execType = clientExecutionMethod.smbWithWMI, VMSource src = VMSource.configuredServer)
+        public hypervisor_vmware createHypervisorForNextFreeVMOrNull(string snapshotName = "clean", clientExecutionMethod execType = clientExecutionMethod.smbWithWMI, VMSource src = VMSource.configuredServer, string bladeID = null)
         {
             lock (hypervisorSpecLock)
             {
@@ -59,13 +59,21 @@ namespace bladeDirectorClient
                 KeyValuePair<hypSpec_vmware, bool> hypKVP;
                 lock (hypervisorSpecLock)
                 {
-                    KeyValuePair<hypSpec_vmware, bool>[] selectedHyp = hypervisorSpecs.Where(x => x.Value == false).Take(1).ToArray();
+                    KeyValuePair<hypSpec_vmware, bool>[] selectedHyp = hypervisorSpecs.Where(x => x.Value == false).ToArray();
                     if (selectedHyp.Length == 0)
                     {
-                        // Allocation failed!
+                        // Allocation failed
                         return null;
                     }
-                    hypKVP = selectedHyp[0];
+                    if (bladeID != null)
+                    {
+                        // We actually throw if a user filter returned nothing, for now.
+                        selectedHyp = selectedHyp.Where(x => x.Key.kernelVMServer.ToLower().Contains(bladeID.ToLower())).ToArray();
+                        if (selectedHyp.Length == 0)
+                            throw new Exception("XDL blade not found");
+                    }
+
+                    hypKVP = selectedHyp.First();
                     hypervisorSpecs[hypKVP.Key] = true;
                 }
 
