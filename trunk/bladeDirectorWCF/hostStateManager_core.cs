@@ -269,7 +269,7 @@ namespace bladeDirectorWCF
                 // to manual threads.
 
                 Thread loginTask = new Thread( () => { taskCreator(newOperation); });
-                loginTask.Name = "Async operation for handle " + waitToken + " on " + hostIP;
+                loginTask.Name = "Async operation for handle " + waitToken.handleType + "_" + waitToken.t + " on " + hostIP;
                 loginTask.Start();
 
                 if (taskAfterStart != null)
