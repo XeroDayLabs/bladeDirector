@@ -2108,6 +2108,10 @@ namespace bladeDirectorWCF
         private static void createClones(NASAccess nas, snapshot toClone, string toCloneVolume, bladeOwnership newThing)
         {
             string fullCloneName = String.Format("{0}/{1}", toCloneVolume, newThing.getCloneName());
+            // Delete any previously-existing snapshot
+            snapshot existingSnapshot = nas.getSnapshots().SingleOrDefault(x => x.fullname == fullCloneName);
+            if (existingSnapshot != null)
+                nas.deleteSnapshot(existingSnapshot);
             nas.cloneSnapshot(toClone, fullCloneName);
         }
 
