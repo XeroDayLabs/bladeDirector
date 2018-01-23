@@ -510,6 +510,7 @@ namespace bladeDirectorWCF
         }
     }
 
+    [Serializable]
     public class unableToLockException : Exception
     {
     }

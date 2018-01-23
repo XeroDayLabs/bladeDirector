@@ -229,6 +229,7 @@ namespace bladeDirectorWCF
 #region async helpers
         public resultAndWaitToken logIn(string hostIP)
         {
+            log("Begin login for user " + hostIP);
             return doAsync(_currentlyRunningLogIns, hostIP, handleTypes.LGI, (e) => { logInBlocking(e); });
         }
 
@@ -322,9 +323,12 @@ namespace bladeDirectorWCF
                 {
                     login.status= new result(resultCode.genericFail, e.Message + "\n\n" + e.StackTrace);
                     login.isFinished = true;
+                    log("Login failed for user " + login.hostIP);
                 }
                 throw;
             }
+
+            log("Login successful for user " + login.hostIP);
         }
 
         private void _logInBlocking(inProgressOperation login)
