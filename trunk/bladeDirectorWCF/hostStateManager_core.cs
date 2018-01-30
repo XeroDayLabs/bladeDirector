@@ -1246,7 +1246,7 @@ namespace bladeDirectorWCF
                         
                         // Now create the disks, and customise the VM by naming it appropriately.
                         configureVMDisks(nas, bladeSpec, childVMFromDB,
-                            "bladebasestable-esxi", null, null, null, childVM_unsafe.nextOwner, threadState.deployDeadline);
+                            "bladebase_1709", null, null, null, childVM_unsafe.nextOwner, threadState.deployDeadline);
 
                         threadState.deployDeadline.throwIfTimedOutOrCancelled("After configuring VM disks");
                     }
