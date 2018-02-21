@@ -22,11 +22,11 @@ namespace bladeDirectorClient
         private readonly Object hypervisorSpecLock = new Object();
         private ConcurrentDictionary<hypSpec_vmware, bool> hypervisorSpecs = null;
 
-        public hypervisor_vmware createHypervisorForNextFreeVMOrWait(string snapshotName = "clean", clientExecutionMethod execType = clientExecutionMethod.smbWithWMI, string bladeID = null)
+        public hypervisor_vmware createHypervisorForNextFreeVMOrWait(string snapshotName = "clean", clientExecutionMethod execType = clientExecutionMethod.smbWithWMI, string bladeID = null, VMSource src = VMSource.configuredServer)
         {
             while (true)
             {
-                hypervisor_vmware toRet = createHypervisorForNextFreeVMOrNull(snapshotName, execType, bladeID: bladeID);
+                hypervisor_vmware toRet = createHypervisorForNextFreeVMOrNull(snapshotName, execType, bladeID: bladeID, src: src);
                 if (toRet != null)
                     return toRet;
 
@@ -176,9 +176,8 @@ namespace bladeDirectorClient
                     string kernelVMServerPassword = Properties.Settings.Default.XDLVMServerPassword;
                     string kernelVMUsername = Properties.Settings.Default.VMWareVMUsername;
                     string kernelVMPassword = Properties.Settings.Default.VMWareVMPassword;
-                    string kernelVMDebugKey = Properties.Settings.Default.VMWareVMDebugKey;
 
-                    if (kernelVMServerUsername == "" || kernelVMServerPassword == "" || kernelVMDebugKey == "")
+                    if (kernelVMServerUsername == "" || kernelVMServerPassword == "" )
                         throw new Exception("BladeDirectorClient not configured properly");
 
                     List<hypSpec_vmware> hyps = new List<hypSpec_vmware>();
@@ -197,21 +196,22 @@ namespace bladeDirectorClient
                         // Get VMs on this blade
                         string[] vmnames = hypervisor_vmware.getVMNames(bladeHostname, kernelVMServerUsername, kernelVMServerPassword).OrderBy(x => x).ToArray();
 
-                        // Now construct them
+                        // Now construct them.
                         for (int vmIndex = 0; vmIndex < kernelVMCount; vmIndex++)
                         {
                             string vmname = vmnames[vmIndex];
                             // VMWare ports are generated according to the blade and VM IDs.
                             // VM 02 on blade 12 would get '51202'.
-                            ushort vmPort = (ushort) (50000 + (bladeID*100) + (vmIndex) + 1);
+                            //ushort vmPort = (ushort) (50000 + (bladeID*100) + (vmIndex) + 1);
+                            string serialPortName = String.Format("com{0}", vmIndex + 1);
 
-                            var newHyp = new hypSpec_vmware(vmname, bladeHostname, kernelVMServerUsername, kernelVMServerPassword, kernelVMUsername, kernelVMPassword, snapshotName, null, vmPort, kernelVMDebugKey, vmname);
+                            var newHyp = new hypSpec_vmware(vmname, bladeHostname, kernelVMServerUsername, kernelVMServerPassword, kernelVMUsername, kernelVMPassword, snapshotName, null, 0, null, vmname, serialPortName);
 
                             hyps.Add(newHyp);
                             hypervisorSpecs[newHyp] = false;
 
                             // Check the relevant port isn't already in use
-                            ipUtils.ensurePortIsFree(vmPort);
+                            //ipUtils.ensurePortIsFree(vmPort);
                         }
                     }
                 }
