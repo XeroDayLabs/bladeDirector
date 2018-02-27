@@ -193,25 +193,58 @@ namespace bladeDirectorClient
                         string bladeHostname = bladeHostnames[index];
                         int bladeID = bladeIndexes[index];
 
-                        // Get VMs on this blade
-                        string[] vmnames = hypervisor_vmware.getVMNames(bladeHostname, kernelVMServerUsername, kernelVMServerPassword).OrderBy(x => x).ToArray();
+                        // Get VMs on this blade, and filter them according to our naming scheme.
+                        // VMs of the form "bladeXX_YY" are our worker VMs, and the VM with the name
+                        // 'KDRunner' is the KD proxy.
+                        Regex bladeNameRe = new Regex("blade[0-9][0-9]_vm[0-9][0-9]", RegexOptions.IgnoreCase);
+                        string[] allVMNames = hypervisor_vmware.getVMNames(bladeHostname, kernelVMServerUsername, kernelVMServerPassword).OrderBy(x => x).ToArray();
+                        string[] workerVMNames = allVMNames.Where(x => bladeNameRe.IsMatch(x) ).ToArray();
 
-                        // Now construct them.
+                        // Construct some info about the KD proxy VM.
+                        string KDProxyName = String.Format("blade{0:D2}_kdproxy", bladeID);
+                        string KDProxyVMHostNAme = String.Format("blade{0:D2}_kdproxy.xd.lan", bladeID);
+                        IPAddress KDProxyIPAddress = Dns.GetHostAddresses(KDProxyVMHostNAme).Single();
+
+                        // Now construct the worker VMs, configuring each to use the KD proxy.
                         for (int vmIndex = 0; vmIndex < kernelVMCount; vmIndex++)
                         {
-                            string vmname = vmnames[vmIndex];
-                            // VMWare ports are generated according to the blade and VM IDs.
-                            // VM 02 on blade 12 would get '51202'.
-                            //ushort vmPort = (ushort) (50000 + (bladeID*100) + (vmIndex) + 1);
-                            string serialPortName = String.Format("com{0}", vmIndex + 1);
+                            string vmname = workerVMNames[vmIndex];
 
-                            var newHyp = new hypSpec_vmware(vmname, bladeHostname, kernelVMServerUsername, kernelVMServerPassword, kernelVMUsername, kernelVMPassword, snapshotName, null, 0, null, vmname, serialPortName);
+                            string serialPortName;
+                            kernelConnectionMethod connMethod;
+                            string proxyHostName;
+                            ushort kernelDebugPort;
+                            if (allVMNames.Any(x => x == KDProxyName))
+                            {
+                                // Serial ports are specified as seen by the KD proxy.
+                                serialPortName = String.Format("com{0}", vmIndex + 1);
+                                connMethod = kernelConnectionMethod.serial;
+                                proxyHostName = KDProxyIPAddress.ToString();
+                                kernelDebugPort = 0;
+                            }
+                            else
+                            {
+                                serialPortName = null;
+                                connMethod = kernelConnectionMethod.net;
+                                proxyHostName = null;
+                                // VMWare ports are generated according to the blade and VM IDs.
+                                // VM 02 on blade 12 would get '51202'.
+                                kernelDebugPort = (ushort) (50000 + (bladeID*100) + (vmIndex) + 1);
+
+                                // Check the relevant port isn't already in use
+                                ipUtils.ensurePortIsFree(kernelDebugPort);
+                            }
+
+                            var newHyp = new hypSpec_vmware(
+                                vmname, bladeHostname, 
+                                kernelVMServerUsername, kernelVMServerPassword, 
+                                kernelVMUsername, kernelVMPassword, 
+                                snapshotName, null, kernelDebugPort, null, vmname,
+                                serialPortName, proxyHostName, 
+                                connMethod);
 
                             hyps.Add(newHyp);
                             hypervisorSpecs[newHyp] = false;
-
-                            // Check the relevant port isn't already in use
-                            //ipUtils.ensurePortIsFree(vmPort);
                         }
                     }
                 }
