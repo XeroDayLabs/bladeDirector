@@ -214,13 +214,15 @@ namespace bladeDirectorClient
                             kernelConnectionMethod connMethod;
                             string proxyHostName;
                             ushort kernelDebugPort;
-                            if (allVMNames.Any(x => x == KDProxyName))
+                            string kernelVMDebugKey;
+                            if (allVMNames.Any(x => x.ToLower() == KDProxyName.ToLower()))
                             {
                                 // Serial ports are specified as seen by the KD proxy.
                                 serialPortName = String.Format("com{0}", vmIndex + 1);
                                 connMethod = kernelConnectionMethod.serial;
                                 proxyHostName = KDProxyIPAddress.ToString();
                                 kernelDebugPort = 0;
+                                kernelVMDebugKey = null;
                             }
                             else
                             {
@@ -230,6 +232,7 @@ namespace bladeDirectorClient
                                 // VMWare ports are generated according to the blade and VM IDs.
                                 // VM 02 on blade 12 would get '51202'.
                                 kernelDebugPort = (ushort) (50000 + (bladeID*100) + (vmIndex) + 1);
+                                kernelVMDebugKey = Properties.Settings.Default.VMWareVMDebugKey;
 
                                 // Check the relevant port isn't already in use
                                 ipUtils.ensurePortIsFree(kernelDebugPort);
@@ -238,8 +241,8 @@ namespace bladeDirectorClient
                             var newHyp = new hypSpec_vmware(
                                 vmname, bladeHostname, 
                                 kernelVMServerUsername, kernelVMServerPassword, 
-                                kernelVMUsername, kernelVMPassword, 
-                                snapshotName, null, kernelDebugPort, null, vmname,
+                                kernelVMUsername, kernelVMPassword,
+                                snapshotName, null, kernelDebugPort, kernelVMDebugKey, vmname,
                                 serialPortName, proxyHostName, 
                                 connMethod);
 
