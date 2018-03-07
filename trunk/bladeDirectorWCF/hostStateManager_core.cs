@@ -1246,7 +1246,7 @@ namespace bladeDirectorWCF
                         
                         // Now create the disks, and customise the VM by naming it appropriately.
                         configureVMDisks(nas, bladeSpec, childVMFromDB,
-                            "bladebasestable-esxi", null, null, null, childVM_unsafe.nextOwner, threadState.deployDeadline);
+                            "bladebase_1709", null, null, null, childVM_unsafe.nextOwner, threadState.deployDeadline);
 
                         threadState.deployDeadline.throwIfTimedOutOrCancelled("After configuring VM disks");
                     }
@@ -2130,12 +2130,16 @@ namespace bladeDirectorWCF
                         targetAlias = itemToAdd.getCloneName(),
                         targetName = itemToAdd.getCloneName()
                     } );
-            }
-
-            // If the target has no portal group associated with it, then associate it with the first portal on the server
-            targetGroup newTgtGroup = nas.getTargetGroups().SingleOrDefault(x => x.iscsi_target == newTarget.id);
-            if (newTgtGroup == null)
                 nas.createTargetGroup(nas.getPortals().First(), newTarget);
+            }
+            else
+            {
+                // This target already exists, but we should check it has a portal group associated
+                // and create one if not.
+                targetGroup portalGroupOfNewClone = nas.getTargetGroups().SingleOrDefault(x => x.iscsi_target == newTarget.id);
+                if (portalGroupOfNewClone == null)
+                    nas.createTargetGroup(nas.getPortals().First(), newTarget);
+            }
 
             iscsiExtent newExtent = nas.getExtents().SingleOrDefault(x => x.iscsi_target_extent_name == newTarget.targetName);
             if (newExtent == null)

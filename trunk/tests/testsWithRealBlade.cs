@@ -224,8 +224,9 @@ namespace tests
                 {
                     string debuggerHost = ipUtils.getBestRouteTo(IPAddress.Parse(thisBlade.bladeIP)).ToString();
 
-                    // Add ten VMs for each blade.
-                    for (int vmCount = 0; vmCount < 10; vmCount++)
+                    // Add fifty VMs for each blade. Don't forget, we will only get those that 
+                    // 'fit' on the cluster.
+                    for (int vmCount = 0; vmCount < 50; vmCount++)
                     {
                         requestedVMSpecs.Add(new VMSpec()
                         {
