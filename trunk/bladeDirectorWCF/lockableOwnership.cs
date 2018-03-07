@@ -130,7 +130,8 @@ namespace bladeDirectorWCF
 
         ~lockableOwnership()
         {
-            throw new bladeLockExeception("lockableOwnership for " + specOwnership.kernelDebugAddress + " was never released! Allocation stack trace: " + allocationStack);
+            if (specOwnership != null)
+                throw new bladeLockExeception("lockableOwnership for " + specOwnership.kernelDebugAddress + " was never released! Allocation stack trace: " + allocationStack);
         }
 
         public void inhibitNextDisposal()
