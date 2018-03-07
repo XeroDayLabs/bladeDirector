@@ -146,7 +146,8 @@ namespace bladeDirectorClient
                             vmname, kernelVMServer,
                             kernelVMServerUsername, kernelVMServerPassword,
                             kernelVMUsername, kernelVMPassword,
-                            snapshotName, null, vmPort, kernelVMDebugKey, vmname);
+                            snapshotName, null, vmPort, kernelVMDebugKey, vmname, 
+                            newDebugMethod: kernelConnectionMethod.net);
 
                         hypervisorSpecs[hyps[i - 1]] = false;
 
