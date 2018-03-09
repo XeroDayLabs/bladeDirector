@@ -70,11 +70,11 @@ namespace bladeDirectorWCF
 
             snapshot baseSnapshot = new snapshot
             {
-                filesystem = "SSDs/bladeBaseStable-esxi",
-                fullname = "SSDs/bladeBaseStable-esxi@bladeBaseStable-esxi",
-                id = "SSDs/bladeBaseStable-esxi@bladeBaseStable-esxi",
+                filesystem = "SSDs/bladebase_1709",
+                fullname = "SSDs/bladebase_1709@bladebase_1709",
+                id = "SSDs/bladebase_1709@bladebase_1709",
                 mostrecent = "true",
-                name = "bladeBaseStable-esxi",
+                name = "bladebase_1709",
                 parent_type = "volume",
                 refer = "20.0 GiB",
                 replication = "null",
