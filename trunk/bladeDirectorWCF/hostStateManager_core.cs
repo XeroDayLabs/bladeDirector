@@ -98,7 +98,7 @@ namespace bladeDirectorWCF
         {
             fairness = fairnessChecker.create(fairnessSpec);
         }
-       
+
         public void setKeepAliveTimeout(TimeSpan newTimeout)
         {
             keepAliveTimeout = newTimeout;
@@ -226,7 +226,7 @@ namespace bladeDirectorWCF
             return new result(resultCode.pending, "Added to queue");
         }
 
-#region async helpers
+        #region async helpers
         public resultAndWaitToken logIn(string hostIP)
         {
             log("Begin login for user " + hostIP);
@@ -269,7 +269,7 @@ namespace bladeDirectorWCF
                 // 'await' which will cause the parent thread to be destroyed until the wait is satisfied, so I'm going back 
                 // to manual threads.
 
-                Thread loginTask = new Thread( () => { taskCreator(newOperation); });
+                Thread loginTask = new Thread(() => { taskCreator(newOperation); });
                 loginTask.Name = "Async operation for handle " + waitToken.handleType + "_" + waitToken.t + " on " + hostIP;
                 loginTask.Start();
 
@@ -309,7 +309,7 @@ namespace bladeDirectorWCF
                 return new resultAndWaitToken(resultCode.bladeNotFound);
             }
         }
-#endregion
+        #endregion
 
         private void logInBlocking(inProgressOperation login)
         {
@@ -321,7 +321,7 @@ namespace bladeDirectorWCF
             {
                 lock (_currentlyRunningLogIns)
                 {
-                    login.status= new result(resultCode.genericFail, e.Message + "\n\n" + e.StackTrace);
+                    login.status = new result(resultCode.genericFail, e.Message + "\n\n" + e.StackTrace);
                     login.isFinished = true;
                     log("Login failed for user " + login.hostIP);
                 }
@@ -341,7 +341,7 @@ namespace bladeDirectorWCF
             while (true)
             {
                 using (disposingList<lockableVMSpec> bootingVMs = db.getAllVMInfo(
-                    x => (x.currentOwner == "vmserver" && x.nextOwner == login.hostIP), 
+                    x => (x.currentOwner == "vmserver" && x.nextOwner == login.hostIP),
                     bladeLockType.lockOwnership, bladeLockType.lockOwnership))
                 {
                     // 'Double lock' here, so that we don't hold the lock (on ownership) for other VMs while we wait for one to be 
@@ -386,7 +386,7 @@ namespace bladeDirectorWCF
                 foreach (lockableVMSpec allocated in bootingVMs)
                 {
                     using (var tmp = new tempLockElevation(allocated,
-                        bladeLockType.lockVMCreation | bladeLockType.lockBIOS | bladeLockType.lockSnapshot | bladeLockType.lockNASOperations | bladeLockType.lockvmDeployState | bladeLockType.lockVirtualHW | 
+                        bladeLockType.lockVMCreation | bladeLockType.lockBIOS | bladeLockType.lockSnapshot | bladeLockType.lockNASOperations | bladeLockType.lockvmDeployState | bladeLockType.lockVirtualHW |
                         bladeLockType.lockOwnership, bladeLockType.lockVMCreation | bladeLockType.lockBIOS | bladeLockType.lockSnapshot | bladeLockType.lockNASOperations | bladeLockType.lockvmDeployState))
                     {
                         releaseVM(allocated);
@@ -401,7 +401,7 @@ namespace bladeDirectorWCF
                 foreach (lockableBladeSpec allocated in currentlyOwned)
                 {
                     using (var tmp = new tempLockElevation(allocated,
-                        bladeLockType.lockVMCreation | bladeLockType.lockBIOS | bladeLockType.lockSnapshot | bladeLockType.lockNASOperations | bladeLockType.lockvmDeployState | bladeLockType.lockVirtualHW | bladeLockType.lockOwnership, 
+                        bladeLockType.lockVMCreation | bladeLockType.lockBIOS | bladeLockType.lockSnapshot | bladeLockType.lockNASOperations | bladeLockType.lockvmDeployState | bladeLockType.lockVirtualHW | bladeLockType.lockOwnership,
                         bladeLockType.lockVMCreation | bladeLockType.lockBIOS | bladeLockType.lockSnapshot | bladeLockType.lockNASOperations | bladeLockType.lockvmDeployState))
                     {
                         releaseBlade(allocated);
@@ -416,7 +416,7 @@ namespace bladeDirectorWCF
                 login.isFinished = true;
             }
         }
-        
+
         public void initWithBlades(string[] bladeIPs)
         {
             bladeSpec[] specs = new bladeSpec[bladeIPs.Length];
@@ -474,8 +474,8 @@ namespace bladeDirectorWCF
         {
             // Note that we permit access during BIOS or VM deployment here, since we check and wait for that in 
             // releaseBlade(lockableBladeSpec).
-            using (lockableBladeSpec reqBlade = 
-                db.getBladeByIP(reqBladeIP, 
+            using (lockableBladeSpec reqBlade =
+                db.getBladeByIP(reqBladeIP,
                 bladeLockType.lockOwnership, bladeLockType.lockNone,
                 permitAccessDuringBIOS: true, permitAccessDuringDeployment: true))
             {
@@ -514,7 +514,7 @@ namespace bladeDirectorWCF
                     addLogEvent("Waiting for blade " + toRelease.spec.bladeIP + " to cancel BIOS operation...");
 
                     // We need to drop these locks temporarily, since they are needed for the BIOS deploy to cancel.
-                    using(var dep = new tempLockDepression(toRelease, 
+                    using (var dep = new tempLockDepression(toRelease,
                         bladeLockType.lockBIOS | bladeLockType.lockvmDeployState,
                         bladeLockType.lockBIOS | bladeLockType.lockvmDeployState))
                     {
@@ -624,7 +624,7 @@ namespace bladeDirectorWCF
             // We don't modify the blade if one or more VMs are assigned to it, so it is safe to specify 
             // permitAccessDuringDeployment, which will be set only when VMs are assigned.
             using (lockableBladeSpec parentBlade = db.getBladeByIP(lockedVM.spec.parentBladeIP,
-                bladeLockType.lockOwnership | bladeLockType.lockVMCreation, 
+                bladeLockType.lockOwnership | bladeLockType.lockVMCreation,
                 bladeLockType.lockNone, true, true))
             {
                 using (hypervisor hyp = makeHypervisorForVM(lockedVM, parentBlade))
@@ -653,7 +653,7 @@ namespace bladeDirectorWCF
                 vmserverTotals VMTotals = db.getVMServerTotals(parentBlade.spec);
                 if (VMTotals.VMs == 0)
                 {
-                    using (var temp = new tempLockElevation(parentBlade, 
+                    using (var temp = new tempLockElevation(parentBlade,
                         bladeLockType.lockvmDeployState,
                         bladeLockType.lockBIOS | bladeLockType.lockOwnership))
                     {
@@ -707,7 +707,7 @@ namespace bladeDirectorWCF
                         islocked = false;
                         // Drop all locks on the VM (except IP address) while we wait for it to release. This will permit  
                         // allocation to continue until a cancellable point.
-                        using ( tempLockDepression tmp = new tempLockDepression(lockedVM, 
+                        using (tempLockDepression tmp = new tempLockDepression(lockedVM,
                                 ~bladeLockType.lockIPAddresses, bladeLockType.lockAll))
                         {
                             Thread.Sleep(TimeSpan.FromSeconds(2));
@@ -746,7 +746,7 @@ namespace bladeDirectorWCF
             }
         }
 
-        public resultAndBladeName RequestAnySingleVM(string requestorIP, VMHardwareSpec hwSpec, VMSoftwareSpec swReq )
+        public resultAndBladeName RequestAnySingleVM(string requestorIP, VMHardwareSpec hwSpec, VMSoftwareSpec swReq)
         {
             // sanity check the VM
             resultAndBladeName sanity = sanityCheckVMRequest(hwSpec, swReq);
@@ -776,7 +776,7 @@ namespace bladeDirectorWCF
 
                         if (_vmDeployState.ContainsKey(waitToken))
                         {
-                            if (_vmDeployState[waitToken].currentProgress.result.code == resultCode.pending )
+                            if (_vmDeployState[waitToken].currentProgress.result.code == resultCode.pending)
                             {
                                 // Oh, a deploy is already in progress for this VM. This should never happen, since .createChildVM
                                 // should never return an already-existing VM.
@@ -809,7 +809,7 @@ namespace bladeDirectorWCF
         private resultAndBladeName sanityCheckVMRequest(VMHardwareSpec hwSpec, VMSoftwareSpec swReq)
         {
             string msg = null;
-            if (hwSpec.memoryMB%4 != 0)
+            if (hwSpec.memoryMB % 4 != 0)
             {
                 // Fun fact: ESXi VM memory size must be a multiple of 4mb.
                 msg = "Failed VM alloc: memory size " + hwSpec.memoryMB + " is not a multiple of 4MB";
@@ -823,7 +823,7 @@ namespace bladeDirectorWCF
                 // TODO: there are additional constraints here that we don't check. Isn't the key base.. base36 or something?
                 msg = "Failed VM alloc: kernel debug key " + swReq.debuggerKey + " is malformed";
             }
-            
+
             if (msg != null)
             {
                 addLogEvent(msg);
@@ -836,7 +836,7 @@ namespace bladeDirectorWCF
         private lockableBladeSpec findAndLockBladeForNewVM(VMHardwareSpec hwSpec, string newOwner, out resultCode res)
         {
             lockableBladeSpec freeVMServer = null;
-//            checkKeepAlives();
+            //            checkKeepAlives();
             // First, we need to find a blade to use as a VM server. Do we have a free VM server? If so, just use that.
             // We create a new bladeSpec to make sure that we don't double-release when the disposingList is released.
             using (disposingList<lockableBladeSpec> serverList = db.getAllBladeInfo(x => true,
@@ -922,7 +922,7 @@ namespace bladeDirectorWCF
                 currentOwnerStat[] stats = db.getFairnessStats(serverList);
 
                 string[] owners = stats.Where(x => x.ownerName != "vmserver").Select(x => x.ownerName).ToArray();
-                float fairShare = (float) db.getAllBladeIP().Length/(float) owners.Length;
+                float fairShare = (float)db.getAllBladeIP().Length / (float)owners.Length;
                 List<currentOwnerStat> ownersOverQuota = stats.Where(x => x.allocatedBlades > fairShare).ToList();
 
                 if (ownersOverQuota.Exists(x => x.ownerName == newOwner))
@@ -945,7 +945,7 @@ namespace bladeDirectorWCF
                             var lockedVM = vms.FirstOrDefault(x =>
                                 // where owner is over quota
                                 ownersOverQuota.Exists(owner => owner.ownerName == x.spec.currentOwner) &&
-                                // And queue is empty
+                                    // And queue is empty
                                 x.spec.nextOwner == null);
 
                             if (lockedVM != null)
@@ -971,7 +971,7 @@ namespace bladeDirectorWCF
         {
             using (lockableBladeSpec reqBlade = db.getBladeByIP(nodeIp, bladeLockType.lockOwnership, bladeLockType.lockNone, false, true))
             {
-                if (reqBlade.spec.currentOwner != "vmserver" && 
+                if (reqBlade.spec.currentOwner != "vmserver" &&
                     reqBlade.spec.currentOwner != requestorIp)
                     return new resultAndWaitToken(resultCode.bladeInUse);
 
@@ -1009,7 +1009,7 @@ namespace bladeDirectorWCF
 
         private void VMServerBootThread(object param)
         {
-            waitToken operationHandle = (waitToken) param;
+            waitToken operationHandle = (waitToken)param;
             VMThreadState threadState;
             lock (_vmDeployState)
             {
@@ -1234,7 +1234,7 @@ namespace bladeDirectorWCF
 
                 // Now we can select the new snapshot. We must be very careful and do this quickly, with the appropriate write lock
                 // held, because it will block the ipxe script creation until we unlock.
-                using (lockableVMSpec childVMFromDB = db.getVMByIP(childVM_unsafe.VMIP, 
+                using (lockableVMSpec childVMFromDB = db.getVMByIP(childVM_unsafe.VMIP,
                     bladeLockType.lockSnapshot | bladeLockType.lockOwnership | bladeLockType.lockVirtualHW, bladeLockType.lockNone))
                 {
                     using (lockableBladeSpec bladeSpec = db.getBladeByIP(vmServerIP, bladeLockType.lockNASOperations, bladeLockType.lockNone, true, true))
@@ -1243,7 +1243,7 @@ namespace bladeDirectorWCF
                         deleteBlade(childVMFromDB.spec.getCloneName(), nas, new cancellableDateTime(TimeSpan.FromMinutes(2)));
 
                         threadState.deployDeadline.throwIfTimedOutOrCancelled("After deleting old NAS objects");
-                        
+
                         // Now create the disks, and customise the VM by naming it appropriately.
                         configureVMDisks(nas, bladeSpec, childVMFromDB,
                             "bladebase_1709", null, null, null, childVM_unsafe.nextOwner, threadState.deployDeadline);
@@ -1254,7 +1254,7 @@ namespace bladeDirectorWCF
 
                     // All done. We can mark the blade as in use. Again, we are careful to hold write locks for as short a time as is
                     // possible, to avoid blocking the PXE-script generation.
-                    using ( var tmp = new tempLockElevation(childVMFromDB,
+                    using (var tmp = new tempLockElevation(childVMFromDB,
                         bladeLockType.lockvmDeployState | bladeLockType.lockSnapshot,
                         bladeLockType.lockOwnership | bladeLockType.lockvmDeployState))
                     {
@@ -1311,7 +1311,7 @@ namespace bladeDirectorWCF
         {
             if (waitToken == null)
                 return new resultAndBladeName(new result(resultCode.bladeNotFound, "No waitToken supplied"), null);
-            
+
             if (!Monitor.TryEnter(_vmDeployState, TimeSpan.FromSeconds(15)))
             {
                 return new resultAndBladeName(new result(resultCode.unknown, "unable to acquire lock on vmDeployState after 15 seconds"), waitToken);
@@ -1326,12 +1326,12 @@ namespace bladeDirectorWCF
                     return _vmDeployState[waitToken].currentProgress;
                 }
             }
-            finally 
+            finally
             {
                 Monitor.Exit(_vmDeployState);
             }
         }
-       
+
         public resultAndBladeName RequestAnySingleNode(string requestorIP)
         {
             resultAndBladeName toRet = null;
@@ -1352,7 +1352,7 @@ namespace bladeDirectorWCF
                     // If this request succeded, great, we can just return it.
                     if (res.code == resultCode.success || res.code == resultCode.pending)
                     {
-                        toRet = new resultAndBladeName(res) {bladeName = reqBlade.spec.bladeIP, result = res};
+                        toRet = new resultAndBladeName(res) { bladeName = reqBlade.spec.bladeIP, result = res };
                         fairness.checkFairness_blades(db, blades);
                         break;
                     }
@@ -1377,7 +1377,7 @@ namespace bladeDirectorWCF
                 result res = requestBlade(blade, requestorIP);
                 resultAndBladeName toRet = new resultAndBladeName(res)
                 {
-                    bladeName = nodeIP, 
+                    bladeName = nodeIP,
                     result = res
                 };
                 return toRet;
@@ -1425,7 +1425,7 @@ namespace bladeDirectorWCF
         public List<logEntry> getLogEvents(int maximum)
         {
             List<logEntry> toRet = new List<logEntry>();
-            
+
             foreach (KeyValuePair<int, logEntryCollection> kvp in _logEvents)
                 toRet.AddRange(kvp.Value);
 
@@ -1473,7 +1473,7 @@ namespace bladeDirectorWCF
 
                             deleteBlade(blade.spec.getCloneName(), nas, new cancellableDateTime(TimeSpan.FromMinutes(2)));
                             // TODO: better cancellability
-                            configureBladeDisks(nas, blade, "bladeBaseStableSnapshot", null, null, null, requestorIP, new cancellableDateTime(TimeSpan.FromMinutes(5)));
+                            configureBladeDisks(nas, blade, "bladebase_1709", null, null, null, requestorIP, new cancellableDateTime(TimeSpan.FromMinutes(5)));
 
                             _currentlyRunningSnapshotSets[e.waitToken].status = new result(resultCode.success);
                         }
@@ -1491,8 +1491,8 @@ namespace bladeDirectorWCF
 
         public resultAndWaitToken selectSnapshotForVM(string requestorIP, string vmName, string newShot)
         {
-            using (lockableVMSpec vm = db.getVMByIP(vmName, 
-                bladeLockType.lockSnapshot | bladeLockType.lockOwnership, 
+            using (lockableVMSpec vm = db.getVMByIP(vmName,
+                bladeLockType.lockSnapshot | bladeLockType.lockOwnership,
                 bladeLockType.lockSnapshot))
             {
                 if (vm.spec.currentOwner != requestorIP)
@@ -1523,7 +1523,7 @@ namespace bladeDirectorWCF
                 return String.Format("{0}-{1}-{2}", nodeIp, ownership.spec.currentOwner, ownership.spec.currentSnapshot);
             }
         }
-        
+
         public void markLastKnownBIOS(lockableBladeSpec reqBlade, string biosxml)
         {
             lock (_currentBIOSOperations)
@@ -1549,9 +1549,9 @@ namespace bladeDirectorWCF
 
                 if (status.code == resultCode.success)
                 {
-                    using (lockableBladeSpec blade = db.getBladeByIP(hostIP, 
-                        bladeLockType.lockBIOS, 
-                        bladeLockType.lockNone, 
+                    using (lockableBladeSpec blade = db.getBladeByIP(hostIP,
+                        bladeLockType.lockBIOS,
+                        bladeLockType.lockNone,
                         permitAccessDuringDeployment: true, // BIOS deploys can happen during the VM deployment process
                         permitAccessDuringBIOS: true))
                     {
@@ -1567,7 +1567,7 @@ namespace bladeDirectorWCF
         private void checkKeepAlives(string forOwnerIP)
         {
             using (disposingList<lockableBladeSpec> bladeInfo = db.getAllBladeInfo(
-                x => x.currentOwner == forOwnerIP, 
+                x => x.currentOwner == forOwnerIP,
                 bladeLockType.lockOwnership | bladeLockType.lockBIOS,
                 bladeLockType.lockOwnership, true, true))
             {
@@ -1674,8 +1674,8 @@ namespace bladeDirectorWCF
 
             if (isPhysicalBlade)
             {
-                using (lockableBladeSpec sourceBlade = db.getBladeByIP(srcIP, 
-                    bladeLockType.lockOwnership | bladeLockType.lockBIOS | bladeLockType.lockSnapshot, 
+                using (lockableBladeSpec sourceBlade = db.getBladeByIP(srcIP,
+                    bladeLockType.lockOwnership | bladeLockType.lockBIOS | bladeLockType.lockSnapshot,
                     bladeLockType.lockNone,
                     permitAccessDuringBIOS: true, permitAccessDuringDeployment: true))
                 {
@@ -1735,9 +1735,9 @@ namespace bladeDirectorWCF
 
         public snapshotDetails _getCurrentSnapshotDetails(string hostIP)
         {
-            return  new snapshotDetails()
+            return new snapshotDetails()
             {
-                friendlyName = getCurrentSnapshotForBladeOrVM(hostIP), 
+                friendlyName = getCurrentSnapshotForBladeOrVM(hostIP),
                 path = getFreeNASSnapshotPath(hostIP)
             };
         }
@@ -1767,7 +1767,7 @@ namespace bladeDirectorWCF
         {
             List<resultAndBladeName> toRet = new List<resultAndBladeName>();
 
-            while(true)
+            while (true)
             {
                 resultAndBladeName res = RequestAnySingleVM(requestorIP, hwSpec, swSpec);
 
@@ -1874,9 +1874,9 @@ namespace bladeDirectorWCF
                 }
             }
         }
-        
-        public void configureVMDisks(NASAccess nas, 
-            lockableBladeSpec parent, lockableVMSpec newVM, 
+
+        public void configureVMDisks(NASAccess nas,
+            lockableBladeSpec parent, lockableVMSpec newVM,
             string baseSnapshot,
             string additionalScript, string[] additionalDeploymentItem,
             userAddRequest[] usersToAdd, string newOwner,
@@ -1911,13 +1911,13 @@ namespace bladeDirectorWCF
                 prepareCloneImage(newVM.spec, toCloneVolume, additionalScript,
                     additionalDeploymentItem, hyp, nas, usersToAdd, newOwner, deadline, TimeSpan.FromMinutes(2));
             }
-           
+
 
             log("Configured " + newVM.spec.VMIP + " OK.");
         }
 
-        public void configureBladeDisks(NASAccess nas, 
-            lockableBladeSpec newBlade, 
+        public void configureBladeDisks(NASAccess nas,
+            lockableBladeSpec newBlade,
             string baseSnapshot,
             string additionalScript, string[] additionalDeploymentItem,
             userAddRequest[] usersToAdd, string newOwner,
@@ -1955,7 +1955,7 @@ namespace bladeDirectorWCF
             using (hypervisor hyp = makeHypervisorForBlade_windows(newBlade))
             {
                 prepareCloneImage(newBlade.spec, toCloneVolume, additionalScript,
-                    additionalDeploymentItem, hyp, nas, usersToAdd, newOwner, deadline, 
+                    additionalDeploymentItem, hyp, nas, usersToAdd, newOwner, deadline,
                     TimeSpan.FromMinutes(5));
             }
 
@@ -1964,8 +1964,8 @@ namespace bladeDirectorWCF
         }
 
         public void prepareCloneImage(
-            bladeOwnership itemToAdd, string toCloneVolume, 
-            string additionalScript, string[] additionalDeploymentItem, 
+            bladeOwnership itemToAdd, string toCloneVolume,
+            string additionalScript, string[] additionalDeploymentItem,
             hypervisor hyp, NASAccess nas, userAddRequest[] usersToAdd, string newOwner,
             cancellableDateTime deadline, TimeSpan powerOnTimeout)
         {
@@ -2125,11 +2125,11 @@ namespace bladeDirectorWCF
             iscsiTarget newTarget = nas.getISCSITargets().SingleOrDefault(x => x.targetName == itemToAdd.getCloneName());
             if (newTarget == null)
             {
-                newTarget = nas.addISCSITarget(new iscsiTarget 
-                    {
-                        targetAlias = itemToAdd.getCloneName(),
-                        targetName = itemToAdd.getCloneName()
-                    } );
+                newTarget = nas.addISCSITarget(new iscsiTarget
+                {
+                    targetAlias = itemToAdd.getCloneName(),
+                    targetName = itemToAdd.getCloneName()
+                });
                 nas.createTargetGroup(nas.getPortals().First(), newTarget);
             }
             else
@@ -2144,7 +2144,7 @@ namespace bladeDirectorWCF
             iscsiExtent newExtent = nas.getExtents().SingleOrDefault(x => x.iscsi_target_extent_name == newTarget.targetName);
             if (newExtent == null)
             {
-                newExtent = nas.addISCSIExtent(new iscsiExtent 
+                newExtent = nas.addISCSIExtent(new iscsiExtent
                 {
                     iscsi_target_extent_name = newTarget.targetName,
                     iscsi_target_extent_type = "Disk",
@@ -2162,10 +2162,10 @@ namespace bladeDirectorWCF
             using (db.getBladeByIP(bladeToLock, bladeLockType.lockAll, bladeLockType.lockAll))
             {
                 Thread requestThread = Thread.CurrentThread;
-                Thread abortingThread = new Thread( () =>
+                Thread abortingThread = new Thread(() =>
                 {
                     Thread.Sleep(TimeSpan.FromSeconds(1));
-                    requestThread.Abort(); 
+                    requestThread.Abort();
                 });
                 abortingThread.Start();
                 Thread.Sleep(TimeSpan.FromSeconds(10));
@@ -2187,7 +2187,7 @@ namespace bladeDirectorWCF
 
         public logEntry()
         {
-            
+
         }
 
         public logEntry(string newEntry)
@@ -2264,7 +2264,8 @@ namespace bladeDirectorWCF
         [DataMember]
         public bool isAdministrator;
 
-        public userAddRequest(string newUsername, string newPassword) : base(newUsername, newPassword)
+        public userAddRequest(string newUsername, string newPassword)
+            : base(newUsername, newPassword)
         {
             isAdministrator = false;
         }
