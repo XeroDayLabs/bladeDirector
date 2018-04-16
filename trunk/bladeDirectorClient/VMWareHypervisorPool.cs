@@ -49,6 +49,21 @@ namespace bladeDirectorClient
             return hyps;
         }
 
+        public hypervisorCollection<hypSpec_vmware> createVMs(int VMsToAlloc, string snapshotName = "clean", clientExecutionMethod execType = clientExecutionMethod.smbWithWMI, VMSource src = VMSource.configuredServer, string bladeID = null)
+        {
+            hypervisorCollection<hypSpec_vmware> hyps = new hypervisorCollection<hypSpec_vmware>();
+
+            for (int i = 0; i < VMsToAlloc; i++)
+            {
+                hypervisor_vmware thisHyp = machinePools.vmware.createHypervisorForNextFreeVMOrNull(snapshotName, execType, src, bladeID);
+                if (thisHyp == null)
+                    break;
+                hyps.TryAdd(thisHyp.getConnectionSpec().kernelDebugIPOrHostname, thisHyp);
+            }
+
+            return hyps;
+        }
+
         public hypervisor_vmware createHypervisorForNextFreeVMOrNull(string snapshotName = "clean", clientExecutionMethod execType = clientExecutionMethod.smbWithWMI, VMSource src = VMSource.configuredServer, string bladeID = null)
         {
             lock (hypervisorSpecLock)
