@@ -34,11 +34,5 @@ namespace bladeDirectorWCF
             }
             isDisposed = true;
         }
-
-        ~disposingList()
-        {
-            if (!isDisposed)
-                throw new Exception("disposingList was leaked! Allocation stack was " + allocationStack);
-        }
     }
 }
